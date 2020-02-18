@@ -1,3 +1,0 @@
-[submodule "faster-rcnn"]
-	path = faster-rcnn
-	url = git@github.com:GriffinLiang/faster-rcnn.pytorch.git
