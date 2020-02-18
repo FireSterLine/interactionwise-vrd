@@ -1,8 +1,0 @@
-# curl -LO https://download.pytorch.org/whl/cu80/torch-0.2.0.post3-cp27-cp27mu-manylinux1_x86_64.whl
-# pip install torch-0.2.0.post3-cp27-cp27mu-manylinux1_x86_64.whl
-
-vim lib/make.sh faster*/lib/make.sh
-cd faster*/lib/ && sh make.sh && cd ../../lib && sh make.sh && cd .. && exit 0
-
-# Obsolete pre-trained R-CNN https://pan.baidu.com/s/1V0QIiEI06tcKQOTcHkaorQ
-#  mirror: https://www.dropbox.com/s/62qxqt477vhb59e/faster_rcnn_1_20_7559.pth?dl=0
