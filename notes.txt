@@ -1,0 +1,5 @@
+cPickle -> pickle
+fix every "print "
+use % instead of format
+xrange -> range
+imread must be cv2.imread
