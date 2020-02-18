@@ -1,0 +1,3 @@
+Need to reinstall the environment? I believe now it's broken because of the release upgrade
+Also, probably need to reinstall the CUDA drivers using the updated 18.04.
+In the meantime, I started the porting from 2.7 to 3.6 on a different branch (update-code)
