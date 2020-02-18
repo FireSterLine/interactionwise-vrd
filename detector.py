@@ -51,6 +51,7 @@ class detector():
     self.args.cfg_file = 'faster-rcnn/cfgs/vgg16.yml'
     self.args.net = 'vgg16'
     self.args.load_dir = 'models/faster_rcnn_1_20_7559.pth'
+    # self.args.load_dir = 'models/faster_rcnn_1_19_48611.pth'
     self.args.cuda = True
     self.args.mGPUs = False
     self.args.class_agnostic = False

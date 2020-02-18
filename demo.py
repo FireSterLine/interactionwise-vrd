@@ -155,11 +155,16 @@ def pre_demo():
     print vrdet.relation_im(im_path, res)
 
 def vrd_demo():
+    print("Importing detector...")
     from detector import detector
     im_path = 'img/3845770407_1a8cd41230_b.jpg'
+    print("Initializing detector...")
     det = detector()
+    print("Initializing VRD module...")
     vrdet = vrd_module()
+    print("Calling det_im on image...")
     det_res = det.det_im(im_path)
+    print("Identifying relationships...")
     vrd_res = vrdet.relation_im(im_path, det_res)
     print vrd_res
 
