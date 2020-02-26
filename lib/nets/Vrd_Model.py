@@ -16,6 +16,7 @@ class Vrd_Model(nn.Module):
     def __init__(self, args, bn=False):
         super(Vrd_Model, self).__init__()
 
+        # Relations = Predicates
         self.n_rel = args.num_relations
         self.n_obj = args.num_classes
 
@@ -42,13 +43,16 @@ class Vrd_Model(nn.Module):
         network.set_trainable(self.conv3, requires_grad=False)
         network.set_trainable(self.conv4, requires_grad=False)
         network.set_trainable(self.conv5, requires_grad=False)
+
         self.roi_pool = RoIPool(7, 7, 1.0/16)
+
         self.fc6 = FC(512 * 7 * 7, 4096)
-        self.fc7 = FC(4096, 4096)        
+        self.fc7 = FC(4096, 4096)
         self.fc_obj = FC(4096, self.n_obj, relu=False)
         network.set_trainable(self.fc6, requires_grad=False)
         network.set_trainable(self.fc7, requires_grad=False)
         network.set_trainable(self.fc_obj, requires_grad=False)
+
         self.fc8 = FC(4096, 256)
 
         n_fusion = 256
@@ -85,12 +89,14 @@ class Vrd_Model(nn.Module):
         ix1 = network.np_to_variable(ix1, is_cuda=True, dtype=torch.LongTensor)
         ix2 = network.np_to_variable(ix2, is_cuda=True, dtype=torch.LongTensor)
 
+        # CNN
         x = self.conv1(im_data)
         x = self.conv2(x)
         x = self.conv3(x)
         x = self.conv4(x)
         x = self.conv5(x)
 
+        # Visual features of subject and object combined
         x_so = self.roi_pool(x, boxes)
         x_so = x_so.view(x_so.size()[0], -1)
         x_so = self.fc6(x_so)
@@ -107,7 +113,7 @@ class Vrd_Model(nn.Module):
         x = self.fc7(x)
         x = F.dropout(x, training=self.training)
         x = self.fc8(x)
-        
+
         if(args.use_so):
             x_s = torch.index_select(x_so, 0, ix1)
             x_o = torch.index_select(x_so, 0, ix2)
@@ -117,7 +123,7 @@ class Vrd_Model(nn.Module):
 
         if(args.loc_type == 1):
             lo = self.fc_lov(SpatialFea)
-            x = torch.cat((x, lo), 1)            
+            x = torch.cat((x, lo), 1)
         elif(args.loc_type == 2):
             lo = self.conv_lo(SpatialFea)
             lo = lo.view(lo.size()[0], -1)
@@ -132,7 +138,7 @@ class Vrd_Model(nn.Module):
             emb_so = torch.cat((emb_s, emb_o), 1)
             emb_so = self.fc_so_emb(emb_so)
             x = torch.cat((x, emb_so), 1)
-            
+
         x = self.fc_fusion(x)
         rel_score = self.fc_rel(x)
         return obj_score, rel_score
