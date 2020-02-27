@@ -126,6 +126,7 @@ class detector():
     if self.args.cuda > 0:
       self.fasterRCNN.cuda()
 
+    # set to evaluation mode
     self.fasterRCNN.eval()
 
   def _get_image_blob(self, im):
@@ -166,6 +167,7 @@ class detector():
 # if __name__ == '__main__':
 
   def det_im(self, im_file):
+    # max_per_image is not used anywhere
     max_per_image = 100
     thresh = 0.05
     total_tic = time.time()

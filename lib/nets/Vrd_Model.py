@@ -56,13 +56,16 @@ class Vrd_Model(nn.Module):
         self.fc8 = FC(4096, 256)
 
         n_fusion = 256
+        # using visual features of subject and object individually too
         if(args.use_so):
             self.fc_so = FC(256*2, 256)
             n_fusion += 256
 
+        # using type 1 of spatial features
         if(args.loc_type == 1):
             self.fc_lov = FC(8, 256)
             n_fusion += 256
+        # using type 2 of spatial features
         elif(args.loc_type == 2):
             self.conv_lo = nn.Sequential(Conv2d(2, 96, 5, same_padding=True, stride=2, bn=bn),
                                        Conv2d(96, 128, 5, same_padding=True, stride=2, bn=bn),
@@ -70,6 +73,7 @@ class Vrd_Model(nn.Module):
             self.fc_lov = FC(64, 256)
             n_fusion += 256
 
+        # using semantic embeddings of objects
         if(args.use_obj):
             self.emb = nn.Embedding(self.n_obj, 300)
             network.set_trainable(self.emb, requires_grad=False)
@@ -77,6 +81,7 @@ class Vrd_Model(nn.Module):
             n_fusion += 256
 
         self.fc_fusion = FC(n_fusion, 256)
+        # this is the final layer
         self.fc_rel = FC(256, self.n_rel, relu=False)
 
     def forward(self, im_data, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, args):
