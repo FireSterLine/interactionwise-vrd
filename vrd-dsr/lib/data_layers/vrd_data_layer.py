@@ -22,17 +22,17 @@ class VrdDataLayer(object):
         self._num_classes = len(self._classes)
         self._num_relations = len(self._relations)
         self._class_to_ind = dict(zip(self._classes, xrange(self._num_classes)))
-        self._relations_to_ind = dict(zip(self._relations, xrange(self._num_relations)))        
+        self._relations_to_ind = dict(zip(self._relations, xrange(self._num_relations)))
         self._cur = 0
         self.cache_path = '../data/cache'
         with open('../data/%s/%s.pkl'%(ds_name, stage), 'rb') as fid:
             anno = pickle.load(fid)
-        if(self.stage == 'train'):          
+        if(self.stage == 'train'):
             self._anno = [x for x in anno if x is not None and len(x['classes'])>1]
         else:
             self.proposals_path = proposals_path
             if(proposals_path != None):
-                with open(proposals_path, 'rb') as fid:   
+                with open(proposals_path, 'rb') as fid:
                     proposals = pickle.load(fid)
                     self._boxes = proposals['boxes']
                     self._pred_cls = proposals['cls']
@@ -41,7 +41,7 @@ class VrdDataLayer(object):
         self._num_instance = len(self._anno)
         self._batch_size = 1
         with open('../data/%s/so_prior.pkl'%ds_name, 'rb') as fid:
-            self._so_prior = pickle.load(fid)  
+            self._so_prior = pickle.load(fid)
 
     def forward(self):
         if(self.stage == 'train'):
@@ -60,13 +60,13 @@ class VrdDataLayer(object):
         anno_img = self._anno[self._cur]
         im_path = anno_img['img_path']
         im = cv2.imread(im_path)
-        ih = im.shape[0]    
+        ih = im.shape[0]
         iw = im.shape[1]
         PIXEL_MEANS = np.array([[[102.9801, 115.9465, 122.7717]]])
         image_blob, im_scale = prep_im_for_blob(im, PIXEL_MEANS)
         blob = np.zeros((1,)+image_blob.shape, dtype=np.float32)
-        blob[0] = image_blob        
-        boxes = np.zeros((anno_img['boxes'].shape[0], 5))        
+        blob[0] = image_blob
+        boxes = np.zeros((anno_img['boxes'].shape[0], 5))
         boxes[:, 1:5] = anno_img['boxes'] * im_scale
         classes = np.array(anno_img['classes'])
         ix1 = np.array(anno_img['ix1'])
@@ -83,19 +83,19 @@ class VrdDataLayer(object):
             sBBox = anno_img['boxes'][ix1[ii]]
             oBBox = anno_img['boxes'][ix2[ii]]
             rBBox = self._getUnionBBox(sBBox, oBBox, ih, iw)
-            rel_boxes[ii, 1:5] = np.array(rBBox) * im_scale    
+            rel_boxes[ii, 1:5] = np.array(rBBox) * im_scale
             SpatialFea[ii] = [self._getDualMask(ih, iw, sBBox), \
                               self._getDualMask(ih, iw, oBBox)]
             rel_so_prior[ii] = self._so_prior[classes[ix1[ii]], classes[ix2[ii]]]
             for r in rel_classes[ii]:
                 rel_labels[0, pos_idx] = ii*self._num_relations + r
-                pos_idx += 1  
+                pos_idx += 1
         image_blob = image_blob.astype(np.float32, copy=False)
         boxes = boxes.astype(np.float32, copy=False)
-        classes = classes.astype(np.float32, copy=False) 
+        classes = classes.astype(np.float32, copy=False)
         self._cur += 1
         if(self._cur >= len(self._anno)):
-            self._cur = 0        
+            self._cur = 0
         return blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, rel_labels, rel_so_prior
 
     def forward_test(self):
@@ -108,14 +108,14 @@ class VrdDataLayer(object):
             return None
         im_path = anno_img['img_path']
         im = cv2.imread(im_path)
-        ih = im.shape[0]    
+        ih = im.shape[0]
         iw = im.shape[1]
         PIXEL_MEANS = np.array([[[102.9801, 115.9465, 122.7717]]])
         image_blob, im_scale = prep_im_for_blob(im, PIXEL_MEANS)
         blob = np.zeros((1,)+image_blob.shape, dtype=np.float32)
-        blob[0] = image_blob        
+        blob[0] = image_blob
         # Reshape net's input blobs
-        boxes = np.zeros((anno_img['boxes'].shape[0], 5))        
+        boxes = np.zeros((anno_img['boxes'].shape[0], 5))
         boxes[:, 1:5] = anno_img['boxes'] * im_scale
         classes = np.array(anno_img['classes'])
         ix1 = np.array(anno_img['ix1'])
@@ -129,26 +129,26 @@ class VrdDataLayer(object):
         for ii in range(n_rel_inst):
             sBBox = anno_img['boxes'][ix1[ii]]
             oBBox = anno_img['boxes'][ix2[ii]]
-            rBBox = self._getUnionBBox(sBBox, oBBox, ih, iw)    
+            rBBox = self._getUnionBBox(sBBox, oBBox, ih, iw)
             soMask = [self._getDualMask(ih, iw, sBBox), \
-                      self._getDualMask(ih, iw, oBBox)]                        
+                      self._getDualMask(ih, iw, oBBox)]
             rel_boxes[ii, 1:5] = np.array(rBBox) * im_scale
             SpatialFea[ii] = soMask
             # SpatialFea[ii] = self._getRelativeLoc(sBBox, oBBox)
-            
+
         image_blob = image_blob.astype(np.float32, copy=False)
         boxes = boxes.astype(np.float32, copy=False)
-        classes = classes.astype(np.float32, copy=False) 
+        classes = classes.astype(np.float32, copy=False)
         self._cur += 1
         if(self._cur >= len(self._anno)):
-            self._cur = 0                
-        return blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, anno_img['boxes']        
+            self._cur = 0
+        return blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, anno_img['boxes']
 
     def forward_det(self):
         anno_img = self._anno[self._cur]
         boxes_img = self._boxes[self._cur]
         pred_cls_img = self._pred_cls[self._cur]
-        pred_confs_img = self._pred_confs[self._cur]        
+        pred_confs_img = self._pred_confs[self._cur]
         if(boxes_img.shape[0] < 2):
             self._cur += 1
             if(self._cur >= len(self._anno)):
@@ -156,14 +156,14 @@ class VrdDataLayer(object):
             return None
         im_path = anno_img['img_path']
         im = cv2.imread(im_path)
-        ih = im.shape[0]    
+        ih = im.shape[0]
         iw = im.shape[1]
         PIXEL_MEANS = np.array([[[102.9801, 115.9465, 122.7717]]])
         image_blob, im_scale = prep_im_for_blob(im, PIXEL_MEANS)
         blob = np.zeros((1,)+image_blob.shape, dtype=np.float32)
-        blob[0] = image_blob        
+        blob[0] = image_blob
         # Reshape net's input blobs
-        boxes = np.zeros((boxes_img.shape[0], 5))        
+        boxes = np.zeros((boxes_img.shape[0], 5))
         boxes[:, 1:5] = boxes_img * im_scale
         classes = pred_cls_img
         ix1 = []
@@ -184,7 +184,7 @@ class VrdDataLayer(object):
                 oBBox = boxes_img[o_idx]
                 rBBox = self._getUnionBBox(sBBox, oBBox, ih, iw)
                 soMask = [self._getDualMask(ih, iw, sBBox), \
-                      self._getDualMask(ih, iw, oBBox)]                        
+                      self._getDualMask(ih, iw, oBBox)]
                 rel_boxes[i_rel_inst, 1:5] = np.array(rBBox) * im_scale
                 SpatialFea[i_rel_inst] = soMask
                 # SpatialFea[i_rel_inst] = self._getRelativeLoc(sBBox, oBBox)
@@ -192,7 +192,7 @@ class VrdDataLayer(object):
                 i_rel_inst += 1
         image_blob = image_blob.astype(np.float32, copy=False)
         boxes = boxes.astype(np.float32, copy=False)
-        classes = classes.astype(np.float32, copy=False) 
+        classes = classes.astype(np.float32, copy=False)
         ix1 = np.array(ix1)
         ix2 = np.array(ix2)
         self._cur += 1
@@ -204,7 +204,7 @@ class VrdDataLayer(object):
         anno_img = self._anno[self._cur]
         boxes_img = self._boxes[self._cur]
         pred_cls_img = self._pred_cls[self._cur]
-        pred_confs_img = self._pred_confs[self._cur]        
+        pred_confs_img = self._pred_confs[self._cur]
         if(boxes_img.shape[0] < 2):
             self._cur += 1
             if(self._cur >= len(self._anno)):
@@ -212,14 +212,14 @@ class VrdDataLayer(object):
             return None
         im_path = anno_img['img_path']
         im = cv2.imread(im_path)
-        ih = im.shape[0]    
+        ih = im.shape[0]
         iw = im.shape[1]
         PIXEL_MEANS = np.array([[[102.9801, 115.9465, 122.7717]]])
         image_blob, im_scale = prep_im_for_blob(im, PIXEL_MEANS)
         blob = np.zeros((1,)+image_blob.shape, dtype=np.float32)
-        blob[0] = image_blob        
+        blob[0] = image_blob
         # Reshape net's input blobs
-        boxes = np.zeros((boxes_img.shape[0], 5))        
+        boxes = np.zeros((boxes_img.shape[0], 5))
         boxes[:, 1:5] = boxes_img * im_scale
         classes = pred_cls_img
         ix1 = []
@@ -244,12 +244,12 @@ class VrdDataLayer(object):
                 i_rel_inst += 1
         image_blob = image_blob.astype(np.float32, copy=False)
         boxes = boxes.astype(np.float32, copy=False)
-        classes = classes.astype(np.float32, copy=False) 
+        classes = classes.astype(np.float32, copy=False)
         ix1 = np.array(ix1)
         ix2 = np.array(ix2)
         self._cur += 1
         if(self._cur >= len(self._anno)):
-            self._cur = 0                
+            self._cur = 0
         return blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, boxes_img, pred_confs_img, rel_so_prior
 
     def _getUnionBBox(self, aBB, bBB, ih, iw, margin = 10):
@@ -257,7 +257,7 @@ class VrdDataLayer(object):
             max(0, min(aBB[1], bBB[1]) - margin), \
             min(iw, max(aBB[2], bBB[2]) + margin), \
             min(ih, max(aBB[3], bBB[3]) + margin)]
-    
+
     def _getDualMask(self, ih, iw, bb):
         rh = 32.0 / ih
         rw = 32.0 / iw
@@ -268,7 +268,7 @@ class VrdDataLayer(object):
         mask = np.zeros((32, 32))
         mask[y1 : y2, x1 : x2] = 1
         assert(mask.sum() == (y2 - y1) * (x2 - x1))
-        return mask    
+        return mask
 
     def _getRelativeLoc(self, aBB, bBB):
         sx1, sy1, sx2, sy2 = aBB.astype(np.float32)
@@ -278,5 +278,5 @@ class VrdDataLayer(object):
         wh = np.log(np.array([sw/ow, sh/oh, ow/sw, oh/sh]))
         return np.hstack((xy, wh))
 
-if __name__ == '__main__':    
+if __name__ == '__main__':
     pass
