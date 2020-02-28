@@ -5,6 +5,9 @@ __pycache__
 other/*
 iwenv*/
 
+images
+images_det
+
 #data/*
 #!data/genome/*
 data/demo/*
