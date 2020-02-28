@@ -50,7 +50,7 @@ class obj_detector():
 
   def __init__(self, dataset_name="vg", net="res101", pretrained="faster_rcnn_1_20_16193.pth"):
 
-    print("Called with args:")
+    print("obj_detector() called with args:")
     print({dataset_name, net, pretrained})
 
     self.dataset_name = dataset_name
@@ -64,7 +64,7 @@ class obj_detector():
     # If a config file is specified for the model, then it is loaded, and the default model configurations are overridden
     # Those model parameters which are not specified in this config file, the default parameter values are used for them
     # If no config file is specified, then simply the default parameters are used, which are specified in models.utils.config
-    cfg_from_file(os.path.join(common.faster_rcnn_dir, "cfgs", "{}.yml").format(self.net))
+    cfg_from_file(osp.join(common.faster_rcnn_dir, "cfgs", "{}.yml").format(self.net))
 
     cfg.USE_GPU_NMS = self.cuda
 
@@ -99,12 +99,12 @@ class obj_detector():
     self.fasterRCNN.create_architecture()
 
     if load_pretrained:
-      model_path = os.path.join(common.faster_rcnn_models_dir, self.net, self.dataset_name, self.pretrained)
+      model_path = osp.join(common.faster_rcnn_models_dir, self.net, self.dataset_name, self.pretrained)
 
       print("Loading model... (checkpoint {})".format(model_path))
 
-      if not os.path.exists(model_path):
-        raise Exception("Pretrained model not found: " + model_path)
+      if not osp.isfile(model_path):
+        raise Exception("Pretrained model not found: {}".format(model_path))
 
       if self.cuda > 0:
         checkpoint = torch.load(model_path)
@@ -304,7 +304,7 @@ class obj_detector():
     misc_toc = time.time()
     nms_time = misc_toc - misc_tic
 
-    result_path = os.path.join(common.images_det_dir, im_file[:-4] + ".jpg")
+    result_path = osp.join(common.images_det_dir, im_file[:-4] + ".jpg")
     cv2.imwrite(result_path, im2show)
 
     sys.stdout.write("im_detect: {:.3f}s {:.3f}s   \r".format(detect_time, nms_time))
@@ -326,4 +326,4 @@ if __name__ == "__main__":
   print("Loaded {} images.".format(num_images))
 
   for img_path in imglist:
-    det.det_im(os.path.join(common.images_dir, img_path))
+    det.det_im(osp.join(common.images_dir, img_path))

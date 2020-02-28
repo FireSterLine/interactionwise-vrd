@@ -5,6 +5,6 @@
 # Exmple use:
 # ./up.sh obj_det.py lib
 
-rsync -avz $@ ara:interactionwise/interactionwise-vrd/
+watch -n 1 rsync -avz $@ ara:interactionwise/interactionwise-vrd/
 
 exit 0
