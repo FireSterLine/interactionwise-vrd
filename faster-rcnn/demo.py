@@ -9,7 +9,10 @@ from __future__ import print_function
 
 import _init_paths
 import os
+
 import sys
+
+
 import numpy as np
 import argparse
 import pprint
@@ -279,6 +282,7 @@ if __name__ == '__main__':
         im_file = os.path.join(args.image_dir, imglist[num_images])
         # im = cv2.imread(im_file)
         im_in = np.array(imread(im_file))
+
       if len(im_in.shape) == 2:
         im_in = im_in[:,:,np.newaxis]
         im_in = np.concatenate((im_in,im_in,im_in), axis=2)
@@ -286,6 +290,7 @@ if __name__ == '__main__':
       im = im_in[:,:,::-1]
 
       blobs, im_scales = _get_image_blob(im)
+
       assert len(im_scales) == 1, "Only single-image batch implemented"
       im_blob = blobs
       im_info_np = np.array([[im_blob.shape[1], im_blob.shape[2], im_scales[0]]], dtype=np.float32)
@@ -347,6 +352,7 @@ if __name__ == '__main__':
       det_toc = time.time()
       detect_time = det_toc - det_tic
       misc_tic = time.time()
+      
       if vis:
           im2show = np.copy(im)
       for j in xrange(1, len(classes)):
@@ -359,7 +365,7 @@ if __name__ == '__main__':
               cls_boxes = pred_boxes[inds, :]
             else:
               cls_boxes = pred_boxes[inds][:, j * 4:(j + 1) * 4]
-            
+
             cls_dets = torch.cat((cls_boxes, cls_scores.unsqueeze(1)), 1)
             # cls_dets = torch.cat((cls_boxes, cls_scores), 1)
             cls_dets = cls_dets[order]

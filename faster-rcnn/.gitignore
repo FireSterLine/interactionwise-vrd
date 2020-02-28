@@ -6,16 +6,6 @@ output/*
 images/*
 images_det/*
 
-data/demo/*
-data/vg
-data/scripts/*
-data/coco
-data/pretrained_model/*
-data/cache/*
-data/genome/visual_genome_python_driver
-data/genome/coco_splits
-data/genome/xml
-
 # READ THIS BEFORE YOU REFACTOR ME
 #
 # setup.py uses the list of patterns in this file to decide

@@ -12,11 +12,11 @@ import os
 import os.path as osp
 import sys
 this_dir = osp.dirname(__file__)
-sys.path.insert(0, osp.join(this_dir, 'faster-rcnn/lib'))
+sys.path.insert(0, osp.join(this_dir, 'faster-rcnn', 'lib'))
 import numpy as np
 import argparse
 import pprint
-import pdb
+
 import time
 import cv2
 import torch
@@ -31,86 +31,95 @@ from roi_data_layer.roidb import combined_roidb
 from roi_data_layer.roibatchLoader import roibatchLoader
 from model.utils.config import cfg, cfg_from_file, cfg_from_list, get_output_dir
 from model.rpn.bbox_transform import clip_boxes
-
-from model.nms.nms_wrapper import nms
+#from model.nms.nms_wrapper import nms
+from model.roi_layers import nms
 from model.rpn.bbox_transform import bbox_transform_inv
-from model.utils.net_utils import save_net, load_net, res_detections
+from model.utils.net_utils import save_net, load_net, vis_detections
 from model.utils.blob import im_list_to_blob
 from model.faster_rcnn.vgg16 import vgg16
 from model.faster_rcnn.resnet import resnet
 from easydict import EasyDict
 
+import common
 
-class detector():
+# This class is the wrapper for the Object Detection model
+#  It currently only supports Faster RCNN, but it can be expanded
 
-  def __init__(self):
-    self.args = EasyDict()
-    self.args.dataset = 'vrd'
+class obj_detector():
 
-    # Dependency here between network type and config file
-    self.args.cfg_file = 'faster-rcnn/cfgs/vgg16.yml'
-    self.args.net = 'vgg16'
+  def __init__(self, dataset_name="vg", net="vgg16", pretrained="faster_rcnn_1_10_489.pth"):
 
-    self.args.load_dir = 'models/faster_rcnn_1_20_7559.pth'
-    # self.args.load_dir = 'models/faster_rcnn_1_19_48611.pth'
-    self.args.cuda = True
-    self.args.mGPUs = False
+    print("Called with args:")
+    print({dataset_name, net, pretrained})
 
-    # Class-agnostic = don't output object labels
-    self.args.class_agnostic = False
-    self.args.parallel_type = 0
-    self.args.batch_size = 1
-    print(self.args)
+    self.dataset_name = dataset_name
+    self.net = net
+    self.pretrained = pretrained
+    self.model_path = common.models_dir + "/" + self.net + "/" + self.dataset_name + "/" + self.pretrained
+
+    self.cuda = True
+    self.class_agnostic = False
+    self.dataset = LoadDataset(self.dataset_name, background=True)
 
     # If a config file is specified for the model, then it is loaded, and the default model configurations are overridden
     # Those model parameters which are not specified in this config file, the default parameter values are used for them
     # If no config file is specified, then simply the default parameters are used, which are specified in models.utils.config
-    if self.args.cfg_file is not None:
-      cfg_from_file(self.args.cfg_file)
+    cfg_from_file("faster-rcnn/cfgs/{}.yml".format(self.net))
 
-    cfg.USE_GPU_NMS = self.args.cuda
+    cfg.USE_GPU_NMS = self.cuda
 
-    print('Using config:')
+    print("Using config:")
     pprint.pprint(cfg)
+
     np.random.seed(cfg.RNG_SEED)
 
-    # train set
-    # -- Note: Use validation set and disable the flipped to enable faster loading.
+    lr = cfg.TRAIN.LEARNING_RATE
+    momentum = cfg.TRAIN.MOMENTUM
+    weight_decay = cfg.TRAIN.WEIGHT_DECAY
 
-    load_name = self.args.load_dir
-    # This file contains the vocabulary for the objects
-    with open('data/vrd/obj.txt') as f:
-      self.vrd_classes = [ x.strip() for x in f.readlines() ]
-    self.vrd_classes = ['__background__'] + self.vrd_classes
+    print("Creating detector...")
 
     # Create Faster R-CNN architecture
-    # Redundancy: vgg16 again.
     # Pretrained = false forbids to load the toddler net, which is not needed since
     # we load_state_dict the full fasterRCNN architecture a few lines later.
-    self.fasterRCNN = vgg16(self.vrd_classes, pretrained=False, class_agnostic=self.args.class_agnostic)
+    # initilize the network here.
+    if self.net == 'vgg16':
+      self.fasterRCNN = vgg16(self.dataset.classes, pretrained=False, class_agnostic=self.class_agnostic)
+    elif self.net == 'res101':
+      self.fasterRCNN = resnet(self.dataset.classes, 101, pretrained=False, class_agnostic=self.class_agnostic)
+    elif self.net == 'res50':
+      self.fasterRCNN = resnet(self.dataset.classes, 50, pretrained=False, class_agnostic=self.class_agnostic)
+    elif self.net == 'res152':
+      self.fasterRCNN = resnet(self.dataset.classes, 152, pretrained=False, class_agnostic=self.class_agnostic)
+    else:
+      raise Exception("Couldn't load unknown network: {}".format(self.net))
+
     self.fasterRCNN.create_architecture()
 
-    if self.args.cuda > 0:
+    print("Loading model... (checkpoint {})".format(self.model_path))
+
+    if not os.path.exists(self.model_path):
+      raise Exception("Pretrained model not found: " + self.model_path)
+
+    if self.cuda > 0:
       checkpoint = torch.load(load_name)
     else:
       checkpoint = torch.load(load_name, map_location=(lambda storage, loc: storage))
     self.fasterRCNN.load_state_dict(checkpoint['model'])
 
-    # pooling mode can be one of three types: align, crop or pool. This is some parameter which defines how the
-    # ROI is applied to return pooled features
-    if 'pooling_mode' in checkpoint.keys():
-      cfg.POOLING_MODE = checkpoint['pooling_mode']
-    print('load model successfully!')
-    print("load checkpoint %s" % (load_name))
+    # pooling_mode can be one of three types: align, crop or pool.
+    # This parameter defines the kind of ROI applied to obtain the pooled features
+    if "pooling_mode" in checkpoint.keys():
+      cfg.POOLING_MODE = checkpoint["pooling_mode"]
 
     # initilize the tensor holder here.
-    self.im_data = torch.FloatTensor(1)
-    self.im_info = torch.FloatTensor(1)
+    self.im_data   = torch.FloatTensor(1)
+    self.im_info   = torch.FloatTensor(1)
     self.num_boxes = torch.LongTensor(1)
-    self.gt_boxes = torch.FloatTensor(1)
+    self.gt_boxes  = torch.FloatTensor(1)
 
     # ship to cuda
-    if self.args.cuda > 0:
+    if self.cuda > 0:
       self.im_data   = self.im_data.cuda()
       self.im_info   = self.im_info.cuda()
       self.num_boxes = self.num_boxes.cuda()
@@ -123,15 +132,17 @@ class detector():
     self.num_boxes = Variable(self.num_boxes, volatile=True)
     self.gt_boxes  = Variable(self.gt_boxes,  volatile=True)
 
-    if self.args.cuda > 0:
-      cfg.CUDA = True
+    cfg.CUDA = True
 
-    if self.args.cuda > 0:
+    if self.cuda > 0:
       self.fasterRCNN.cuda()
 
-    # set to evaluation mode
-    self.fasterRCNN.eval()
+    # Set the model to evaluation mode
+    if self.cuda > 0:
+      self.fasterRCNN.eval()
 
+  # This function generates, given an input image,
+  #  the image pyramid which is then input to the network
   def _get_image_blob(self, im):
     """Converts an image into a network input.
     Arguments:
@@ -148,6 +159,7 @@ class detector():
     im_size_min = np.min(im_shape[0:2])
     im_size_max = np.max(im_shape[0:2])
 
+    # Generate pyramis as a list of images
     processed_ims = []
     im_scale_factors = []
 
@@ -166,22 +178,38 @@ class detector():
 
     return blob, np.array(im_scale_factors)
 
-# def detect_im():
-# if __name__ == '__main__':
+  # Similar to vis_detections in faster-rcnn/lib/model/utils/net_utils.py
+  def res_detections(im, class_ix, class_name, dets, res, thresh=0.8):
+    """Visual debugging of detections."""
+    for i in range(np.minimum(10, dets.shape[0])):
+      bbox = tuple(int(np.round(x)) for x in dets[i, :4])
+      score = dets[i, -1]
+      if score > thresh:
+        cv2.rectangle(im, bbox[0:2], bbox[2:4], (0, 204, 0), 2)
+        cv2.putText(im, '%s%d: %.3f' % (class_name, len(res['cls']), score), (bbox[0], bbox[1] + 15), cv2.FONT_HERSHEY_PLAIN,
+                    2.0, (0, 0, 255), thickness=2)
+        res['box'] = np.vstack((res['box'], dets[i, :4]))
+        res['cls'].append(class_ix-1)
+        res['confs'].append(score)
+    return im
 
   def det_im(self, im_file):
-    # max_per_image is not used anywhere
-    max_per_image = 100
+
     thresh = 0.05
+
     total_tic = time.time()
     im_in = np.array(cv2.imread(im_file))
+
+    # This probably allows black and white images
     if len(im_in.shape) == 2:
       im_in = im_in[:,:,np.newaxis]
       im_in = np.concatenate((im_in,im_in,im_in), axis=2)
-    # rgb -> bgr
+
+    # RGB -> BGR
     im = im_in[:,:,::-1]
 
     blobs, im_scales = self._get_image_blob(im)
+
     assert len(im_scales) == 1, "Only single-image batch implemented"
     im_blob = blobs
     im_info_np = np.array([[im_blob.shape[1], im_blob.shape[2], im_scales[0]]], dtype=np.float32)
@@ -190,10 +218,11 @@ class detector():
     im_data_pt = im_data_pt.permute(0, 3, 1, 2)
     im_info_pt = torch.from_numpy(im_info_np)
 
-    self.im_data.data.resize_(im_data_pt.size()).copy_(im_data_pt)
-    self.im_info.data.resize_(im_info_pt.size()).copy_(im_info_pt)
-    self.gt_boxes.data.resize_(1, 1, 5).zero_()
-    self.num_boxes.data.resize_(1).zero_()
+    with torch.no_grad():
+      self.im_data.resize_(im_data_pt.size()).copy_(im_data_pt)
+      self.im_info.resize_(im_info_pt.size()).copy_(im_info_pt)
+      self.gt_boxes.resize_(1, 1, 5).zero_()
+      self.num_boxes.resize_(1).zero_()
 
     det_tic = time.time()
 
@@ -206,33 +235,27 @@ class detector():
     boxes = rois.data[:, :, 1:5]
 
     if cfg.TEST.BBOX_REG:
-        # Apply bounding-box regression deltas
-        box_deltas = bbox_pred.data
-        if cfg.TRAIN.BBOX_NORMALIZE_TARGETS_PRECOMPUTED:
+      # Apply bounding-box regression deltas
+      box_deltas = bbox_pred.data
+      if cfg.TRAIN.BBOX_NORMALIZE_TARGETS_PRECOMPUTED:
         # Optionally normalize targets by a precomputed mean and stdev
-          if self.args.class_agnostic:
-              if self.args.cuda > 0:
-                  box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS).cuda() \
-                             + torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS).cuda()
-              else:
-                  box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS) \
-                             + torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS)
+        if self.cuda > 0:
+          box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS).cuda() \
+                     + torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS).cuda()
+        else:
+          box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS) \
+                     + torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS)
 
-              box_deltas = box_deltas.view(1, -1, 4)
-          else:
-              if self.args.cuda > 0:
-                  box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS).cuda() \
-                             + torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS).cuda()
-              else:
-                  box_deltas = box_deltas.view(-1, 4) * torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS) \
-                             + torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS)
-              box_deltas = box_deltas.view(1, -1, 4 * len(self.vrd_classes))
+        if self.class_agnostic:
+          box_deltas = box_deltas.view(1, -1, 4)
+        else:
+          box_deltas = box_deltas.view(1, -1, 4 * len(self.dataset.classes))
 
-        pred_boxes = bbox_transform_inv(boxes, box_deltas, 1)
-        pred_boxes = clip_boxes(pred_boxes, self.im_info.data, 1)
+      pred_boxes = bbox_transform_inv(boxes, box_deltas, 1)
+      pred_boxes = clip_boxes(pred_boxes, self.im_info.data, 1)
     else:
-        # Simply repeat the boxes, once for each class
-        pred_boxes = np.tile(boxes, (1, scores.shape[1]))
+      # Simply repeat the boxes, once for each class
+      pred_boxes = np.tile(boxes, (1, scores.shape[1]))
 
     pred_boxes /= im_scales[0]
 
@@ -241,18 +264,21 @@ class detector():
     det_toc = time.time()
     detect_time = det_toc - det_tic
     misc_tic = time.time()
+
     im2show = np.copy(im)
+
     res = {}
     res['box'] = np.zeros((0,4))
     res['cls'] = []
     res['confs'] = []
-    for j in range(1, len(self.vrd_classes)):
+
+    for j in range(1, len(self.dataset.classes)):
       inds = torch.nonzero(scores[:,j]>thresh).view(-1)
       # if there is det
       if inds.numel() > 0:
         cls_scores = scores[:,j][inds]
         _, order = torch.sort(cls_scores, 0, True)
-        if self.args.class_agnostic:
+        if self.class_agnostic:
           cls_boxes = pred_boxes[inds, :]
         else:
           cls_boxes = pred_boxes[inds][:, j * 4:(j + 1) * 4]
@@ -260,18 +286,34 @@ class detector():
         cls_dets = torch.cat((cls_boxes, cls_scores.unsqueeze(1)), 1)
         # cls_dets = torch.cat((cls_boxes, cls_scores), 1)
         cls_dets = cls_dets[order]
-        keep = nms(cls_dets, cfg.TEST.NMS, force_cpu=not cfg.USE_GPU_NMS)
+        # keep = nms(cls_dets, cfg.TEST.NMS, force_cpu=not cfg.USE_GPU_NMS)
+        keep = nms(cls_boxes[order, :], cls_scores[order], cfg.TEST.NMS)
         cls_dets = cls_dets[keep.view(-1).long()]
-        im2show = res_detections(im2show, j, self.vrd_classes[j], cls_dets.cpu().numpy(), res, 0.5)
+
+        im2show = vis_detections(im2show, classes[j], cls_dets.cpu().numpy(), 0.5)
+        im2show = self.res_detections(im2show, j, self.dataset.classes[j], cls_dets.cpu().numpy(), res, 0.5)
 
     misc_toc = time.time()
     nms_time = misc_toc - misc_tic
 
+    result_path = os.path.join(common.images_det_dir, im_file[:-4] + ".jpg")
+    cv2.imwrite(result_path, im2show)
+
     sys.stdout.write('im_detect: {:.3f}s {:.3f}s   \r'.format(detect_time, nms_time))
     sys.stdout.flush()
-    cv2.imwrite('img/im_det.jpg', im2show)
+
+    cv2.imshow("Test detection", im2show)
+    cv2.waitKey(0)
+
     return res
 
 if __name__ == '__main__':
-  det = detector()
-  det.det_im('img/im.jpg')
+  det = obj_detector()
+
+  imglist = os.listdir(common.images_dir)
+  num_images = len(imglist)
+
+  print("Loaded {} images.".format(num_images))
+
+  for img_path in imglist:
+    det.det_im(img_path)

@@ -23,6 +23,7 @@ def train_net(train_data_layer, net, epoch, args):
         # so in reality, this forward function here is not really a network
         # the rel_so_prior here is a subset of the 100*70*70 dimensional so_prior array, which contains the predicate prob distribution for all object pairs
         # the rel_so_prior here contains the predicate probability distribution of only the object pairs in this annotation
+        # Also, it might be helpful to keep in mind that this train_data_layer currently works for a single annotation at a time - no batching is implemented!
         image_blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, rel_labels, rel_so_prior = train_data_layer.forward()
         target = Variable(torch.from_numpy(rel_labels).type(torch.LongTensor)).cuda()
         rel_so_prior = -0.5*(rel_so_prior+1.0/args.num_relations)

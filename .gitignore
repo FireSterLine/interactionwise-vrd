@@ -1,3 +1,19 @@
 ## General
+tmp*
+*.tmp
+__pycache__
 other/*
 iwenv*/
+
+#data/*
+#!data/genome/*
+data/demo/*
+data/vg
+data/scripts/*
+data/coco
+data/pretrained_model/*
+data/cache/*
+data/genome/visual_genome_python_driver
+data/genome/coco_splits
+data/genome/xml
+
