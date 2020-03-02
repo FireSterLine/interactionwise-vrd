@@ -5,6 +5,8 @@
 # Exmple use:
 # ./up.sh obj_det.py lib
 
-watch -n 1 rsync -avz $@ ara:interactionwise/interactionwise-vrd/
+watch -n 1 rsync \
+ --exclude "*__pycache__*" \
+ -avz $@ ara:interactionwise/interactionwise-vrd/
 
 exit 0
