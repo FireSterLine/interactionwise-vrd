@@ -23,6 +23,7 @@ class dataset():
                          "motorbike", "person", "pottedplant",
                          "sheep", "sofa", "train", "tvmonitor"])
     elif self.name == "vg":
+
       if self.subset == None:
         self.subset = "1600-400-20"
       # self.subset = "2500-1000-500"
@@ -34,6 +35,11 @@ class dataset():
       with open("data/genome/{}/relations_vocab.txt".format(self.subset), 'r') as f:
         pred_vocab = f.readlines()
         pred_classes = np.asarray([x.strip('\n') for x in pred_vocab])
+
+      # Load list of images
+      self.img_rels = None
+      {"VG_100K_2/237.jpg" : [], "VG_100K_2/138.jpg" : [] }
+
     else:
       raise Exception("Unknown dataset: " + self.name)
 

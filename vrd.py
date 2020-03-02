@@ -21,15 +21,16 @@ from easydict import EasyDict
 
 from obj_det import obj_detector
 from lib.dataset import dataset
-import common
+import globals
+import utils
 import pdb
 
 class vr_detector():
 
-  def __init__(self, dataset_name="vg", pretrained="epoch_4_checkpoint.pth(.tar)"):
+  def __init__(self, dataset_name="vg", pretrained=False): # pretrained="epoch_4_checkpoint.pth(.tar)"):
 
     print("vr_detector() called with args:")
-    print({dataset_name, pretrained})
+    print([dataset_name, pretrained])
 
     self.dataset_name = dataset_name
     self.pretrained = False # TODO
@@ -39,11 +40,13 @@ class vr_detector():
 
     self.dataset = dataset(self.dataset_name, with_bg_obj=True)
 
-    self.N = self.dataset.n_obj
-    self.M = self.dataset.n_pred
+    # self.N = self.dataset.n_obj
+    # self.M = self.dataset.n_pred
 
     self.args = EasyDict()
     self.args.dataset = self.dataset_name
+    self.args.n_obj   = self.dataset.n_obj
+    self.args.n_pred  = self.dataset.n_pred
     # this decides whether we are using visual features of the subject and object individually as well
     # or not, along with the visual features of the box bounding the two objects
     self.args.use_so = True
@@ -57,9 +60,12 @@ class vr_detector():
     # so_prior is a N*M*N dimension array, which contains the prior probability distribution of
     # each object pair over all 70 predicates. This was calculated beforehand, probably from the
     # co-occurance of predicates with respect to subject-object pairs
-    with open("data/{}/so_prior.pkl".format(dataset_name), 'rb') as fid:
-      self.so_prior = cPickle.load(fid)
-
+    try:
+      with open("data/{}/so_prior.pkl".format(dataset_name), 'rb') as fid:
+        self.so_prior = pickle.load(fid)
+    except EnvironmentError: # parent of IOError, OSError *and* WindowsError where available
+      print("Initializing null so_prior")
+      self.so_prior = None
 
     load_pretrained = isinstance(self.pretrained, str)
 
@@ -70,7 +76,7 @@ class vr_detector():
     self.net.eval()
 
     if load_pretrained:
-      model_path = osp.join(common.models_dir, self.pretrained)
+      model_path = osp.join(globals.models_dir, self.pretrained)
 
       print("Loading model... (checkpoint {})".format(model_path))
 
@@ -80,7 +86,16 @@ class vr_detector():
       checkpoint = torch.load(model_path)
       self.net.load_state_dict(checkpoint["state_dict"])
 
-  def det_im(self, im_path, objd_res):
+  def test_vrd_model(self):
+
+    for img_path,rels in self.dataset.img_rels:
+      for i in range(rels):
+        rels[i]
+
+      x = self.net(spatial_features, sematic_features)
+      print(x)
+
+  def det_im(self, im_path):
 
     print("Detecting object...")
     objd_res = self.obj_det.det_im(im_path)
@@ -92,11 +107,11 @@ class vr_detector():
 
     time1 = time.time()
 
-    im = common.read_img(im_path)
+    im = utils.read_img(im_path)
     ih = im.shape[0]
     iw = im.shape[1]
 
-    PIXEL_MEANS = common.vrd_pixel_means
+    PIXEL_MEANS = globals.vrd_pixel_means
     image_blob, im_scale = prep_im_for_blob(im, PIXEL_MEANS)
 
     blob = np.zeros((1,) + image_blob.shape, dtype=np.float32)
@@ -139,87 +154,24 @@ class vr_detector():
         rel_boxes[i_rel_inst, 1:5] = np.array(rBBox) * im_scale
         SpatialFea[i_rel_inst] = self.getRelativeLoc(sBBox, oBBox)
         # store the probability distribution of this subject-object pair from the so_prior
-        rel_so_prior[i_rel_inst] = self.so_prior[classes[s_idx], classes[o_idx]]
+        if self.so_prior != None:
+          rel_so_prior[i_rel_inst] = self.so_prior[classes[s_idx], classes[o_idx]]
+        else:
+          rel_so_prior[i_rel_inst,:] = 0.0
         i_rel_inst += 1
     boxes = boxes.astype(np.float32, copy=False)
     classes = classes.astype(np.float32, copy=False)
     ix1 = np.array(ix1)
     ix2 = np.array(ix2)
 
-    # apply the VRD model on the pairs of objects
-    # Here, obj_score contains the scores (not probabilities!) of all objects. Size = self.dataset.n_obj
-    # Here, rel_score contains the scores (not probabilities!) of all predicates. Size = num_predicates
-    obj_score, rel_score = self.net(blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, self.args)
-    # To figure out: why are these now probabilities and not scores anymore?
-    rel_prob = rel_score.data.cpu().numpy()
-    # Here, we are factoring in the prior probability using rel_so_prior
-    rel_prob += np.log(0.5 * (rel_so_prior + 1.0 / self.dataset.n_pred))
-    # this structure is for holding the subject class ID, subject ID, predicate ID, object class ID and object ID
-    rlp_labels_im = np.zeros((rel_prob.shape[0] * rel_prob.shape[1], 5), dtype=np.int)
-    # this is for storing the confidence scores. To figure out: Why is this named tuple?
-    tuple_confs_im = []
-    n_idx = 0
-    for tuple_idx in range(rel_prob.shape[0]):
-      sub = ix1[tuple_idx]
-      obj = ix2[tuple_idx]
-      for rel in range(rel_prob.shape[1]):
-        # get the confidence score. To figure out: Does this mean it's not a probability?
-        conf = rel_prob[tuple_idx, rel]
-        # classes[sub] and classes[obj] will give the actual class IDs
-        # sub and rel are the subject and object IDs assigned as per their order of detection in the
-        # original image. Therefore, the first object detected has ID 0, the second has ID 1, and so on
-        rlp_labels_im[n_idx] = [classes[sub], sub, rel, classes[obj], obj]
-        tuple_confs_im.append(conf)
-        n_idx += 1
-    tuple_confs_im = np.array(tuple_confs_im)
-    # sort the confidence scores, reverse the sorting to get descending order, select the first 20,
-    # and get their indices
-    idx_order = tuple_confs_im.argsort()[::-1][:20]
-    rlp_labels_im = rlp_labels_im[idx_order, :]
-    tuple_confs_im = tuple_confs_im[idx_order]
-    # this is for storing the final subject-predicate-object triples, and the corresponding confidence scores
-    vrd_res = []
-    for tuple_idx in range(rlp_labels_im.shape[0]):
-      label_tuple = rlp_labels_im[tuple_idx]
-      # get the class label of the subject
-      # label_tuple[0] contains the class ID of the subject
-      sub_cls = self.dataset.obj_classes[label_tuple[0]]
-      # get the class label of the object
-      # label_tuple[3] contains the class ID of the object
-      obj_cls = self.dataset.obj_classes[label_tuple[3]]
-      # get the class label of the predicate
-      # label_tuple[2] contains the class ID of the predicate
-      rel_cls = self.dataset.pred_classes[label_tuple[2]]
-      vrd_res.append(("%s%d-%s-%s%d" % (sub_cls, label_tuple[1], rel_cls, obj_cls, label_tuple[4]), tuple_confs_im[tuple_idx]))
-    print(vrd_res)
+    x = self.net(blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, self.args)
 
-    time2 = time.time()
-
-    print("TEST Time:%s" % (time.strftime("%H:%M:%S", time.gmtime(int(time2 - time1)))))
-
-    return vrd_res
-
-  # Union box of two boxes
-  def getUnionBBox(self, aBB, bBB, ih, iw, margin=10):
-    return [max(0, min(aBB[0], bBB[0]) - margin),
-            max(0, min(aBB[1], bBB[1]) - margin),
-            min(iw, max(aBB[2], bBB[2]) + margin),
-            min(ih, max(aBB[3], bBB[3]) + margin)]
-
-  # Relative location spatial feature
-  def getRelativeLoc(self, aBB, bBB):
-    sx1, sy1, sx2, sy2 = aBB.astype(np.float32)
-    ox1, oy1, ox2, oy2 = bBB.astype(np.float32)
-    sw, sh, ow, oh = sx2 - sx1, sy2 - sy1, ox2 - ox1, oy2 - oy1
-    xy = np.array([(sx1 - ox1) / ow, (sy1 - oy1) / oh, (ox1 - sx1) / sw, (oy1 - sy1) / sh])
-    wh = np.log(np.array([sw / ow, sh / oh, ow / sw, oh / sh]))
-    return np.hstack((xy, wh))
-
+    return x
 
 def vrd_demo():
 
-  # im_path = osp.join(common.images_dir, "3845770407_1a8cd41230_b.jpg")
-  im_path = osp.join(common.images_dir, "img1.jpg")
+  # im_path = osp.join(globals.images_dir, "3845770407_1a8cd41230_b.jpg")
+  im_path = osp.join("img-vrd", "3845770407_1a8cd41230_b.jpg")
 
   print("Initializing VRD module...")
   vr_det = vr_detector()
@@ -230,5 +182,10 @@ def vrd_demo():
 
 
 if __name__ == '__main__':
-  vrd_demo()
+  print("Initializing VRD module...")
+  vr_det = vr_detector()
+
+  vr_det.test_vrd_model()
+
+  # vrd_demo()
   #from IPython import embed; embed()

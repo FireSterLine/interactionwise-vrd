@@ -7,6 +7,7 @@ iwenv*/
 
 images
 images_det
+img-vrd
 
 #data/*
 #!data/genome/*
@@ -18,6 +19,7 @@ data/pretrained_model/*
 data/cache/*
 data/genome/visual_genome_python_driver
 data/genome/coco_splits
+data/genome/xml/
 data/genome/*/xml
 data/genome/*/json
 data/genome/*.json

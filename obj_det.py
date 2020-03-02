@@ -40,7 +40,8 @@ from model.faster_rcnn.resnet import resnet
 from easydict import EasyDict
 
 from lib.dataset import dataset
-import common
+import globals
+import utils
 import pdb
 
 # This class is the wrapper for the Object Detection model
@@ -51,7 +52,7 @@ class obj_detector():
   def __init__(self, dataset_name="vg", net="res101", pretrained="faster_rcnn_1_20_16193.pth"):
 
     print("obj_detector() called with args:")
-    print({dataset_name, net, pretrained})
+    print([dataset_name, net, pretrained])
 
     self.dataset_name = dataset_name
     self.net = net
@@ -65,7 +66,7 @@ class obj_detector():
     # If a config file is specified for the model, then it is loaded, and the default model configurations are overridden
     # Those model parameters which are not specified in this config file, the default parameter values are used for them
     # If no config file is specified, then simply the default parameters are used, which are specified in models.utils.config
-    cfg_from_file(osp.join(common.faster_rcnn_dir, "cfgs", "{}.yml").format(self.net))
+    cfg_from_file(osp.join(globals.faster_rcnn_dir, "cfgs", "{}.yml").format(self.net))
 
     cfg.USE_GPU_NMS = self.cuda
 
@@ -100,7 +101,7 @@ class obj_detector():
     self.fasterRCNN.create_architecture()
 
     if load_pretrained:
-      model_path = osp.join(common.faster_rcnn_models_dir, self.net, self.dataset_name, self.pretrained)
+      model_path = osp.join(globals.faster_rcnn_models_dir, self.net, self.dataset_name, self.pretrained)
 
       print("Loading model... (checkpoint {})".format(model_path))
 
@@ -192,23 +193,19 @@ class obj_detector():
         res["confs"].append(score)
     return im
 
-  def det_im(self, im_file):
+  def det_im(self, im_file, show = False):
 
     print("det_im({})".format(im_file))
 
     thresh = 0.05
 
     total_tic = time.time()
-    im_in = common.read_img(im_file)
-
-    print(im_in.shape)
+    im_in = utils.read_img(im_file)
 
     # This probably allows black and white images
     if len(im_in.shape) == 2:
       im_in = im_in[:,:,np.newaxis]
       im_in = np.concatenate((im_in,im_in,im_in), axis=2)
-
-    print(im_in.shape)
 
     # RGB -> BGR
     im_bgr = im_in[:,:,::-1]
@@ -306,7 +303,7 @@ class obj_detector():
     misc_toc = time.time()
     nms_time = misc_toc - misc_tic
 
-    result_path = osp.join(common.images_det_dir, im_file[:-4] + ".jpg")
+    result_path = osp.join(globals.images_det_dir, im_file[:-4] + ".jpg")
     cv2.imwrite(result_path, im2show)
 
     sys.stdout.write("im_detect: {:.3f}s {:.3f}s   \r".format(detect_time, nms_time))
@@ -322,10 +319,10 @@ if __name__ == "__main__":
 
   print("Loading test images...")
 
-  imglist = os.listdir(common.images_dir)
+  imglist = os.listdir(globals.images_dir)
   num_images = len(imglist)
 
   print("Loaded {} images.".format(num_images))
 
   for img_path in imglist:
-    det.det_im(osp.join(common.images_dir, img_path))
+    det.det_im(osp.join(globals.images_dir, img_path), True)
