@@ -179,15 +179,16 @@ class obj_detector():
     return blob, np.array(im_scale_factors)
 
   # Similar to vis_detections in faster-rcnn/lib/model/utils/net_utils.py
-  def res_detections(self, im, class_ix, class_name, dets, res, thresh=0.8):
+  def res_detections(self, show, im, class_ix, class_name, dets, res, thresh=0.8):
     """Visual debugging of detections."""
     for i in range(np.minimum(10, dets.shape[0])):
       bbox = tuple(int(np.round(x)) for x in dets[i, :4])
       score = dets[i, -1]
       if score > thresh:
-        cv2.rectangle(im, bbox[0:2], bbox[2:4], (0, 204, 0), 2)
-        cv2.putText(im, "%s%d: %.3f" % (class_name, len(res["cls"]), score), (bbox[0], bbox[1] + 15), cv2.FONT_HERSHEY_PLAIN,
-                    2.0, (0, 0, 255), thickness=2)
+        if show:
+          cv2.rectangle(im, bbox[0:2], bbox[2:4], (0, 204, 0), 2)
+          cv2.putText(im, "%s%d: %.3f" % (class_name, len(res["cls"]), score), (bbox[0], bbox[1] + 15), cv2.FONT_HERSHEY_PLAIN,
+                      2.0, (0, 0, 255), thickness=2)
         res["box"] = np.vstack((res["box"], dets[i, :4]))
         res["cls"].append(class_ix-1)
         res["confs"].append(score)
@@ -272,7 +273,8 @@ class obj_detector():
     detect_time = det_toc - det_tic
     misc_tic = time.time()
 
-    im2show = np.copy(im_in)
+    if show:
+      im2show = np.copy(im_in)
 
     res = {}
     res["box"] = np.zeros((0,4))
@@ -297,20 +299,23 @@ class obj_detector():
         keep = nms(cls_boxes[order, :], cls_scores[order], cfg.TEST.NMS)
         cls_dets = cls_dets[keep.view(-1).long()]
 
-        # im2show = vis_detections(im2show, self.dataset.obj_classes[j], cls_dets.cpu().numpy(), 0.5)
-        im2show = self.res_detections(im2show, j, self.dataset.obj_classes[j], cls_dets.cpu().numpy(), res, 0.5)
+        # if show:
+          # im2show = vis_detections(im2show, self.dataset.obj_classes[j], cls_dets.cpu().numpy(), 0.5)
+        showim2show = self.res_detections(im2show, show, j, self.dataset.obj_classes[j], cls_dets.cpu().numpy(), res, 0.5)
 
     misc_toc = time.time()
     nms_time = misc_toc - misc_tic
 
-    result_path = osp.join(globals.images_det_dir, im_file[:-4] + ".jpg")
-    cv2.imwrite(result_path, im2show)
+    if show:
+      result_path = osp.join(globals.images_det_dir, im_file[:-4] + ".jpg")
+      cv2.imwrite(result_path, im2show)
 
     sys.stdout.write("im_detect: {:.3f}s {:.3f}s   \r".format(detect_time, nms_time))
     sys.stdout.flush()
 
-    cv2.imshow("Test detection", im2show)
-    cv2.waitKey(0)
+    if show:
+      cv2.imshow("Test detection", im2show)
+      cv2.waitKey(0)
 
     return res
 

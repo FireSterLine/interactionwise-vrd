@@ -21,7 +21,7 @@ if __name__ == '__main__':
     json_files_path = "./faster-rcnn/data/genome/{}-{}-{}/json/".format(num_objects, num_attributes, num_predicates)
     objects_vocab_file = "./faster-rcnn/data/genome/{}-{}-{}/objects_vocab_{}.txt".format(num_objects, num_attributes, num_predicates, num_objects)
     predicates_vocab_file = "./faster-rcnn/data/genome/{}-{}-{}/relations_vocab_{}.txt".format(num_objects, num_attributes, num_predicates, num_predicates)
-    output_file = './faster-rcnn/data/genome/vrd_data_{}-{}-{}.json'.format(num_objects, num_attributes, num_predicates)
+    output_file = './faster-rcnn/data/genome/{}-{}-{}/vrd_data.json'.format(num_objects, num_attributes, num_predicates)
     save_bounding_boxes = False
 
     objects_label_to_id_mapping = generate_mapping(objects_vocab_file)
@@ -42,8 +42,7 @@ if __name__ == '__main__':
 
         folder = data['folder']
         filename = data['filename']
-        # we add data/vg/ here because vg is a symlink on the server to the Visual Genome dataset path
-        img_path = "data/vg/" + folder + "/" + filename
+        img_id = folder + "/" + filename
         for pred in data['relations']:
             subject_info = objects_info[pred['subject_id']]
             object_info = objects_info[pred['object_id']]
@@ -61,7 +60,7 @@ if __name__ == '__main__':
             rel_data['predicate']['name'] = pred_label
             rel_data['predicate']['id'] = predicates_label_to_id_mapping[pred_label]
 
-            if rel_data not in relationship_data[img_path]:
-                relationship_data[img_path].append(rel_data)
+            if rel_data not in relationship_data[img_id]:
+                relationship_data[img_id].append(rel_data)
 
     json.dump(relationship_data, open(output_file, 'w'))

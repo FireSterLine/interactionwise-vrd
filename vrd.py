@@ -40,32 +40,13 @@ class vr_detector():
 
     self.dataset = dataset(self.dataset_name, with_bg_obj=True)
 
-    # self.N = self.dataset.n_obj
-    # self.M = self.dataset.n_pred
-
     self.args = EasyDict()
-    self.args.dataset = self.dataset_name
     self.args.n_obj   = self.dataset.n_obj
     self.args.n_pred  = self.dataset.n_pred
-    # this decides whether we are using visual features of the subject and object individually as well
-    # or not, along with the visual features of the box bounding the two objects
-    self.args.use_so = True
-    # this decides whether we use the embeddings of the objects or not
-    self.args.use_obj = True
-    self.args.no_obj_prior = True
-    # we have one of two location type features here; we can choose between them through 1 and 2
-    # if this is set to 0, it means we are not using spatial features
-    self.args.loc_type = 0
 
-    # so_prior is a N*M*N dimension array, which contains the prior probability distribution of
-    # each object pair over all 70 predicates. This was calculated beforehand, probably from the
-    # co-occurance of predicates with respect to subject-object pairs
-    try:
-      with open("data/{}/so_prior.pkl".format(dataset_name), 'rb') as fid:
-        self.so_prior = pickle.load(fid)
-    except EnvironmentError: # parent of IOError, OSError *and* WindowsError where available
-      print("Initializing null so_prior")
-      self.so_prior = None
+    # soP_prior is a N*M*N dimension array, which contains the prior probability distribution of
+    #  each object pair over all 70 predicates.
+    self.soP_prior = self.dataset.getDistribution("soP")
 
     load_pretrained = isinstance(self.pretrained, str)
 
@@ -87,72 +68,13 @@ class vr_detector():
       self.net.load_state_dict(checkpoint["state_dict"])
 
   def test_vrd_model(self):
+    img_rels = self.dataset.getImgRels()
 
-    test_img_rels = {
-      "data/vg/VG_100K_2/237.jpg" :
-      [
-        {
-          "subject": {
-            "name": "arrow",
-            "id": 1445,
-            "bbox": {
-              "xmin": 705,
-              "ymin": 248,
-              "xmax": 726,
-              "ymax": 292
-            }
-          },
-          "object": {
-            "name": "box",
-            "id": 196,
-            "bbox": {
-              "xmin": 615,
-              "ymin": 150,
-              "xmax": 749,
-              "ymax": 337
-            }
-          },
-          "predicate": {
-            "name": "on",
-            "id": 0
-          }
-        },
-        {
-          "subject": {
-            "name": "box",
-            "id": 123,
-            "bbox": {
-              "xmin": 70,
-              "ymin": 24,
-              "xmax": 72,
-              "ymax": 29
-            }
-          },
-          "object": {
-            "name": "box",
-            "id": 196,
-            "bbox": {
-              "xmin": 615,
-              "ymin": 150,
-              "xmax": 749,
-              "ymax": 337
-            }
-          },
-          "predicate": {
-            "name": "in",
-            "id": 1
-          }
-        }
-      ]
-    }
-    # NOTE: bbox to contains numbers, not string
-    # NOTE: FULL path to image, including "data/vg/"
-    for im_path,rels in test_img_rels.items():
-    # for im_path,rels in self.dataset.img_rels.items():
+    for im_id,rels in img_rels.items():
 
-      # print("IMG: {}".format(im_path))
+      print("IMG: {}".format(osp.join(self.dataset.img_dir, im_id)))
 
-      im = utils.read_img(im_path)
+      im = utils.read_img(osp.join(self.dataset.img_dir, im_id))
       ih = im.shape[0]
       iw = im.shape[1]
 
@@ -167,7 +89,7 @@ class vr_detector():
       # the dimension 8 here is the size of the spatial feature vector, containing the relative location and log-distance
       semantic_features = np.zeros((n_rel, 2*300))
       # this will contain the probability distribution of each subject-object pair ID over all 70 predicates
-      rel_so_prior = np.zeros((n_rel, self.dataset.n_pred))
+      rel_soP_prior = np.zeros((n_rel, self.dataset.n_pred))
 
       for i_rel,rel in enumerate(rels):
 
@@ -177,19 +99,17 @@ class vr_detector():
         sBBox = utils.bboxDictToNumpy(rel["subject"]["bbox"])
         oBBox = utils.bboxDictToNumpy(rel["object"]["bbox"])
 
-        # get the union bounding box
-        rBBox = utils.getUnionBBox(sBBox, oBBox, ih, iw)
         # store the scaled dimensions of the union bounding box here, with the id i_rel
         spatial_features[i_rel] = utils.getRelativeLoc(sBBox, oBBox)
 
         # TODO: semantic feat of obj and subj
         semantic_features[i_rel] = np.zeros(600)
 
-        # store the probability distribution of this subject-object pair from the so_prior
-        if self.so_prior != None:
-          rel_so_prior[i_rel] = self.so_prior[classes[s_idx], classes[o_idx]]
+        # store the probability distribution of this subject-object pair from the soP_prior
+        if self.soP_prior != None:
+          rel_soP_prior[i_rel] = self.soP_prior[classes[s_idx], classes[o_idx]]
         else:
-          rel_so_prior[i_rel,:] = 0.0
+          rel_soP_prior[i_rel,:] = 0.0
         i_rel += 1
 
       print(spatial_features)
@@ -242,7 +162,7 @@ class vr_detector():
     # the dimension 8 here is the size of the spatial feature vector, containing the relative location and log-distance
     SpatialFea = np.zeros((n_rel_inst, 8))
     # this will contain the probability distribution of each subject-object pair ID over all 70 predicates
-    rel_so_prior = np.zeros((n_rel_inst, self.dataset.n_pred))
+    rel_soP_prior = np.zeros((n_rel_inst, self.dataset.n_pred))
     # this is used as an ID for each subject-object pair; it increments at the end of the inner loop below
 
     i_rel_inst = 0
@@ -261,11 +181,11 @@ class vr_detector():
         # store the scaled dimensions of the union bounding box here, with the id i_rel_inst
         rel_boxes[i_rel_inst, 1:5] = np.array(rBBox) * im_scale
         SpatialFea[i_rel_inst] = self.getRelativeLoc(sBBox, oBBox)
-        # store the probability distribution of this subject-object pair from the so_prior
-        if self.so_prior != None:
-          rel_so_prior[i_rel_inst] = self.so_prior[classes[s_idx], classes[o_idx]]
+        # store the probability distribution of this subject-object pair from the soP_prior
+        if self.soP_prior != None:
+          rel_soP_prior[i_rel_inst] = self.soP_prior[classes[s_idx], classes[o_idx]]
         else:
-          rel_so_prior[i_rel_inst,:] = 0.0
+          rel_soP_prior[i_rel_inst,:] = 0.0
         i_rel_inst += 1
     boxes = boxes.astype(np.float32, copy=False)
     classes = classes.astype(np.float32, copy=False)

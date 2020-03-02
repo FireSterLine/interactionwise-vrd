@@ -22,4 +22,5 @@ data/genome/coco_splits
 data/genome/xml/
 data/genome/*/xml
 data/genome/*/json
+data/genome/*/*.json
 data/genome/*.json
