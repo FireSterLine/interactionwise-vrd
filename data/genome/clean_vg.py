@@ -7,33 +7,38 @@ import os
 import json
 import operator
 from pprint import pprint
+from shutil import copyfile
 from collections import Counter
 from nltk.stem import WordNetLemmatizer
 import xml.etree.cElementTree as ET
 from xml.dom import minidom
 
-dataDir = '../../../visual_genome'
-outDir = './cleaned_data_genome'
-
 # Set maximum values for number of object / attribute / relation classes,
-# DON'T CHANGE NUMBER OF OBJECTS - that will require retraining the model
+# Changing the number of objects will require retraining the object detection model
 max_objects = 1600
-max_attributes = 1000
-max_relations = 500
+max_attributes = 400
+max_relations = 20
+
+dataDir = '../../../visual_genome/'
+outDir = './{}-{}-{}'.format(max_objects, max_attributes, max_relations)
+if not os.path.exists(outDir):
+    os.mkdir(outDir)
 
 common_attributes = set(['white', 'black', 'blue', 'green', 'red', 'brown', 'yellow',
                          'small', 'large', 'silver', 'wooden', 'orange', 'gray', 'grey', 'metal', 'pink', 'tall',
                          'long', 'dark'])
 lemmatizer = WordNetLemmatizer()
-output_format = 'xml'
+output_format = 'json'
+lemma_flag = True
 
 
 def clean_string(string, pos_tag):
     ''' Convert to lowercase, strip, lemmatize, remove trailing full stop '''
     string = string.lower().strip()
     string = string.replace("-", " ")
-    words = string.split()
-    string = " ".join([lemmatizer.lemmatize(w, pos_tag) for w in words])
+    if lemma_flag is True:
+        words = string.split()
+        string = " ".join([lemmatizer.lemmatize(w, pos_tag) for w in words])
     if len(string) >= 1 and string[-1] == '.':
         return string[:-1].strip()
     return string
@@ -83,6 +88,7 @@ def build_vocabs_and_json():
     with open(os.path.join(dataDir, 'scene_graphs.json')) as f:
         data = json.load(f)
 
+    print("Lemmatizing set to {}".format(lemma_flag))
     print("Extracting and cleaning attributes and predicates...")
     # First extract attributes and relations
     for sg in data:
@@ -141,6 +147,20 @@ def build_vocabs_and_json():
         for item in relations:
             text_file.write("%s\n" % item)
 
+    outSubDir = os.path.join(outDir, "%s-%s-%s" % (max_objects, max_attributes, max_relations))
+
+    if not os.path.exists(outSubDir):
+        os.mkdir(outSubDir)
+
+    copyfile(os.path.join(outDir, "objects_vocab_%s.txt" % max_objects),
+             os.path.join(outSubDir, "objects_vocab.txt"))
+
+    copyfile(os.path.join(outDir, "attributes_vocab_%s.txt" % max_attributes),
+             os.path.join(outSubDir, "attributes_vocab.txt"))
+
+    copyfile(os.path.join(outDir, "relations_vocab_%s.txt" % max_relations),
+             os.path.join(outSubDir, "relations_vocab.txt"))
+
     print("Generating {} output...".format(output_format.upper()))
     # Load image metadata
     metadata = {}
@@ -153,7 +173,9 @@ def build_vocabs_and_json():
     if not os.path.exists(os.path.join(outDir, out_folder)):
         os.mkdir(os.path.join(outDir, out_folder))
 
-    for sg in data:
+    for index, sg in enumerate(data):
+        if index >= 500:
+            break
         meta = metadata[sg["image_id"]]
         assert sg["image_id"] == meta["image_id"]
         url_split = meta["url"].split("/")
@@ -181,7 +203,7 @@ def build_vocabs_and_json():
             ET.SubElement(ann, "filename").text = url_split[-1]
 
             source = ET.SubElement(ann, "source")
-            ET.SubElement(source, "database").text = "Visual Genome Version 1.2"
+            ET.SubElement(source, "database").text = "Visual Genome Version 1.4"
             ET.SubElement(source, "image_id").text = str(meta["image_id"])
             ET.SubElement(source, "coco_id").text = str(meta["coco_id"])
             ET.SubElement(source, "flickr_id").text = str(meta["flickr_id"])
