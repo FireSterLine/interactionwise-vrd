@@ -90,7 +90,7 @@ class vrd_module():
         n_rel_inst = len(pred_cls_img) * (len(pred_cls_img) - 1)
         # rel_boxes contains the scaled dimensions of the union bounding boxes
         rel_boxes = np.zeros((n_rel_inst, 5))
-        # the dimension 8 here signifies the four location features per object; 4*2 = 8
+        # the dimension 8 here is the size of the spatial feature vector, containing the relative location and log-distance
         SpatialFea = np.zeros((n_rel_inst, 8))
         # this will contain the probability distribution of each subject-object pair ID over all 70 predicates
         rel_so_prior = np.zeros((n_rel_inst, 70))
@@ -144,7 +144,7 @@ class vrd_module():
                 tuple_confs_im.append(conf)
                 n_idx += 1
         tuple_confs_im = np.array(tuple_confs_im)
-        # sort the confidence scores, reverse the sorting to get descending order, select the first 20, 
+        # sort the confidence scores, reverse the sorting to get descending order, select the first 20,
         # and get their indices
         idx_order = tuple_confs_im.argsort()[::-1][:20]
         rlp_labels_im = rlp_labels_im[idx_order, :]

@@ -57,7 +57,8 @@ class obj_detector():
     self.net = net
     self.pretrained = pretrained
 
-    self.cuda = True
+    self.cuda = torch.cuda.is_available()
+    # self.cuda = True ...
     self.class_agnostic = False
     self.dataset = dataset(self.dataset_name, with_bg_obj=True)
 
@@ -263,7 +264,8 @@ class obj_detector():
       pred_boxes = clip_boxes(pred_boxes, self.im_info.data, 1)
     else:
       # Simply repeat the boxes, once for each class
-      pred_boxes = torch.FloatTensor(np.tile(boxes.data.cpu().numpy(), (1, scores.shape[1]))).cuda()
+      # pred_boxes = torch.FloatTensor(np.tile(boxes.data.cpu().numpy(), (1, scores.shape[1]))).cuda()
+      pred_boxes = np.tile(boxes, (1, scores.shape[1]))
 
     pred_boxes /= im_scales[0]
 

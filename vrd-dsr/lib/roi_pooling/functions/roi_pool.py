@@ -2,7 +2,8 @@ import torch
 from torch.autograd import Function
 from .._ext import roi_pooling
 
-
+# This is a modified version of /faster-rcnn/lib/model/roi_pooling/functions/roi_pool.py
+# Checkout /faster-rcnn/lib/model/roi_layers/roi_pool.py for a newer version
 class RoIPoolFunction(Function):
     def __init__(self, pooled_height, pooled_width, spatial_scale):
         self.pooled_width = int(pooled_width)
@@ -14,6 +15,7 @@ class RoIPoolFunction(Function):
         self.feature_size = None
 
     def forward(self, features, rois):
+
         batch_size, num_channels, data_height, data_width = features.size()
         num_rois = rois.size()[0]
         output = torch.zeros(num_rois, num_channels, self.pooled_height, self.pooled_width)
@@ -42,6 +44,7 @@ class RoIPoolFunction(Function):
         batch_size, num_channels, data_height, data_width = self.feature_size
 
         grad_input = torch.zeros(batch_size, num_channels, data_height, data_width).cuda()
+
         roi_pooling.roi_pooling_backward_cuda(self.pooled_height, self.pooled_width, self.spatial_scale,
                                               grad_output, self.rois, grad_input, self.argmax)
 
