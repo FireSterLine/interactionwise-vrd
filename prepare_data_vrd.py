@@ -31,25 +31,30 @@ if __name__ == '__main__':
     for filename in glob(json_files_path + "*.json"):
         data = json.load(open(filename, 'r'))
 
-        objects_vg_id_to_label = {}
+        objects_info = {}
         for obj in data['objects']:
             obj_vg_id = obj['object_id']
-            objects_vg_id_to_label[obj_vg_id] = {'name': obj['name'][0]}
+            objects_info[obj_vg_id] = {
+                'name': obj['name'][0],
+                'bbox': obj['bndbox']
+            }
             # if save_bounding_boxes is True:
 
         folder = data['folder']
         filename = data['filename']
         for pred in data['relations']:
-            subject_label = objects_vg_id_to_label[pred['subject_id']]
-            object_label = objects_vg_id_to_label[pred['object_id']]
+            subject_info = objects_info[pred['subject_id']]
+            object_info = objects_info[pred['object_id']]
             pred_label = pred['predicate']
 
             rel_data = defaultdict(lambda: dict())
-            rel_data['subject']['name'] = subject_label['name']
-            rel_data['subject']['id'] = objects_label_to_id_mapping[subject_label['name']]
+            rel_data['subject']['name'] = subject_info['name']
+            rel_data['subject']['id'] = objects_label_to_id_mapping[subject_info['name']]
+            rel_data['subject']['bbox'] = subject_info['bbox']
 
-            rel_data['object']['name'] = object_label['name']
-            rel_data['object']['id'] = objects_label_to_id_mapping[object_label['name']]
+            rel_data['object']['name'] = object_info['name']
+            rel_data['object']['id'] = objects_label_to_id_mapping[object_info['name']]
+            rel_data['object']['bbox'] = object_info['bbox']
 
             rel_data['predicate']['name'] = pred_label
             rel_data['predicate']['id'] = predicates_label_to_id_mapping[pred_label]
