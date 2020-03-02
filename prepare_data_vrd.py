@@ -27,7 +27,7 @@ if __name__ == '__main__':
     objects_label_to_id_mapping = generate_mapping(objects_vocab_file)
     predicates_label_to_id_mapping = generate_mapping(predicates_vocab_file)
 
-    relationship_data = defaultdict(lambda: defaultdict(lambda: list()))
+    relationship_data = defaultdict(lambda: list())
     for filename in glob(json_files_path + "*.json"):
         data = json.load(open(filename, 'r'))
 
@@ -36,12 +36,14 @@ if __name__ == '__main__':
             obj_vg_id = obj['object_id']
             objects_info[obj_vg_id] = {
                 'name': obj['name'][0],
-                'bbox': obj['bndbox']
+                'bbox': {k: int(v) for k, v in obj['bndbox'].items()}
             }
             # if save_bounding_boxes is True:
 
         folder = data['folder']
         filename = data['filename']
+        # we add data/vg/ here because vg is a symlink on the server to the Visual Genome dataset path
+        img_path = "data/vg/" + folder + "/" + filename
         for pred in data['relations']:
             subject_info = objects_info[pred['subject_id']]
             object_info = objects_info[pred['object_id']]
@@ -59,7 +61,7 @@ if __name__ == '__main__':
             rel_data['predicate']['name'] = pred_label
             rel_data['predicate']['id'] = predicates_label_to_id_mapping[pred_label]
 
-            if rel_data not in relationship_data[folder][filename]:
-                relationship_data[folder][filename].append(rel_data)
+            if rel_data not in relationship_data[img_path]:
+                relationship_data[img_path].append(rel_data)
 
     json.dump(relationship_data, open(output_file, 'w'))
