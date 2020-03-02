@@ -2,7 +2,6 @@ import cv2
 import numpy as np
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 import sys
 import os.path as osp
@@ -29,21 +28,17 @@ class vrd_model(nn.Module):
         self.fc_spatial  = FC(8, 256)
         self.fc_semantic = FC(2*300, 256)
         self.fc_fus1     = FC(256*2, 256)
-        self.fc_fus2     = FC(256, self.n_pred)
+        self.fc_fus2     = FC(256, self.n_pred, relu=False)
 
 
-    def forward(self, spatial_features, sematic_features):
-
-        x_spat = torch.Tensor(spatial_features) # Specify that it has to be on cuda (cuda() or is_cuda=True)
-        x_sem  = torch.Tensor(sematic_features) # Specify that it has to be on cuda (cuda() or is_cuda=True)
-
-        x_spat = self.fc_spatial(x_spat)
-        x_sem  = self.fc_semantic(x_sem)
+    def forward(self, spatial_features, semantic_features):
+        x_spat = self.fc_spatial(spatial_features)
+        x_sem  = self.fc_semantic(semantic_features)
 
         x_fused = torch.cat((x_spat, x_sem), 1)
 
         x_fused = self.fc_fus1(x_fused)
-        x_fused = self.fc_fus2(x_fused, relu=False)
+        x_fused = self.fc_fus2(x_fused)
 
         return x_fused
 

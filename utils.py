@@ -7,6 +7,14 @@ import numpy as np
 vrd_pixel_means = np.array([[[102.9801, 115.9465, 122.7717]]])
 
 
+# Bbox as a dict to numpy array
+def bboxDictToNumpy(bbox_dict):
+  return np.array([bbox_dict["xmin"],
+                    bbox_dict["ymin"],
+                    bbox_dict["xmax"],
+                    bbox_dict["ymax"]])
+
+
 # Union box of two boxes
 def getUnionBBox(aBB, bBB, ih, iw, margin=10):
   return [max(0, min(aBB[0], bBB[0]) - margin),

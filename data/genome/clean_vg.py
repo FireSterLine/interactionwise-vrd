@@ -19,7 +19,7 @@ max_objects = 1600
 max_attributes = 400
 max_relations = 20
 
-dataDir = '../../../visual_genome/'
+dataDir = '../vg/'
 outDir = './{}-{}-{}'.format(max_objects, max_attributes, max_relations)
 if not os.path.exists(outDir):
     os.mkdir(outDir)
@@ -137,16 +137,17 @@ def build_vocabs_and_json():
     relations = set([k for k, v in relations.most_common(max_relations)])
 
     print("Writing condensed objects, attributes and predicates to files...")
-    with open(os.path.join(outDir, "objects_vocab_%s.txt" % max_objects), "w") as text_file:
+    with open(os.path.join(outDir, "objects_vocab.txt"), "w") as text_file:
         for item in objects:
             text_file.write("%s\n" % item)
-    with open(os.path.join(outDir, "attributes_vocab_%s.txt" % max_attributes), "w") as text_file:
+    with open(os.path.join(outDir, "attributes_vocab.txt"), "w") as text_file:
         for item in attributes:
             text_file.write("%s\n" % item)
-    with open(os.path.join(outDir, "relations_vocab_%s.txt" % max_relations), "w") as text_file:
+    with open(os.path.join(outDir, "relations_vocab.txt"), "w") as text_file:
         for item in relations:
             text_file.write("%s\n" % item)
-
+    
+    """
     outSubDir = os.path.join(outDir, "%s-%s-%s" % (max_objects, max_attributes, max_relations))
 
     if not os.path.exists(outSubDir):
@@ -160,7 +161,8 @@ def build_vocabs_and_json():
 
     copyfile(os.path.join(outDir, "relations_vocab_%s.txt" % max_relations),
              os.path.join(outSubDir, "relations_vocab.txt"))
-
+    """
+    
     print("Generating {} output...".format(output_format.upper()))
     # Load image metadata
     metadata = {}
@@ -174,8 +176,8 @@ def build_vocabs_and_json():
         os.mkdir(os.path.join(outDir, out_folder))
 
     for index, sg in enumerate(data):
-        if index >= 500:
-            break
+        # if index >= 500:
+        #     break
         meta = metadata[sg["image_id"]]
         assert sg["image_id"] == meta["image_id"]
         url_split = meta["url"].split("/")

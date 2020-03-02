@@ -7,10 +7,10 @@ import time
 import pickle
 import argparse
 
+import cv2
 import torch
 import torch.nn as nn
 import torch.nn.init
-import cv2
 import numpy as np
 
 import sys
@@ -88,12 +88,120 @@ class vr_detector():
 
   def test_vrd_model(self):
 
-    for img_path,rels in self.dataset.img_rels:
-      for i in range(rels):
-        rels[i]
+    test_img_rels = {
+      "data/vg/VG_100K_2/237.jpg" :
+      [
+        {
+          "subject": {
+            "name": "arrow",
+            "id": 1445,
+            "bbox": {
+              "xmin": 705,
+              "ymin": 248,
+              "xmax": 726,
+              "ymax": 292
+            }
+          },
+          "object": {
+            "name": "box",
+            "id": 196,
+            "bbox": {
+              "xmin": 615,
+              "ymin": 150,
+              "xmax": 749,
+              "ymax": 337
+            }
+          },
+          "predicate": {
+            "name": "on",
+            "id": 0
+          }
+        },
+        {
+          "subject": {
+            "name": "box",
+            "id": 123,
+            "bbox": {
+              "xmin": 70,
+              "ymin": 24,
+              "xmax": 72,
+              "ymax": 29
+            }
+          },
+          "object": {
+            "name": "box",
+            "id": 196,
+            "bbox": {
+              "xmin": 615,
+              "ymin": 150,
+              "xmax": 749,
+              "ymax": 337
+            }
+          },
+          "predicate": {
+            "name": "in",
+            "id": 1
+          }
+        }
+      ]
+    }
+    # NOTE: bbox to contains numbers, not string
+    # NOTE: FULL path to image, including "data/vg/"
+    for im_path,rels in test_img_rels.items():
+    # for im_path,rels in self.dataset.img_rels.items():
 
-      x = self.net(spatial_features, sematic_features)
+      # print("IMG: {}".format(im_path))
+
+      im = utils.read_img(im_path)
+      ih = im.shape[0]
+      iw = im.shape[1]
+
+      print(im.shape)
+
+      n_rel = len(rels)
+
+      print(n_rel)
+
+      # the dimension 8 here is the size of the spatial feature vector, containing the relative location and log-distance
+      spatial_features = np.zeros((n_rel, 8))
+      # the dimension 8 here is the size of the spatial feature vector, containing the relative location and log-distance
+      semantic_features = np.zeros((n_rel, 2*300))
+      # this will contain the probability distribution of each subject-object pair ID over all 70 predicates
+      rel_so_prior = np.zeros((n_rel, self.dataset.n_pred))
+
+      for i_rel,rel in enumerate(rels):
+
+        print(i_rel,rel)
+
+        # these are the subject and object bounding boxes
+        sBBox = utils.bboxDictToNumpy(rel["subject"]["bbox"])
+        oBBox = utils.bboxDictToNumpy(rel["object"]["bbox"])
+
+        # get the union bounding box
+        rBBox = utils.getUnionBBox(sBBox, oBBox, ih, iw)
+        # store the scaled dimensions of the union bounding box here, with the id i_rel
+        spatial_features[i_rel] = utils.getRelativeLoc(sBBox, oBBox)
+
+        # TODO: semantic feat of obj and subj
+        semantic_features[i_rel] = np.zeros(600)
+
+        # store the probability distribution of this subject-object pair from the so_prior
+        if self.so_prior != None:
+          rel_so_prior[i_rel] = self.so_prior[classes[s_idx], classes[o_idx]]
+        else:
+          rel_so_prior[i_rel,:] = 0.0
+        i_rel += 1
+
+      print(spatial_features)
+      print(semantic_features)
+
+      spatial_features  = torch.FloatTensor(spatial_features).cuda()
+      semantic_features = torch.FloatTensor(semantic_features).cuda()
+
+      x = self.net(spatial_features, semantic_features)
       print(x)
+
+      break
 
   def det_im(self, im_path):
 
