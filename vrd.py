@@ -103,7 +103,8 @@ class vr_detector():
         spatial_features[i_rel] = utils.getRelativeLoc(sBBox, oBBox)
 
         # TODO: semantic feat of obj and subj
-        semantic_features[i_rel] = np.zeros(600)
+        semantic_features[i_rel] = utils.getSemanticVector(rel['subject']['name'], rel['object']['name'], self.dataset.w2v_model)
+        # semantic_features[i_rel] = np.zeros(600)
 
         # store the probability distribution of this subject-object pair from the soP_prior
         if self.soP_prior != None:

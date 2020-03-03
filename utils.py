@@ -31,6 +31,13 @@ def getRelativeLoc(aBB, bBB):
   wh = np.log(np.array([sw / ow, sh / oh, ow / sw, oh / sh]))
   return np.hstack((xy, wh))
 
+# Get word embedding of subject and object label and concatenate them
+def getSemanticVector(subject_label, object_label, w2v_model):
+  subject_vector = w2v_model[subject_label]
+  object_vector = w2v_model[object_label]
+  combined_vector = np.concatenate((subject_vector, object_vector), axis=0)
+  return combined_vector
+
 # Wrapper for cv2.imread
 def read_img(im_file):
   if not os.path.exists(im_file):

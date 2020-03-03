@@ -8,6 +8,7 @@ import pickle
 import sys
 import math
 import os.path as osp
+from gensim.models import KeyedVectors
 import globals
 
 class dataset():
@@ -69,6 +70,8 @@ class dataset():
 
     self.pred_classes = np.append(pred_additional, pred_classes).tolist()
     self.n_pred = len(self.pred_classes)
+
+    self.w2v_model = KeyedVectors.load_word2vec_format(globals.w2v_model_path, binary=True)
 
   def getImgRels(self):
     """ Load list of images """
