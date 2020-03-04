@@ -6,17 +6,7 @@ import torch.nn as nn
 import sys
 import os.path as osp
 
-class FC(nn.Module):
-    def __init__(self, in_features, out_features, relu=True):
-        super(FC, self).__init__()
-        self.fc = nn.Linear(in_features, out_features)
-        self.relu = nn.ReLU(inplace=True) if relu else None
-
-    def forward(self, x):
-        x = self.fc(x)
-        if self.relu is not None:
-            x = self.relu(x)
-        return x
+from lib.network import FC
 
 class vrd_model(nn.Module):
     def __init__(self, args):

@@ -28,7 +28,7 @@ import pdb
 
 class vr_detector():
 
-  def __init__(self, dataset_name="vg", pretrained=False): # pretrained="epoch_4_checkpoint.pth(.tar)"):
+  def __init__(self, dataset_name="vg"): # , pretrained=False): pretrained="epoch_4_checkpoint.pth(.tar)"):
 
     print("vr_detector() called with args:")
     print([dataset_name, pretrained])
@@ -46,8 +46,8 @@ class vr_detector():
     self.args.n_pred  = self.dataset.n_pred
 
     # soP_prior is a N*M*N dimension array, which contains the prior probability distribution of
-    # each object pair over all 70 predicates.
-    self.soP_prior = self.dataset.getDistribution("soP")
+    #  each object pair over all 70 predicates.
+    self.soP_prior = self.dataset.getDistribution("soP", True)
 
     load_pretrained = isinstance(self.pretrained, str)
 
