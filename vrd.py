@@ -46,13 +46,13 @@ class vr_detector():
     self.args.n_pred  = self.dataset.n_pred
 
     # soP_prior is a N*M*N dimension array, which contains the prior probability distribution of
-    #  each object pair over all 70 predicates.
+    # each object pair over all 70 predicates.
     self.soP_prior = self.dataset.getDistribution("soP")
 
     load_pretrained = isinstance(self.pretrained, str)
 
     print("Loading Word2Vec model...")
-    self.w2v_model = KeyedVectors.load_word2vec_format(globals.w2v_model_path, binary=True)
+    self.w2v_model = KeyedVectors.load_word2vec_format(osp.join(globals.data_dir, globals.w2v_model_path), binary=True)
 
     # initialize the model using the args set above
     print("Initializing VRD Model...")

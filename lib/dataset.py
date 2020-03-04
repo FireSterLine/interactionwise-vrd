@@ -30,8 +30,15 @@ class dataset():
                          "sheep", "sofa", "train", "tvmonitor"])
                          
     elif self.name == "vrd":
-      self.img_dir = osp.join(globals.data_dir, "vrd")
-      self.metadata_dir = osp.join(globals.data_dir, "vrd")
+      self.img_dir = osp.join(globals.data_dir, globals.vrd_dir, globals.vrd_images_train_dir)
+      self.metadata_dir = osp.join(globals.data_dir, globals.vrd_dir)
+
+      # load the vocabularies for objects and predicates
+      with open(osp.join(self.metadata_dir, globals.vrd_objects_vocab_file), 'r') as rfile:
+        obj_classes = json.load(rfile)
+
+      with open(osp.join(self.metadata_dir, globals.vrd_predicates_vocab_file), 'r') as rfile:
+        pred_classes = json.load(rfile)
 
     elif self.name == "vg":
 
@@ -40,14 +47,15 @@ class dataset():
       # self.subset = "2500-1000-500"
       # self.subset = "150-50-50"
       
-      self.img_dir = osp.join(globals.data_dir, "vg")
+      self.img_dir = osp.join(globals.data_dir, globals.vg_dir)
       self.metadata_dir = osp.join(globals.data_dir, "genome", self.subset)
 
-      with open(osp.join(self.metadata_dir, "objects_vocab.txt"), 'r') as f:
+      # load the vocabularies for objects and predicates
+      with open(osp.join(self.metadata_dir, globals.vg_objects_vocab_file), 'r') as f:
         obj_vocab = f.readlines()
         obj_classes = np.asarray([x.strip('\n') for x in obj_vocab])
 
-      with open(osp.join(self.metadata_dir, "relations_vocab.txt"), 'r') as f:
+      with open(osp.join(self.metadata_dir, globals.vg_predicates_vocab_file), 'r') as f:
         pred_vocab = f.readlines()
         pred_classes = np.asarray([x.strip('\n') for x in pred_vocab])
 
