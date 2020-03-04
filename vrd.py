@@ -12,6 +12,7 @@ import torch
 import torch.nn as nn
 import torch.nn.init
 import numpy as np
+from gensim.models import KeyedVectors
 
 import sys
 
@@ -49,6 +50,9 @@ class vr_detector():
     self.soP_prior = self.dataset.getDistribution("soP")
 
     load_pretrained = isinstance(self.pretrained, str)
+
+    print("Loading Word2Vec model...")
+    self.w2v_model = KeyedVectors.load_word2vec_format(globals.w2v_model_path, binary=True)
 
     # initialize the model using the args set above
     print("Initializing VRD Model...")
@@ -102,8 +106,8 @@ class vr_detector():
         # store the scaled dimensions of the union bounding box here, with the id i_rel
         spatial_features[i_rel] = utils.getRelativeLoc(sBBox, oBBox)
 
-        # TODO: semantic feat of obj and subj
-        semantic_features[i_rel] = utils.getSemanticVector(rel['subject']['name'], rel['object']['name'], self.dataset.w2v_model)
+        # semantic features of obj and subj
+        semantic_features[i_rel] = utils.getSemanticVector(rel['subject']['name'], rel['object']['name'], self.w2v_model)
         # semantic_features[i_rel] = np.zeros(600)
 
         # store the probability distribution of this subject-object pair from the soP_prior
