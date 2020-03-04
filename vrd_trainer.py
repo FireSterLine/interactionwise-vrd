@@ -121,7 +121,7 @@ class vrd_trainer():
     time1 = time.time()
 
     # Obtain next annotation input and target
-    spatial_features, semantic_features, rel_labels = self.datalayer.step()
+    spatial_features, semantic_features, target = self.datalayer.step()
 
     spatial_features  = torch.FloatTensor(spatial_features).cuda()
     semantic_features = torch.FloatTensor(semantic_features).cuda()
