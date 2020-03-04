@@ -1,3 +1,4 @@
+import os.path as osp
 import json
 from collections import defaultdict
 
@@ -16,14 +17,25 @@ def generate_mapping(filename):
 if __name__ == '__main__':
     objects_vocab_file = "./data/vrd/objects.json"
     predicates_vocab_file = "./data/vrd/predicates.json"
-    annotations_file = "./data/vrd/annotations_train.json"
+    annotations_train_file = "./data/vrd/annotations_train.json"
+    annotations_test_file = "./data/vrd/annotations_test.json"
     output_file = "./data/vrd/vrd_data.json"
 
     objects_id_to_label_mapping = generate_mapping(objects_vocab_file)
     predicates_id_to_label_mapping = generate_mapping(predicates_vocab_file)
 
-    with open(annotations_file, 'r') as rfile:
-        annotations = json.load(rfile)
+    with open(annotations_train_file, 'r') as rfile:
+        annotations_train = json.load(rfile)
+
+    with open(annotations_test_file, 'r') as rfile:
+        annotations_test = json.load(rfile)
+
+    # Transform img file names to img subpaths
+    annotations = {}
+    for img_file,anns in annotations_train.items():
+        annotations[osp.join("sg_train_images", img_file)] = anns
+    for img_file,anns in annotations_test.items():
+        annotations[osp.join("sg_test_images", img_file)] = anns
 
     relationship_data = defaultdict(lambda: list())
     for img_path, anns in annotations.items():
@@ -62,9 +74,7 @@ if __name__ == '__main__':
             if rel_data not in relationship_data[img_path]:
                 relationship_data[img_path].append(rel_data)
             else:
-                print(img_path)
-                print(rel_data)
-                break
+                print("Found duplicate relationship in image: {}".format(img_path))
 
     with open(output_file, 'w') as wfile:
         json.dump(relationship_data, wfile)

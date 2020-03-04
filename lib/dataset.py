@@ -26,22 +26,15 @@ class dataset():
     self.img_dir = None
     self.metadata_dir = None
 
-    if self.name == "pascal_voc":
-      obj_classes = np.asarray(["aeroplane", "bicycle", "bird", "boat",
-                         "bottle", "bus", "car", "cat", "chair",
-                         "cow", "diningtable", "dog", "horse",
-                         "motorbike", "person", "pottedplant",
-                         "sheep", "sofa", "train", "tvmonitor"])
-
-    elif self.name == "vrd":
-      self.img_dir = osp.join(globals.data_dir, globals.vrd_dir, globals.vrd_images_train_dir)
-      self.metadata_dir = osp.join(globals.data_dir, globals.vrd_dir)
+    if self.name == "vrd":
+      self.img_dir = osp.join(globals.data_dir, "vrd", "sg_dataset")
+      self.metadata_dir = osp.join(globals.data_dir, "vrd")
 
       # load the vocabularies for objects and predicates
-      with open(osp.join(self.metadata_dir, globals.vrd_objects_vocab_file), 'r') as rfile:
+      with open(osp.join(self.metadata_dir, "objects.json"), 'r') as rfile:
         obj_classes = json.load(rfile)
 
-      with open(osp.join(self.metadata_dir, globals.vrd_predicates_vocab_file), 'r') as rfile:
+      with open(osp.join(self.metadata_dir, "predicates.json"), 'r') as rfile:
         pred_classes = json.load(rfile)
 
     elif self.name == "vg":
@@ -51,15 +44,15 @@ class dataset():
       # self.subset = "2500-1000-500"
       # self.subset = "150-50-50"
 
-      self.img_dir = osp.join(globals.data_dir, globals.vg_dir)
+      self.img_dir = osp.join(globals.data_dir, "vg")
       self.metadata_dir = osp.join(globals.data_dir, "genome", self.subset)
 
       # load the vocabularies for objects and predicates
-      with open(osp.join(self.metadata_dir, globals.vg_objects_vocab_file), 'r') as f:
+      with open(osp.join(self.metadata_dir, "objects_vocab.txt"), 'r') as f:
         obj_vocab = f.readlines()
         obj_classes = np.asarray([x.strip('\n') for x in obj_vocab])
 
-      with open(osp.join(self.metadata_dir, globals.vg_predicates_vocab_file), 'r') as f:
+      with open(osp.join(self.metadata_dir, "relations_vocab.txt"), 'r') as f:
         pred_vocab = f.readlines()
         pred_classes = np.asarray([x.strip('\n') for x in pred_vocab])
 
@@ -87,20 +80,21 @@ class dataset():
     # self.relations_to_ind = dict(zip(self._relations, xrange(self._num_relations)))
 
 
+  # TODO: select which split ("train", "test", default="traintest")
   def getImgRels(self):
-    """ Load list of images """
+    """ Load list of rel-annotations per images """
     with open(osp.join(self.metadata_dir, "vrd_data.json"), 'r') as rfile:
       return json.load(rfile) # Maybe pickle this?
 
   def getAnno(self):
-    """ Load list of annotations """
-
+    """ Load list of  """
+    pass
     # with open(osp.join(globals.metadata_dir, "anno.pkl", 'rb') as fid:
     #   anno = pickle.load(fid)
     #   self._anno = [x for x in anno if x is not None and len(x['classes'])>1]
 
   # Todo: instead of simply return it, store it in self and return a reference to, say, self.soP
-  def getDistribution(self, type, force = False):
+  def getDistribution(self, type, force = True):
     """ Computes and returns some distributional data """
 
     if not type in ["soP"]:
@@ -108,7 +102,8 @@ class dataset():
 
     distribution_pkl_path = osp.join(self.metadata_dir, "{}.pkl".format(type))
 
-    if type == "soP" and self.name == "vrd": # TODO: uniform vrd dataset
+    # TODO: remove this fix once we have our own so_prior
+    if type == "soP" and self.name == "vrd":
         distribution_pkl_path = osp.join(self.metadata_dir, "so_prior.pkl")
 
     try:
@@ -118,4 +113,5 @@ class dataset():
       if not force:
         print("Distribution not found: {}".format(distribution_pkl_path))
         return None
-      # TODO: else compute distribution, save pkl and return it.
+      else:
+        raise Exception("TODO: compute distribution, save pkl and return it.")

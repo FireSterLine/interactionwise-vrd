@@ -1,0 +1,81 @@
+SESSION=1
+EPOCH=19
+CHECKPOINT=48611
+
+python test_net.py --dataset vg --net vgg16 --checksession $SESSION --checkepoch $EPOCH --checkpoint $CHECKPOINT --cuda
+python demo.py     --dataset vg --net vgg16 --checksession $SESSION --checkepoch $EPOCH --checkpoint $CHECKPOINT --cuda
+
+
+
+BATCH_SIZE=4
+LEARNING_RATE=0.001
+DECAY_STEP=5
+WORKER_NUMBER=4
+# WORKER_NUMBER=8
+# WORKER_NUMBER=16
+SESSION=1
+EPOCH=2
+CHECKPOINT=489
+
+python trainval_net.py \
+                   --dataset vg --net vgg16 \
+                   --bs $BATCH_SIZE --nw $WORKER_NUMBER \
+                   --lr $LEARNING_RATE --lr_decay_step $DECAY_STEP \
+                   --checksession $SESSION --checkepoch $EPOCH --checkpoint $CHECKPOINT \
+                   --cuda
+
+
+models/vgg16/vg/faster_rcnn_1_2_489.pth
+
+SESSION=1
+EPOCH=2
+CHECKPOINT=489
+
+python test_net.py --dataset vg --net vgg16 --checksession $SESSION --checkepoch $EPOCH --checkpoint $CHECKPOINT --cuda
+python demo.py     --dataset vg --net vgg16 --checksession $SESSION --checkepoch $EPOCH --checkpoint $CHECKPOINT --cuda
+
+
+SESSION=1
+EPOCH=20
+CHECKPOINT=16193
+
+python test_net.py --dataset vg --net res101 --checksession $SESSION --checkepoch $EPOCH --checkpoint $CHECKPOINT --cuda
+python demo.py     --dataset vg --net res101 --checksession $SESSION --checkepoch $EPOCH --checkpoint $CHECKPOINT --cuda
+
+
+
+SESSION=1
+EPOCH=20
+CHECKPOINT=7559
+
+python test_net.py --dataset vg --net res101 --checksession $SESSION --checkepoch $EPOCH --checkpoint $CHECKPOINT --cuda
+python demo.py     --dataset vg --net res101 --checksession $SESSION --checkepoch $EPOCH --checkpoint $CHECKPOINT --cuda
+
+
+
+BATCH_SIZE=4
+LEARNING_RATE=0.001
+DECAY_STEP=5
+WORKER_NUMBER=4
+# WORKER_NUMBER=8
+# WORKER_NUMBER=16
+SESSION=1
+EPOCH=20
+CHECKPOINT=489
+
+python trainval_net.py \
+                   --dataset vg --net res101 \
+                   --epochs 30 \
+                   --bs $BATCH_SIZE --nw $WORKER_NUMBER \
+                   --lr $LEARNING_RATE --lr_decay_step $DECAY_STEP \
+                   --checksession $SESSION --checkepoch $EPOCH --checkpoint $CHECKPOINT \
+                   --cuda
+
+
+
+SESSION=1
+EPOCH=30
+CHECKPOINT=489
+
+python test_net.py --dataset vg --net res101 --checksession $SESSION --checkepoch $EPOCH --checkpoint $CHECKPOINT --cuda
+python demo.py     --dataset vg --net res101 --checksession $SESSION --checkepoch $EPOCH --checkpoint $CHECKPOINT --cuda
