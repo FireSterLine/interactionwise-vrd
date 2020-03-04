@@ -29,19 +29,20 @@ if __name__ == '__main__':
     for img_path, anns in annotations.items():
         for ann in anns:
             subject_label = objects_id_to_label_mapping[ann['subject']['category']]
+            # this is as per the format described in the README of the VRD dataset
             subject_bbox = {
-                'xmin': ann['subject']['bbox'][0],
-                'xmax': ann['subject']['bbox'][1],
-                'ymin': ann['subject']['bbox'][2],
-                'ymax': ann['subject']['bbox'][3]
+                'ymin': ann['subject']['bbox'][0],
+                'ymax': ann['subject']['bbox'][1],
+                'xmin': ann['subject']['bbox'][2],
+                'xmax': ann['subject']['bbox'][3]
             }
 
             object_label = objects_id_to_label_mapping[ann['object']['category']]
             object_bbox = {
-                'xmin': ann['object']['bbox'][0],
-                'xmax': ann['object']['bbox'][1],
-                'ymin': ann['object']['bbox'][2],
-                'ymax': ann['object']['bbox'][3]
+                'ymin': ann['object']['bbox'][0],
+                'ymax': ann['object']['bbox'][1],
+                'xmin': ann['object']['bbox'][2],
+                'xmax': ann['object']['bbox'][3]
             }
 
             predicate_label = predicates_id_to_label_mapping[ann['predicate']]
@@ -58,7 +59,12 @@ if __name__ == '__main__':
             rel_data['predicate']['name'] = predicate_label
             rel_data['predicate']['id'] = ann['predicate']
 
-            relationship_data[img_path].append(rel_data)
+            if rel_data not in relationship_data[img_path]:
+                relationship_data[img_path].append(rel_data)
+            else:
+                print(img_path)
+                print(rel_data)
+                break
 
     with open(output_file, 'w') as wfile:
         json.dump(relationship_data, wfile)
