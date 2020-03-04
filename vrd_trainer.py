@@ -37,7 +37,8 @@ class vrd_trainer():
     self.pretrained = False # TODO
 
     self.save_dir = osp.join(globals.models_dir, self.session_name)
-    os.mkdir(self.save_dir)
+    if not osp.exists(self.save_dir):
+      os.mkdir(self.save_dir)
 
     # load data layer
     print("Initializing data layer...")
@@ -106,6 +107,8 @@ class vrd_trainer():
       # with open(res_file, 'w') as f:
       #   f.write(tabulate(res, headers))
 
+      print("Epoch {}".format(epoch))
+      
       save_name = osp.join(self.save_dir, "checkpoint_epoch_%d.pth.tar".format(epoch))
       save_checkpoint({
         "session": self.session_name,
@@ -125,9 +128,9 @@ class vrd_trainer():
     for i in range(10):
       # TODO: why range(10)? Loop through all of the data, maybe?
 
-      spatial_features, semantic_features, target = self.datalayer.next()
+      spatial_features, semantic_features, target = next(self.datalayer)
       
-      time1 = time.time()
+      # time1 = time.time()
 
       spatial_features  = torch.FloatTensor(spatial_features).cuda()
       semantic_features = torch.FloatTensor(semantic_features).cuda()
@@ -141,9 +144,9 @@ class vrd_trainer():
       loss.backward()
       self.args.optimizer.step()
 
-      time2 = time.time()
-      print("TRAIN: %d, Total LOSS: %f, Time: %s".format(epoch, loss, time.strftime('%H:%M:%S', time.gmtime(int(time2 - time1)))))
-      break
+      # time2 = time.time()
+      
+      print("Step {}, Loss: {}".format(i, loss))
 
     """
     losses = AverageMeter()

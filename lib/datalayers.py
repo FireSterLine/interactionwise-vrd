@@ -39,11 +39,10 @@ class VRDDataLayer():
     self.n_imgrels = len(self.imgrels)
     self.cur_imgrels = 0
 
-  def __iter__(self):
-      return self
+  #def __iter__(self):
+  #    return self
 
-  # def __next__(self):
-  def next(self):
+  def __next__(self):
 
     (im_id, rels) = self.imgrels[self.cur_imgrels]
 
@@ -51,11 +50,7 @@ class VRDDataLayer():
     ih = im.shape[0]
     iw = im.shape[1]
 
-    print(im.shape)
-
     n_rel = len(rels)
-
-    print(n_rel)
 
     # the dimension 8 here is the size of the spatial feature vector, containing the relative location and log-distance
     spatial_features = np.zeros((n_rel, 8))
@@ -65,8 +60,6 @@ class VRDDataLayer():
     target = np.zeros((n_rel, self.n_pred))
 
     for i_rel,rel in enumerate(rels):
-
-      print(i_rel,rel)
 
       # these are the subject and object bounding boxes
       sBBox = utils.bboxDictToNumpy(rel["subject"]["bbox"])
@@ -79,7 +72,7 @@ class VRDDataLayer():
       # semantic_features[i_rel] = utils.getSemanticVector(rel["subject"]["name"], rel["object"]["name"], self.w2v_model)
       semantic_features[i_rel] = np.zeros(600)
 
-      # target[i_rel] = np.zeros(self.n_pred)
+      target[i_rel][rel["predicate"]["id"]] = 1.
 
       i_rel += 1
 
@@ -87,8 +80,9 @@ class VRDDataLayer():
     if(self.cur_imgrels >= self.n_imgrels):
       self.cur_imgrels = 0
 
-    return spatial_features, semantic_features, target
-    # yield spatial_features, semantic_features, target
+    yield spatial_features
+    yield semantic_features
+    yield target
 
 if __name__ == '__main__':
   pass
