@@ -21,9 +21,8 @@ if __name__ == '__main__':
     json_files_path = "./faster-rcnn/data/genome/{}-{}-{}/json/".format(num_objects, num_attributes, num_predicates)
     objects_vocab_file = "./faster-rcnn/data/genome/{}-{}-{}/objects_vocab_{}.txt".format(num_objects, num_attributes, num_predicates, num_objects)
     predicates_vocab_file = "./faster-rcnn/data/genome/{}-{}-{}/relations_vocab_{}.txt".format(num_objects, num_attributes, num_predicates, num_predicates)
-    output_file = './faster-rcnn/data/genome/{}-{}-{}/vrd_data.json'.format(num_objects, num_attributes, num_predicates)
-    save_bounding_boxes = False
-
+    output_file = './faster-rcnn/data/genome/{}-{}-{}/vg_data.json'.format(num_objects, num_attributes, num_predicates)
+    
     objects_label_to_id_mapping = generate_mapping(objects_vocab_file)
     predicates_label_to_id_mapping = generate_mapping(predicates_vocab_file)
 
@@ -38,7 +37,6 @@ if __name__ == '__main__':
                 'name': obj['name'][0],
                 'bbox': {k: int(v) for k, v in obj['bndbox'].items()}
             }
-            # if save_bounding_boxes is True:
 
         folder = data['folder']
         filename = data['filename']
