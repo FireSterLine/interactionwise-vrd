@@ -12,6 +12,7 @@ import torch.nn.init
 
 from easydict import EasyDict
 import globals
+import utils
 from lib.nets.vrd_model import vrd_model
 from lib.datalayers import VRDDataLayer
 from model.utils.net_utils import weights_normal_init, save_checkpoint
@@ -98,7 +99,7 @@ class vrd_trainer():
     res = []
     for epoch in range(self.start_epoch, self.start_epoch + self.num_epochs):
 
-      self.__train_epoch()
+      self.__train_epoch(epoch)
       # res.append((epoch,) + test_pre_net(net, args) + test_rel_net(net, args))
       # with open(res_file, 'w') as f:
       #   f.write(tabulate(res, headers))
@@ -114,7 +115,7 @@ class vrd_trainer():
         # "class_agnostic": args.class_agnostic,
       }, save_name)
 
-  def __train_epoch(self):
+  def __train_epoch(self, epoch):
     # TODO: right now one epoch = one annotation. Expand
 
     self.net.train()
@@ -136,7 +137,7 @@ class vrd_trainer():
     self.args.optimizer.step()
 
     time2 = time.time()
-    print("TRAIN: %d, Total LOSS: %f, Time: %s".format(step, loss, time.strftime('%H:%M:%S', time.gmtime(int(time2 - time1)))))
+    print("TRAIN: %d, Total LOSS: %f, Time: %s".format(epoch, loss, time.strftime('%H:%M:%S', time.gmtime(int(time2 - time1)))))
 
     """
     losses = AverageMeter()
@@ -174,3 +175,6 @@ class vrd_trainer():
 
 if __name__ == '__main__':
   trainer = vrd_trainer()
+  
+  trainer.train()
+

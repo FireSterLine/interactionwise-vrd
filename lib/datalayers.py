@@ -6,10 +6,13 @@ import cv2
 import pickle
 import sys
 from lib.blob import prep_im_for_blob
-from lib.dataset
+from lib.dataset import dataset
 import math
 
+import utils
 # TODO: expand so that it supports batch sizes > 1
+# TODO: make a generator class? yield?
+
 class VRDDataLayer(object):
 
   def __init__(self, ds_info, stage):
@@ -18,8 +21,8 @@ class VRDDataLayer(object):
     if isinstance(ds_info, str):
       ds_name = ds_info
       ds_args = {}
-      else:
-    ds_name = ds_info["ds_name"]
+    else:
+      ds_name = ds_info["ds_name"]
       del ds_info["ds_name"]
       ds_args = ds_info
 
@@ -28,9 +31,12 @@ class VRDDataLayer(object):
 
     self.dataset = dataset(self.ds_name, **ds_args)
 
-    self.imgrels = self.dataset.getImgRels().items()
-    self.n_imgrels = len(self.imgrels)
+    self.n_obj   = self.dataset.n_obj
+    self.n_pred  = self.dataset.n_pred
 
+    self.imgrels = [(k,v) for k,v in
+            self.dataset.getImgRels().items()]
+    self.n_imgrels = len(self.imgrels)
     self.cur_imgrels = 0
 
   def step(self):
@@ -53,6 +59,8 @@ class VRDDataLayer(object):
     # the dimension 8 here is the size of the spatial feature vector, containing the relative location and log-distance
     semantic_features = np.zeros((n_rel, 2*300))
 
+    target = np.zeros((n_rel, self.n_pred))
+    
     for i_rel,rel in enumerate(rels):
 
       print(i_rel,rel)
@@ -67,14 +75,14 @@ class VRDDataLayer(object):
       # semantic features of obj and subj
       # semantic_features[i_rel] = utils.getSemanticVector(rel["subject"]["name"], rel["object"]["name"], self.w2v_model)
       semantic_features[i_rel] = np.zeros(600)
-
+      
+      # target[i_rel] = np.zeros(self.n_pred)
+      
       i_rel += 1
 
     self.cur_imgrels += 1
-    if(self.cur_imgrels >= len(self.n_imgrels)):
-    self.cur_imgrels = 0
-
-    target = np.zeros((self.dataset.n_pred))
+    if(self.cur_imgrels >= self.n_imgrels):
+      self.cur_imgrels = 0
 
     return spatial_features, semantic_features, target
 
