@@ -10,6 +10,10 @@ import math
 import os.path as osp
 import globals
 
+# TODO: rename to VRDDataset
+# TODO: add flag that forbids/allows caching with pickles
+#  (default behaviour would be to pickle everything, since the dataset won't change that much)
+
 class dataset():
 
   def __init__(self, name="vg", subset=None, with_bg_obj=True, with_bg_pred=False):
@@ -21,14 +25,14 @@ class dataset():
 
     self.img_dir = None
     self.metadata_dir = None
-    
+
     if self.name == "pascal_voc":
       obj_classes = np.asarray(["aeroplane", "bicycle", "bird", "boat",
                          "bottle", "bus", "car", "cat", "chair",
                          "cow", "diningtable", "dog", "horse",
                          "motorbike", "person", "pottedplant",
                          "sheep", "sofa", "train", "tvmonitor"])
-                         
+
     elif self.name == "vrd":
       self.img_dir = osp.join(globals.data_dir, globals.vrd_dir, globals.vrd_images_train_dir)
       self.metadata_dir = osp.join(globals.data_dir, globals.vrd_dir)
@@ -46,7 +50,7 @@ class dataset():
         self.subset = "1600-400-20"
       # self.subset = "2500-1000-500"
       # self.subset = "150-50-50"
-      
+
       self.img_dir = osp.join(globals.data_dir, globals.vg_dir)
       self.metadata_dir = osp.join(globals.data_dir, "genome", self.subset)
 
@@ -78,10 +82,23 @@ class dataset():
     self.pred_classes = np.append(pred_additional, pred_classes).tolist()
     self.n_pred = len(self.pred_classes)
 
+    # Need these?
+    # self.class_to_ind     = dict(zip(self._classes, xrange(self._num_classes)))
+    # self.relations_to_ind = dict(zip(self._relations, xrange(self._num_relations)))
+
+
   def getImgRels(self):
     """ Load list of images """
     with open(osp.join(self.metadata_dir, "vrd_data.json"), 'r') as rfile:
-      return json.load(rfile)
+      return json.load(rfile) # Maybe pickle this?
+
+  def getAnno(self):
+    """ Load list of annotations """
+    
+    # with open(osp.join(globals.metadata_dir, "anno.pkl", 'rb') as fid:
+    #   anno = pickle.load(fid)
+    #   self._anno = [x for x in anno if x is not None and len(x['classes'])>1]
+
 
   def getDistribution(self, type, force = False):
     """ Computes and returns some distributional data """
@@ -102,4 +119,3 @@ class dataset():
         print("Distribution not found: {}".format(distribution_pkl_path))
         return None
       # TODO: else compute distribution, save pkl and return it.
-      

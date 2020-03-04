@@ -130,6 +130,7 @@ class vr_detector():
 
       break
 
+  """
   def det_im(self, im_path):
 
     print("Detecting object...")
@@ -202,7 +203,8 @@ class vr_detector():
     x = self.net(blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, self.args)
 
     return x
-
+  """
+  
 def vrd_demo():
 
   # im_path = osp.join(globals.images_dir, "3845770407_1a8cd41230_b.jpg")
