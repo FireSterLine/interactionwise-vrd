@@ -42,7 +42,8 @@ class VRDDataLayer():
   def __iter__(self):
       return self
 
-  def __next__(self):
+  # def __next__(self):
+  def next(self):
 
     (im_id, rels) = self.imgrels[self.cur_imgrels]
 
@@ -86,7 +87,8 @@ class VRDDataLayer():
     if(self.cur_imgrels >= self.n_imgrels):
       self.cur_imgrels = 0
 
-    yield spatial_features, semantic_features, target
+    return spatial_features, semantic_features, target
+    # yield spatial_features, semantic_features, target
 
 if __name__ == '__main__':
   pass

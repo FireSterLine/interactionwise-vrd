@@ -36,6 +36,9 @@ class vrd_trainer():
     self.dataset_name = dataset_name
     self.pretrained = False # TODO
 
+    self.save_dir = osp.join(globals.models_dir, self.session_name)
+    os.mkdir(self.save_dir)
+
     # load data layer
     print("Initializing data layer...")
     # self.datalayer = VRDDataLayer({"ds_name" : self.dataset_name, "with_bg_obj" : True}, "train")
@@ -93,7 +96,6 @@ class vrd_trainer():
 
   def train(self):
     res_file = "output-{}.txt".format(self.session_name)
-    save_dir = osp.join(globals.models_dir, self.session_name)
 
     headers = ["Epoch","Pre R@50", "ZS", "R@100", "ZS", "Rel R@50", "ZS", "R@100", "ZS"]
     res = []
@@ -104,7 +106,7 @@ class vrd_trainer():
       # with open(res_file, 'w') as f:
       #   f.write(tabulate(res, headers))
 
-      save_name = osp.join(save_dir, "checkpoint_epoch_%d.pth.tar".format(epoch))
+      save_name = osp.join(self.save_dir, "checkpoint_epoch_%d.pth.tar".format(epoch))
       save_checkpoint({
         "session": self.session_name,
         "epoch": epoch,
@@ -119,10 +121,12 @@ class vrd_trainer():
     self.net.train()
 
     # Obtain next annotation input and target
-    for i in range(10): # TODO: why range(10)? Loop through all of the data, maybe?
+    #for spatial_features, semantic_features, target in self.datalayer:
+    for i in range(10):
+      # TODO: why range(10)? Loop through all of the data, maybe?
 
-      spatial_features, semantic_features, target = next(self.datalayer)
-
+      spatial_features, semantic_features, target = self.datalayer.next()
+      
       time1 = time.time()
 
       spatial_features  = torch.FloatTensor(spatial_features).cuda()
@@ -139,6 +143,7 @@ class vrd_trainer():
 
       time2 = time.time()
       print("TRAIN: %d, Total LOSS: %f, Time: %s".format(epoch, loss, time.strftime('%H:%M:%S', time.gmtime(int(time2 - time1)))))
+      break
 
     """
     losses = AverageMeter()
