@@ -204,7 +204,7 @@ class vr_detector():
 
     return x
   """
-  
+
 def vrd_demo():
 
   # im_path = osp.join(globals.images_dir, "3845770407_1a8cd41230_b.jpg")

@@ -11,7 +11,6 @@ import math
 
 import utils
 # TODO: expand so that it supports batch sizes > 1
-# TODO: make a generator class? yield?
 
 class VRDDataLayer():
   """ Iterate through the dataset and yield the input and target for the network """
@@ -34,8 +33,7 @@ class VRDDataLayer():
     self.n_obj   = self.dataset.n_obj
     self.n_pred  = self.dataset.n_pred
 
-    self.imgrels = [(k,v) for k,v in
-            self.dataset.getImgRels().items()]
+    self.imgrels = [(k,v) for k,v in self.dataset.getImgRels().items()]
     self.n_imgrels = len(self.imgrels)
     self.cur_imgrels = 0
 
@@ -57,6 +55,9 @@ class VRDDataLayer():
     # the dimension 8 here is the size of the spatial feature vector, containing the relative location and log-distance
     semantic_features = np.zeros((n_rel, 2*300))
 
+    # this will contain the probability distribution of each subject-object pair ID over all 70 predicates
+    # rel_soP_prior = np.zeros((n_rel, self.dataset.n_pred))
+
     target = np.zeros((n_rel, self.n_pred))
 
     for i_rel,rel in enumerate(rels):
@@ -71,6 +72,12 @@ class VRDDataLayer():
       # semantic features of obj and subj
       # semantic_features[i_rel] = utils.getSemanticVector(rel["subject"]["name"], rel["object"]["name"], self.w2v_model)
       semantic_features[i_rel] = np.zeros(600)
+
+      # store the probability distribution of this subject-object pair from the soP_prior
+      # if self.soP_prior != None:
+      #   rel_soP_prior[i_rel] = self.dataset.soP_prior[classes[s_idx], classes[o_idx]]
+      # else:
+      #   rel_soP_prior[i_rel,:] = 0.0
 
       target[i_rel][rel["predicate"]["id"]] = 1.
 
