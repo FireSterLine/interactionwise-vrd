@@ -9,8 +9,10 @@ import torch
 import torch.nn as nn
 import torch.nn.init
 
+from easydict import EasyDict
 import globals
 from lib.nets.vrd_model import vrd_model
+from lib.dataset import dataset
 from model.utils.net_utils import weights_normal_init, save_checkpoint
 #, save_net, load_net, \
 #      adjust_learning_rate, , clip_gradient
@@ -61,7 +63,7 @@ class vrd_trainer():
     self.args.criterion = nn.MultiLabelMarginLoss().cuda()
 
     self.args.lr = 0.00001
-    self.args.momentum = 0.9
+    # self.args.momentum = 0.9
     self.args.weight_decay = 0.0005
 
     # params = list(self.net.parameters())
@@ -71,7 +73,10 @@ class vrd_trainer():
       {'params': self.net.fc_fus1.parameters(),     'lr': self.args.lr},
       {'params': self.net.fc_fus2.parameters(),     'lr': self.args.lr},
     ]
-    self.args.optimizer = torch.optim.Adam(opt_params, lr=self.args.lr, momentum=self.args.momentum, weight_decay=self.args.weight_decay)
+    self.args.optimizer = torch.optim.Adam(opt_params,
+            lr=self.args.lr,
+            # momentum=self.args.momentum,
+            weight_decay=self.args.weight_decay)
 
     # if args.resume:
     #     if osp.isfile(args.resume):
