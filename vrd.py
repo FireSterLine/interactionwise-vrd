@@ -37,7 +37,9 @@ class vr_detector():
     self.pretrained = False # TODO
 
     print("Initializing object detector...")
-    self.obj_det = obj_detector(dataset_name=self.dataset_name)
+    # self.obj_det = obj_detector(dataset_name=self.dataset_name)
+    # TODO: Hardcoding this until we have an object detection model for the VRD dataset
+    self.obj_det = obj_detector('vg')
 
     self.dataset = dataset(self.dataset_name, with_bg_obj=True)
 
@@ -216,7 +218,7 @@ def vrd_demo():
 
 if __name__ == '__main__':
   print("Initializing VRD module...")
-  vr_det = vr_detector()
+  vr_det = vr_detector(dataset_name='vrd')
 
   vr_det.test_vrd_model()
 
