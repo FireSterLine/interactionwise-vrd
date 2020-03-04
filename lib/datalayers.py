@@ -13,10 +13,10 @@ import utils
 # TODO: expand so that it supports batch sizes > 1
 # TODO: make a generator class? yield?
 
-class VRDDataLayer(object):
+class VRDDataLayer():
+  """ Iterate through the dataset and yield the input and target for the network """
 
   def __init__(self, ds_info, stage):
-    """ Setup the VRD DataLayer """
 
     if isinstance(ds_info, str):
       ds_name = ds_info
@@ -39,8 +39,10 @@ class VRDDataLayer(object):
     self.n_imgrels = len(self.imgrels)
     self.cur_imgrels = 0
 
-  def step(self):
-    """ Iterate through the dataset and yield the annotations """
+  def __iter__(self):
+      return self
+
+  def __next__(self):
 
     (im_id, rels) = self.imgrels[self.cur_imgrels]
 
@@ -60,7 +62,7 @@ class VRDDataLayer(object):
     semantic_features = np.zeros((n_rel, 2*300))
 
     target = np.zeros((n_rel, self.n_pred))
-    
+
     for i_rel,rel in enumerate(rels):
 
       print(i_rel,rel)
@@ -75,16 +77,16 @@ class VRDDataLayer(object):
       # semantic features of obj and subj
       # semantic_features[i_rel] = utils.getSemanticVector(rel["subject"]["name"], rel["object"]["name"], self.w2v_model)
       semantic_features[i_rel] = np.zeros(600)
-      
+
       # target[i_rel] = np.zeros(self.n_pred)
-      
+
       i_rel += 1
 
     self.cur_imgrels += 1
     if(self.cur_imgrels >= self.n_imgrels):
       self.cur_imgrels = 0
 
-    return spatial_features, semantic_features, target
+    yield spatial_features, semantic_features, target
 
 if __name__ == '__main__':
   pass

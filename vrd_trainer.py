@@ -116,28 +116,29 @@ class vrd_trainer():
       }, save_name)
 
   def __train_epoch(self, epoch):
-    # TODO: right now one epoch = one annotation. Expand
-
     self.net.train()
-    time1 = time.time()
 
     # Obtain next annotation input and target
-    spatial_features, semantic_features, target = self.datalayer.step()
+    for i in range(10): # TODO: why range(10)? Loop through all of the data, maybe?
 
-    spatial_features  = torch.FloatTensor(spatial_features).cuda()
-    semantic_features = torch.FloatTensor(semantic_features).cuda()
-    target            = torch.FloatTensor(target).cuda()
+      spatial_features, semantic_features, target = next(self.datalayer)
 
-    # Forward pass & Backpropagation step
-    self.args.optimizer.zero_grad()
-    x = self.net(spatial_features, semantic_features)
+      time1 = time.time()
 
-    loss = self.args.criterion(x, target)
-    loss.backward()
-    self.args.optimizer.step()
+      spatial_features  = torch.FloatTensor(spatial_features).cuda()
+      semantic_features = torch.FloatTensor(semantic_features).cuda()
+      target            = torch.FloatTensor(target).cuda()
 
-    time2 = time.time()
-    print("TRAIN: %d, Total LOSS: %f, Time: %s".format(epoch, loss, time.strftime('%H:%M:%S', time.gmtime(int(time2 - time1)))))
+      # Forward pass & Backpropagation step
+      self.args.optimizer.zero_grad()
+      x = self.net(spatial_features, semantic_features)
+
+      loss = self.args.criterion(x, target)
+      loss.backward()
+      self.args.optimizer.step()
+
+      time2 = time.time()
+      print("TRAIN: %d, Total LOSS: %f, Time: %s".format(epoch, loss, time.strftime('%H:%M:%S', time.gmtime(int(time2 - time1)))))
 
     """
     losses = AverageMeter()
@@ -175,6 +176,5 @@ class vrd_trainer():
 
 if __name__ == '__main__':
   trainer = vrd_trainer()
-  
-  trainer.train()
 
+  trainer.train()
