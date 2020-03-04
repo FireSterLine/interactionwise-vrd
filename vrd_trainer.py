@@ -47,18 +47,23 @@ class vrd_trainer():
     # self.datalayer = VRDDataLayer({"ds_name" : self.dataset_name, "with_bg_obj" : True}, "train")
     self.datalayer = VRDDataLayer(self.dataset_name, "train")
 
+    self.args = EasyDict()
+    self.args.n_obj   = self.datalayer.n_obj
+    self.args.n_pred  = self.datalayer.n_pred
+
     # TODO: Pytorch DataLoader()
     # self.dataset = VRDDataset()
     # self.datalayer = torch.utils.data.DataLoader(self.dataset,
-                      batch_size=self.batch_size,
-                      # sampler= Random ...,
-                      num_workers=self.num_workers)
+    #                  batch_size=self.batch_size,
+    #                  # sampler= Random ...,
+    #                  num_workers=self.num_workers)
+    self.train_size = 100
 
     load_pretrained = isinstance(self.pretrained, str)
 
     # initialize the model using the args set above
     print("Initializing VRD Model...")
-    self.net = vrd_model(self) # TODO: load_pretrained affects how the model is initialized?
+    self.net = vrd_model(self.args) # TODO: load_pretrained affects how the model is initialized?
     self.net.cuda()
 
     # Initialize the model in some way ...
@@ -130,7 +135,7 @@ class vrd_trainer():
 
     # Obtain next annotation input and target
     #for spatial_features, semantic_features, target in self.datalayer:
-    iters_per_epoch = int(train_size / self.batch_size)
+    iters_per_epoch = int(self.train_size / self.batch_size)
     for step in range(iters_per_epoch):
       # TODO: why range(10)? Loop through all of the data, maybe?
 
