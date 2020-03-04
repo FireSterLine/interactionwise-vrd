@@ -14,7 +14,7 @@ class dataset():
 
   def __init__(self, name="vg", subset=None, with_bg_obj=True, with_bg_pred=False):
 
-    self.name = "vg"
+    self.name = name
     self.subset = None
     self.with_bg_obj = True
     self.with_bg_pred = False
