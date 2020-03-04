@@ -31,6 +31,20 @@ def getRelativeLoc(aBB, bBB):
   wh = np.log(np.array([sw / ow, sh / oh, ow / sw, oh / sh]))
   return np.hstack((xy, wh))
 
+"""
+def getDualMask(self, ih, iw, bb):
+  rh = 32.0 / ih
+  rw = 32.0 / iw
+  x1 = max(0, int(math.floor(bb[0] * rw)))
+  x2 = min(32, int(math.ceil(bb[2] * rw)))
+  y1 = max(0, int(math.floor(bb[1] * rh)))
+  y2 = min(32, int(math.ceil(bb[3] * rh)))
+  mask = np.zeros((32, 32))
+  mask[y1 : y2, x1 : x2] = 1
+  assert(mask.sum() == (y2 - y1) * (x2 - x1))
+  return mask
+"""
+
 # Get word embedding of subject and object label and concatenate them
 def getSemanticVector(subject_label, object_label, w2v_model):
   subject_vector = w2v_model[subject_label]

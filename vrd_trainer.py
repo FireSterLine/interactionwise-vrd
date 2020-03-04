@@ -4,6 +4,7 @@ import sys
 import pickle
 import argparse
 from tabulate import tabulate
+import time
 
 import torch
 import torch.nn as nn
@@ -12,12 +13,12 @@ import torch.nn.init
 from easydict import EasyDict
 import globals
 from lib.nets.vrd_model import vrd_model
-from lib.dataset import dataset
+from lib.datalayers import VRDDataLayer
 from model.utils.net_utils import weights_normal_init, save_checkpoint
 #, save_net, load_net, \
 #      adjust_learning_rate, , clip_gradient
 
-# from lib.datalayer import DataLayer
+# from lib.datalayer import VRDDataLayer
 # from lib.model import train_net, test_pre_net, test_rel_net
 
 class vrd_trainer():
@@ -35,14 +36,13 @@ class vrd_trainer():
     self.pretrained = False # TODO
 
     # load data layer
-    # print("Initializing data layer...")
-    # self.datalayer = DataLayer(self.dataset_name, "train")
-
-    self.dataset = dataset(self.dataset_name, with_bg_obj=True)
+    print("Initializing data layer...")
+    # self.datalayer = VRDDataLayer({"ds_name" : self.dataset_name, "with_bg_obj" : True}, "train")
+    self.datalayer = VRDDataLayer(self.dataset_name, "train")
 
     self.args = EasyDict()
-    self.args.n_obj   = self.dataset.n_obj
-    self.args.n_pred  = self.dataset.n_pred
+    self.args.n_obj   = self.datalayer.n_obj
+    self.args.n_pred  = self.datalayer.n_pred
 
     load_pretrained = isinstance(self.pretrained, str)
 
@@ -60,7 +60,8 @@ class vrd_trainer():
     #net.state_dict()['emb.weight'].copy_(torch.from_numpy(emb_init))
 
     print("Initializing optimizer...")
-    self.args.criterion = nn.MultiLabelMarginLoss().cuda()
+    # self.args.criterion = nn.MultiLabelMarginLoss().cuda()
+    self.args.criterion = nn.MSELoss().cuda()
 
     self.args.lr = 0.00001
     # self.args.momentum = 0.9
@@ -114,32 +115,56 @@ class vrd_trainer():
       }, save_name)
 
   def __train_epoch(self):
+    # TODO: right now one epoch = one annotation. Expand
 
     self.net.train()
+    time1 = time.time()
 
-    # TODO
+    # Obtain next annotation input and target
+    spatial_features, semantic_features, rel_labels = self.datalayer.step()
+
+    spatial_features  = torch.FloatTensor(spatial_features).cuda()
+    semantic_features = torch.FloatTensor(semantic_features).cuda()
+    target            = torch.FloatTensor(target).cuda()
+
+    # Forward pass & Backpropagation step
+    self.args.optimizer.zero_grad()
+    x = self.net(spatial_features, semantic_features)
+
+    loss = self.args.criterion(x, target)
+    loss.backward()
+    self.args.optimizer.step()
+
+    time2 = time.time()
+    print("TRAIN: %d, Total LOSS: %f, Time: %s".format(step, loss, time.strftime('%H:%M:%S', time.gmtime(int(time2 - time1)))))
+
     """
     losses = AverageMeter()
     time1 = time.time()
     epoch_num = self.datalayer._num_instance / self.datalayer._batch_size
     for step in range(epoch_num):
+
       # this forward function just gets the ground truth - the annotations - for the image under consideration
       # so in reality, this forward function here is not really a network
       # the rel_so_prior here is a subset of the 100*70*70 dimensional so_prior array, which contains the predicate prob distribution for all object pairs
       # the rel_so_prior here contains the predicate probability distribution of only the object pairs in this annotation
       # Also, it might be helpful to keep in mind that this datalayer currently works for a single annotation at a time - no batching is implemented!
       image_blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, rel_labels, rel_so_prior = self.datalayer.forward()
+
       target = Variable(torch.from_numpy(rel_labels).type(torch.LongTensor)).cuda()
       rel_so_prior = -0.5*(rel_so_prior+1.0/self.args.num_relations)
       rel_so_prior = Variable(torch.from_numpy(rel_so_prior).type(torch.FloatTensor)).cuda()
-      # forward
-      self.args.optimizer.zero_grad()
+
+      # backward
       # this is where the forward function of the trainable VRD network is really applied
+      self.args.optimizer.zero_grad()
       obj_score, rel_score = self.net(image_blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, self.args)
+
       loss = self.args.criterion((rel_so_prior+rel_score).view(1, -1), target)
       losses.update(loss.data[0])
       loss.backward()
       self.args.optimizer.step()
+
       if step % self.args.print_freq == 0:
         time2 = time.time()
         print "TRAIN:%d, Total LOSS:%f, Time:%s" % (step, losses.avg, time.strftime('%H:%M:%S', time.gmtime(int(time2 - time1))))
