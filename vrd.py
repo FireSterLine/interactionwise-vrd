@@ -31,7 +31,7 @@ class vr_detector():
   def __init__(self, dataset_name="vg"): # , pretrained=False): pretrained="epoch_4_checkpoint.pth(.tar)"):
 
     print("vr_detector() called with args:")
-    print([dataset_name, pretrained])
+    print([dataset_name])
 
     self.dataset_name = dataset_name
     self.pretrained = False # TODO
