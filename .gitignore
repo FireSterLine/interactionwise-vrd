@@ -24,3 +24,4 @@ data/genome/*/xml
 data/genome/*/json
 data/genome/*/*.json
 data/genome/*.json
+data/word2vec_model/
