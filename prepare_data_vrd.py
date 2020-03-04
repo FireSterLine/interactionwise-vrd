@@ -1,66 +1,64 @@
 import json
-from glob import glob
 from collections import defaultdict
 
 
 def generate_mapping(filename):
-    label_to_id_mapping = {}
+    id_to_label_mapping = {}
     with open(filename, 'r') as rfile:
-        for index, line in enumerate(rfile):
-            label_to_id_mapping[line.strip()] = index
+        elems = json.load(rfile)
 
-    return label_to_id_mapping
+    for index, elem in enumerate(elems):
+        id_to_label_mapping[index] = elem
+
+    return id_to_label_mapping
 
 
 if __name__ == '__main__':
-    num_objects = 1600
-    num_attributes = 400
-    num_predicates = 20
-    # the training data file created by this script is actually in data/genome/... instead of faster-rcnn/data/genome
-    # this is because the faster-rcnn/data/genome has been linked to data/genome
-    json_files_path = "./faster-rcnn/data/genome/{}-{}-{}/json/".format(num_objects, num_attributes, num_predicates)
-    objects_vocab_file = "./faster-rcnn/data/genome/{}-{}-{}/objects_vocab_{}.txt".format(num_objects, num_attributes, num_predicates, num_objects)
-    predicates_vocab_file = "./faster-rcnn/data/genome/{}-{}-{}/relations_vocab_{}.txt".format(num_objects, num_attributes, num_predicates, num_predicates)
-    output_file = './faster-rcnn/data/genome/{}-{}-{}/vrd_data.json'.format(num_objects, num_attributes, num_predicates)
-    save_bounding_boxes = False
+    objects_vocab_file = "./data/vrd/objects.json"
+    predicates_vocab_file = "./data/vrd/predicates.json"
+    annotations_file = "./data/vrd/annotations_train.json"
+    output_file = "./data/vrd/vrd_data.json"
 
-    objects_label_to_id_mapping = generate_mapping(objects_vocab_file)
-    predicates_label_to_id_mapping = generate_mapping(predicates_vocab_file)
+    objects_id_to_label_mapping = generate_mapping(objects_vocab_file)
+    predicates_id_to_label_mapping = generate_mapping(predicates_vocab_file)
+
+    with open(annotations_file, 'r') as rfile:
+        annotations = json.load(rfile)
 
     relationship_data = defaultdict(lambda: list())
-    for filename in glob(json_files_path + "*.json"):
-        data = json.load(open(filename, 'r'))
-
-        objects_info = {}
-        for obj in data['objects']:
-            obj_vg_id = obj['object_id']
-            objects_info[obj_vg_id] = {
-                'name': obj['name'][0],
-                'bbox': {k: int(v) for k, v in obj['bndbox'].items()}
+    for img_path, anns in annotations.items():
+        for ann in anns:
+            subject_label = objects_id_to_label_mapping[ann['subject']['category']]
+            subject_bbox = {
+                'xmin': ann['subject']['bbox'][0],
+                'xmax': ann['subject']['bbox'][1],
+                'ymin': ann['subject']['bbox'][2],
+                'ymax': ann['subject']['bbox'][3]
             }
-            # if save_bounding_boxes is True:
 
-        folder = data['folder']
-        filename = data['filename']
-        img_id = folder + "/" + filename
-        for pred in data['relations']:
-            subject_info = objects_info[pred['subject_id']]
-            object_info = objects_info[pred['object_id']]
-            pred_label = pred['predicate']
+            object_label = objects_id_to_label_mapping[ann['object']['category']]
+            object_bbox = {
+                'xmin': ann['object']['bbox'][0],
+                'xmax': ann['object']['bbox'][1],
+                'ymin': ann['object']['bbox'][2],
+                'ymax': ann['object']['bbox'][3]
+            }
+
+            predicate_label = predicates_id_to_label_mapping[ann['predicate']]
 
             rel_data = defaultdict(lambda: dict())
-            rel_data['subject']['name'] = subject_info['name']
-            rel_data['subject']['id'] = objects_label_to_id_mapping[subject_info['name']]
-            rel_data['subject']['bbox'] = subject_info['bbox']
+            rel_data['subject']['name'] = subject_label
+            rel_data['subject']['id'] = ann['subject']['category']
+            rel_data['subject']['bbox'] = subject_bbox
 
-            rel_data['object']['name'] = object_info['name']
-            rel_data['object']['id'] = objects_label_to_id_mapping[object_info['name']]
-            rel_data['object']['bbox'] = object_info['bbox']
+            rel_data['object']['name'] = object_label
+            rel_data['object']['id'] = ann['object']['category']
+            rel_data['object']['bbox'] = object_bbox
 
-            rel_data['predicate']['name'] = pred_label
-            rel_data['predicate']['id'] = predicates_label_to_id_mapping[pred_label]
+            rel_data['predicate']['name'] = predicate_label
+            rel_data['predicate']['id'] = ann['predicate']
 
-            if rel_data not in relationship_data[img_id]:
-                relationship_data[img_id].append(rel_data)
+            relationship_data[img_path].append(rel_data)
 
-    json.dump(relationship_data, open(output_file, 'w'))
+    with open(output_file, 'w') as wfile:
+        json.dump(relationship_data, wfile)
