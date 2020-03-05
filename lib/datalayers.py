@@ -79,15 +79,18 @@ class VRDDataLayer():
 
 
     # Objects' boxes
-    so_boxes = np.zeros((boxes_img.shape[0], 5)) # , dtype=np.float32)
-    so_boxes[:, 1:5] = boxes_img * im_scale
+    obj_boxes = np.zeros((boxes_img.shape[0], 5)) # , dtype=np.float32)
+    obj_boxes[:, 1:5] = boxes_img * im_scale
 
 
     n_rel = len(rels)
 
+    # union bounding boxes
+    u_boxes = np.zeros((n_rel_inst, 5))
+
     # the dimension 8 here is the size of the spatial feature vector, containing the relative location and log-distance
     spatial_features = np.zeros((n_rel, 8))
-    # the dimension 8 here is the size of the spatial feature vector, containing the relative location and log-distance
+    # TODO: add tiny comment...
     semantic_features = np.zeros((n_rel, 2*300))
 
     # this will contain the probability distribution of each subject-object pair ID over all 70 predicates
@@ -96,15 +99,20 @@ class VRDDataLayer():
     target = np.zeros((n_rel, self.n_pred))
 
     # Indices for objects and subjects
-    idx_s = []
-    idx_o = []
+    idx_s,idx_o = [],[]
 
     for i_rel,rel in enumerate(rels):
 
-      # these are the subject and object bounding boxes
+      # Subject and object bounding boxes
       sBBox = utils.bboxDictToNumpy(objs[rel["subject"]]["bbox"])
       oBBox = utils.bboxDictToNumpy(objs[rel["object"]]["bbox"])
 
+      # get the union bounding box
+      rBBox = utils.getUnionBBox(sBBox, oBBox, ih, iw)
+      # store the union box (= relation box) of the union bounding box here, with the id i_rel_inst
+      u_boxes[i_rel_inst, 1:5] = np.array(rBBox) * im_scale
+
+      # Subject and object local indices (useful when selecting ROI results)
       idx_s.append(rel["subject"])
       idx_o.append(rel["object"])
 
@@ -133,7 +141,8 @@ class VRDDataLayer():
     # Note: the transpose should move the color channel to being the
     #  last dimension
     img_blob          = torch.FloatTensor(img_blob).permute(0, 3, 1, 2).cuda()
-    so_boxes          = torch.FloatTensor(so_boxes).cuda()
+    obj_boxes         = torch.FloatTensor(obj_boxes).cuda()
+    u_boxes           = torch.FloatTensor(u_boxes).cuda()
     idx_s             = torch.LongTensor(idx_s).cuda()
     idx_o             = torch.LongTensor(idx_o).cuda()
     spatial_features  = torch.FloatTensor(spatial_features).cuda()
@@ -144,7 +153,8 @@ class VRDDataLayer():
 
 
     yield img_blob
-    yield so_boxes
+    yield obj_boxes
+    yield u_boxes
     yield idx_s
     yield idx_o
     yield spatial_features

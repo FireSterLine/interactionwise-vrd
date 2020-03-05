@@ -20,6 +20,34 @@ class Vrd_Model(nn.Module):
         self.n_rel = args.num_relations
         self.n_obj = args.num_classes
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         self.conv1 = nn.Sequential(Conv2d(3, 64, 3, same_padding=True, bn=bn),
                                    Conv2d(64, 64, 3, same_padding=True, bn=bn),
                                    nn.MaxPool2d(2))
@@ -46,6 +74,8 @@ class Vrd_Model(nn.Module):
 
         self.roi_pool = RoIPool(7, 7, 1.0/16)
 
+
+
         self.fc6 = FC(512 * 7 * 7, 4096)
         self.fc7 = FC(4096, 4096)
         self.fc_obj = FC(4096, self.n_obj, relu=False)
@@ -53,9 +83,15 @@ class Vrd_Model(nn.Module):
         network.set_trainable(self.fc7, requires_grad=False)
         network.set_trainable(self.fc_obj, requires_grad=False)
 
-        self.fc8 = FC(4096, 256)
 
+
+
+
+
+        self.fc8 = FC(4096, 256)
         n_fusion = 256
+
+
         # using visual features of subject and object individually too
         if(args.use_so):
             self.fc_so = FC(256*2, 256)
@@ -80,8 +116,8 @@ class Vrd_Model(nn.Module):
             self.fc_so_emb = FC(300*2, 256)
             n_fusion += 256
 
+        # this are the final layers
         self.fc_fusion = FC(n_fusion, 256)
-        # this is the final layer
         self.fc_rel = FC(256, self.n_rel, relu=False)
 
     def forward(self, im_data, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, args):
@@ -109,7 +145,6 @@ class Vrd_Model(nn.Module):
         x_so = self.fc7(x_so)
         x_so = F.dropout(x_so, training=self.training)
         obj_score = self.fc_obj(x_so)
-        x_so = self.fc8(x_so)
 
         # Visual features of the union box
         x_u = self.roi_pool(x, rel_boxes)
@@ -118,6 +153,8 @@ class Vrd_Model(nn.Module):
         x = F.dropout(x, training=self.training)
         x = self.fc7(x)
         x = F.dropout(x, training=self.training)
+
+        x_so = self.fc8(x_so)
         x = self.fc8(x)
 
         if(args.use_so):
@@ -127,6 +164,7 @@ class Vrd_Model(nn.Module):
             x_so = self.fc_so(x_so)
             x = torch.cat((x, x_so), 1)
 
+
         if(args.loc_type == 1):
             lo = self.fc_lov(SpatialFea)
             x = torch.cat((x, lo), 1)
@@ -135,6 +173,8 @@ class Vrd_Model(nn.Module):
             lo = lo.view(lo.size()[0], -1)
             lo = self.fc_lov(lo)
             x = torch.cat((x, lo), 1)
+
+
 
         if(args.use_obj):
             emb = self.emb(classes)
@@ -147,8 +187,8 @@ class Vrd_Model(nn.Module):
 
         x = self.fc_fusion(x)
         rel_score = self.fc_rel(x)
-        return obj_score, rel_score
 
+        return obj_score, rel_score
 
 if __name__ == '__main__':
     m = Vrd_Model()

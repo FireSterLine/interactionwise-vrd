@@ -48,10 +48,6 @@ class vrd_trainer():
     self.datalayer = VRDDataLayer({"ds_name" : self.dataset_name, "with_bg_obj" : False, "with_bg_pred" : False}, "train")
     # self.datalayer = VRDDataLayer(self.dataset_name, "train")
 
-    self.args = EasyDict()
-    self.args.n_obj   = self.datalayer.n_obj
-    self.args.n_pred  = self.datalayer.n_pred
-
     # TODO: Pytorch DataLoader()
     # self.dataset = VRDDataset()
     # self.datalayer = torch.utils.data.DataLoader(self.dataset,
@@ -64,7 +60,10 @@ class vrd_trainer():
 
     # initialize the model using the args set above
     print("Initializing VRD Model...")
-    self.net = vrd_model(self.args) # TODO: load_pretrained affects how the model is initialized?
+    self.net = vrd_model(
+      n_obj = self.datalayer.n_obj,
+      n_pred = self.datalayer.n_pred
+    ) # TODO: load_pretrained affects how the model is initialized?
     self.net.cuda()
 
     # Initialize the model in some way ...
@@ -141,7 +140,8 @@ class vrd_trainer():
       # TODO: why range(10)? Loop through all of the data, maybe?
 
       img_blob, \
-      so_boxes, \
+      obj_boxes, \
+      u_boxes, \
       idx_s, idx_o, \
       spatial_features, semantic_features, \
       rel_sop_prior, target = next(self.datalayer)
@@ -152,12 +152,12 @@ class vrd_trainer():
       # print(target.size())
       # Forward pass & Backpropagation step
       self.optimizer.zero_grad()
-      rel_score = self.net(img_blob, so_boxes, idx_s, idx_o, spatial_features, semantic_features)
+      obj_scores, rel_scores = self.net(img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, semantic_features)
 
       # applying some preprocessing to the rel_sop_prior before factoring it into the score
-      rel_sop_prior = -0.5 * ( rel_sop_prior + 1.0 / self.args.n_pred)
-      loss = self.criterion(rel_sop_prior + rel_score, target)
-      # loss = self.criterion((rel_score).view(1, -1), target)
+      rel_sop_prior = -0.5 * ( rel_sop_prior + 1.0 / self.dataset.n_pred)
+      loss = self.criterion(rel_sop_prior + rel_scores, target)
+      # loss = self.criterion((rel_scores).view(1, -1), target)
       loss.backward()
       self.optimizer.step()
 
