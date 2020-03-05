@@ -111,6 +111,7 @@ class Vrd_Model(nn.Module):
         obj_score = self.fc_obj(x_so)
         x_so = self.fc8(x_so)
 
+        # Visual features of the union box
         x_u = self.roi_pool(x, rel_boxes)
         x = x_u.view(x_u.size()[0], -1)
         x = self.fc6(x)

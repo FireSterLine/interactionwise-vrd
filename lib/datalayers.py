@@ -52,9 +52,12 @@ class VRDDataLayer():
     img_blob = np.zeros((1,) + image_blob.shape, dtype=np.float32)
     img_blob[0] = image_blob
 
-    print(image_blob.shape)
 
-    print(img_blob.shape)
+    # TODO: Objects' boxes
+    so_boxes = np.zeros((10, 5))
+    #so_boxes = np.zeros((boxes_img.shape[0], 5)) # , dtype=np.float32)
+    #so_boxes[:, 1:5] = boxes_img * im_scale
+
 
     n_rel = len(rels)
 
@@ -95,7 +98,18 @@ class VRDDataLayer():
     if(self.cur_imgrels >= self.n_imgrels):
       self.cur_imgrels = 0
 
+
+    # Note: the transpose should move the color channel to being the
+    #  last dimension
+    img_blob          = torch.FloatTensor(img_blob).transpose(2,3).transpose(1,2).cuda()
+    so_boxes          = torch.FloatTensor(so_boxes).cuda()
+    spatial_features  = torch.FloatTensor(spatial_features).cuda()
+    semantic_features = torch.FloatTensor(semantic_features).cuda()
+    target            = torch.LongTensor(target).cuda()
+
+
     yield img_blob
+    yield so_boxes
     yield spatial_features
     yield semantic_features
     yield target
