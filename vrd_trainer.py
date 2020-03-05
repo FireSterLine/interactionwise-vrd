@@ -75,8 +75,8 @@ class vrd_trainer():
     #net.state_dict()['emb.weight'].copy_(torch.from_numpy(emb_init))
 
     print("Initializing optimizer...")
-    # self.criterion = nn.MultiLabelMarginLoss().cuda()
-    self.criterion = nn.MSELoss().cuda()
+    self.criterion = nn.MultiLabelMarginLoss().cuda()
+    # self.criterion = nn.MSELoss().cuda()
 
     self.lr = 0.00001
     # self.momentum = 0.9
@@ -145,13 +145,18 @@ class vrd_trainer():
 
       spatial_features  = torch.FloatTensor(spatial_features).cuda()
       semantic_features = torch.FloatTensor(semantic_features).cuda()
-      target            = torch.FloatTensor(target).cuda()
+      target            = torch.LongTensor(target).cuda()
 
+      # print(target)
+      # print(target.size())
       # Forward pass & Backpropagation step
       self.optimizer.zero_grad()
-      x = self.net(spatial_features, semantic_features)
-
-      loss = self.criterion(x, target)
+      rel_score = self.net(spatial_features, semantic_features)
+      
+      # print(rel_score)
+      # print(rel_score.size())
+      loss = self.criterion(rel_score, target)
+      # loss = self.criterion((rel_score).view(1, -1), target)
       loss.backward()
       self.optimizer.step()
 
