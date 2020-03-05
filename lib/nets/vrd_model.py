@@ -96,8 +96,8 @@ class vrd_model(nn.Module):
     x_sem  = self.fc_semantic(semantic_features)
 
     #print(x_vis.size())
-    print(x_spat.size())
-    print(x_sem.size())
+    # print(x_spat.size())
+    # print(x_sem.size())
 
     # Add x_vis ...
     x_fused = torch.cat((x_spat, x_sem), 1)
