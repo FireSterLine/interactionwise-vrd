@@ -139,10 +139,11 @@ class vrd_trainer():
     for step in range(iters_per_epoch):
       # TODO: why range(10)? Loop through all of the data, maybe?
 
-      spatial_features, semantic_features, target = next(self.datalayer)
+      img_blob, spatial_features, semantic_features, target = next(self.datalayer)
 
       # time1 = time.time()
 
+      img_blob          = torch.FloatTensor(img_blob).cuda()
       spatial_features  = torch.FloatTensor(spatial_features).cuda()
       semantic_features = torch.FloatTensor(semantic_features).cuda()
       target            = torch.LongTensor(target).cuda()
@@ -151,8 +152,8 @@ class vrd_trainer():
       # print(target.size())
       # Forward pass & Backpropagation step
       self.optimizer.zero_grad()
-      rel_score = self.net(spatial_features, semantic_features)
-      
+      rel_score = self.net(img_blob, spatial_features, semantic_features)
+
       # print(rel_score)
       # print(rel_score.size())
       loss = self.criterion(rel_score, target)

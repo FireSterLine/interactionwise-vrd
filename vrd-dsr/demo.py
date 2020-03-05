@@ -77,6 +77,7 @@ class vrd_module():
         image_blob, im_scale = prep_im_for_blob(im, PIXEL_MEANS)
         blob = np.zeros((1,) + image_blob.shape, dtype=np.float32)
         blob[0] = image_blob
+        
         # Reshape net's input blobs
         # boxes holds the scaled dimensions of the object boxes.
         boxes = np.zeros((boxes_img.shape[0], 5))

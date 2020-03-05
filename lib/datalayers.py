@@ -48,6 +48,10 @@ class VRDDataLayer():
     ih = im.shape[0]
     iw = im.shape[1]
 
+    image_blob, im_scale = prep_im_for_blob(im, globals.vrd_pixel_means)
+    img_blob = np.zeros((1,) + image_blob.shape, dtype=np.float32)
+    img_blob[0] = image_blob
+
     n_rel = len(rels)
 
     # the dimension 8 here is the size of the spatial feature vector, containing the relative location and log-distance
@@ -87,6 +91,7 @@ class VRDDataLayer():
     if(self.cur_imgrels >= self.n_imgrels):
       self.cur_imgrels = 0
 
+    yield img_blob
     yield spatial_features
     yield semantic_features
     yield target
