@@ -142,8 +142,11 @@ class vrd_trainer():
       img_blob, spatial_features, semantic_features, target = next(self.datalayer)
 
       # time1 = time.time()
-
-      img_blob          = torch.FloatTensor(img_blob).cuda()
+      
+      # TODO: move to datalayer?
+      # Note: the transpose should move the color channel to being the
+      #  last dimension
+      img_blob          = torch.FloatTensor(img_blob).transpose(2,3).transpose(1,2).cuda()
       spatial_features  = torch.FloatTensor(spatial_features).cuda()
       semantic_features = torch.FloatTensor(semantic_features).cuda()
       target            = torch.LongTensor(target).cuda()

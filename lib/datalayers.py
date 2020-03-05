@@ -48,9 +48,13 @@ class VRDDataLayer():
     ih = im.shape[0]
     iw = im.shape[1]
 
-    image_blob, im_scale = prep_im_for_blob(im, globals.vrd_pixel_means)
+    image_blob, im_scale = prep_im_for_blob(im, utils.vrd_pixel_means)
     img_blob = np.zeros((1,) + image_blob.shape, dtype=np.float32)
     img_blob[0] = image_blob
+
+    print(image_blob.shape)
+
+    print(img_blob.shape)
 
     n_rel = len(rels)
 

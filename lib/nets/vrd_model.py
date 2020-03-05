@@ -12,7 +12,7 @@ class vrd_model(nn.Module):
     def __init__(self, args):
         super(vrd_model, self).__init__()
 
-        self.self.use_bn = False
+        self.use_bn = False
         
         self.n_obj  = args.n_obj
         self.n_pred = args.n_pred
@@ -45,7 +45,7 @@ class vrd_model(nn.Module):
 
     def forward(self, img_blob, spatial_features, semantic_features):
 
-        x_visual = self.conv1(im_blob)
+        x_visual = self.conv1(img_blob)
         x_visual = self.conv2(x_visual)
         x_visual = self.conv3(x_visual)
         x_visual = self.conv4(x_visual)
@@ -54,7 +54,7 @@ class vrd_model(nn.Module):
         x_spat = self.fc_spatial(spatial_features)
         x_sem  = self.fc_semantic(semantic_features)
 
-        x_fused = torch.cat((x_visual, x_spat, x_sem), 1)
+        x_fused = torch.cat((x_visual.view(1,-1), x_spat, x_sem), 1)
 
         x_fused = self.fc_fus1(x_fused)
         x_fused = self.fc_fus2(x_fused)
