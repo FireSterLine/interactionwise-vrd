@@ -60,7 +60,7 @@ class vrd_model(nn.Module):
     self.fc_rel     = FC(256, self.n_pred, relu=False)
 
 
-  def forward(self, img_blob, so_boxes, spatial_features, semantic_features):
+  def forward(self, img_blob, idx_s, idx_o, so_boxes, spatial_features, semantic_features):
 
     # Visual features from the whole image
 
@@ -90,8 +90,8 @@ class vrd_model(nn.Module):
     x_so = self.fc_visual(x_so)
     # x_u = self.fc_visual(x_u)
 
-    x_s  = torch.index_select(x_so, 0, ix1)
-    x_o  = torch.index_select(x_so, 0, ix2)
+    x_s  = torch.index_select(x_so, 0, idx_s)
+    x_o  = torch.index_select(x_so, 0, idx_o)
     x_so = torch.cat((x_s, x_o), 1)
     x_so = self.fc_so(x_so)
     #x_fused    = torch.cat((x_u, x_so), 1)

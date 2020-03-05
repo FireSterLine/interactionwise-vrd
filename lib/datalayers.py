@@ -121,7 +121,7 @@ class VRDDataLayer():
       rel_soP_prior[i_rel] = self.soP_prior[s_cls_id][o_cls_id]
 
       # TODO: this target is not the one we want
-      target[i_rel][objs[rel["predicate"]]["id"]] = 1.
+      target[i_rel][rel["predicate"]["id"]] = 1.
 
       i_rel += 1
 
@@ -134,8 +134,8 @@ class VRDDataLayer():
     #  last dimension
     img_blob          = torch.FloatTensor(img_blob).permute(0, 3, 1, 2).cuda()
     so_boxes          = torch.FloatTensor(so_boxes).cuda()
-    idx_s             = torch.FloatTensor(idx_s).cuda()
-    idx_o             = torch.FloatTensor(idx_o).cuda()
+    idx_s             = torch.LongTensor(idx_s).cuda()
+    idx_o             = torch.LongTensor(idx_o).cuda()
     spatial_features  = torch.FloatTensor(spatial_features).cuda()
     semantic_features = torch.FloatTensor(semantic_features).cuda()
 
