@@ -106,7 +106,7 @@ class dataset():
     try:
       with open(distribution_pkl_path, 'rb') as fid:
         return pickle.load(fid)
-    except EnvironmentError: # parent of IOError, OSError *and* WindowsError where available
+    except FileNotFoundError: # parent of IOError, OSError *and* WindowsError where available
       if not force:
         print("Distribution not found: {}".format(distribution_pkl_path))
         return None
@@ -130,7 +130,7 @@ class dataset():
 
         sop_counts[subject_label][object_label][predicate_label] += 1
 
-    assert len(sop_counts.keys()) == len(self.obj_classes)
+    # assert len(sop_counts.keys()) == len(self.obj_classes)
     so_prior = np.zeros((len(self.obj_classes), len(self.obj_classes), len(self.pred_classes)))
 
     for out_ix, out_elem in enumerate(self.obj_classes):

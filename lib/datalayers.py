@@ -106,6 +106,7 @@ class VRDDataLayer():
       o_cls_id = rel['object']['id']
       rel_soP_prior[i_rel] = self.soP_prior[s_cls_id][o_cls_id]
 
+      # TODO: this target is not the one we want 
       target[i_rel][rel["predicate"]["id"]] = 1.
 
       i_rel += 1

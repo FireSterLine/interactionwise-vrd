@@ -23,7 +23,7 @@ from model.utils.net_utils import weights_normal_init, save_checkpoint
 
 class vrd_trainer():
 
-  def __init__(self, dataset_name="vg", pretrained=False):
+  def __init__(self, dataset_name="vrd", pretrained=False):
 
     print("vrd_trainer() called with args:")
     print([dataset_name, pretrained])
@@ -45,7 +45,8 @@ class vrd_trainer():
     # load data layer
     print("Initializing data layer...")
     # self.datalayer = VRDDataLayer({"ds_name" : self.dataset_name, "with_bg_obj" : True}, "train")
-    self.datalayer = VRDDataLayer(self.dataset_name, "train")
+    self.datalayer = VRDDataLayer({"ds_name" : self.dataset_name, "with_bg_obj" : False, "with_bg_pred" : False}, "train")
+    # self.datalayer = VRDDataLayer(self.dataset_name, "train")
 
     self.args = EasyDict()
     self.args.n_obj   = self.datalayer.n_obj
