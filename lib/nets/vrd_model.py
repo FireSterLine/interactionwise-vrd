@@ -68,7 +68,7 @@ class vrd_model(nn.Module):
     x_img = self.conv5(x_img)
 
     # ROI pooling combined for subjects' and objects' boxes
-    # x_so = self.roi_pool(x_img, so_boxes)
+    x_so = self.roi_pool(x_img, so_boxes)
     # x_so = x_so.view(x_so.size()[0], -1)
     # x_so = self.fc6(x_so)
     # x_so = self.dropout0(x_so)

@@ -53,14 +53,25 @@ class VRDDataLayer():
     img_blob = np.zeros((1,) + image_blob.shape, dtype=np.float32)
     img_blob[0] = image_blob
 
+    # TODO: instead of computing boxes_img here, put it in the preprocess
+    #  (and maybe transform relationships to contain object indices instead of whole objects)
+    objs = []
+    for i_rel,rel in enumerate(rels):
+      objs.append(rel["subject"])
+      objs.append(rel["object"])
 
-    # TODO: Objects' boxes
-    so_boxes = np.zeros((10, 5))
-    #so_boxes = np.zeros((boxes_img.shape[0], 5)) # , dtype=np.float32)
-    #so_boxes[:, 1:5] = boxes_img * im_scale
+    n_objs = len(objs)
 
+    boxes_img = np.zeros(n_objs, )
 
-    n_rel = len(rels)
+    for i_obj,obj in enumerate(objs):
+      boxes_img[i_obj] = obj["bbox"]
+
+    # Objects' boxes
+    so_boxes = np.zeros((n_objs, 5))
+    so_boxes = np.zeros((boxes_img.shape[0], 5)) # , dtype=np.float32)
+    so_boxes[:, 1:5] = boxes_img * im_scale
+
 
     # the dimension 8 here is the size of the spatial feature vector, containing the relative location and log-distance
     spatial_features = np.zeros((n_rel, 8))
@@ -73,6 +84,8 @@ class VRDDataLayer():
     target = np.zeros((n_rel, self.n_pred))
 
     for i_rel,rel in enumerate(rels):
+
+      rel["subject"]
 
       # these are the subject and object bounding boxes
       sBBox = utils.bboxDictToNumpy(rel["subject"]["bbox"])
@@ -102,7 +115,7 @@ class VRDDataLayer():
 
     # Note: the transpose should move the color channel to being the
     #  last dimension
-    img_blob          = torch.FloatTensor(img_blob).transpose(2,3).transpose(1,2).cuda()
+    img_blob          = torch.FloatTensor(img_blob).permute(0, 3, 1, 2).cuda()
     so_boxes          = torch.FloatTensor(so_boxes).cuda()
     spatial_features  = torch.FloatTensor(spatial_features).cuda()
     semantic_features = torch.FloatTensor(semantic_features).cuda()
