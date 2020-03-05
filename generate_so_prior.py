@@ -1,4 +1,5 @@
 import json
+import pickle
 import numpy as np
 from collections import defaultdict
 
@@ -49,16 +50,16 @@ if __name__ == '__main__':
                 so_prior[out_ix][in_ix][p_ix] = float(sop_counts[out_elem][in_elem][p_elem]) / float(total_count)
 
     print(so_prior)
+    pickle.dump(so_prior, open('data/so_prior_vrd.pkl', 'wb'))
 
     # Computing difference between their so_prior and our so_prior
-    import pickle
-    s = pickle.load(open('/home/azfar/Downloads/so_prior.pkl', 'rb'), encoding='latin1')
+    # s = pickle.load(open('/home/azfar/Downloads/so_prior.pkl', 'rb'), encoding='latin1')
     
-    total_diff = 0
-    for a in range(100):
-        for b in range(100):
-            diff = so_prior[a][b] - s[a][b]
-            total_diff += max(diff)
+    # total_diff = 0
+    # for a in range(100):
+    #     for b in range(100):
+    #         diff = so_prior[a][b] - s[a][b]
+    #         total_diff += max(diff)
 
-    print(total_diff)
+    # print(total_diff)
     # TODO: We are getting some difference here, can't figure out why yet.

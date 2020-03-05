@@ -8,6 +8,7 @@ import pickle
 import sys
 import math
 import os.path as osp
+from collections import defaultdict
 import globals
 
 # TODO: rename to VRDDataset
@@ -93,7 +94,7 @@ class dataset():
     #   anno = pickle.load(fid)
     #   self._anno = [x for x in anno if x is not None and len(x['classes'])>1]
 
-  # Todo: instead of simply return it, store it in self and return a reference to, say, self.soP
+  # TODO: instead of simply return it, store it in self and return a reference to, say, self.soP
   def getDistribution(self, type, force = True):
     """ Computes and returns some distributional data """
 
@@ -101,10 +102,6 @@ class dataset():
       raise Exception("Unknown distribution requested: {}".format(type))
 
     distribution_pkl_path = osp.join(self.metadata_dir, "{}.pkl".format(type))
-
-    # TODO: remove this fix once we have our own so_prior
-    if type == "soP" and self.name == "vrd":
-        distribution_pkl_path = osp.join(self.metadata_dir, "so_prior.pkl")
 
     try:
       with open(distribution_pkl_path, 'rb') as fid:
@@ -114,4 +111,35 @@ class dataset():
         print("Distribution not found: {}".format(distribution_pkl_path))
         return None
       else:
-        raise Exception("TODO: compute distribution, save pkl and return it.")
+        so_prior = self._generate_so_prior()
+        pickle.dump(so_prior, open(distribution_pkl_path, 'wb'))
+        return so_prior
+
+  def _generate_so_prior(self):
+    filename = osp.join(self.metadata_dir, 'vrd_data.json')
+    sop_counts = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: int())))
+
+    with open(filename, 'r') as rfile:
+        data = json.load(rfile)
+
+    for _, elems in data.items():
+        for elem in elems:
+            subject_label = elem['subject']['name']
+            object_label = elem['object']['name']
+            predicate_label = elem['predicate']['name']
+
+            sop_counts[subject_label][object_label][predicate_label] += 1
+
+    assert len(sop_counts.keys()) == len(self.obj_classes)
+    so_prior = np.zeros((len(self.obj_classes), len(self.obj_classes), len(self.pred_classes)))
+
+    for out_ix, out_elem in enumerate(self.obj_classes):
+        for in_ix, in_elem in enumerate(self.obj_classes):
+            total_count = sum(sop_counts[out_elem][in_elem].values())
+            if total_count == 0:
+                # print("{}-{} doesn't exist!".format(out_elem, in_elem))
+                continue
+            for p_ix, p_elem in enumerate(self.pred_classes):
+                so_prior[out_ix][in_ix][p_ix] = float(sop_counts[out_elem][in_elem][p_elem]) / float(total_count)
+
+    return so_prior
