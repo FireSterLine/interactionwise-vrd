@@ -55,12 +55,12 @@ class vrd_model(nn.Module):
 
     self.fc_spatial  = FC(8, 256)
     self.fc_semantic = FC(2*300, 256)
-    self.fc_fus1     = FC(256*2, 256)
+    self.fc_fus1     = FC(256*3, 256)
 
     self.fc_rel     = FC(256, self.n_pred, relu=False)
 
 
-  def forward(self, img_blob, idx_s, idx_o, so_boxes, spatial_features, semantic_features):
+  def forward(self, img_blob, so_boxes, idx_s, idx_o, spatial_features, semantic_features):
 
     # Visual features from the whole image
 
