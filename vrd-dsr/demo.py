@@ -77,7 +77,7 @@ class vrd_module():
         image_blob, im_scale = prep_im_for_blob(im, PIXEL_MEANS)
         blob = np.zeros((1,) + image_blob.shape, dtype=np.float32)
         blob[0] = image_blob
-        
+
         # Reshape net's input blobs
         # boxes holds the scaled dimensions of the object boxes.
         boxes = np.zeros((boxes_img.shape[0], 5))
@@ -89,7 +89,7 @@ class vrd_module():
         # the total number of union bounding boxes is n(n-1),
         # where n is the number of objects identified in the image, or pred_cls_img
         n_rel_inst = len(pred_cls_img) * (len(pred_cls_img) - 1)
-        # rel_boxes contains the scaled dimensions of the union bounding boxes
+        # union bounding boxes
         rel_boxes = np.zeros((n_rel_inst, 5))
         # the dimension 8 here is the size of the spatial feature vector, containing the relative location and log-distance
         SpatialFea = np.zeros((n_rel_inst, 8))
@@ -109,7 +109,7 @@ class vrd_module():
                 oBBox = boxes_img[o_idx]
                 # get the union bounding box
                 rBBox = self.getUnionBBox(sBBox, oBBox, ih, iw)
-                # store the scaled dimensions of the union bounding box here, with the id i_rel_inst
+                # store the union box (= relation box) of the union bounding box here, with the id i_rel_inst
                 rel_boxes[i_rel_inst, 1:5] = np.array(rBBox) * im_scale
                 SpatialFea[i_rel_inst] = self.getRelativeLoc(sBBox, oBBox)
                 # store the probability distribution of this subject-object pair from the so_prior

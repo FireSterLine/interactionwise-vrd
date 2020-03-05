@@ -8,6 +8,7 @@ import sys
 from lib.blob import prep_im_for_blob
 from lib.dataset import dataset
 import math
+import torch
 
 import utils
 # TODO: expand so that it supports batch sizes > 1
@@ -49,9 +50,27 @@ class VRDDataLayer():
     ih = im.shape[0]
     iw = im.shape[1]
 
-    image_blob, im_scale = prep_im_for_blob(im, globals.vrd_pixel_means)
+    image_blob, im_scale = prep_im_for_blob(im, utils.vrd_pixel_means)
     img_blob = np.zeros((1,) + image_blob.shape, dtype=np.float32)
     img_blob[0] = image_blob
+
+    # TODO: instead of computing boxes_img here, put it in the preprocess
+    #  (and maybe transform relationships to contain object indices instead of whole objects)
+    objs = []
+    for i_rel,rel in enumerate(rels):
+      objs.append(rel["subject"])
+      objs.append(rel["object"])
+
+    n_objs = len(objs)
+
+    boxes_img = np.zeros((n_objs, 4))
+
+    for i_obj,obj in enumerate(objs):
+      boxes_img[i_obj] = utils.bboxDictToNumpy(obj["bbox"])
+
+    # Objects' boxes
+    so_boxes = np.zeros((boxes_img.shape[0], 5)) # , dtype=np.float32)
+    so_boxes[:, 1:5] = boxes_img * im_scale
 
     n_rel = len(rels)
 
@@ -66,6 +85,8 @@ class VRDDataLayer():
     target = np.zeros((n_rel, self.n_pred))
 
     for i_rel,rel in enumerate(rels):
+
+      rel["subject"]
 
       # these are the subject and object bounding boxes
       sBBox = utils.bboxDictToNumpy(rel["subject"]["bbox"])
@@ -91,7 +112,18 @@ class VRDDataLayer():
     if(self.cur_imgrels >= self.n_imgrels):
       self.cur_imgrels = 0
 
+
+    # Note: the transpose should move the color channel to being the
+    #  last dimension
+    img_blob          = torch.FloatTensor(img_blob).permute(0, 3, 1, 2).cuda()
+    so_boxes          = torch.FloatTensor(so_boxes).cuda()
+    spatial_features  = torch.FloatTensor(spatial_features).cuda()
+    semantic_features = torch.FloatTensor(semantic_features).cuda()
+    target            = torch.LongTensor(target).cuda()
+
+
     yield img_blob
+    yield so_boxes
     yield spatial_features
     yield semantic_features
     yield rel_soP_prior

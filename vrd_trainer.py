@@ -82,13 +82,13 @@ class vrd_trainer():
     # self.momentum = 0.9
     self.weight_decay = 0.0005
 
-    # params = list(self.net.parameters())
-    opt_params = [
-      {'params': self.net.fc_spatial.parameters(),  'lr': self.lr},
-      {'params': self.net.fc_semantic.parameters(), 'lr': self.lr},
-      {'params': self.net.fc_fus1.parameters(),     'lr': self.lr},
-      {'params': self.net.fc_fus2.parameters(),     'lr': self.lr},
-    ]
+    opt_params = list(self.net.parameters())
+    #opt_params = [
+    #  {'params': self.net.fc_spatial.parameters(),  'lr': self.lr},
+    #  {'params': self.net.fc_semantic.parameters(), 'lr': self.lr},
+    #  {'params': self.net.fc_fus1.parameters(),     'lr': self.lr},
+    #  {'params': self.net.fc_fus2.parameters(),     'lr': self.lr},
+    #]
     self.optimizer = torch.optim.Adam(opt_params,
             lr=self.lr,
             # momentum=self.momentum,
@@ -139,20 +139,15 @@ class vrd_trainer():
     for step in range(iters_per_epoch):
       # TODO: why range(10)? Loop through all of the data, maybe?
 
-      img_blob, spatial_features, semantic_features, rel_sop_prior, target = next(self.datalayer)
-
+      img_blob, so_boxes, spatial_features, semantic_features, rel_sop_prior, target = next(self.datalayer)
+      
       # time1 = time.time()
-
-      img_blob          = torch.FloatTensor(img_blob).cuda()
-      spatial_features  = torch.FloatTensor(spatial_features).cuda()
-      semantic_features = torch.FloatTensor(semantic_features).cuda()
-      target            = torch.LongTensor(target).cuda()
 
       # print(target)
       # print(target.size())
       # Forward pass & Backpropagation step
       self.optimizer.zero_grad()
-      rel_score = self.net(img_blob, spatial_features, semantic_features)
+      rel_score = self.net(img_blob, so_boxes, spatial_features, semantic_features)
 
       # applying some preprocessing to the rel_sop_prior before factoring it into the score
       rel_sop_prior = -0.5 * ( rel_sop_prior + 1.0 / self.args.n_pred)
