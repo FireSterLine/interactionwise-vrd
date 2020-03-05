@@ -140,7 +140,11 @@ class vrd_trainer():
     for step in range(iters_per_epoch):
       # TODO: why range(10)? Loop through all of the data, maybe?
 
-      img_blob, so_boxes, spatial_features, semantic_features, rel_sop_prior, target = next(self.datalayer)
+      img_blob, \
+      so_boxes, \
+      idx_s, idx_o, \
+      spatial_features, semantic_features, \
+      rel_sop_prior, target = next(self.datalayer)
 
       # time1 = time.time()
 
@@ -148,7 +152,7 @@ class vrd_trainer():
       # print(target.size())
       # Forward pass & Backpropagation step
       self.optimizer.zero_grad()
-      rel_score = self.net(img_blob, so_boxes, spatial_features, semantic_features)
+      rel_score = self.net(img_blob, so_boxes, idx_s, idx_o, spatial_features, semantic_features)
 
       # applying some preprocessing to the rel_sop_prior before factoring it into the score
       rel_sop_prior = -0.5 * ( rel_sop_prior + 1.0 / self.args.n_pred)

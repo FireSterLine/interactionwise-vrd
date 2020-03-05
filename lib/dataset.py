@@ -124,8 +124,8 @@ class dataset():
 
     for _, elems in data.items():
       for elem in elems:
-        subject_label = elem['subject']['name']
-        object_label = elem['object']['name']
+        subject_label   = elem['subject']['name']
+        object_label    = elem['object']['name']
         predicate_label = elem['predicate']['name']
 
         sop_counts[subject_label][object_label][predicate_label] += 1

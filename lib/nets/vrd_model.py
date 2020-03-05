@@ -50,6 +50,9 @@ class vrd_model(nn.Module):
 
     self.fc_visual   = FC(4096, 256)
 
+    self.fc_so = FC(256*2, 256)
+
+
     self.fc_spatial  = FC(8, 256)
     self.fc_semantic = FC(2*300, 256)
     self.fc_fus1     = FC(256*2, 256)
@@ -80,13 +83,18 @@ class vrd_model(nn.Module):
     # x_u = self.roi_pool(x_img, u_boxes)
     # x_u = x_u.view(x_u.size()[0], -1)
     # x_u = self.fc6(x_u)
-    # x_u = self.dropou0t(x_u)
+    # x_u = self.dropout0(x_u)
     # x_u = self.fc7(x_u)
-    # x_u = self.dropou0t(x_u)
+    # x_u = self.dropout0(x_u)
 
     x_so = self.fc_visual(x_so)
     # x_u = self.fc_visual(x_u)
-    # x_vis = x_so + x_u...
+
+    x_s  = torch.index_select(x_so, 0, ix1)
+    x_o  = torch.index_select(x_so, 0, ix2)
+    x_so = torch.cat((x_s, x_o), 1)
+    x_so = self.fc_so(x_so)
+    #x_fused    = torch.cat((x_u, x_so), 1)
 
     x_vis = x_so
 
@@ -99,8 +107,7 @@ class vrd_model(nn.Module):
     print(x_spat.size())
     print(x_sem.size())
 
-    # Add x_vis ...
-    x_fused = torch.cat((x_spat, x_sem), 1)
+    x_fused = torch.cat((x_vis, x_spat, x_sem), 1)
 
     x_fused = self.fc_fus1(x_fused)
 

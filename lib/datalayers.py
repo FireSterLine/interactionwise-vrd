@@ -57,10 +57,17 @@ class VRDDataLayer():
 
     # TODO: instead of computing boxes_img here, put it in the preprocess
     #  (and maybe transform relationships to contain object indices instead of whole objects)
+    # Note: from here on, rel["subject"] and rel["object"] contain indices to objs
     objs = []
     for i_rel,rel in enumerate(rels):
+
+      i_obj = len(objs)
       objs.append(rel["subject"])
+      rel["subject"] = i_obj
+
+      i_obj = len(objs)
       objs.append(rel["object"])
+      rel["object"] = i_obj
 
     n_objs = len(objs)
 
@@ -68,6 +75,8 @@ class VRDDataLayer():
 
     for i_obj,obj in enumerate(objs):
       boxes_img[i_obj] = utils.bboxDictToNumpy(obj["bbox"])
+
+
 
     # Objects' boxes
     so_boxes = np.zeros((boxes_img.shape[0], 5)) # , dtype=np.float32)
@@ -86,28 +95,33 @@ class VRDDataLayer():
 
     target = np.zeros((n_rel, self.n_pred))
 
+    # Indices for objects and subjects
+    idx_s = []
+    idx_o = []
+
     for i_rel,rel in enumerate(rels):
 
-      rel["subject"]
-
       # these are the subject and object bounding boxes
-      sBBox = utils.bboxDictToNumpy(rel["subject"]["bbox"])
-      oBBox = utils.bboxDictToNumpy(rel["object"]["bbox"])
+      sBBox = utils.bboxDictToNumpy(objs[rel["subject"]]["bbox"])
+      oBBox = utils.bboxDictToNumpy(objs[rel["object"]]["bbox"])
+
+      idx_s.append(rel["subject"])
+      idx_o.append(rel["object"])
 
       # store the scaled dimensions of the union bounding box here, with the id i_rel
       spatial_features[i_rel] = utils.getRelativeLoc(sBBox, oBBox)
 
       # semantic features of obj and subj
-      # semantic_features[i_rel] = utils.getSemanticVector(rel["subject"]["name"], rel["object"]["name"], self.w2v_model)
+      # semantic_features[i_rel] = utils.getSemanticVector(objs[rel["subject"]]["name"], objs[rel["object"]]["name"], self.w2v_model)
       semantic_features[i_rel] = np.zeros(600)
 
       # store the probability distribution of this subject-object pair from the soP_prior
-      s_cls_id = rel['subject']['id']
-      o_cls_id = rel['object']['id']
+      s_cls_id = objs[rel["subject"]]["id"]
+      o_cls_id = objs[rel["object"]]["id"]
       rel_soP_prior[i_rel] = self.soP_prior[s_cls_id][o_cls_id]
 
-      # TODO: this target is not the one we want 
-      target[i_rel][rel["predicate"]["id"]] = 1.
+      # TODO: this target is not the one we want
+      target[i_rel][objs[rel["predicate"]]["id"]] = 1.
 
       i_rel += 1
 
@@ -120,17 +134,22 @@ class VRDDataLayer():
     #  last dimension
     img_blob          = torch.FloatTensor(img_blob).permute(0, 3, 1, 2).cuda()
     so_boxes          = torch.FloatTensor(so_boxes).cuda()
+    idx_s             = torch.FloatTensor(idx_s).cuda()
+    idx_o             = torch.FloatTensor(idx_o).cuda()
     spatial_features  = torch.FloatTensor(spatial_features).cuda()
     semantic_features = torch.FloatTensor(semantic_features).cuda()
 
-    rel_sop_prior = torch.FloatTensor(rel_sop_prior).cuda()
+    rel_soP_prior = torch.FloatTensor(rel_soP_prior).cuda()
     target        = torch.LongTensor(target).cuda()
 
 
     yield img_blob
     yield so_boxes
+    yield idx_s
+    yield idx_o
     yield spatial_features
     yield semantic_features
+
     yield rel_soP_prior
     yield target
 
