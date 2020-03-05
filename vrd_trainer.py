@@ -82,13 +82,13 @@ class vrd_trainer():
     # self.momentum = 0.9
     self.weight_decay = 0.0005
 
-    # params = list(self.net.parameters())
-    opt_params = [
-      {'params': self.net.fc_spatial.parameters(),  'lr': self.lr},
-      {'params': self.net.fc_semantic.parameters(), 'lr': self.lr},
-      {'params': self.net.fc_fus1.parameters(),     'lr': self.lr},
-      {'params': self.net.fc_fus2.parameters(),     'lr': self.lr},
-    ]
+    opt_params = list(self.net.parameters())
+    #opt_params = [
+    #  {'params': self.net.fc_spatial.parameters(),  'lr': self.lr},
+    #  {'params': self.net.fc_semantic.parameters(), 'lr': self.lr},
+    #  {'params': self.net.fc_fus1.parameters(),     'lr': self.lr},
+    #  {'params': self.net.fc_fus2.parameters(),     'lr': self.lr},
+    #]
     self.optimizer = torch.optim.Adam(opt_params,
             lr=self.lr,
             # momentum=self.momentum,

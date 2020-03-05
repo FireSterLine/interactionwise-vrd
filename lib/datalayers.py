@@ -8,6 +8,7 @@ import sys
 from lib.blob import prep_im_for_blob
 from lib.dataset import dataset
 import math
+import torch
 
 import utils
 # TODO: expand so that it supports batch sizes > 1

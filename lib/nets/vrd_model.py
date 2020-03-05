@@ -7,7 +7,7 @@ import sys
 import os.path as osp
 
 from lib.network import FC, Conv2d
-from lib.model.roi_layers import ROIPool
+from model.roi_layers.roi_pool import ROIPool
 
 class vrd_model(nn.Module):
   def __init__(self, args):
@@ -56,57 +56,58 @@ class vrd_model(nn.Module):
 
     self.fc_rel     = FC(256, self.n_pred, relu=False)
 
-    def forward(self, img_blob, so_boxes, spatial_features, semantic_features):
 
-      # Visual features from the whole image
+  def forward(self, img_blob, so_boxes, spatial_features, semantic_features):
 
-      x_img = self.conv1(img_blob)
-      x_img = self.conv2(x_img)
-      x_img = self.conv3(x_img)
-      x_img = self.conv4(x_img)
-      x_img = self.conv5(x_img)
+    # Visual features from the whole image
 
-      # ROI pooling combined for subjects' and objects' boxes
-      # x_so = self.roi_pool(x_img, so_boxes)
-      # x_so = x_so.view(x_so.size()[0], -1)
-      # x_so = self.fc6(x_so)
-      # x_so = self.dropout0(x_so)
-      # x_so = self.fc7(x_so)
-      # x_so = self.dropout0(x_so)
-      # obj_scores = self.fc_obj(x_so)
+    x_img = self.conv1(img_blob)
+    x_img = self.conv2(x_img)
+    x_img = self.conv3(x_img)
+    x_img = self.conv4(x_img)
+    x_img = self.conv5(x_img)
 
-      # ROI pooling for union boxes
-      # x_u = self.roi_pool(x_img, u_boxes)
-      # x_u = x_u.view(x_u.size()[0], -1)
-      # x_u = self.fc6(x_u)
-      # x_u = self.dropou0t(x_u)
-      # x_u = self.fc7(x_u)
-      # x_u = self.dropou0t(x_u)
+    # ROI pooling combined for subjects' and objects' boxes
+    # x_so = self.roi_pool(x_img, so_boxes)
+    # x_so = x_so.view(x_so.size()[0], -1)
+    # x_so = self.fc6(x_so)
+    # x_so = self.dropout0(x_so)
+    # x_so = self.fc7(x_so)
+    # x_so = self.dropout0(x_so)
+    # obj_scores = self.fc_obj(x_so)
 
-      # x_so = self.fc_visual(x_so)
-      # x_u = self.fc_visual(x_u)
-      # x_vis = x_so + x_u...
+    # ROI pooling for union boxes
+    # x_u = self.roi_pool(x_img, u_boxes)
+    # x_u = x_u.view(x_u.size()[0], -1)
+    # x_u = self.fc6(x_u)
+    # x_u = self.dropou0t(x_u)
+    # x_u = self.fc7(x_u)
+    # x_u = self.dropou0t(x_u)
 
-      # x_vis = x_so
+    # x_so = self.fc_visual(x_so)
+    # x_u = self.fc_visual(x_u)
+    # x_vis = x_so + x_u...
 
-      # Fusion with spatial and semantic features
+    # x_vis = x_so
 
-      x_spat = self.fc_spatial(spatial_features)
-      x_sem  = self.fc_semantic(semantic_features)
+    # Fusion with spatial and semantic features
 
-      print(x_vis.size())
-      print(x_spat.size())
-      print(x_sem.size())
+    x_spat = self.fc_spatial(spatial_features)
+    x_sem  = self.fc_semantic(semantic_features)
 
-      # Add x_vis ...
-      x_fused = torch.cat((x_spat, x_sem), 1)
+    #print(x_vis.size())
+    print(x_spat.size())
+    print(x_sem.size())
 
-      x_fused = self.fc_fus1(x_fused)
+    # Add x_vis ...
+    x_fused = torch.cat((x_spat, x_sem), 1)
 
-      rel_scores = self.fc_rel(x_fused)
+    x_fused = self.fc_fus1(x_fused)
 
-      # return obj_scores, rel_scores
-      return rel_scores
+    rel_scores = self.fc_rel(x_fused)
+
+    # return obj_scores, rel_scores
+    return rel_scores
 
 if __name__ == '__main__':
   m = vrd_model()
