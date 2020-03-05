@@ -29,6 +29,7 @@ class VRDDataLayer():
     self.stage   = stage
 
     self.dataset = dataset(self.ds_name, **ds_args)
+    self.soP_prior_vrd = self.dataset.getDistribution(type="soP", force=True)
 
     self.n_obj   = self.dataset.n_obj
     self.n_pred  = self.dataset.n_pred
@@ -60,7 +61,7 @@ class VRDDataLayer():
     semantic_features = np.zeros((n_rel, 2*300))
 
     # this will contain the probability distribution of each subject-object pair ID over all 70 predicates
-    # rel_soP_prior = np.zeros((n_rel, self.dataset.n_pred))
+    rel_soP_prior = np.zeros((n_rel, self.dataset.n_pred))
 
     target = np.zeros((n_rel, self.n_pred))
 
@@ -78,10 +79,9 @@ class VRDDataLayer():
       semantic_features[i_rel] = np.zeros(600)
 
       # store the probability distribution of this subject-object pair from the soP_prior
-      # if self.soP_prior != None:
-      #   rel_soP_prior[i_rel] = self.dataset.soP_prior[classes[s_idx], classes[o_idx]]
-      # else:
-      #   rel_soP_prior[i_rel,:] = 0.0
+      s_cls_id = rel['subject']['id']
+      o_cls_id = rel['object']['id']
+      rel_soP_prior[i_rel] = self.soP_prior_vrd[s_cls_id][o_cls_id]
 
       target[i_rel][rel["predicate"]["id"]] = 1.
 
@@ -94,6 +94,7 @@ class VRDDataLayer():
     yield img_blob
     yield spatial_features
     yield semantic_features
+    yield rel_soP_prior
     yield target
 
 if __name__ == '__main__':
