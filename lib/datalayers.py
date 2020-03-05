@@ -62,16 +62,16 @@ class VRDDataLayer():
 
     n_objs = len(objs)
 
-    boxes_img = np.zeros(n_objs, )
+    boxes_img = np.zeros((n_objs, 4))
 
     for i_obj,obj in enumerate(objs):
-      boxes_img[i_obj] = obj["bbox"]
+      boxes_img[i_obj] = utils.bboxDictToNumpy(obj["bbox"])
 
     # Objects' boxes
-    so_boxes = np.zeros((n_objs, 5))
     so_boxes = np.zeros((boxes_img.shape[0], 5)) # , dtype=np.float32)
     so_boxes[:, 1:5] = boxes_img * im_scale
 
+    n_rel = len(rels)
 
     # the dimension 8 here is the size of the spatial feature vector, containing the relative location and log-distance
     spatial_features = np.zeros((n_rel, 8))
