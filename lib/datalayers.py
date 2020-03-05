@@ -30,7 +30,7 @@ class VRDDataLayer():
     self.stage   = stage
 
     self.dataset = dataset(self.ds_name, **ds_args)
-    self.soP_prior_vrd = self.dataset.getDistribution(type="soP", force=True)
+    self.soP_prior = self.dataset.getDistribution(type="soP", force=True)
 
     self.n_obj   = self.dataset.n_obj
     self.n_pred  = self.dataset.n_pred
@@ -54,6 +54,7 @@ class VRDDataLayer():
     img_blob = np.zeros((1,) + image_blob.shape, dtype=np.float32)
     img_blob[0] = image_blob
 
+
     # TODO: instead of computing boxes_img here, put it in the preprocess
     #  (and maybe transform relationships to contain object indices instead of whole objects)
     objs = []
@@ -71,6 +72,7 @@ class VRDDataLayer():
     # Objects' boxes
     so_boxes = np.zeros((boxes_img.shape[0], 5)) # , dtype=np.float32)
     so_boxes[:, 1:5] = boxes_img * im_scale
+
 
     n_rel = len(rels)
 
@@ -102,7 +104,7 @@ class VRDDataLayer():
       # store the probability distribution of this subject-object pair from the soP_prior
       s_cls_id = rel['subject']['id']
       o_cls_id = rel['object']['id']
-      rel_soP_prior[i_rel] = self.soP_prior_vrd[s_cls_id][o_cls_id]
+      rel_soP_prior[i_rel] = self.soP_prior[s_cls_id][o_cls_id]
 
       target[i_rel][rel["predicate"]["id"]] = 1.
 
@@ -119,7 +121,9 @@ class VRDDataLayer():
     so_boxes          = torch.FloatTensor(so_boxes).cuda()
     spatial_features  = torch.FloatTensor(spatial_features).cuda()
     semantic_features = torch.FloatTensor(semantic_features).cuda()
-    target            = torch.LongTensor(target).cuda()
+
+    rel_sop_prior = torch.FloatTensor(rel_sop_prior).cuda()
+    target        = torch.LongTensor(target).cuda()
 
 
     yield img_blob

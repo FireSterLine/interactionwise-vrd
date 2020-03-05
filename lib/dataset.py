@@ -70,10 +70,10 @@ class dataset():
     else:
         pred_additional = np.asarray([])
 
-    self.obj_classes = np.append(obj_additional, obj_classes).tolist()
+    self.obj_classes = np.append(obj_classes, obj_additional).tolist()
     self.n_obj = len(self.obj_classes)
 
-    self.pred_classes = np.append(pred_additional, pred_classes).tolist()
+    self.pred_classes = np.append(pred_classes, pred_additional).tolist()
     self.n_pred = len(self.pred_classes)
 
     # Need these?
@@ -120,26 +120,31 @@ class dataset():
     sop_counts = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: int())))
 
     with open(filename, 'r') as rfile:
-        data = json.load(rfile)
+      data = json.load(rfile)
 
     for _, elems in data.items():
-        for elem in elems:
-            subject_label = elem['subject']['name']
-            object_label = elem['object']['name']
-            predicate_label = elem['predicate']['name']
+      for elem in elems:
+        subject_label = elem['subject']['name']
+        object_label = elem['object']['name']
+        predicate_label = elem['predicate']['name']
 
-            sop_counts[subject_label][object_label][predicate_label] += 1
+        sop_counts[subject_label][object_label][predicate_label] += 1
 
     assert len(sop_counts.keys()) == len(self.obj_classes)
     so_prior = np.zeros((len(self.obj_classes), len(self.obj_classes), len(self.pred_classes)))
 
     for out_ix, out_elem in enumerate(self.obj_classes):
-        for in_ix, in_elem in enumerate(self.obj_classes):
-            total_count = sum(sop_counts[out_elem][in_elem].values())
-            if total_count == 0:
-                # print("{}-{} doesn't exist!".format(out_elem, in_elem))
-                continue
-            for p_ix, p_elem in enumerate(self.pred_classes):
-                so_prior[out_ix][in_ix][p_ix] = float(sop_counts[out_elem][in_elem][p_elem]) / float(total_count)
+      for in_ix, in_elem in enumerate(self.obj_classes):
+        total_count = sum(sop_counts[out_elem][in_elem].values())
+        if total_count == 0:
+          # print("{}-{} doesn't exist!".format(out_elem, in_elem))
+          continue
+        for p_ix, p_elem in enumerate(self.pred_classes):
+          so_prior[out_ix][in_ix][p_ix] = float(sop_counts[out_elem][in_elem][p_elem]) / float(total_count)
 
     return so_prior
+
+  # TODO
+  def readMetadata(self, file):
+    """ Wrapper for read/pickle metadata file. This prevents loading the same metadata file more than once """
+    pass

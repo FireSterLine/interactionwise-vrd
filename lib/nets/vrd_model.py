@@ -69,11 +69,11 @@ class vrd_model(nn.Module):
 
     # ROI pooling combined for subjects' and objects' boxes
     x_so = self.roi_pool(x_img, so_boxes)
-    # x_so = x_so.view(x_so.size()[0], -1)
-    # x_so = self.fc6(x_so)
-    # x_so = self.dropout0(x_so)
-    # x_so = self.fc7(x_so)
-    # x_so = self.dropout0(x_so)
+    x_so = x_so.view(x_so.size()[0], -1)
+    x_so = self.fc6(x_so)
+    x_so = self.dropout0(x_so)
+    x_so = self.fc7(x_so)
+    x_so = self.dropout0(x_so)
     # obj_scores = self.fc_obj(x_so)
 
     # ROI pooling for union boxes
@@ -84,18 +84,18 @@ class vrd_model(nn.Module):
     # x_u = self.fc7(x_u)
     # x_u = self.dropou0t(x_u)
 
-    # x_so = self.fc_visual(x_so)
+    x_so = self.fc_visual(x_so)
     # x_u = self.fc_visual(x_u)
     # x_vis = x_so + x_u...
 
-    # x_vis = x_so
+    x_vis = x_so
 
     # Fusion with spatial and semantic features
 
     x_spat = self.fc_spatial(spatial_features)
     x_sem  = self.fc_semantic(semantic_features)
 
-    #print(x_vis.size())
+    print(x_vis.size())
     print(x_spat.size())
     print(x_sem.size())
 

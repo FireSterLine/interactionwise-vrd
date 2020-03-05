@@ -109,7 +109,7 @@ class vrd_trainer():
     res_file = "output-{}.txt".format(self.session_name)
 
     headers = ["Epoch","Pre R@50", "ZS", "R@100", "ZS", "Rel R@50", "ZS", "R@100", "ZS"]
-    res = []    
+    res = []
     for epoch in range(self.start_epoch, self.start_epoch + self.max_epochs):
 
       self.__train_epoch(epoch)
@@ -140,7 +140,7 @@ class vrd_trainer():
       # TODO: why range(10)? Loop through all of the data, maybe?
 
       img_blob, so_boxes, spatial_features, semantic_features, rel_sop_prior, target = next(self.datalayer)
-      
+
       # time1 = time.time()
 
       # print(target)
@@ -151,7 +151,6 @@ class vrd_trainer():
 
       # applying some preprocessing to the rel_sop_prior before factoring it into the score
       rel_sop_prior = -0.5 * ( rel_sop_prior + 1.0 / self.args.n_pred)
-      rel_sop_prior = torch.FloatTensor(rel_sop_prior).cuda()
       loss = self.criterion(rel_sop_prior + rel_score, target)
       # loss = self.criterion((rel_score).view(1, -1), target)
       loss.backward()
