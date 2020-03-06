@@ -147,17 +147,17 @@ class vrd_trainer():
       {'params': self.net.fc8.parameters(),       'lr': self.lr*10},
       {'params': self.net.fc_fusion.parameters(), 'lr': self.lr*10},
       {'params': self.net.fc_rel.parameters(),    'lr': self.lr*10},
-    ]     
+    ]
     if(self.net_args.use_so):
       opt_params.append({'params': self.net.fc_so.parameters(), 'lr': self.lr*10})
     if(self.net_args.use_spat == 1):
-      opt_params.append({'params': self.net.fc_spatial.parameters(), 'lr': self.lr*10})  
+      opt_params.append({'params': self.net.fc_spatial.parameters(), 'lr': self.lr*10})
     elif(self.net_args.use_spat == 2):
       raise NotImplementedError
-      # opt_params.append({'params': self.net.conv_lo.parameters(), 'lr': self.lr*10})   
+      # opt_params.append({'params': self.net.conv_lo.parameters(), 'lr': self.lr*10})
       # opt_params.append({'params': self.net.fc_spatial.parameters(), 'lr': self.lr*10})
     if(self.net_args.use_sem):
-      opt_params.append({'params': self.net.fc_semantic.parameters(), 'lr': self.lr*10}) 
+      opt_params.append({'params': self.net.fc_semantic.parameters(), 'lr': self.lr*10})
     self.optimizer = torch.optim.Adam(opt_params,
             lr=self.lr,
             # momentum=self.momentum,
@@ -188,7 +188,7 @@ class vrd_trainer():
 
       print("Epoch {}".format(epoch))
 
-      save_name = osp.join(self.save_dir, "checkpoint_epoch_%d.pth.tar".format(epoch))
+      save_name = osp.join(self.save_dir, "checkpoint_epoch_{}.pth.tar".format(epoch))
       save_checkpoint({
         "session": self.session_name,
         "epoch": epoch,
@@ -204,7 +204,7 @@ class vrd_trainer():
 
     # Obtain next annotation input and target
     #for spatial_features, semantic_features, target in self.datalayer:
-    iters_per_epoch = int(self.train_size / self.batch_size)
+    iters_per_epoch = self.train_size // self.batch_size
     losses = utils.AverageMeter()
     for step in range(iters_per_epoch):
       # TODO: why range(10)? Loop through all of the data, maybe?
@@ -216,8 +216,6 @@ class vrd_trainer():
       spatial_features, semantic_features, \
       rel_sop_prior, target = next(self.datalayer)
 
-      # time1 = time.time()
-
       # print(target)
       # print(target.size())
       # Forward pass & Backpropagation step
@@ -228,47 +226,22 @@ class vrd_trainer():
       rel_sop_prior = -0.5 * ( rel_sop_prior + 1.0 / self.datalayer.n_pred)
       loss = self.criterion((rel_sop_prior + rel_scores).view(1, -1), target)
       # loss = self.criterion((rel_scores).view(1, -1), target)
+      print(loss.size())
       losses.update(loss.item())
       loss.backward()
       self.optimizer.step()
 
-      # time2 = time.time()
-
-      # print("Step {}, Loss: {}".format(step, loss))
     print("Epoch loss: {}".format(losses.avg))
+    losses.reset()
 
     """
-    losses = AverageMeter()
-    time1 = time.time()
-    epoch_num = self.datalayer._num_instance / self.datalayer._batch_size
     for step in range(epoch_num):
 
-      # this forward function just gets the ground truth - the annotations - for the image under consideration
-      # so in reality, this forward function here is not really a network
       # the rel_so_prior here is a subset of the 100*70*70 dimensional so_prior array, which contains the predicate prob distribution for all object pairs
       # the rel_so_prior here contains the predicate probability distribution of only the object pairs in this annotation
       # Also, it might be helpful to keep in mind that this data layer currently works for a single annotation at a time - no batching is implemented!
       image_blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, rel_labels, rel_so_prior = self.datalayer.forward()
 
-      target = Variable(torch.from_numpy(rel_labels).type(torch.LongTensor)).cuda()
-      rel_so_prior = -0.5*(rel_so_prior+1.0/self.num_relations)
-      rel_so_prior = Variable(torch.from_numpy(rel_so_prior).type(torch.FloatTensor)).cuda()
-
-      # backward
-      # this is where the forward function of the trainable VRD network is really applied
-      self.optimizer.zero_grad()
-      obj_score, rel_score = self.net(image_blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, self)
-
-      loss = self.criterion((rel_so_prior+rel_score).view(1, -1), target)
-      losses.update(loss.data[0])
-      loss.backward()
-      self.optimizer.step()
-
-      if step % self.print_freq == 0:
-        time2 = time.time()
-        print "TRAIN:%d, Total LOSS:%f, Time:%s" % (step, losses.avg, time.strftime('%H:%M:%S', time.gmtime(int(time2 - time1))))
-        time1 = time.time()
-        losses.reset()
     """
 
 if __name__ == '__main__':
