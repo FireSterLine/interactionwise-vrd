@@ -8,47 +8,42 @@ import torch.nn as nn
 import sys
 import os.path as osp
 from model.roi_layers.roi_pool import ROIPool
-from lib.network import FC, Conv2d
+from lib.network import set_trainability, FC, Conv2d
 from easydict import EasyDict
 
 
 class vrd_model(nn.Module):
-  def __init__(self, n_obj, n_pred,
-      use_so = True,
-      use_vis = True,
-      use_spat = 1,
-      use_sem = True,
-      n_fus_neurons = 256,
-      use_bn = False):
+  def __init__(self, args):
     super(vrd_model, self).__init__()
 
-    self.args = EasyDict()
+    self.args = args
 
-    self.args.n_obj  = n_obj
-    self.args.n_pred = n_pred
+    if not hasattr(self.args, "n_obj")
+      raise Error("Can't build vrd model without knowing n_obj")
+    if not hasattr(self.args, "n_pred")
+      raise Error("Can't build vrd model without knowing n_pred")
 
     # This decides whether, in addition to the visual features of union box,
     #  those of subject and object individually are used or not
-    self.args.use_so = use_so
-
-    # Use semantic features (TODO: this becomes the size of the semantic features)
-    self.args.use_sem = use_sem
+    self.args.use_so        = self.args.get("use_so",        True)
 
     # Use visual features
-    self.args.use_vis = use_vis
+    self.args.use_vis       = self.args.get("use_vis",       True)
+
+    # Use semantic features (TODO: this becomes the size of the semantic features)
+    self.args.use_sem       = self.args.get("use_sem",       True)
 
     # Three types of spatial features:
     # - 0: no spatial info
     # - 1: 8-way relative location vector
     # - 2: dual mask
-    self.args.use_spat = use_spat
+    self.args.use_spat      = self.args.get("use_spat",      1)
 
     # Size of the representation for each modality when fusing features
-    self.args.n_fus_neurons = n_fus_neurons
+    self.args.n_fus_neurons = self.args.get("n_fus_neurons", 256)
 
     # Use batch normalization or not
-    self.args.use_bn = use_bn
-
+    self.args.use_bn        = self.args.get("use_bn",        False)
 
 
     self.total_fus_neurons = 0
@@ -63,7 +58,6 @@ class vrd_model(nn.Module):
                                nn.MaxPool2d(2))
 
 
-
     self.conv3 = nn.Sequential(Conv2d(128, 256, 3, same_padding=True, bn=self.args.use_bn),
                                Conv2d(256, 256, 3, same_padding=True, bn=self.args.use_bn),
                                Conv2d(256, 256, 3, same_padding=True, bn=self.args.use_bn),
@@ -76,7 +70,6 @@ class vrd_model(nn.Module):
                                Conv2d(512, 512, 3, same_padding=True, bn=self.args.use_bn),
                                Conv2d(512, 512, 3, same_padding=True, bn=self.args.use_bn))
 
-
     # Guide for jwyang's ROI Pooling Layers:
     #  https://medium.com/@andrewjong/how-to-use-roi-pool-and-roi-align-in-your-neural-networks-pytorch-1-0-b43e3d22d073
     self.roi_pool = ROIPool((7, 7), 1.0/16)
@@ -86,6 +79,7 @@ class vrd_model(nn.Module):
     self.fc6    = FC(512 * 7 * 7, 4096)
     self.fc7    = FC(4096, 4096)
     self.fc_obj = FC(4096, self.args.n_obj, relu = False)
+    network.set_trainability(self.fc_obj, requires_grad=False)
 
 
 
@@ -114,13 +108,13 @@ class vrd_model(nn.Module):
       # self.conv_spat = nn.Sequential(Conv2d(2, 96, 5, same_padding=True, stride=2, bn=bn),
       #                            Conv2d(96, 128, 5, same_padding=True, stride=2, bn=bn),
       #                            Conv2d(128, 64, 8, same_padding=False, bn=bn))
-      # self.fc_lov = FC(64, self.args.n_fus_neurons)
+      # self.fc_spatial = FC(64, self.args.n_fus_neurons)
       # self.total_fus_neurons += self.args.n_fus_neurons
 
     if(self.args.use_sem):
       self.fc_semantic = FC(2*300, self.args.n_fus_neurons)
       # self.emb = nn.Embedding(self.n_obj, 300)
-      # network.set_trainable(self.emb, requires_grad=False)
+      # network.set_trainability(self.emb, requires_grad=False)
       # self.fc_so_emb = FC(300*2, 256)
       # self.total_fus_neurons += self.args.n_fus_neurons
 
@@ -184,7 +178,7 @@ class vrd_model(nn.Module):
       raise NotImplementedError
       # lo = self.conv_lo(SpatialFea)
       # lo = lo.view(lo.size()[0], -1)
-      # lo = self.fc_lov(lo)
+      # lo = self.fc_spatial(lo)
       # x = torch.cat((x_fused, lo), 1)
 
     # TODO: use embedding layer like they do
@@ -201,6 +195,56 @@ class vrd_model(nn.Module):
     rel_scores = self.fc_rel(x_fused)
 
     return obj_scores, rel_scores
+
+  def load_pretrained_conv(self, file_path, fix_layers=True):
+    """ Load the weights for the initial convolutional layers and fully connecteda layers """
+
+    params = np.load(file_path, allow_pickle=True, encoding="latin1").item()
+    # vgg16
+    vgg16_dict = self.state_dict()
+    # print(vgg16_dict)
+    # print(params)
+
+    # print()
+
+    for layer_name, val in vgg16_dict.items():
+      if name.find("bn.") >= 0 or not "conv" in layer_name or "spat" in layer_name:
+        continue
+      # print(layer_name, val)
+      i, j = int(layer_name[4]), int(layer_name[6]) + 1
+      # print(i, j)
+      ptype = "weights" if layer_name[-1] == "t" else "biases"
+      key = "conv{}_{}".format(i, j)
+      # print(ptype, key)
+      param = torch.from_numpy(params[key][ptype])
+      # print(params[key][ptype])
+
+      if ptype == "weights":
+        param = param.permute(3, 2, 0, 1)
+
+      val.copy_(param)
+
+      if fix_layers:
+        network.set_trainability(getattr(self, layer_name), requires_grad=False)
+
+    # fc6 fc7
+    frcnn_dict = self.state_dict()
+    pairs = {"fc6.fc": "fc6", "fc7.fc": "fc7"}
+    # pairs = {'fc6.fc': 'fc6', 'fc7.fc': 'fc7', 'fc7_so.fc': 'fc7'}
+    for dest_layer, source_layer in pairs.items():
+      # print(k,v)
+      key = "{}.weight".format(dest_layer)
+      # print(params[v]["weights"])
+      param = torch.from_numpy(params[source_layer]["weights"]).permute(1, 0)
+      frcnn_dict[key].copy_(param)
+
+      key = "{}.bias".format(dest_layer)
+      # print(params[v]["biases"])
+      param = torch.from_numpy(params[source_layer]["biases"])
+      frcnn_dict[key].copy_(param)
+
+      if fix_layers:
+        network.set_trainability(getattr(self, source_layer), requires_grad=False)
 
 if __name__ == '__main__':
   m = vrd_model()

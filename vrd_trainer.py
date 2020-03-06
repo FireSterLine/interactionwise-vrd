@@ -12,7 +12,6 @@ import torch.nn.init
 
 from easydict import EasyDict
 import globals, utils
-import lib.network as network
 from lib.nets.vrd_model import vrd_model
 from lib.datalayers import VRDDataLayer
 from model.utils.net_utils import weights_normal_init, save_checkpoint
@@ -93,18 +92,45 @@ class vrd_trainer():
 
     load_pretrained = isinstance(self.pretrained, str)
 
-    # initialize the model using the args set above
     print("Initializing VRD Model...")
-    self.net = vrd_model(
-      n_obj = self.datalayer.n_obj,
-      n_pred = self.datalayer.n_pred
-    ) # TODO: load_pretrained affects how the model is initialized?
+
+    self.net_args = EasyDict()
+
+    self.net_args.n_obj  = self.datalayer.n_obj
+    self.net_args.n_pred = self.datalayer.n_pred
+
+    # This decides whether, in addition to the visual features of union box,
+    #  those of subject and object individually are used or not
+    self.net_args.use_so = True
+
+    # Use visual features
+    self.net_args.use_vis = True
+
+    # Use semantic features (TODO: this becomes the size of the semantic features)
+    self.net_args.use_sem = True
+
+    # Three types of spatial features:
+    # - 0: no spatial info
+    # - 1: 8-way relative location vector
+    # - 2: dual mask
+    self.net_args.use_spat = 1
+
+    # Size of the representation for each modality when fusing features
+    self.net_args.n_fus_neurons = 256
+
+    # Use batch normalization or not
+    self.net_args.use_bn = False
+
+    # initialize the model using the args set above
+    print("Args: ", self.args)
+    self.net = vrd_model(self.net_args) # TODO: load_pretrained affects how the model is initialized?
     self.net.cuda()
 
     # Initialize the model in some way ...
     print("Initializing weights...")
     weights_normal_init(self.net, dev=0.01)
-    network.load_pretrained_conv(self.net, osp.join(globals.data_dir, "VGG_imagenet.npy"))
+    self.net.load_pretrained_conv(osp.join(globals.data_dir, "VGG_imagenet.npy"))
+
     # Initial object embedding with word2vec
     #with open('../data/vrd/params_emb.pkl') as f:
     #    emb_init = pickle.load(f)
@@ -116,20 +142,22 @@ class vrd_trainer():
     # self.momentum = 0.9
     self.weight_decay = 0.0005
 
-    opt_params = list(self.net.parameters())
-    # opt_params = [{'params': net.fc8.parameters(), 'lr': self.args.lr*10},
-    #               {'params': net.fc_fusion.parameters(), 'lr': self.args.lr*10},
-    #               {'params': net.fc_rel.parameters(), 'lr': self.args.lr*10},
-    #               ]
-    # if(self.args.use_so):
-    #     opt_params.append({'params': net.fc_so.parameters(), 'lr': self.args.lr*10})
-    # if(self.args.loc_type == 1):
-    #     opt_params.append({'params': net.fc_lov.parameters(), 'lr': self.args.lr*10})
-    # elif(self.args.loc_type == 2):
-    #     opt_params.append({'params': net.conv_lo.parameters(), 'lr': self.args.lr*10})
-    #     opt_params.append({'params': net.fc_lov.parameters(), 'lr': self.args.lr*10})
-    # if(self.args.use_obj):
-    #     opt_params.append({'params': net.fc_so_emb.parameters(), 'lr': self.args.lr*10})
+    # opt_params = list(self.net.parameters())
+    opt_params = [
+      {'params': net.fc8.parameters(),       'lr': self.net_args.lr*10},
+      {'params': net.fc_fusion.parameters(), 'lr': self.net_args.lr*10},
+      {'params': net.fc_rel.parameters(),    'lr': self.net_args.lr*10},
+    ]
+    if(self.net_args.use_so):
+      opt_params.append({'params': net.fc_so.parameters(), 'lr': self.net_args.lr*10})
+    if(self.net_args.use_spat == 1):
+      opt_params.append({'params': net.fc_spatial.parameters(), 'lr': self.net_args.lr*10})
+    elif(self.net_args.use_spat == 2):
+      raise NotImplementedError
+      # opt_params.append({'params': net.conv_lo.parameters(), 'lr': self.net_args.lr*10})
+      # opt_params.append({'params': net.fc_spatial.parameters(), 'lr': self.net_args.lr*10})
+    if(self.net_args.use_sem):
+      opt_params.append({'params': net.fc_semantic.parameters(), 'lr': self.net_args.lr*10})
 
     self.optimizer = torch.optim.Adam(opt_params,
             lr=self.lr,

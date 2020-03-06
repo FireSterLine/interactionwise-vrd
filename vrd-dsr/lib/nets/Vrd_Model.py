@@ -17,39 +17,9 @@ class Vrd_Model(nn.Module):
         super(Vrd_Model, self).__init__()
 
 
-
-
-
-
-
-
         # Relations = Predicates
         self.n_rel = args.num_relations
         self.n_obj = args.num_classes
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
