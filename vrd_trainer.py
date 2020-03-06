@@ -64,7 +64,8 @@ class vrd_trainer():
 
     self.session_name = "test" # Training session name?
     self.start_epoch = 0
-    self.max_epochs = 20
+    self.max_epochs = 200
+    self.checkpoint_frequency = 10
 
     self.batch_size = 5
     self.num_workers = 0
@@ -88,7 +89,7 @@ class vrd_trainer():
     #                  batch_size=self.batch_size,
     #                  # sampler= Random ...,
     #                  num_workers=self.num_workers)
-    self.train_size = 100
+    self.train_size = 200
 
     load_pretrained = isinstance(self.pretrained, str)
 
@@ -181,23 +182,24 @@ class vrd_trainer():
     res = []
     for epoch in range(self.start_epoch, self.start_epoch + self.max_epochs):
 
+      print("Epoch {}".format(epoch))
+      
       self.__train_epoch(epoch)
       # res.append((epoch,) + test_pre_net(net, args) + test_rel_net(net, args))
       # with open(res_file, 'w') as f:
       #   f.write(tabulate(res, headers))
 
-      print("Epoch {}".format(epoch))
-
-      save_name = osp.join(self.save_dir, "checkpoint_epoch_{}.pth.tar".format(epoch))
-      save_checkpoint({
-        "session": self.session_name,
-        "epoch": epoch,
-        "state_dict": self.net.state_dict(),
-        "optimizer_state_dict": self.optimizer.state_dict(),
-        # "loss": loss,
-        # "pooling_mode": cfg.POOLING_MODE,
-        # "class_agnostic": self.class_agnostic,
-      }, save_name)
+      if epoch % self.checkpoint_frequency == 0:
+        save_name = osp.join(self.save_dir, "checkpoint_epoch_{}.pth.tar".format(epoch))
+        save_checkpoint({
+          "session": self.session_name,
+          "epoch": epoch,
+          "state_dict": self.net.state_dict(),
+          "optimizer_state_dict": self.optimizer.state_dict(),
+          "loss": loss,
+          # "pooling_mode": cfg.POOLING_MODE,
+          # "class_agnostic": self.class_agnostic,
+        }, save_name)
 
   def __train_epoch(self, epoch):
     self.net.train()
