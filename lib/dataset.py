@@ -82,9 +82,9 @@ class dataset():
 
 
   # TODO: select which split ("train", "test", default="traintest")
-  def getImgRels(self):
+  def getImgRels(self, stage):
     """ Load list of rel-annotations per images """
-    with open(osp.join(self.metadata_dir, "vrd_data.json"), 'r') as rfile:
+    with open(osp.join(self.metadata_dir, "data{}.json".format(stage)), 'r') as rfile:
       return json.load(rfile) # Maybe pickle this?
 
   def getAnno(self):
@@ -111,7 +111,7 @@ class dataset():
         if type == "soP":
           sop_counts = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: int())))
 
-          with open(osp.join(self.metadata_dir, "vrd_data.json"), 'r') as rfile:
+          with open(osp.join(self.metadata_dir, "{}_data.json".format(self.name)), 'r') as rfile:
             data = json.load(rfile)
 
           for _, elems in data.items():

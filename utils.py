@@ -64,7 +64,7 @@ def getSemanticVector(subject_label, object_label, w2v_model):
 def read_img(im_file):
   """ Wrapper for cv2.imread """
   if not os.path.exists(im_file):
-    raise Exception("Image file not found: " + im_file)
+    raise FileNotFoundError("Image file not found: " + im_file)
   return np.array(cv2.imread(im_file))
 
 class AverageMeter(object):
@@ -83,3 +83,18 @@ class AverageMeter(object):
     self.sum += val * n
     self.count += n
     self.avg = self.sum / self.count
+
+
+# https://stackoverflow.com/questions/31174295/getattr-and-setattr-on-nested-subobjects-chained-properties
+import functools
+
+def rsetattr(obj, attr, val):
+    pre, _, post = attr.rpartition('.')
+    return setattr(rgetattr(obj, pre) if pre else obj, post, val)
+
+# using wonder's beautiful simplification: https://stackoverflow.com/questions/31174295/getattr-and-setattr-on-nested-objects/31174427?noredirect=1#comment86638618_31174427
+
+def rgetattr(obj, attr, *args):
+    def _getattr(obj, attr):
+        return getattr(obj, attr, *args)
+    return functools.reduce(_getattr, [obj] + attr.split('.'))

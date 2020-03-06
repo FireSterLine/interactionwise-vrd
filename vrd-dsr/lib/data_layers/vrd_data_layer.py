@@ -101,7 +101,7 @@ class VrdDataLayer(object):
     def forward_test(self):
         """Get blobs and copy them into this layer's top blob vector."""
         anno_img = self._anno[self._cur]
-        if(anno_img is None):
+        if(anno_img is None): # Jesus why?
             self._cur += 1
             if(self._cur >= len(self._anno)):
                 self._cur = 0
@@ -124,12 +124,15 @@ class VrdDataLayer(object):
 
         n_rel_inst = len(rel_classes)
         rel_boxes = np.zeros((n_rel_inst, 5))
+
         SpatialFea = np.zeros((n_rel_inst, 2, 32, 32))
         # SpatialFea = np.zeros((n_rel_inst, 8))
+
         for ii in range(n_rel_inst):
             sBBox = anno_img['boxes'][ix1[ii]]
             oBBox = anno_img['boxes'][ix2[ii]]
             rBBox = self._getUnionBBox(sBBox, oBBox, ih, iw)
+
             soMask = [self._getDualMask(ih, iw, sBBox), \
                       self._getDualMask(ih, iw, oBBox)]
             rel_boxes[ii, 1:5] = np.array(rBBox) * im_scale

@@ -71,7 +71,7 @@ if __name__ == '__main__':
     net = Vrd_Model(args)
     network.weights_normal_init(net, dev=0.01)
     pretrained_model = '../data/VGG_imagenet.npy'
-    network.load_pretrained_npy(net, pretrained_model)
+    network.load_pretrained_npy(net, pretrained_model, fix_layers=True)
     # Initial object embedding with word2vec
     #with open('../data/vrd/params_emb.pkl') as f:
     #    emb_init = cPickle.load(f)
