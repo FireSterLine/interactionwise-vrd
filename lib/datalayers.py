@@ -145,6 +145,7 @@ class VRDDataLayer():
     if(self.cur_imgrels >= self.n_imgrels):
       self.cur_imgrels = 0
 
+    # print(target)
 
     # Note: the transpose should move the color channel to being the
     #  last dimension

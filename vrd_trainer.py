@@ -156,7 +156,7 @@ class vrd_trainer():
 
       # applying some preprocessing to the rel_sop_prior before factoring it into the score
       rel_sop_prior = -0.5 * ( rel_sop_prior + 1.0 / self.datalayer.n_pred)
-      loss = self.criterion(rel_sop_prior + rel_scores, target)
+      loss = self.criterion((rel_sop_prior + rel_scores).view(1, -1), target)
       # loss = self.criterion((rel_scores).view(1, -1), target)
       loss.backward()
       self.optimizer.step()
