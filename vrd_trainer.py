@@ -122,7 +122,7 @@ class vrd_trainer():
     self.net_args.use_bn = False
 
     # initialize the model using the args set above
-    print("Args: ", self.args)
+    print("Args: ", self.net_args)
     self.net = vrd_model(self.net_args) # TODO: load_pretrained affects how the model is initialized?
     self.net.cuda()
 
@@ -144,21 +144,20 @@ class vrd_trainer():
 
     # opt_params = list(self.net.parameters())
     opt_params = [
-      {'params': net.fc8.parameters(),       'lr': self.net_args.lr*10},
-      {'params': net.fc_fusion.parameters(), 'lr': self.net_args.lr*10},
-      {'params': net.fc_rel.parameters(),    'lr': self.net_args.lr*10},
-    ]
+      {'params': self.net.fc8.parameters(),       'lr': self.lr*10},
+      {'params': self.net.fc_fusion.parameters(), 'lr': self.lr*10},
+      {'params': self.net.fc_rel.parameters(),    'lr': self.lr*10},
+    ]     
     if(self.net_args.use_so):
-      opt_params.append({'params': net.fc_so.parameters(), 'lr': self.net_args.lr*10})
+      opt_params.append({'params': self.net.fc_so.parameters(), 'lr': self.lr*10})
     if(self.net_args.use_spat == 1):
-      opt_params.append({'params': net.fc_spatial.parameters(), 'lr': self.net_args.lr*10})
+      opt_params.append({'params': self.net.fc_spatial.parameters(), 'lr': self.lr*10})  
     elif(self.net_args.use_spat == 2):
       raise NotImplementedError
-      # opt_params.append({'params': net.conv_lo.parameters(), 'lr': self.net_args.lr*10})
-      # opt_params.append({'params': net.fc_spatial.parameters(), 'lr': self.net_args.lr*10})
+      # opt_params.append({'params': self.net.conv_lo.parameters(), 'lr': self.lr*10})   
+      # opt_params.append({'params': self.net.fc_spatial.parameters(), 'lr': self.lr*10})
     if(self.net_args.use_sem):
-      opt_params.append({'params': net.fc_semantic.parameters(), 'lr': self.net_args.lr*10})
-
+      opt_params.append({'params': self.net.fc_semantic.parameters(), 'lr': self.lr*10}) 
     self.optimizer = torch.optim.Adam(opt_params,
             lr=self.lr,
             # momentum=self.momentum,

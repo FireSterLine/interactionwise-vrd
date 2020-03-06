@@ -38,8 +38,14 @@ class Conv2d(nn.Module):
     return x
 
 
-def set_trainability(model, requires_grad):
-  for param in model.parameters():
+def set_trainability(model_or_params, requires_grad):
+  """ Set trainability of params (or a model's params) """
+  if hasattr(model_or_params, "parameters") and callable(model_or_params.parameters):
+    params = model_or_params.parameters()
+  else:
+    params = model_or_params
+
+  for param in params:
     param.requires_grad = requires_grad
 
 

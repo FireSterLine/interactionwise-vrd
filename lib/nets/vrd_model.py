@@ -10,7 +10,7 @@ import os.path as osp
 from model.roi_layers.roi_pool import ROIPool
 from lib.network import set_trainability, FC, Conv2d
 from easydict import EasyDict
-
+import utils
 
 class vrd_model(nn.Module):
   def __init__(self, args):
@@ -18,9 +18,9 @@ class vrd_model(nn.Module):
 
     self.args = args
 
-    if not hasattr(self.args, "n_obj")
+    if not hasattr(self.args, "n_obj"):
       raise Error("Can't build vrd model without knowing n_obj")
-    if not hasattr(self.args, "n_pred")
+    if not hasattr(self.args, "n_pred"):
       raise Error("Can't build vrd model without knowing n_pred")
 
     # This decides whether, in addition to the visual features of union box,
@@ -79,7 +79,7 @@ class vrd_model(nn.Module):
     self.fc6    = FC(512 * 7 * 7, 4096)
     self.fc7    = FC(4096, 4096)
     self.fc_obj = FC(4096, self.args.n_obj, relu = False)
-    network.set_trainability(self.fc_obj, requires_grad=False)
+    set_trainability(self.fc_obj, requires_grad=False)
 
 
 
@@ -114,7 +114,7 @@ class vrd_model(nn.Module):
     if(self.args.use_sem):
       self.fc_semantic = FC(2*300, self.args.n_fus_neurons)
       # self.emb = nn.Embedding(self.n_obj, 300)
-      # network.set_trainability(self.emb, requires_grad=False)
+      # set_trainability(self.emb, requires_grad=False)
       # self.fc_so_emb = FC(300*2, 256)
       # self.total_fus_neurons += self.args.n_fus_neurons
 
@@ -207,13 +207,13 @@ class vrd_model(nn.Module):
 
     # print()
 
-    for layer_name, val in vgg16_dict.items():
-      if name.find("bn.") >= 0 or not "conv" in layer_name or "spat" in layer_name:
+    for params_name, val in vgg16_dict.items():
+      if params_name.find("bn.") >= 0 or not "conv" in params_name or "spat" in params_name:
         continue
-      # print(layer_name, val)
-      i, j = int(layer_name[4]), int(layer_name[6]) + 1
+      # print(params_name, val)
+      i, j = int(params_name[4]), int(params_name[6]) + 1 
       # print(i, j)
-      ptype = "weights" if layer_name[-1] == "t" else "biases"
+      ptype = "weights" if params_name[-1] == "t" else "biases"
       key = "conv{}_{}".format(i, j)
       # print(ptype, key)
       param = torch.from_numpy(params[key][ptype])
@@ -224,8 +224,15 @@ class vrd_model(nn.Module):
 
       val.copy_(param)
 
-      if fix_layers:
-        network.set_trainability(getattr(self, layer_name), requires_grad=False)
+      #if fix_layers:
+      #  set_trainability(utils.rgetattr(self, params_name), requires_grad=False)
+    # TODO: fix this imprecision
+    set_trainability(self.conv1, requires_grad=False)
+    set_trainability(self.conv2, requires_grad=False)
+    set_trainability(self.conv3, requires_grad=False)
+    set_trainability(self.conv4, requires_grad=False)
+    set_trainability(self.conv5, requires_grad=False)
+
 
     # fc6 fc7
     frcnn_dict = self.state_dict()
@@ -244,7 +251,7 @@ class vrd_model(nn.Module):
       frcnn_dict[key].copy_(param)
 
       if fix_layers:
-        network.set_trainability(getattr(self, source_layer), requires_grad=False)
+        set_trainability(getattr(self, source_layer), requires_grad=False)
 
 if __name__ == '__main__':
   m = vrd_model()
