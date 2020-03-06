@@ -47,8 +47,16 @@ def getDualMask(self, ih, iw, bb):
 
 # Get word embedding of subject and object label and concatenate them
 def getSemanticVector(subject_label, object_label, w2v_model):
-  subject_vector = w2v_model[subject_label]
-  object_vector = w2v_model[object_label]
+  # the key errors mean that the word was not found in the model's dictionary
+  try:
+    subject_vector = w2v_model[subject_label]
+  except KeyError:
+    subject_vector = np.zeros(300)
+  
+  try:
+    object_vector = w2v_model[object_label]
+  except KeyError:
+    object_vector = np.zeros(300)
   combined_vector = np.concatenate((subject_vector, object_vector), axis=0)
   return combined_vector
 
