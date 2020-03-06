@@ -196,7 +196,7 @@ class vrd_trainer():
           "epoch": epoch,
           "state_dict": self.net.state_dict(),
           "optimizer_state_dict": self.optimizer.state_dict(),
-          "loss": loss,
+          # "loss": loss,
           # "pooling_mode": cfg.POOLING_MODE,
           # "class_agnostic": self.class_agnostic,
         }, save_name)
@@ -228,7 +228,7 @@ class vrd_trainer():
       rel_sop_prior = -0.5 * ( rel_sop_prior + 1.0 / self.datalayer.n_pred)
       loss = self.criterion((rel_sop_prior + rel_scores).view(1, -1), target)
       # loss = self.criterion((rel_scores).view(1, -1), target)
-      print(loss.size())
+      # print(loss.size())
       losses.update(loss.item())
       loss.backward()
       self.optimizer.step()

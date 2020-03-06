@@ -27,7 +27,7 @@ if __name__ == '__main__':
     # filename = "data/vrd/vrd_data.json"
     # objects_vocab_filename = "data/vrd/objects.json"
     # predicates_vocab_filename = "data/vrd/predicates.json"
-    # output_file = "data/vrd/sop_prior_vrd.pkl"
+    # output_file = "data/vrd/soP.pkl"
 
     # THIS IS FOR VG
     print("Generating the prior for Visual Genome Dataset...")
@@ -35,7 +35,7 @@ if __name__ == '__main__':
     filename = "data/genome/1600-400-20/vg_data.json"
     objects_vocab_filename = "data/genome/1600-400-20/objects_vocab_1600.txt"
     predicates_vocab_filename = "data/genome/1600-400-20/relations_vocab_20.txt"
-    output_file = "data/genome/sop_prior_vg_1600-400-20.pkl"
+    output_file = "data/genome/1600-400-20/soP.pkl"
     
     objects_vocab = generate_mapping(objects_vocab_filename)
     predicates_vocab = generate_mapping(predicates_vocab_filename)
