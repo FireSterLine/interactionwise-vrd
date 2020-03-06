@@ -19,7 +19,11 @@ max_objects = 1600
 max_attributes = 400
 max_relations = 20
 
+# this is for server
 dataDir = '../vg/'
+
+# this is for local
+# dataDir = "../../../visual_genome/"
 outDir = './{}-{}-{}'.format(max_objects, max_attributes, max_relations)
 if not os.path.exists(outDir):
     os.mkdir(outDir)
@@ -146,7 +150,7 @@ def build_vocabs_and_json():
     with open(os.path.join(outDir, "relations_vocab.txt"), "w") as text_file:
         for item in relations:
             text_file.write("%s\n" % item)
-    
+
     """
     outSubDir = os.path.join(outDir, "%s-%s-%s" % (max_objects, max_attributes, max_relations))
 
@@ -162,7 +166,7 @@ def build_vocabs_and_json():
     copyfile(os.path.join(outDir, "relations_vocab_%s.txt" % max_relations),
              os.path.join(outSubDir, "relations_vocab.txt"))
     """
-    
+
     print("Generating {} output...".format(output_format.upper()))
     # Load image metadata
     metadata = {}
