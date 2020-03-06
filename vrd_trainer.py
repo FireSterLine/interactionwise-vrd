@@ -57,7 +57,7 @@ from model.utils.net_utils import weights_normal_init, save_checkpoint
 
 class vrd_trainer():
 
-  def __init__(self, dataset_name="vrd", pretrained="epoch_4_checkpoint.pth.tar"):
+  def __init__(self, dataset_name="vrd", pretrained=False): # pretrained="epoch_4_checkpoint.pth.tar"):
 
     print("vrd_trainer() called with args:")
     print([dataset_name, pretrained])
@@ -129,33 +129,6 @@ class vrd_trainer():
     self.net = vrd_model(self.net_args) # TODO: load_pretrained affects how the model is initialized?
     self.net.cuda()
 
-    if load_pretrained:
-      model_path = osp.join(globals.models_dir, self.pretrained)
-
-      print("Loading model... (checkpoint {})".format(model_path))
-
-      if not osp.isfile(model_path):
-        raise Exception("Pretrained model not found: {}".format(model_path))
-
-      checkpoint = torch.load(model_path)
-      self.start_epoch = checkpoint["epoch"]
-      # self.session = checkpoint["session"]
-      state_dict = checkpoint["state_dict"]
-      try:
-        self.net.load_state_dict(state_dict)
-      except RuntimeError:
-        def patch_model_state_dict(state_dict):
-          state_dict["fc_semantic.weight"] = state_dict["fc_so_emb.fc.weight"]
-          state_dict["fc_semantic.bias"] = state_dict["fc_so_emb.fc.bias"]
-          del state_dict["emb.weight"]
-          del state_dict["fc_so_emb.fc.weight"]
-          del state_dict["fc_so_emb.fc.bias"]
-
-          return state_dict
-        self.net.load_state_dict(patch_model_state_dict(state_dict))
-
-      self.optimizer.load_state_dict(checkpoint["optimizer"])
-
     # Initialize the model in some way ...
     print("Initializing weights...")
     weights_normal_init(self.net, dev=0.01)
@@ -193,16 +166,33 @@ class vrd_trainer():
             # momentum=self.momentum,
             weight_decay=self.weight_decay)
 
-    # if self.resume:
-    #     if osp.isfile(self.resume):
-    #         print("=> loading checkpoint '{}'".format(self.resume))
-    #         checkpoint = torch.load(self.resume)
-    #         self.start_epoch = checkpoint['epoch']
-    #         net.load_state_dict(checkpoint['state_dict'])
-    #         self.optimizer.load_state_dict(checkpoint['optimizer'])
-    #         print("=> loaded checkpoint '{}' (epoch {})".format(self.resume, checkpoint['epoch']))
-    #     else:
-    #         print("=> no checkpoint found at '{}'".format(self.resume))
+    if load_pretrained:
+      model_path = osp.join(globals.models_dir, self.pretrained)
+
+      print("Loading model... (checkpoint {})".format(model_path))
+
+      if not osp.isfile(model_path):
+        raise Exception("Pretrained model not found: {}".format(model_path))
+
+      checkpoint = torch.load(model_path)
+      self.start_epoch = checkpoint["epoch"]
+      # self.session = checkpoint["session"]
+      state_dict = checkpoint["state_dict"]
+      try:
+        self.net.load_state_dict(state_dict)
+      except RuntimeError:
+        def patch_model_state_dict(state_dict):
+          state_dict["fc_semantic.fc.weight"] = state_dict["fc_so_emb.fc.weight"]
+          state_dict["fc_semantic.fc.bias"] = state_dict["fc_so_emb.fc.bias"]
+          del state_dict["emb.weight"]
+          del state_dict["fc_so_emb.fc.weight"]
+          del state_dict["fc_so_emb.fc.bias"]
+          return state_dict
+        self.net.load_state_dict(patch_model_state_dict(state_dict))
+
+      self.optimizer.load_state_dict(checkpoint["optimizer"])
+
+    # Initialize the model in some way ...
 
   def train(self):
     res_file = "output-{}.txt".format(self.session_name)
