@@ -96,7 +96,10 @@ class VRDDataLayer():
     # this will contain the probability distribution of each subject-object pair ID over all 70 predicates
     rel_soP_prior = np.zeros((n_rel, self.dataset.n_pred))
 
-    target = np.zeros((n_rel, self.n_pred))
+    # Target output for the network
+    target = -1*np.ones((1, self.dataset.n_pred*n_rel))
+    pos_idx = 0
+    # target = np.zeros((n_rel, self.n_pred))
 
     # Indices for objects and subjects
     idx_s,idx_o = [],[]
@@ -129,7 +132,12 @@ class VRDDataLayer():
       rel_soP_prior[i_rel] = self.soP_prior[s_cls_id][o_cls_id]
 
       # TODO: this target is not the one we want
-      target[i_rel][rel["predicate"]["id"]] = 1.
+      # target[i_rel][rel["predicate"]["id"]] = 1.
+      # TODO: enable multi-class predicate (rel_classes: list of predicates for every pair)
+      rel_classes = [rel["predicate"]["id"]]
+      for rel_label in rel_classes:
+        target[0, pos_idx] = i_rel*self.dataset.n_pred + rel_label
+        pos_idx += 1
 
       i_rel += 1
 
@@ -149,7 +157,8 @@ class VRDDataLayer():
     semantic_features = torch.FloatTensor(semantic_features).cuda()
 
     rel_soP_prior = torch.FloatTensor(rel_soP_prior).cuda()
-    target        = torch.LongTensor(target).cuda()
+    target       = torch.LongTensor(target).cuda()
+    # target        = torch.LongTensor(target).cuda()
 
 
     yield img_blob
@@ -162,6 +171,7 @@ class VRDDataLayer():
 
     yield rel_soP_prior
     yield target
+    # yield target
 
 if __name__ == '__main__':
   pass
