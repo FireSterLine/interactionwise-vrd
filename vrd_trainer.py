@@ -64,7 +64,7 @@ class vrd_trainer():
 
     self.session_name = "test" # Training session name?
     self.start_epoch = 0
-    self.max_epochs = 200
+    self.max_epochs = 10 # 200
     self.checkpoint_frequency = 10
 
     # Does this have to be a constant?
@@ -206,7 +206,7 @@ class vrd_trainer():
 
       self.__train_epoch(epoch)
       # res.append((epoch,) + test_pre_net(net, args) + test_rel_net(net, args))
-      res.append((epoch,) + self.test_pre_net(net, args))
+      res.append((epoch,) + self.test_pre_net())
       with open("results-{}.txt".format(self.session_name), 'w') as f:
         f.write(tabulate(res, headers))
 
@@ -261,8 +261,10 @@ class vrd_trainer():
       image_blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, rel_labels, rel_so_prior = self.datalayer.forward()
 
     """
-
+  
+  # TODO: move in evaluation?
   def test_pre_net(self):
+    import numpy as np
     self.net.eval()
     time1 = time.time()
 
@@ -274,7 +276,7 @@ class vrd_trainer():
     sub_bboxes_cell  = []
     obj_bboxes_cell  = []
 
-    for img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, semantic_features, classes, ori_bboxes in test_data_layer:
+    for img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, semantic_features, classes, ori_bboxes in iter(test_data_layer):
 
       tuple_confs_im = []
       rlp_labels_im  = np.zeros((100, 3), dtype = np.float)

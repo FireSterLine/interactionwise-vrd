@@ -1,12 +1,12 @@
 import scipy.io as sio
 import numpy as np
-import cPickle
+import pickle
 import copy
 import time
 import sys
 import os.path as osp
 this_dir = osp.dirname(osp.realpath(__file__))
-print this_dir
+# print this_dir
 
 # TODO: don't use this, make our own
 def eval_per_image(i, gt, pred, use_rel, gt_thr = 0.5, return_match = False):
@@ -98,7 +98,7 @@ def eval_recall_at_N(ds_name, N, res, use_rel = True, use_zero_shot = False):
         else:
             gt_path = '../data/%s/gt.pkl'%ds_name
         with open(gt_path, 'rb') as fid:
-            gt = cPickle.load(fid)
+            gt = pickle.load(fid)
 
     pred = {}
     pred['tuple_label'] = copy.deepcopy(res['rlp_labels_ours'])
@@ -169,10 +169,10 @@ def eval_obj_img(gt_boxes, gt_cls, pred_boxes, pred_cls, gt_thr=0.5, return_flag
 
 def eval_object_recognition_top_N(proposals_path):
     with open('VRD_test.pkl', 'rb') as fid:
-        anno = cPickle.load(fid)
+        anno = pickle.load(fid)
 
     with open(proposals_path, 'rb') as fid:
-        proposals = cPickle.load(fid)
+        proposals = pickle.load(fid)
 
     pos_num = 0.0
     loc_num = 0.0
@@ -187,7 +187,7 @@ def eval_object_recognition_top_N(proposals_path):
         pos_num_img, loc_num_img = eval_obj_img(gt_boxes, gt_cls, pred_boxes, pred_cls)
         pos_num += pos_num_img
         loc_num += loc_num_img
-    print pos_num/(pos_num+loc_num)
+    print(pos_num/(pos_num+loc_num))
 
 if __name__ == '__main__':
     pass

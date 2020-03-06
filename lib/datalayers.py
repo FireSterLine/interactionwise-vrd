@@ -11,15 +11,15 @@ import math
 import torch
 from gensim.models import KeyedVectors
 
-import utils
-import globals
+import utils, globals
+from copy import copy
 # TODO: expand so that it supports batch sizes > 1
 
 class VRDDataLayer():
   """ Iterate through the dataset and yield the input and target for the network """
 
   def __init__(self, ds_info, stage):
-
+    ds_info = copy(ds_info)
     if isinstance(ds_info, str):
       ds_name = ds_info
       ds_args = {}
@@ -37,7 +37,7 @@ class VRDDataLayer():
     self.n_obj   = self.dataset.n_obj
     self.n_pred  = self.dataset.n_pred
 
-    self.imgrels   = [(k,v) for k,v in self.dataset.getImgRels().items()]
+    self.imgrels   = [(k,v) for k,v in self.dataset.getImgRels(self.stage).items()]
     self.n_imgrels = len(self.imgrels)
     self.cur_imgrels = 0
 
@@ -48,8 +48,8 @@ class VRDDataLayer():
     # print("Loading Word2Vec model...")
     # self.w2v_model = KeyedVectors.load_word2vec_format(osp.join(globals.data_dir, globals.w2v_model_path), binary=True)
 
-  #def __iter__(self):
-  #    return self
+  def __iter__(self):
+      return self
 
   def __next__(self):
 
@@ -82,11 +82,11 @@ class VRDDataLayer():
     n_objs = len(objs)
 
     boxes_img = np.zeros((n_objs, 4))
-    classes_img = np.zeros((n_objs,))
+    classes_img = np.zeros((n_objs))
 
     for i_obj,obj in enumerate(objs):
       boxes_img[i_obj] = utils.bboxDictToNumpy(obj["bbox"])
-      classes_img[i_obj] = utils.bboxDictToNumpy(obj["id"])
+      classes_img[i_obj] = obj["id"]
 
 
 
@@ -191,7 +191,7 @@ class VRDDataLayer():
     if self.stage == "train":
       yield rel_soP_prior
       yield target
-    elif self.stage == "test"
+    elif self.stage == "test":
       yield classes_img
       yield boxes_img
 
