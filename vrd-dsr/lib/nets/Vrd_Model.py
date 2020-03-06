@@ -16,6 +16,13 @@ class Vrd_Model(nn.Module):
     def __init__(self, args, bn=False):
         super(Vrd_Model, self).__init__()
 
+
+
+
+
+
+
+
         # Relations = Predicates
         self.n_rel = args.num_relations
         self.n_obj = args.num_classes
@@ -109,6 +116,7 @@ class Vrd_Model(nn.Module):
             self.fc_lov = FC(64, 256)
             n_fusion += 256
 
+
         # using semantic embeddings of objects
         if(args.use_obj):
             self.emb = nn.Embedding(self.n_obj, 300)
@@ -157,13 +165,17 @@ class Vrd_Model(nn.Module):
         x_so = self.fc8(x_so)
         x = self.fc8(x)
 
+
+
+
+
         if(args.use_so):
+
             x_s = torch.index_select(x_so, 0, ix1)
             x_o = torch.index_select(x_so, 0, ix2)
             x_so = torch.cat((x_s, x_o), 1)
             x_so = self.fc_so(x_so)
             x = torch.cat((x, x_so), 1)
-
 
         if(args.loc_type == 1):
             lo = self.fc_lov(SpatialFea)

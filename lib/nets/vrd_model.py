@@ -90,6 +90,10 @@ class vrd_model(nn.Module):
 
 
 
+
+
+
+
     if(self.args.use_vis):
       self.fc8   = FC(4096, self.args.n_fus_neurons)
       self.total_fus_neurons += self.args.n_fus_neurons
@@ -98,6 +102,7 @@ class vrd_model(nn.Module):
       if(self.args.use_so):
         self.fc_so = FC(self.args.n_fus_neurons*2, self.args.n_fus_neurons)
         self.total_fus_neurons += self.args.n_fus_neurons
+
 
     # using type 1 of spatial features
     if(self.args.use_spat == 1):
@@ -123,9 +128,14 @@ class vrd_model(nn.Module):
     self.fc_fusion = FC(self.total_fus_neurons, 256)
     self.fc_rel    = FC(256, self.args.n_pred, relu = False)
 
-
-
   def forward(self, img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, semantic_features):
+
+
+
+
+
+
+
 
     # Visual features from the whole image
 
@@ -151,7 +161,7 @@ class vrd_model(nn.Module):
     x_u = self.dropout0(x_u)
     x_u = self.fc7(x_u)
     x_u = self.dropout0(x_u)
-    
+
     x_fused = torch.empty((u_boxes.size()[0], 0)).cuda()
 
     if(self.args.use_vis):
