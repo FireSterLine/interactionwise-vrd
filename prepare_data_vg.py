@@ -91,8 +91,8 @@ if __name__ == '__main__':
 
     relationship_data = defaultdict(lambda: list())
     for ix, filename in enumerate(glob(json_files_path + "*.json")):
-        if ix > 2:
-            break
+        # if ix > 2:
+        #     break
         data = json.load(open(filename, 'r'))
 
         folder = data['folder']
