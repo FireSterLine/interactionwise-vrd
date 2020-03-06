@@ -12,7 +12,7 @@ import torch.nn.init
 
 from easydict import EasyDict
 import globals, utils
-import network
+import lib.network as network
 from lib.nets.vrd_model import vrd_model
 from lib.datalayers import VRDDataLayer
 from model.utils.net_utils import weights_normal_init, save_checkpoint

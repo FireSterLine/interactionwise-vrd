@@ -44,11 +44,11 @@ def set_trainability(model, requires_grad):
 
 
 def load_pretrained_conv(self, file_path):
-  params = np.load(file_path).item()
+  params = np.load(file_path, allow_pickle=True, encoding='latin1').item()
   # vgg16
   vgg16_dict = self.state_dict()
-  print(vgg16_dict)
-  print(params)
+  # print(vgg16_dict)
+  # print(params)
 
   print()
 
@@ -62,7 +62,7 @@ def load_pretrained_conv(self, file_path):
     key = "conv{}_{}".format(i, j)
     print(ptype, key)
     param = torch.from_numpy(params[key][ptype])
-    print(params)
+    # print(params[key][ptype])
 
     if ptype == "weights":
       param = param.permute(3, 2, 0, 1)
@@ -76,12 +76,12 @@ def load_pretrained_conv(self, file_path):
   for k, v in pairs.items():
     print(k,v)
     key = "{}.weight".format(k)
-    print(params[v]["weights"])
+    # print(params[v]["weights"])
     param = torch.from_numpy(params[v]["weights"]).permute(1, 0)
     frcnn_dict[key].copy_(param)
 
     key = "{}.bias".format(k)
-    print(params[v]["biases"])
+    # print(params[v]["biases"])
     param = torch.from_numpy(params[v]["biases"])
     frcnn_dict[key].copy_(param)
 
