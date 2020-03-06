@@ -64,7 +64,7 @@ def getSemanticVector(subject_label, object_label, w2v_model):
 def read_img(im_file):
   """ Wrapper for cv2.imread """
   if not os.path.exists(im_file):
-    raise Exception("Image file not found: " + im_file)
+    raise FileNotFoundError("Image file not found: " + im_file)
   return np.array(cv2.imread(im_file))
 
 class AverageMeter(object):
