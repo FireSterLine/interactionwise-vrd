@@ -143,11 +143,14 @@ class vrd_trainer():
       state_dict = checkpoint["state_dict"]
       try:
         self.net.load_state_dict(state_dict)
-      except Error:
+      except RuntimeError:
         def patch_model_state_dict(state_dict):
-          del state_dict["emb.weight"]
           state_dict["fc_semantic.weight"] = state_dict["fc_so_emb.fc.weight"]
           state_dict["fc_semantic.bias"] = state_dict["fc_so_emb.fc.bias"]
+          del state_dict["emb.weight"]
+          del state_dict["fc_so_emb.fc.weight"]
+          del state_dict["fc_so_emb.fc.bias"]
+
           return state_dict
         self.net.load_state_dict(patch_model_state_dict(state_dict))
 
