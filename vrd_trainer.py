@@ -11,8 +11,8 @@ import torch.nn as nn
 import torch.nn.init
 
 from easydict import EasyDict
-import globals
-import utils
+import globals, utils
+import network
 from lib.nets.vrd_model import vrd_model
 from lib.datalayers import VRDDataLayer
 from model.utils.net_utils import weights_normal_init, save_checkpoint
@@ -104,7 +104,7 @@ class vrd_trainer():
     # Initialize the model in some way ...
     print("Initializing weights...")
     weights_normal_init(self.net, dev=0.01)
-    self.net.load_pretrained_npy(osp.join(globals.data_dir, "VGG_imagenet.npy"))
+    network.load_pretrained_conv(self.net, osp.join(globals.data_dir, "VGG_imagenet.npy"))
     # Initial object embedding with word2vec
     #with open('../data/vrd/params_emb.pkl') as f:
     #    emb_init = pickle.load(f)

@@ -43,6 +43,48 @@ def set_trainability(model, requires_grad):
     param.requires_grad = requires_grad
 
 
+def load_pretrained_conv(self, file_path):
+  params = np.load(file_path).item()
+  # vgg16
+  vgg16_dict = self.state_dict()
+  print(vgg16_dict)
+  print(params)
+
+  print()
+
+  for name, val in vgg16_dict.items():
+    if name.find("bn.") >= 0 or not "conv" in name or "spat" in name:
+      continue
+    print(name, val)
+    i, j = int(name[4]), int(name[6]) + 1
+    print(i, j)
+    ptype = "weights" if name[-1] == "t" else "biases"
+    key = "conv{}_{}".format(i, j)
+    print(ptype, key)
+    param = torch.from_numpy(params[key][ptype])
+    print(params)
+
+    if ptype == "weights":
+      param = param.permute(3, 2, 0, 1)
+
+    val.copy_(param)
+
+  # fc6 fc7
+  frcnn_dict = self.state_dict()
+  pairs = {"fc6.fc": "fc6", "fc7.fc": "fc7"}
+  # pairs = {'fc6.fc': 'fc6', 'fc7.fc': 'fc7', 'fc7_so.fc': 'fc7'}
+  for k, v in pairs.items():
+    print(k,v)
+    key = "{}.weight".format(k)
+    print(params[v]["weights"])
+    param = torch.from_numpy(params[v]["weights"]).permute(1, 0)
+    frcnn_dict[key].copy_(param)
+
+    key = "{}.bias".format(k)
+    print(params[v]["biases"])
+    param = torch.from_numpy(params[v]["biases"])
+    frcnn_dict[key].copy_(param)
+
 """
 
 
