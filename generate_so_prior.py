@@ -6,8 +6,14 @@ from collections import defaultdict
 
 def generate_mapping(filename):
     label_to_id_mapping = {}
-    with open(filename, 'r') as rfile:
-        data = json.load(rfile)
+    if filename.split('.')[-1] == 'json':
+        with open(filename, 'r') as rfile:
+            data = json.load(rfile)
+    elif filename.split('.')[-1] == 'txt':
+        data = []
+        with open(filename, 'r') as rfile:
+            for line in rfile:
+                data.append(line.strip())
 
     for index, elem in enumerate(data):
         label_to_id_mapping[elem] = index
@@ -16,9 +22,20 @@ def generate_mapping(filename):
 
 
 if __name__ == '__main__':
-    filename = "data/vrd/vrd_data.json"
-    objects_vocab_filename = "data/vrd/objects.json"
-    predicates_vocab_filename = "data/vrd/predicates.json"
+    # THIS IS FOR VRD
+    # print("Generating the prior for Visual Relationship Dataset...")
+    # filename = "data/vrd/vrd_data.json"
+    # objects_vocab_filename = "data/vrd/objects.json"
+    # predicates_vocab_filename = "data/vrd/predicates.json"
+    # output_file = "data/vrd/sop_prior_vrd.pkl"
+
+    # THIS IS FOR VG
+    print("Generating the prior for Visual Genome Dataset...")
+    # filename = "data/genome/vrd_data_1600-400-20.json"
+    filename = "data/genome/1600-400-20/vg_data.json"
+    objects_vocab_filename = "data/genome/1600-400-20/objects_vocab_1600.txt"
+    predicates_vocab_filename = "data/genome/1600-400-20/relations_vocab_20.txt"
+    output_file = "data/genome/sop_prior_vg_1600-400-20.pkl"
     
     objects_vocab = generate_mapping(objects_vocab_filename)
     predicates_vocab = generate_mapping(predicates_vocab_filename)
@@ -36,7 +53,9 @@ if __name__ == '__main__':
 
             sop_counts[subject_label][object_label][predicate_label] += 1
 
-    assert len(sop_counts.keys()) == len(objects_vocab)
+    print("Number of objects in training data: {}".format(len(sop_counts.keys())))
+    print("Number of objects in vocab: {}".format(len(objects_vocab)))
+    assert len(sop_counts.keys()) <= len(objects_vocab)
 
     so_prior = np.zeros((len(objects_vocab), len(objects_vocab), len(predicates_vocab)))
 
@@ -50,7 +69,7 @@ if __name__ == '__main__':
                 so_prior[out_ix][in_ix][p_ix] = float(sop_counts[out_elem][in_elem][p_elem]) / float(total_count)
 
     print(so_prior)
-    pickle.dump(so_prior, open('data/so_prior_vrd.pkl', 'wb'))
+    pickle.dump(so_prior, open(output_file, 'wb'))
 
     # Computing difference between their so_prior and our so_prior
     # s = pickle.load(open('/home/azfar/Downloads/so_prior.pkl', 'rb'), encoding='latin1')

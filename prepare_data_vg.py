@@ -18,10 +18,10 @@ if __name__ == '__main__':
     num_predicates = 20
     # the training data file created by this script is actually in data/genome/... instead of faster-rcnn/data/genome
     # this is because the faster-rcnn/data/genome has been linked to data/genome
-    json_files_path = "./faster-rcnn/data/genome/{}-{}-{}/json/".format(num_objects, num_attributes, num_predicates)
-    objects_vocab_file = "./faster-rcnn/data/genome/{}-{}-{}/objects_vocab_{}.txt".format(num_objects, num_attributes, num_predicates, num_objects)
-    predicates_vocab_file = "./faster-rcnn/data/genome/{}-{}-{}/relations_vocab_{}.txt".format(num_objects, num_attributes, num_predicates, num_predicates)
-    output_file = './faster-rcnn/data/genome/{}-{}-{}/vg_data.json'.format(num_objects, num_attributes, num_predicates)
+    json_files_path = "./data/genome/{}-{}-{}/json/".format(num_objects, num_attributes, num_predicates)
+    objects_vocab_file = "./data/genome/{}-{}-{}/objects_vocab_{}.txt".format(num_objects, num_attributes, num_predicates, num_objects)
+    predicates_vocab_file = "./data/genome/{}-{}-{}/relations_vocab_{}.txt".format(num_objects, num_attributes, num_predicates, num_predicates)
+    output_file = './data/genome/{}-{}-{}/vg_data.json'.format(num_objects, num_attributes, num_predicates)
     
     objects_label_to_id_mapping = generate_mapping(objects_vocab_file)
     predicates_label_to_id_mapping = generate_mapping(predicates_vocab_file)
