@@ -41,8 +41,8 @@ class VRDDataLayer():
     self.n_imgrels = len(self.imgrels)
     self.cur_imgrels = 0
 
-    print("Loading Word2Vec model...")
-    self.w2v_model = KeyedVectors.load_word2vec_format(osp.join(globals.data_dir, globals.w2v_model_path), binary=True)
+    # print("Loading Word2Vec model...")
+    # self.w2v_model = KeyedVectors.load_word2vec_format(osp.join(globals.data_dir, globals.w2v_model_path), binary=True)
 
   #def __iter__(self):
   #    return self
@@ -128,8 +128,8 @@ class VRDDataLayer():
       spatial_features[i_rel] = utils.getRelativeLoc(sBBox, oBBox)
 
       # semantic features of obj and subj
-      semantic_features[i_rel] = utils.getSemanticVector(objs[rel["subject"]]["name"], objs[rel["object"]]["name"], self.w2v_model)
-      # semantic_features[i_rel] = np.zeros(600)
+      # semantic_features[i_rel] = utils.getSemanticVector(objs[rel["subject"]]["name"], objs[rel["object"]]["name"], self.w2v_model)
+      semantic_features[i_rel] = np.zeros(600)
 
       # store the probability distribution of this subject-object pair from the soP_prior
       s_cls_id = objs[rel["subject"]]["id"]
