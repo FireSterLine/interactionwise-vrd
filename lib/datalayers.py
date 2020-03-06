@@ -68,6 +68,7 @@ class VRDDataLayer():
     #  (and maybe transform relationships to contain object indices instead of whole objects)
     # Note: from here on, rel["subject"] and rel["object"] contain indices to objs
     objs = []
+    boxes = []
     for i_rel,rel in enumerate(rels):
 
       i_obj = len(objs)
@@ -81,9 +82,11 @@ class VRDDataLayer():
     n_objs = len(objs)
 
     boxes_img = np.zeros((n_objs, 4))
+    classes_img = np.zeros((n_objs,))
 
     for i_obj,obj in enumerate(objs):
       boxes_img[i_obj] = utils.bboxDictToNumpy(obj["bbox"])
+      classes_img[i_obj] = utils.bboxDictToNumpy(obj["id"])
 
 
 
@@ -189,8 +192,8 @@ class VRDDataLayer():
       yield rel_soP_prior
       yield target
     elif self.stage == "test"
-      yield np.array(anno_img["classes"])
-      yield anno_img["boxes"]
+      yield classes_img
+      yield boxes_img
 
 if __name__ == '__main__':
   pass
