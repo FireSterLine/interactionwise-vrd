@@ -21,12 +21,12 @@ if __name__ == '__main__':
     json_files_path = "./data/genome/{}-{}-{}/json/".format(num_objects, num_attributes, num_predicates)
     objects_vocab_file = "./data/genome/{}-{}-{}/objects_vocab_{}.txt".format(num_objects, num_attributes, num_predicates, num_objects)
     predicates_vocab_file = "./data/genome/{}-{}-{}/relations_vocab_{}.txt".format(num_objects, num_attributes, num_predicates, num_predicates)
-    output_file = './data/genome/{}-{}-{}/vg_data.json'.format(num_objects, num_attributes, num_predicates)
-    
+    output_file = './data/genome/{}-{}-{}/data.json'.format(num_objects, num_attributes, num_predicates)
+
     objects_label_to_id_mapping = generate_mapping(objects_vocab_file)
     predicates_label_to_id_mapping = generate_mapping(predicates_vocab_file)
 
-    relationship_data = defaultdict(lambda: list())
+    vrd_data = defaultdict(lambda: list())
     for filename in glob(json_files_path + "*.json"):
         data = json.load(open(filename, 'r'))
 
@@ -58,7 +58,7 @@ if __name__ == '__main__':
             rel_data['predicate']['name'] = pred_label
             rel_data['predicate']['id'] = predicates_label_to_id_mapping[pred_label]
 
-            if rel_data not in relationship_data[img_id]:
-                relationship_data[img_id].append(rel_data)
+            if rel_data not in vrd_data[img_id]:
+                vrd_data[img_id].append(rel_data)
 
-    json.dump(relationship_data, open(output_file, 'w'))
+    json.dump(vrd_data, open(output_file, 'w'))
