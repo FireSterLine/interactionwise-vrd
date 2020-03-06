@@ -37,9 +37,13 @@ class VRDDataLayer():
     self.n_obj   = self.dataset.n_obj
     self.n_pred  = self.dataset.n_pred
 
-    self.imgrels = [(k,v) for k,v in self.dataset.getImgRels().items()]
+    self.imgrels   = [(k,v) for k,v in self.dataset.getImgRels().items()]
     self.n_imgrels = len(self.imgrels)
     self.cur_imgrels = 0
+
+    self.batch_size = 1
+    # TODO: take care of the remaining
+    self.n_imgrel_batches = self.n_imgrels // self.batch_size
 
     # print("Loading Word2Vec model...")
     # self.w2v_model = KeyedVectors.load_word2vec_format(osp.join(globals.data_dir, globals.w2v_model_path), binary=True)
@@ -95,6 +99,11 @@ class VRDDataLayer():
 
     # the dimension 8 here is the size of the spatial feature vector, containing the relative location and log-distance
     spatial_features = np.zeros((n_rel, 8))
+    # TODO: introduce the other spatial feature thingy
+    # spatial_features = np.zeros((n_rel, 2, 32, 32))
+    #     spatial_features[ii] = [self._getDualMask(ih, iw, sBBox), \
+    #               self._getDualMask(ih, iw, oBBox)]
+
     # TODO: add tiny comment...
     semantic_features = np.zeros((n_rel, 2*300))
 
@@ -150,6 +159,7 @@ class VRDDataLayer():
     if(self.cur_imgrels >= self.n_imgrels):
       self.cur_imgrels = 0
 
+
     # print(target)
 
     # Note: the transpose should move the color channel to being the
@@ -163,7 +173,7 @@ class VRDDataLayer():
     semantic_features = torch.FloatTensor(semantic_features).cuda()
 
     rel_soP_prior = torch.FloatTensor(rel_soP_prior).cuda()
-    target       = torch.LongTensor(target).cuda()
+    target        = torch.LongTensor(target).cuda()
     # target        = torch.LongTensor(target).cuda()
 
 
@@ -175,9 +185,12 @@ class VRDDataLayer():
     yield spatial_features
     yield semantic_features
 
-    yield rel_soP_prior
-    yield target
-    # yield target
+    if self.stage == "train":
+      yield rel_soP_prior
+      yield target
+    elif self.stage == "test"
+      yield np.array(anno_img["classes"])
+      yield anno_img["boxes"]
 
 if __name__ == '__main__':
   pass

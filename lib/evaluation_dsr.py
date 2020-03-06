@@ -8,6 +8,7 @@ import os.path as osp
 this_dir = osp.dirname(osp.realpath(__file__))
 print this_dir
 
+# TODO: don't use this, make our own
 def eval_per_image(i, gt, pred, use_rel, gt_thr = 0.5, return_match = False):
     gt_tupLabel = gt['tuple_label'][i].astype(np.float32)
     num_gt_tuple = gt_tupLabel.shape[0]
@@ -73,7 +74,7 @@ def eval_per_image(i, gt, pred, use_rel, gt_thr = 0.5, return_match = False):
         return tp
     return tp.sum(), num_gt_tuple
 
-def eval_reall_at_N(ds_name, N, res, use_rel = True, use_zero_shot = False):
+def eval_recall_at_N(ds_name, N, res, use_rel = True, use_zero_shot = False):
     if(ds_name == 'vrd'):
         num_imgs = 1000
         gt = sio.loadmat('../data/vrd/gt.mat')

@@ -15,11 +15,11 @@ import globals, utils
 from lib.nets.vrd_model import vrd_model
 from lib.datalayers import VRDDataLayer
 from model.utils.net_utils import weights_normal_init, save_checkpoint
+from lib.evaluation_dsr import eval_recall_at_N, eval_obj_img # TODO remove this module
 #, save_net, load_net, \
 #      adjust_learning_rate, , clip_gradient
 
 # from lib.model import train_net, test_pre_net, test_rel_net
-
 
 
 
@@ -67,7 +67,10 @@ class vrd_trainer():
     self.max_epochs = 200
     self.checkpoint_frequency = 10
 
-    self.batch_size = 5
+    # Does this have to be a constant?
+    self.iters_per_epoch = 200
+
+    self.batch_size = 1 # TODO
     self.num_workers = 0
 
     self.save_dir = osp.join(globals.models_dir, self.session_name)
@@ -75,12 +78,13 @@ class vrd_trainer():
       os.mkdir(self.save_dir)
 
     self.dataset_name = dataset_name
+    self.dataset_args = {"ds_name" : self.dataset_name, "with_bg_obj" : False, "with_bg_pred" : False}
     self.pretrained = pretrained
 
     # load data layer
     print("Initializing data layer...")
     # self.datalayer = VRDDataLayer({"ds_name" : self.dataset_name, "with_bg_obj" : True}, "train")
-    self.datalayer = VRDDataLayer({"ds_name" : self.dataset_name, "with_bg_obj" : False, "with_bg_pred" : False}, "train")
+    self.datalayer = VRDDataLayer(self.dataset_args, "train")
     # self.datalayer = VRDDataLayer(self.dataset_name, "train")
 
     # TODO: Pytorch DataLoader()
@@ -89,9 +93,6 @@ class vrd_trainer():
     #                  batch_size=self.batch_size,
     #                  # sampler= Random ...,
     #                  num_workers=self.num_workers)
-
-    # TODO: why a constant? Loop through all of the data, maybe?
-    self.train_size = 200
 
     load_pretrained = isinstance(self.pretrained, str)
 
@@ -177,6 +178,7 @@ class vrd_trainer():
       checkpoint = torch.load(model_path)
       self.start_epoch = checkpoint["epoch"]
       # self.session = checkpoint["session"]
+
       state_dict = checkpoint["state_dict"]
       try:
         self.net.load_state_dict(state_dict)
@@ -192,12 +194,11 @@ class vrd_trainer():
 
       self.optimizer.load_state_dict(checkpoint["optimizer"])
 
-    # Initialize the model in some way ...
-
   def train(self):
     res_file = "output-{}.txt".format(self.session_name)
 
-    headers = ["Epoch","Pre R@50", "ZS", "R@100", "ZS", "Rel R@50", "ZS", "R@100", "ZS"]
+    # headers = ["Epoch","Pre R@50", "ZS", "R@100", "ZS", "Rel R@50", "ZS", "R@100", "ZS"]
+    headers = ["Epoch","Pre R@50", "ZS", "R@100", "ZS"]
     res = []
     for epoch in range(self.start_epoch, self.start_epoch + self.max_epochs):
 
@@ -205,8 +206,9 @@ class vrd_trainer():
 
       self.__train_epoch(epoch)
       # res.append((epoch,) + test_pre_net(net, args) + test_rel_net(net, args))
-      # with open(res_file, 'w') as f:
-      #   f.write(tabulate(res, headers))
+      res.append((epoch,) + self.test_pre_net(net, args))
+      with open("results-{}.txt".format(self.session_name), 'w') as f:
+        f.write(tabulate(res, headers))
 
       if epoch % self.checkpoint_frequency == 0:
         save_name = osp.join(self.save_dir, "checkpoint_epoch_{}.pth.tar".format(epoch))
@@ -226,9 +228,8 @@ class vrd_trainer():
 
     # Obtain next annotation input and target
     #for spatial_features, semantic_features, target in self.datalayer:
-    iters_per_epoch = self.train_size // self.batch_size
     losses = utils.AverageMeter()
-    for step in range(iters_per_epoch):
+    for step in range(self.iters_per_epoch):
 
       img_blob, \
       obj_boxes, u_boxes, \
@@ -260,6 +261,62 @@ class vrd_trainer():
       image_blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, rel_labels, rel_so_prior = self.datalayer.forward()
 
     """
+
+  def test_pre_net(self):
+    self.net.eval()
+    time1 = time.time()
+
+    test_data_layer = VRDDataLayer(self.dataset_args, "test")
+
+    res = {}
+    rlp_labels_ours  = []
+    tuple_confs_cell = []
+    sub_bboxes_cell  = []
+    obj_bboxes_cell  = []
+
+    for img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, semantic_features, classes, ori_bboxes in test_data_layer:
+
+      tuple_confs_im = []
+      rlp_labels_im  = np.zeros((100, 3), dtype = np.float)
+      sub_bboxes_im  = np.zeros((100, 4), dtype = np.float)
+      obj_bboxes_im  = np.zeros((100, 4), dtype = np.float)
+
+      obj_scores, rel_scores = self.net(img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, semantic_features)
+      rel_prob = rel_scores.data.cpu().numpy()
+      rel_res = np.dstack(np.unravel_index(np.argsort(-rel_prob.ravel()), rel_prob.shape))[0][:100]
+
+      for ii in range(rel_res.shape[0]):
+        rel = rel_res[ii, 1]
+        tuple_idx = rel_res[ii, 0]
+        conf = rel_prob[tuple_idx, rel]
+        tuple_confs_im.append(conf)
+        rlp_labels_im[ii] = [classes[idx_s[tuple_idx]], rel, classes[idx_o[tuple_idx]]]
+        sub_bboxes_im[ii] = ori_bboxes[idx_s[tuple_idx]]
+        obj_bboxes_im[ii] = ori_bboxes[idx_o[tuple_idx]]
+      if(test_data_layer.ds_name =="vrd"):
+        rlp_labels_im += 1
+
+      tuple_confs_im = np.array(tuple_confs_im)
+      rlp_labels_ours.append(rlp_labels_im)
+      tuple_confs_cell.append(tuple_confs_im)
+      sub_bboxes_cell.append(sub_bboxes_im)
+      obj_bboxes_cell.append(obj_bboxes_im)
+
+    res["rlp_labels_ours"] = rlp_labels_ours
+    res["rlp_confs_ours"]  = tuple_confs_cell
+    res["sub_bboxes_ours"] = sub_bboxes_cell
+    res["obj_bboxes_ours"] = obj_bboxes_cell
+
+    rec_50     = eval_recall_at_N(self.args.ds_name, 50,  res, use_zero_shot = False)
+    rec_50_zs  = eval_recall_at_N(self.args.ds_name, 50,  res, use_zero_shot = True)
+    rec_100    = eval_recall_at_N(self.args.ds_name, 100, res, use_zero_shot = False)
+    rec_100_zs = eval_recall_at_N(self.args.ds_name, 100, res, use_zero_shot = True)
+    time2 = time.time()
+
+    print ("CLS TEST r50:%f, r50_zs:%f, r100:%f, r100_zs:%f" % (rec_50, rec_50_zs, rec_100, rec_100_zs))
+    print ("TEST Time:%s" % (time.strftime('%H:%M:%S', time.gmtime(int(time2 - time1)))))
+
+    return rec_50, rec_50_zs, rec_100, rec_100_zs
 
 if __name__ == '__main__':
   trainer = vrd_trainer()
