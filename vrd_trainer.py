@@ -65,7 +65,7 @@ class vrd_trainer():
 
     self.session_name = "test" # Training session name?
     self.start_epoch = 0
-    self.max_epochs = 10
+    self.max_epochs = 20
 
     self.batch_size = 5
     self.num_workers = 0
@@ -178,6 +178,7 @@ class vrd_trainer():
     # Obtain next annotation input and target
     #for spatial_features, semantic_features, target in self.datalayer:
     iters_per_epoch = int(self.train_size / self.batch_size)
+    losses = utils.AverageMeter()
     for step in range(iters_per_epoch):
       # TODO: why range(10)? Loop through all of the data, maybe?
 
@@ -198,14 +199,16 @@ class vrd_trainer():
 
       # applying some preprocessing to the rel_sop_prior before factoring it into the score
       rel_sop_prior = -0.5 * ( rel_sop_prior + 1.0 / self.datalayer.n_pred)
-      # loss = self.criterion((rel_sop_prior + rel_scores).view(1, -1), target)
-      loss = self.criterion((rel_scores).view(1, -1), target)
+      loss = self.criterion((rel_sop_prior + rel_scores).view(1, -1), target)
+      # loss = self.criterion((rel_scores).view(1, -1), target)
+      losses.update(loss.item())
       loss.backward()
       self.optimizer.step()
 
       # time2 = time.time()
 
-      print("Step {}, Loss: {}".format(step, loss))
+      # print("Step {}, Loss: {}".format(step, loss))
+    print("Epoch loss: {}".format(losses.avg))
 
     """
     losses = AverageMeter()
