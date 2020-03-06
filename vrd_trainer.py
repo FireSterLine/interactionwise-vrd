@@ -57,7 +57,7 @@ from model.utils.net_utils import weights_normal_init, save_checkpoint
 
 class vrd_trainer():
 
-  def __init__(self, dataset_name="vrd", pretrained=False):
+  def __init__(self, dataset_name="vrd", pretrained="epoch_4_checkpoint.pth.tar"):
 
     print("vrd_trainer() called with args:")
     print([dataset_name, pretrained])
@@ -75,7 +75,7 @@ class vrd_trainer():
       os.mkdir(self.save_dir)
 
     self.dataset_name = dataset_name
-    self.pretrained = False # TODO
+    self.pretrained = pretrained
 
     # load data layer
     print("Initializing data layer...")
@@ -89,6 +89,8 @@ class vrd_trainer():
     #                  batch_size=self.batch_size,
     #                  # sampler= Random ...,
     #                  num_workers=self.num_workers)
+
+    # TODO: why a constant? Loop through all of the data, maybe?
     self.train_size = 200
 
     load_pretrained = isinstance(self.pretrained, str)
@@ -114,7 +116,7 @@ class vrd_trainer():
     # - 0: no spatial info
     # - 1: 8-way relative location vector
     # - 2: dual mask
-    self.net_args.use_spat = 1
+    self.net_args.use_spat = 0
 
     # Size of the representation for each modality when fusing features
     self.net_args.n_fus_neurons = 256
@@ -127,13 +129,37 @@ class vrd_trainer():
     self.net = vrd_model(self.net_args) # TODO: load_pretrained affects how the model is initialized?
     self.net.cuda()
 
+    if load_pretrained:
+      model_path = osp.join(globals.models_dir, self.pretrained)
+
+      print("Loading model... (checkpoint {})".format(model_path))
+
+      if not osp.isfile(model_path):
+        raise Exception("Pretrained model not found: {}".format(model_path))
+
+      checkpoint = torch.load(model_path)
+      self.start_epoch = checkpoint["epoch"]
+      # self.session = checkpoint["session"]
+      state_dict = checkpoint["state_dict"]
+      try:
+        self.net.load_state_dict(state_dict)
+      except Error:
+        def patch_model_state_dict(state_dict):
+          del state_dict["emb.weight"]
+          state_dict["fc_semantic.weight"] = state_dict["fc_so_emb.fc.weight"]
+          state_dict["fc_semantic.bias"] = state_dict["fc_so_emb.fc.bias"]
+          return state_dict
+        self.net.load_state_dict(patch_model_state_dict(state_dict))
+
+      self.optimizer.load_state_dict(checkpoint["optimizer"])
+
     # Initialize the model in some way ...
     print("Initializing weights...")
     weights_normal_init(self.net, dev=0.01)
     self.net.load_pretrained_conv(osp.join(globals.data_dir, "VGG_imagenet.npy"))
 
     # Initial object embedding with word2vec
-    #with open('../data/vrd/params_emb.pkl') as f:
+    #with open("../data/vrd/params_emb.pkl") as f:
     #    emb_init = pickle.load(f)
     #net.state_dict()['emb.weight'].copy_(torch.from_numpy(emb_init))
 
@@ -183,7 +209,7 @@ class vrd_trainer():
     for epoch in range(self.start_epoch, self.start_epoch + self.max_epochs):
 
       print("Epoch {}".format(epoch))
-      
+
       self.__train_epoch(epoch)
       # res.append((epoch,) + test_pre_net(net, args) + test_rel_net(net, args))
       # with open(res_file, 'w') as f:
@@ -196,6 +222,7 @@ class vrd_trainer():
           "epoch": epoch,
           "state_dict": self.net.state_dict(),
           "optimizer_state_dict": self.optimizer.state_dict(),
+          # "net_args": net_args
           # "loss": loss,
           # "pooling_mode": cfg.POOLING_MODE,
           # "class_agnostic": self.class_agnostic,
@@ -209,17 +236,13 @@ class vrd_trainer():
     iters_per_epoch = self.train_size // self.batch_size
     losses = utils.AverageMeter()
     for step in range(iters_per_epoch):
-      # TODO: why range(10)? Loop through all of the data, maybe?
 
       img_blob, \
-      obj_boxes, \
-      u_boxes, \
+      obj_boxes, u_boxes, \
       idx_s, idx_o, \
       spatial_features, semantic_features, \
       rel_sop_prior, target = next(self.datalayer)
 
-      # print(target)
-      # print(target.size())
       # Forward pass & Backpropagation step
       self.optimizer.zero_grad()
       obj_scores, rel_scores = self.net(img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, semantic_features)
@@ -228,7 +251,6 @@ class vrd_trainer():
       rel_sop_prior = -0.5 * ( rel_sop_prior + 1.0 / self.datalayer.n_pred)
       loss = self.criterion((rel_sop_prior + rel_scores).view(1, -1), target)
       # loss = self.criterion((rel_scores).view(1, -1), target)
-      # print(loss.size())
       losses.update(loss.item())
       loss.backward()
       self.optimizer.step()
