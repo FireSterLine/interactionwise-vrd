@@ -21,6 +21,41 @@ from model.utils.net_utils import weights_normal_init, save_checkpoint
 
 # from lib.model import train_net, test_pre_net, test_rel_net
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class vrd_trainer():
 
   def __init__(self, dataset_name="vrd", pretrained=False):
@@ -69,6 +104,7 @@ class vrd_trainer():
     # Initialize the model in some way ...
     print("Initializing weights...")
     weights_normal_init(self.net, dev=0.01)
+    self.net.load_pretrained_npy(osp.join(globals.data_dir, "VGG_imagenet.npy"))
     # Initial object embedding with word2vec
     #with open('../data/vrd/params_emb.pkl') as f:
     #    emb_init = pickle.load(f)
@@ -76,19 +112,25 @@ class vrd_trainer():
 
     print("Initializing optimizer...")
     self.criterion = nn.MultiLabelMarginLoss().cuda()
-    # self.criterion = nn.MSELoss().cuda()
-
     self.lr = 0.00001
     # self.momentum = 0.9
     self.weight_decay = 0.0005
 
     opt_params = list(self.net.parameters())
-    #opt_params = [
-    #  {'params': self.net.fc_spatial.parameters(),  'lr': self.lr},
-    #  {'params': self.net.fc_semantic.parameters(), 'lr': self.lr},
-    #  {'params': self.net.fc_fus1.parameters(),     'lr': self.lr},
-    #  {'params': self.net.fc_fus2.parameters(),     'lr': self.lr},
-    #]
+    # opt_params = [{'params': net.fc8.parameters(), 'lr': self.args.lr*10},
+    #               {'params': net.fc_fusion.parameters(), 'lr': self.args.lr*10},
+    #               {'params': net.fc_rel.parameters(), 'lr': self.args.lr*10},
+    #               ]
+    # if(self.args.use_so):
+    #     opt_params.append({'params': net.fc_so.parameters(), 'lr': self.args.lr*10})
+    # if(self.args.loc_type == 1):
+    #     opt_params.append({'params': net.fc_lov.parameters(), 'lr': self.args.lr*10})
+    # elif(self.args.loc_type == 2):
+    #     opt_params.append({'params': net.conv_lo.parameters(), 'lr': self.args.lr*10})
+    #     opt_params.append({'params': net.fc_lov.parameters(), 'lr': self.args.lr*10})
+    # if(self.args.use_obj):
+    #     opt_params.append({'params': net.fc_so_emb.parameters(), 'lr': self.args.lr*10})
+
     self.optimizer = torch.optim.Adam(opt_params,
             lr=self.lr,
             # momentum=self.momentum,
