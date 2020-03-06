@@ -151,12 +151,12 @@ class vrd_model(nn.Module):
     x_u = self.dropout0(x_u)
     x_u = self.fc7(x_u)
     x_u = self.dropout0(x_u)
-
-    x_fused = torch.empty((0, self.args.n_fus_neurons))
+    
+    x_fused = torch.empty((u_boxes.size()[0], 0)).cuda()
 
     if(self.args.use_vis):
       x_u = self.fc8(x_u)
-      x_fused = torch.cat((x_fused, x_so), 1)
+      x_fused = torch.cat((x_fused, x_u), 1)
 
       # using visual features of subject and object individually too
       if(self.args.use_so):
@@ -169,13 +169,13 @@ class vrd_model(nn.Module):
 
     if(self.args.use_spat == 1):
       x_spat = self.fc_spatial(spatial_features)
-      x = torch.cat((x, x_spat), 1)
+      x = torch.cat((x_fused, x_spat), 1)
     elif(self.args.use_spat == 2):
       raise NotImplementedError
       # lo = self.conv_lo(SpatialFea)
       # lo = lo.view(lo.size()[0], -1)
       # lo = self.fc_lov(lo)
-      # x = torch.cat((x, lo), 1)
+      # x = torch.cat((x_fused, lo), 1)
 
     # TODO: use embedding layer like they do
     if(self.args.use_sem):

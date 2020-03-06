@@ -86,7 +86,7 @@ class VRDDataLayer():
     n_rel = len(rels)
 
     # union bounding boxes
-    u_boxes = np.zeros((n_rel_inst, 5))
+    u_boxes = np.zeros((n_rel, 5))
 
     # the dimension 8 here is the size of the spatial feature vector, containing the relative location and log-distance
     spatial_features = np.zeros((n_rel, 8))
@@ -113,7 +113,7 @@ class VRDDataLayer():
       # get the union bounding box
       rBBox = utils.getUnionBBox(sBBox, oBBox, ih, iw)
       # store the union box (= relation box) of the union bounding box here, with the id i_rel_inst
-      u_boxes[i_rel_inst, 1:5] = np.array(rBBox) * im_scale
+      u_boxes[i_rel, 1:5] = np.array(rBBox) * im_scale
 
       # Subject and object local indices (useful when selecting ROI results)
       idx_s.append(rel["subject"])
