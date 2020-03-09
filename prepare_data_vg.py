@@ -12,7 +12,7 @@ def generate_mapping(filename):
     return label_to_id_mapping
 
 
-def generate_data_old_format(data, object_mapping, predicate_mapping):
+def generate_img_relationships(data, object_mapping, predicate_mapping):
     objects_info = {}
     for obj in data['objects']:
         obj_vg_id = obj['object_id']
@@ -21,7 +21,7 @@ def generate_data_old_format(data, object_mapping, predicate_mapping):
             'bbox': {k: int(v) for k, v in obj['bndbox'].items()}
         }
 
-    relationships = set()
+    relationships = []
     for pred in data['relations']:
         subject_info = objects_info[pred['subject_id']]
         object_info = objects_info[pred['object_id']]
@@ -39,12 +39,13 @@ def generate_data_old_format(data, object_mapping, predicate_mapping):
         rel_data['predicate']['name'] = pred_label
         rel_data['predicate']['id'] = predicate_mapping[pred_label]
 
-        relationships.add(rel_data)
+        if rel_data not in relationships:
+            relationships.append(dict(rel_data))
     
-    return list(relationships)
+    return relationships
 
 
-def generate_data_new_format(data, object_mapping, predicate_mapping):
+def generate_annotations(data, object_mapping, predicate_mapping):
     objects = {}
     obj_id_to_class_id_mapping = {}
     for obj in data['objects']:
@@ -71,7 +72,7 @@ def generate_data_new_format(data, object_mapping, predicate_mapping):
 
 
 if __name__ == '__main__':
-    use_old_format = False
+    generate_img_rels = True
     
     num_objects = 1600
     num_attributes = 400
@@ -81,10 +82,12 @@ if __name__ == '__main__':
     json_files_path = "./data/genome/{}-{}-{}/json/".format(num_objects, num_attributes, num_predicates)
     objects_vocab_file = "./data/genome/{}-{}-{}/objects_vocab_{}.txt".format(num_objects, num_attributes, num_predicates, num_objects)
     predicates_vocab_file = "./data/genome/{}-{}-{}/relations_vocab_{}.txt".format(num_objects, num_attributes, num_predicates, num_predicates)
-    if use_old_format is True:
-        output_file = './data/genome/{}-{}-{}/vg_data.json'.format(num_objects, num_attributes, num_predicates)
+    # this format is used for generating the so_prior
+    if generate_img_rels is True:
+        output_file = './data/genome/{}-{}-{}/img_rels.json'.format(num_objects, num_attributes, num_predicates)
+    # this format is used for training the model
     else:
-        output_file = './data/genome/{}-{}-{}/vg_data_new.json'.format(num_objects, num_attributes, num_predicates)
+        output_file = './data/genome/{}-{}-{}/annotations.json'.format(num_objects, num_attributes, num_predicates)
     
     objects_label_to_id_mapping = generate_mapping(objects_vocab_file)
     predicates_label_to_id_mapping = generate_mapping(predicates_vocab_file)
@@ -99,9 +102,9 @@ if __name__ == '__main__':
         filename = data['filename']
         img_id = folder + "/" + filename
 
-        if use_old_format is True:
-            relationship_data[img_id] = generate_data_old_format(data, objects_label_to_id_mapping, predicates_label_to_id_mapping)
+        if generate_img_rels is True:
+            relationship_data[img_id] = generate_img_relationships(data, objects_label_to_id_mapping, predicates_label_to_id_mapping)
         else:
-            relationship_data[img_id] = generate_data_new_format(data, objects_label_to_id_mapping, predicates_label_to_id_mapping)
+            relationship_data[img_id] = generate_annotations(data, objects_label_to_id_mapping, predicates_label_to_id_mapping)
 
     json.dump(relationship_data, open(output_file, 'w'))
