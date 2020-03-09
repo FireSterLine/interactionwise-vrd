@@ -198,7 +198,8 @@ class vrd_trainer():
     res_file = "output-{}.txt".format(self.session_name)
 
     # headers = ["Epoch","Pre R@50", "ZS", "R@100", "ZS", "Rel R@50", "ZS", "R@100", "ZS"]
-    headers = ["Epoch","Pre R@50", "ZS", "R@100", "ZS"]
+    # headers = ["Epoch","Pre R@50", "ZS", "R@100", "ZS"]
+    headers = ["Epoch","Pre R@50", "R@100"]
     res = []
     for epoch in range(self.start_epoch, self.start_epoch + self.max_epochs):
 
@@ -276,8 +277,12 @@ class vrd_trainer():
     sub_bboxes_cell  = []
     obj_bboxes_cell  = []
 
-    for img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, semantic_features, classes, ori_bboxes in iter(test_data_layer):
-
+    while True:
+      try:
+        img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, semantic_features, classes, ori_bboxes = next(test_data_layer)
+      except ValueError:
+        break
+      
       tuple_confs_im = []
       rlp_labels_im  = np.zeros((100, 3), dtype = np.float)
       sub_bboxes_im  = np.zeros((100, 4), dtype = np.float)
@@ -309,16 +314,18 @@ class vrd_trainer():
     res["sub_bboxes_ours"] = sub_bboxes_cell
     res["obj_bboxes_ours"] = obj_bboxes_cell
 
-    rec_50     = eval_recall_at_N(self.args.ds_name, 50,  res, use_zero_shot = False)
-    rec_50_zs  = eval_recall_at_N(self.args.ds_name, 50,  res, use_zero_shot = True)
-    rec_100    = eval_recall_at_N(self.args.ds_name, 100, res, use_zero_shot = False)
-    rec_100_zs = eval_recall_at_N(self.args.ds_name, 100, res, use_zero_shot = True)
+    rec_50     = eval_recall_at_N(test_data_layer.ds_name, 50,  res, use_zero_shot = False)
+    # rec_50_zs  = eval_recall_at_N(test_data_layer.ds_name, 50,  res, use_zero_shot = True)
+    rec_100    = eval_recall_at_N(test_data_layer.ds_name, 100, res, use_zero_shot = False)
+    # rec_100_zs = eval_recall_at_N(test_data_layer.ds_name, 100, res, use_zero_shot = True)
     time2 = time.time()
 
-    print ("CLS TEST r50:%f, r50_zs:%f, r100:%f, r100_zs:%f" % (rec_50, rec_50_zs, rec_100, rec_100_zs))
+    # print ("CLS TEST r50:%f, r50_zs:%f, r100:%f, r100_zs:%f" % (rec_50, rec_50_zs, rec_100, rec_100_zs))
+    print ("CLS TEST r50:%f, r100:%f" % (rec_50, rec_100))
     print ("TEST Time:%s" % (time.strftime('%H:%M:%S', time.gmtime(int(time2 - time1)))))
 
-    return rec_50, rec_50_zs, rec_100, rec_100_zs
+    # return rec_50, rec_50_zs, rec_100, rec_100_zs
+    return rec_50, rec_100
 
 if __name__ == '__main__':
   trainer = vrd_trainer()

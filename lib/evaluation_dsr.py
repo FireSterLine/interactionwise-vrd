@@ -4,6 +4,7 @@ import pickle
 import copy
 import time
 import sys
+import pdb
 import os.path as osp
 this_dir = osp.dirname(osp.realpath(__file__))
 # print this_dir
@@ -77,12 +78,12 @@ def eval_per_image(i, gt, pred, use_rel, gt_thr = 0.5, return_match = False):
 def eval_recall_at_N(ds_name, N, res, use_rel = True, use_zero_shot = False):
     if(ds_name == 'vrd'):
         num_imgs = 1000
-        gt = sio.loadmat('../data/vrd/gt.mat')
+        gt = sio.loadmat('data/vrd/gt.mat')
         gt['tuple_label'] = gt['gt_tuple_label'][0]
         gt['obj_bboxes'] = gt['gt_obj_bboxes'][0]
         gt['sub_bboxes'] = gt['gt_sub_bboxes'][0]
         if(use_zero_shot):
-            zs = sio.loadmat('../data/vrd/zeroShot.mat')['zeroShot'][0];
+            zs = sio.loadmat('data/vrd/zeroShot.mat')['zeroShot'][0];
             for ii in range(num_imgs):
                 if(zs[ii].shape[0] == 0):
                     continue
@@ -105,9 +106,16 @@ def eval_recall_at_N(ds_name, N, res, use_rel = True, use_zero_shot = False):
     pred['tuple_confs'] = copy.deepcopy(res['rlp_confs_ours'])
     pred['sub_bboxes']  = copy.deepcopy(res['sub_bboxes_ours'])
     pred['obj_bboxes']  = copy.deepcopy(res['obj_bboxes_ours'])
+    
+    print(pred.keys())
+    print(len(pred['tuple_label']))
+    print(len(pred['tuple_confs']))
+    print(len(pred['sub_bboxes']))
+    print(len(pred['obj_bboxes']))
+    pdb.set_trace()
 
     for ii in range(num_imgs):
-        if(pred['tuple_confs'][ii] is None):
+        if(ii not in pred['tuple_confs'] or pred['tuple_confs'][ii] is None):
             continue
         pred['tuple_confs'][ii] = np.array(pred['tuple_confs'][ii])
         if(pred['tuple_confs'][ii].shape[0] == 0):
