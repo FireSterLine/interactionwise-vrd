@@ -60,7 +60,7 @@ def generate_annotations(data, object_mapping, predicate_mapping):
         pred_id = predicate_mapping[pred['predicate']]
 
         # do we want a set of this?
-        if (subject_id, object_id) not in rels.keys():
+        if str(subject_id, object_id) not in rels.keys():
             rels[str((subject_id, object_id))] = []
         rels[str((subject_id, object_id))].append(pred_id)
 
@@ -84,10 +84,10 @@ if __name__ == '__main__':
     predicates_vocab_file = "./data/genome/{}-{}-{}/relations_vocab_{}.txt".format(num_objects, num_attributes, num_predicates, num_predicates)
     # this format is used for generating the so_prior
     if generate_img_rels is True:
-        output_file = './data/genome/{}-{}-{}/img_rels.json'.format(num_objects, num_attributes, num_predicates)
+        output_file = './data/genome/{}-{}-{}/data_img_rels.json'.format(num_objects, num_attributes, num_predicates)
     # this format is used for training the model
     else:
-        output_file = './data/genome/{}-{}-{}/annotations.json'.format(num_objects, num_attributes, num_predicates)
+        output_file = './data/genome/{}-{}-{}/data_annotations.json'.format(num_objects, num_attributes, num_predicates)
     
     objects_label_to_id_mapping = generate_mapping(objects_vocab_file)
     predicates_label_to_id_mapping = generate_mapping(predicates_vocab_file)
