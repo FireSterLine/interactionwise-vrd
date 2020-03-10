@@ -37,12 +37,12 @@ class VRDDataLayer():
     self.n_obj   = self.dataset.n_obj
     self.n_pred  = self.dataset.n_pred
 
-    self.imgrels   = deepcopy([(k,v) for k,v in self.dataset.getImgRels(self.stage).items()])
-    # self.imgrels   = deepcopy([(k,v) for k,v in self.dataset.getImgRels(self.stage).items()])[:10]
+    # self.imgrels   = deepcopy([(k,v) for k,v in self.dataset.getImgRels(self.stage).items()])
+    self.imgrels   = deepcopy([(k,v) for k,v in self.dataset.getImgRels(self.stage).items()])[:10]
     self.n_imgrels = len(self.imgrels)
     self.cur_imgrels = 0
     self.wrap_around = ( self.stage == "train" )
-    
+
     self.batch_size = 1
     # TODO: take care of the remaining
     self.n_imgrel_batches = self.n_imgrels // self.batch_size
@@ -54,14 +54,14 @@ class VRDDataLayer():
       return self
 
   def __next__(self):
-    
+
     if self.cur_imgrels >= self.n_imgrels:
       if self.wrap_around:
         self.cur_imgrels = 0
       else:
         raise StopIteration
         return
-    
+
     (im_id, _rels) = self.imgrels[self.cur_imgrels]
 
     rels = deepcopy(_rels)

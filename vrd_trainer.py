@@ -68,7 +68,7 @@ class vrd_trainer():
     self.checkpoint_frequency = 10
 
     # Does this have to be a constant?
-    self.iters_per_epoch = 200
+    self.iters_per_epoch = 10
 
     self.batch_size = 1 # TODO
     self.num_workers = 0
@@ -262,7 +262,7 @@ class vrd_trainer():
       image_blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, rel_labels, rel_so_prior = self.datalayer.forward()
 
     """
-  
+
   # TODO: move in evaluation?
   def test_pre_net(self):
     import numpy as np
@@ -272,45 +272,51 @@ class vrd_trainer():
     test_data_layer = VRDDataLayer(self.dataset_args, "test")
 
     res = {}
-    rlp_labels_ours  = []
+    rlp_labels_cell  = []
     tuple_confs_cell = []
     sub_bboxes_cell  = []
     obj_bboxes_cell  = []
+
+    N = 100 # What's this? (num of rel_res) (with this you can compute R@i for any i<=N)
 
     while True:
       try:
         img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, semantic_features, classes, ori_bboxes = next(test_data_layer)
       except ValueError:
         break
-      
-      tuple_confs_im = []
-      rlp_labels_im  = np.zeros((100, 3), dtype = np.float)
-      sub_bboxes_im  = np.zeros((100, 4), dtype = np.float)
-      obj_bboxes_im  = np.zeros((100, 4), dtype = np.float)
+
+      tuple_confs_im = np.zeros((N,),   dtype = np.float) # Confidence...
+      rlp_labels_im  = np.zeros((N, 3), dtype = np.float) # Rel triples
+      sub_bboxes_im  = np.zeros((N, 4), dtype = np.float) # Subj bboxes
+      obj_bboxes_im  = np.zeros((N, 4), dtype = np.float) # Obj bboxes
 
       obj_scores, rel_scores = self.net(img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, semantic_features)
       rel_prob = rel_scores.data.cpu().numpy()
-      rel_res = np.dstack(np.unravel_index(np.argsort(-rel_prob.ravel()), rel_prob.shape))[0][:100]
+      rel_res = np.dstack(np.unravel_index(np.argsort(-rel_prob.ravel()), rel_prob.shape))[0][:N]
 
       for ii in range(rel_res.shape[0]):
         rel = rel_res[ii, 1]
         tuple_idx = rel_res[ii, 0]
+
         conf = rel_prob[tuple_idx, rel]
-        tuple_confs_im.append(conf)
+        tuple_confs_im[ii] = conf
+
         rlp_labels_im[ii] = [classes[idx_s[tuple_idx]], rel, classes[idx_o[tuple_idx]]]
+
         sub_bboxes_im[ii] = ori_bboxes[idx_s[tuple_idx]]
         obj_bboxes_im[ii] = ori_bboxes[idx_o[tuple_idx]]
-      if(test_data_layer.ds_name =="vrd"):
+
+      # Is this because of the background ... ?
+      if(test_data_layer.ds_name == "vrd"):
         rlp_labels_im += 1
 
-      tuple_confs_im = np.array(tuple_confs_im)
-      rlp_labels_ours.append(rlp_labels_im)
       tuple_confs_cell.append(tuple_confs_im)
+      rlp_labels_cell.append(rlp_labels_im)
       sub_bboxes_cell.append(sub_bboxes_im)
       obj_bboxes_cell.append(obj_bboxes_im)
 
-    res["rlp_labels_ours"] = rlp_labels_ours
     res["rlp_confs_ours"]  = tuple_confs_cell
+    res["rlp_labels_ours"] = rlp_labels_cell
     res["sub_bboxes_ours"] = sub_bboxes_cell
     res["obj_bboxes_ours"] = obj_bboxes_cell
 
