@@ -186,7 +186,8 @@ class VRDDataLayer():
     yield idx_s
     yield idx_o
     yield spatial_features
-    yield semantic_features
+    # yield semantic_features
+    yield self.dataset.obj_classes
 
     if self.stage == "train":
       yield rel_soP_prior

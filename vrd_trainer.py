@@ -136,9 +136,9 @@ class vrd_trainer():
     self.net.load_pretrained_conv(osp.join(globals.data_dir, "VGG_imagenet.npy"))
 
     # Initial object embedding with word2vec
-    #with open("../data/vrd/params_emb.pkl") as f:
-    #    emb_init = pickle.load(f)
-    #net.state_dict()['emb.weight'].copy_(torch.from_numpy(emb_init))
+    with open("../data/vrd/params_emb.pkl") as f:
+       emb_init = pickle.load(f)
+    self.net.state_dict()['emb.weight'].copy_(torch.from_numpy(emb_init))
 
     print("Initializing optimizer...")
     self.criterion = nn.MultiLabelMarginLoss().cuda()
@@ -231,15 +231,21 @@ class vrd_trainer():
     losses = utils.AverageMeter()
     for step in range(self.iters_per_epoch):
 
+      # img_blob, \
+      # obj_boxes, u_boxes, \
+      # idx_s, idx_o, \
+      # spatial_features, semantic_features, \
+      # rel_sop_prior, target = next(self.datalayer)
       img_blob, \
       obj_boxes, u_boxes, \
       idx_s, idx_o, \
-      spatial_features, semantic_features, \
+      spatial_features, obj_classes, \
       rel_sop_prior, target = next(self.datalayer)
 
       # Forward pass & Backpropagation step
       self.optimizer.zero_grad()
-      obj_scores, rel_scores = self.net(img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, semantic_features)
+      # obj_scores, rel_scores = self.net(img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, semantic_features)
+      obj_scores, rel_scores = self.net(img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
 
       # applying some preprocessing to the rel_sop_prior before factoring it into the score
       rel_sop_prior = -0.5 * ( rel_sop_prior + 1.0 / self.datalayer.n_pred)

@@ -112,8 +112,13 @@ class vrd_model(nn.Module):
       # self.total_fus_neurons += self.args.n_fus_neurons
 
     if(self.args.use_sem):
-      self.fc_semantic = FC(2*300, self.args.n_fus_neurons)
+      # self.fc_semantic = FC(2*300, self.args.n_fus_neurons)
+      # self.total_fus_neurons += self.args.n_fus_neurons
+      self.emb = nn.Embedding(self.n_obj, 300)
+      set_trainability(self.emb, requires_grad=False)
+      self.fc_semantic = FC(300*2, 256)
       self.total_fus_neurons += self.args.n_fus_neurons
+
       # self.emb = nn.Embedding(self.n_obj, 300)
       # set_trainability(self.emb, requires_grad=False)
       # self.fc_so_emb = FC(300*2, 256)
@@ -173,18 +178,28 @@ class vrd_model(nn.Module):
 
     if(self.args.use_spat == 1):
       x_spat = self.fc_spatial(spatial_features)
-      x = torch.cat((x_fused, x_spat), 1)
+      x_fused = torch.cat((x_fused, x_spat), 1)
     elif(self.args.use_spat == 2):
       raise NotImplementedError
       # lo = self.conv_lo(SpatialFea)
       # lo = lo.view(lo.size()[0], -1)
       # lo = self.fc_spatial(lo)
-      # x = torch.cat((x_fused, lo), 1)
+      # x_fused = torch.cat((x_fused, lo), 1)
 
     # TODO: use embedding layer like they do
     if(self.args.use_sem):
-      x_sem  = self.fc_semantic(semantic_features)
-      x_fused = torch.cat((x_fused, x_sem), 1)
+      # x_sem  = self.fc_semantic(semantic_features)
+      # x_fused = torch.cat((x_fused, x_sem), 1)
+      
+      # semantic_features in this case is simply a list of objects
+      # TODO: Rename this 
+      emb = self.emb(semantic_features)
+      emb = torch.squeeze(emb, 1)
+      emb_subject = torch.index_select(emb, dim=0, index=idx_s)
+      emb_object = torch.index_select(emb, dim=0, index=idx_o)
+      emb_s_o = torch.cat((emb_subject, emb_object), dim=1)
+      emb = self.fc_semantic(emb_s_o)
+      x_fused = torch.cat((x_fused, emb), dim=1)
 
 
 
