@@ -80,12 +80,14 @@ def eval_per_image(i, gt, pred, use_rel, gt_thr = 0.5, return_match = False):
 # R@50
 def eval_recall_at_N(ds_name, N, res, use_rel = True, use_zero_shot = False):
     if(ds_name == "vrd"):
-        # num_imgs = 1000
-        num_imgs = 10
         gt = sio.loadmat("data/vrd/gt.mat")
         gt["tuple_label"] = gt["gt_tuple_label"][0]
         gt["obj_bboxes"]  = gt["gt_obj_bboxes"][0]
         gt["sub_bboxes"]  = gt["gt_sub_bboxes"][0]
+        
+        # num_imgs = 1000
+        num_imgs = len(res["rlp_confs_ours"])
+        
         if(use_zero_shot):
             zs = sio.loadmat("data/vrd/zeroShot.mat")["zeroShot"][0];
             for ii in range(num_imgs):
@@ -112,15 +114,18 @@ def eval_recall_at_N(ds_name, N, res, use_rel = True, use_zero_shot = False):
     pred["obj_bboxes"]  = copy.deepcopy(res["obj_bboxes_ours"])
 
     print(pred.keys())
-    print("tuple_label: {}".format(pred["tuple_label"].shape))
-    print("tuple_confs: {}".format(pred["tuple_confs"].shape))
-    print("sub_bboxes: {}".format(pred["sub_bboxes"].shape))
-    print("obj_bboxes: {}".format(pred["obj_bboxes"].shape))
+    print("tuple_label: {}".format(len(pred["tuple_label"])))
+    print("tuple_confs: {}".format(len(pred["tuple_confs"])))
+    print("sub_bboxes: {}".format(len(pred["sub_bboxes"])))
+    print("obj_bboxes: {}".format(len(pred["obj_bboxes"])))
+    
+    print("tuple_confs[0]: {}".format((pred["tuple_confs"][0]).shape))
+    print(pred["tuple_confs"][0])
     # pdb.set_trace()
 
     for ii in range(num_imgs):
-        if(ii not in pred["tuple_confs"] or pred["tuple_confs"][ii] is None):
-            continue
+        # ...if(not ii in pred["tuple_confs"]): #  or pred["tuple_confs"][ii] is None):
+        #     continue
         pred["tuple_confs"][ii] = np.array(pred["tuple_confs"][ii])
         if(pred["tuple_confs"][ii].shape[0] == 0):
             continue

@@ -68,7 +68,7 @@ class vrd_trainer():
     self.checkpoint_frequency = 10
 
     # Does this have to be a constant?
-    self.iters_per_epoch = 10
+    self.iters_per_epoch = 200
 
     self.batch_size = 1 # TODO
     self.num_workers = 0
