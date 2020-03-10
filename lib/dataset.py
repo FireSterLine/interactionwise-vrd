@@ -84,7 +84,7 @@ class dataset():
   # TODO: select which split ("train", "test", default="traintest")
   def getImgRels(self, stage):
     """ Load list of rel-annotations per images """
-    with open(osp.join(self.metadata_dir, "data{}.json".format(stage)), 'r') as rfile:
+    with open(osp.join(self.metadata_dir, "data_img_rels_{}.json".format(stage)), 'r') as rfile:
       return json.load(rfile) # Maybe pickle this?
 
   def getAnno(self):
@@ -105,16 +105,20 @@ class dataset():
 
     try:
       with open(distribution_pkl_path, 'rb') as fid:
-        return pickle.load(fid)
+        dist = pickle.load(fid)
+      print("Distribution found!")
+      return dist
+      # return pickle.load(fid)
     except FileNotFoundError: # parent of IOError, OSError *and* WindowsError where available
       if not force:
         print("Distribution not found: {}".format(distribution_pkl_path))
         return None
       else:
         if type == "soP":
+          print("Distribution not found - generating it from scratch!")
           sop_counts = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: int())))
 
-          with open(osp.join(self.metadata_dir, "data{}.json".format(stage)), 'r') as rfile:
+          with open(osp.join(self.metadata_dir, "data_img_rels_{}.json".format(stage)), 'r') as rfile:
             data = json.load(rfile)
 
           for _, elems in data.items():
