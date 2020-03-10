@@ -26,6 +26,13 @@ class VRDPrep(DataPreparer):
         self.annotations_train_file = "./data/vrd/annotations_train.json"
         self.annotations_test_file = "./data/vrd/annotations_test.json"
 
+        with open("data/vrd/train.pkl", 'rb') as f:
+            self.train_dsr = pickle.load(f, encoding="latin1")
+
+        with open("data/vrd/test.pkl", 'rb') as f:
+            self.test_dsr = pickle.load(f, encoding="latin1")
+
+
     def prepare_data(self, generate_img_rels):
         if generate_img_rels is True:
             output_file_format = "./data/vrd/data_img_rels_{}.json"
@@ -57,12 +64,30 @@ class VRDPrep(DataPreparer):
 
         with open(output_file_format.format("train"), 'w') as wfile:
             vrd_data_train = self._filter_by_subdir(vrd_data, "sg_train_images")
-            json.dump(vrd_data_train, wfile)
+
+            # Reorder such that images are ordered same as dsr
+            vrd_data_train_sorted = []
+            for i in self.train_dsr:
+                for im_path in vrd_data_train:
+                  if i["filename"] in k:
+                    break
+                vrd_data_train_sorted.append((im_path, vrd_data[im_path]))
+
+            json.dump(vrd_data_train_sorted, wfile)
 
         with open(output_file_format.format("test"), 'w') as wfile:
             vrd_data_test = self._filter_by_subdir(vrd_data, "sg_test_images")
-            json.dump(vrd_data_test, wfile)
-    
+
+            # Reorder such that images are ordered same as dsr
+            vrd_data_test_sorted = []
+            for i in self.test_dsr:
+                for im_path in vrd_data_test:
+                  if i["filename"] in k:
+                    break
+                vrd_data_test_sorted.append((im_path, vrd_data[im_path]))
+
+            json.dump(vrd_data_test_sorted, wfile)
+
     def _generate_mapping(self, filename):
         id_to_label_mapping = {}
         with open(filename, 'r') as rfile:
@@ -122,7 +147,7 @@ class VRDPrep(DataPreparer):
                 relationships.append(rel_data)
             # else:
             #     print("Found duplicate relationship in image: {}".format(img_path))
-        
+
         return relationships
 
     def _generate_annotations(self, anns):
@@ -147,7 +172,7 @@ class VRDPrep(DataPreparer):
             }
 
             predicate_id = int(ann['predicate'])
-            
+
             objects[subject_id] = subject_bbox
             objects[object_id] = object_bbox
 
@@ -184,7 +209,7 @@ class VGPrep(DataPreparer):
         # this format is used for training the model
         else:
             output_file = './data/genome/{}-{}-{}/data_annotations.json'.format(self.num_objects, self.num_attributes, self.num_predicates)
-        
+
         objects_label_to_id_mapping = self._generate_mapping(self.objects_vocab_file)
         predicates_label_to_id_mapping = self._generate_mapping(self.predicates_vocab_file)
 
@@ -244,7 +269,7 @@ class VGPrep(DataPreparer):
             rel_data = dict(rel_data)
             if rel_data not in relationships:
                 relationships.append(rel_data)
-        
+
         return relationships
 
 
