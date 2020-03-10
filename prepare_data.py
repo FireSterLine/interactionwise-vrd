@@ -3,7 +3,7 @@ import json
 from glob import glob
 import os.path as osp
 from collections import defaultdict
-
+import pickle
 
 class DataPreparer:
     def prepare_data(self, generate_img_rels):
@@ -68,11 +68,15 @@ class VRDPrep(DataPreparer):
             # Reorder such that images are ordered same as dsr
             vrd_data_train_sorted = []
             for i in self.train_dsr:
+                if i == None:
+                    continue
                 for im_path in vrd_data_train:
-                  if i["filename"] in k:
-                    break
-                vrd_data_train_sorted.append((im_path, vrd_data[im_path]))
+                    if osp.basename(i["img_path"]) in im_path:
+                        break
+                vrd_data_train_sorted.append((im_path, vrd_data_train[im_path]))
+                del vrd_data_train[im_path]
 
+            print(len(vrd_data_train_sorted))
             json.dump(vrd_data_train_sorted, wfile)
 
         with open(output_file_format.format("test"), 'w') as wfile:
@@ -81,11 +85,15 @@ class VRDPrep(DataPreparer):
             # Reorder such that images are ordered same as dsr
             vrd_data_test_sorted = []
             for i in self.test_dsr:
+                if i == None:
+                    continue
                 for im_path in vrd_data_test:
-                  if i["filename"] in k:
-                    break
-                vrd_data_test_sorted.append((im_path, vrd_data[im_path]))
-
+                    if osp.basename(i["img_path"]) in im_path:
+                        break
+                vrd_data_test_sorted.append((im_path, vrd_data_test[im_path]))
+                del vrd_data_test[im_path]
+            
+            print(len(vrd_data_test_sorted))
             json.dump(vrd_data_test_sorted, wfile)
 
     def _generate_mapping(self, filename):

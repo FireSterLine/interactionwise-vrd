@@ -121,10 +121,10 @@ class dataset():
           sop_counts = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: int())))
 
           with open(osp.join(self.metadata_dir, "data_img_rels_{}.json".format(stage)), 'r') as rfile:
-            data = json.load(rfile)
+            img_rels = json.load(rfile)
 
-          for _, elems in data.items():
-            for elem in elems:
+          for img,rels in img_rels:
+            for elem in rels:
               subject_label   = elem["subject"]["name"]
               object_label    = elem["object"]["name"]
               predicate_label = elem["predicate"]["name"]
