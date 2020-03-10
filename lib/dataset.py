@@ -105,9 +105,10 @@ class dataset():
     distribution_pkl_path = osp.join(self.metadata_dir, "{}.pkl".format(type))
 
     try:
-      raise FileNotFoundError
-      with open(distribution_pkl_path, 'rb') as fid:
-        dist = pickle.load(fid)
+      # raise FileNotFoundError
+      # with open(distribution_pkl_path, 'rb') as fid:
+      with open("data/vrd/so_prior.pkl", 'rb') as fid:
+        dist = pickle.load(fid, encoding='latin1')
       print("Distribution found!")
       return dist
       # return pickle.load(fid)

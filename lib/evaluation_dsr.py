@@ -85,8 +85,8 @@ def eval_recall_at_N(ds_name, N, res, use_rel = True, use_zero_shot = False):
         gt["obj_bboxes"]  = gt["gt_obj_bboxes"][0]
         gt["sub_bboxes"]  = gt["gt_sub_bboxes"][0]
         
-        # num_imgs = 1000
-        num_imgs = len(res["rlp_confs_ours"])
+        num_imgs = 1000
+        # num_imgs = len(res["rlp_confs_ours"])
         
         if(use_zero_shot):
             zs = sio.loadmat("data/vrd/zeroShot.mat")["zeroShot"][0];
@@ -119,13 +119,13 @@ def eval_recall_at_N(ds_name, N, res, use_rel = True, use_zero_shot = False):
     print("sub_bboxes: {}".format(len(pred["sub_bboxes"])))
     print("obj_bboxes: {}".format(len(pred["obj_bboxes"])))
     
-    print("tuple_confs[0]: {}".format((pred["tuple_confs"][0]).shape))
-    print(pred["tuple_confs"][0])
+    #print("tuple_confs[0]: {}".format((pred["tuple_confs"][0]).shape))
+    #print(pred["tuple_confs"][0])
     # pdb.set_trace()
 
     for ii in range(num_imgs):
-        # ...if(not ii in pred["tuple_confs"]): #  or pred["tuple_confs"][ii] is None):
-        #     continue
+        if(pred["tuple_confs"][ii] is None):
+            continue
         pred["tuple_confs"][ii] = np.array(pred["tuple_confs"][ii])
         if(pred["tuple_confs"][ii].shape[0] == 0):
             continue
@@ -135,8 +135,8 @@ def eval_recall_at_N(ds_name, N, res, use_rel = True, use_zero_shot = False):
         pred["sub_bboxes"][ii]  = pred["sub_bboxes"][ii][idx_order,:]
         pred["obj_bboxes"][ii]  = pred["obj_bboxes"][ii][idx_order,:]
 
-    if idx_order.shape[0] < N:
-        raise ValueError("Can't compute R@{}: input is malformed ({})".format(N, pred["tuple_label"].shape))
+        #if idx_order.shape[0] <= N:
+        #  raise ValueError("Can't compute R@{}: input is malformed ({})".format(N, pred["tuple_label"][ii].shape))
 
     # from IPython import embed; embed()
     # Evaluate each image

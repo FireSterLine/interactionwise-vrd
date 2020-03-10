@@ -69,6 +69,7 @@ class VRDPrep(DataPreparer):
             vrd_data_train_sorted = []
             for i in self.train_dsr:
                 if i == None:
+                    vrd_data_train_sorted.append((None,None))
                     continue
                 for im_path in vrd_data_train:
                     if osp.basename(i["img_path"]) in im_path:
@@ -86,6 +87,7 @@ class VRDPrep(DataPreparer):
             vrd_data_test_sorted = []
             for i in self.test_dsr:
                 if i == None:
+                    vrd_data_test_sorted.append((None,None))
                     continue
                 for im_path in vrd_data_test:
                     if osp.basename(i["img_path"]) in im_path:

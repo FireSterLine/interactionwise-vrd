@@ -55,24 +55,50 @@ class VRDDataLayer():
 
   def __next__(self):
 
-    if self.cur_imgrels >= self.n_imgrels:
-      if self.wrap_around:
-        self.cur_imgrels = 0
-      else:
-        raise StopIteration
-        return
-    
     while True:
-      (im_id, _rels) = self.imgrels[self.cur_imgrels]
-      
-      self.cur_imgrels += 1
-
-      rels = deepcopy(_rels)
-
-      n_rel = len(rels)
+      if self.cur_imgrels >= self.n_imgrels:
+        if self.wrap_around:
+          self.cur_imgrels = 0
+        else:
+          raise StopIteration
+          print("ciao")
+          return
     
-      if n_rel != 0:
-        break
+      (im_id, _rels) = self.imgrels[self.cur_imgrels]
+      self.cur_imgrels += 1
+      
+      if im_id is not None:
+
+        rels = deepcopy(_rels)
+
+        n_rel = len(rels)
+    
+        if n_rel != 0:
+          break
+        elif self.stage == "test":
+          print("no-ne")
+          yield None
+          yield None
+          yield None
+          yield None
+          yield None
+          yield None
+          yield None
+          yield None
+          yield None
+          return
+      elif self.stage == "test":
+        # print("none")
+        yield None
+        yield None
+        yield None
+        yield None
+        yield None
+        yield None
+        yield None
+        yield None
+        yield None
+        return
     
     im = utils.read_img(osp.join(self.dataset.img_dir, im_id))
     ih = im.shape[0]

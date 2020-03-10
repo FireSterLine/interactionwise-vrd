@@ -57,18 +57,19 @@ from lib.evaluation_dsr import eval_recall_at_N, eval_obj_img # TODO remove this
 
 class vrd_trainer():
 
-  def __init__(self, dataset_name="vrd", pretrained=False): # pretrained="epoch_4_checkpoint.pth.tar"):
+  #def __init__(self, dataset_name="vrd", pretrained="epoch_4_checkpoint.pth.tar"):
+  def __init__(self, dataset_name="vrd", pretrained=False):
 
     print("vrd_trainer() called with args:")
     print([dataset_name, pretrained])
 
     self.session_name = "test" # Training session name?
     self.start_epoch = 0
-    self.max_epochs = 10 # 200
+    self.max_epochs = 20 # 200
     self.checkpoint_frequency = 10
 
     # Does this have to be a constant?
-    self.iters_per_epoch = 50
+    self.iters_per_epoch = 4000
 
     self.batch_size = 1 # TODO
     self.num_workers = 0
@@ -83,9 +84,7 @@ class vrd_trainer():
 
     # load data layer
     print("Initializing data layer...")
-    # self.datalayer = VRDDataLayer({"ds_name" : self.dataset_name, "with_bg_obj" : True}, "train")
     self.datalayer = VRDDataLayer(self.dataset_args, "train")
-    # self.datalayer = VRDDataLayer(self.dataset_name, "train")
 
     # TODO: Pytorch DataLoader()
     # self.dataset = VRDDataset()
@@ -117,7 +116,7 @@ class vrd_trainer():
     # - 0: no spatial info
     # - 1: 8-way relative location vector
     # - 2: dual mask
-    self.net_args.use_spat = 1
+    self.net_args.use_spat = 0
 
     # Size of the representation for each modality when fusing features
     self.net_args.n_fus_neurons = 256
@@ -138,7 +137,7 @@ class vrd_trainer():
     # Initial object embedding with word2vec
     with open("data/vrd/params_emb.pkl", 'rb') as f:
        emb_init = pickle.load(f, encoding="latin1")
-    self.net.state_dict()['emb.weight'].copy_(torch.from_numpy(emb_init))
+    self.net.state_dict()["emb.weight"].copy_(torch.from_numpy(emb_init))
 
     print("Initializing optimizer...")
     self.criterion = nn.MultiLabelMarginLoss().cuda()
@@ -186,7 +185,7 @@ class vrd_trainer():
         def patch_model_state_dict(state_dict):
           state_dict["fc_semantic.fc.weight"] = state_dict["fc_so_emb.fc.weight"]
           state_dict["fc_semantic.fc.bias"] = state_dict["fc_so_emb.fc.bias"]
-          del state_dict["emb.weight"]
+          # del state_dict["emb.weight"]
           del state_dict["fc_so_emb.fc.weight"]
           del state_dict["fc_so_emb.fc.bias"]
           return state_dict
@@ -205,7 +204,7 @@ class vrd_trainer():
 
       print("Epoch {}".format(epoch))
 
-      self.__train_epoch(epoch)
+      # self.__train_epoch(epoch)
       # res.append((epoch,) + test_pre_net(net, args) + test_rel_net(net, args))
       res.append((epoch,) + self.test_pre_net())
       with open("results-{}.txt".format(self.session_name), 'w') as f:
@@ -223,6 +222,7 @@ class vrd_trainer():
           # "pooling_mode": cfg.POOLING_MODE,
           # "class_agnostic": self.class_agnostic,
         }, save_name)
+      self.__train_epoch(epoch)
 
   def __train_epoch(self, epoch):
     self.net.train()
@@ -290,10 +290,23 @@ class vrd_trainer():
     N = 100 # What's this? (num of rel_res) (with this you can compute R@i for any i<=N)
 
     while True:
+      
       try:
         img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, semantic_features, classes, ori_bboxes = next(test_data_layer)
       except ValueError:
+      # except StopIteration:
+        print("break")
         break
+      
+      if(img_blob is None):
+        print("NONE", end="")
+        rlp_labels_cell.append(None)
+        tuple_confs_cell.append(None)
+        sub_bboxes_cell.append(None)
+        obj_bboxes_cell.append(None)
+        continue
+      # else:
+      #   print("NANI")
 
       tuple_confs_im = np.zeros((N,),   dtype = np.float) # Confidence...
       rlp_labels_im  = np.zeros((N, 3), dtype = np.float) # Rel triples
@@ -337,7 +350,7 @@ class vrd_trainer():
     time2 = time.time()
 
     # print ("CLS TEST r50:%f, r50_zs:%f, r100:%f, r100_zs:%f" % (rec_50, rec_50_zs, rec_100, rec_100_zs))
-    print ("CLS TEST r50:%f, r100:%f" % (rec_50, rec_100))
+    print ("CLS TEST R@50: %f, R@100: %f" % (rec_50, rec_100))
     print ("TEST Time:%s" % (time.strftime('%H:%M:%S', time.gmtime(int(time2 - time1)))))
 
     # return rec_50, rec_50_zs, rec_100, rec_100_zs
