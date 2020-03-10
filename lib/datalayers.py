@@ -196,7 +196,7 @@ class VRDDataLayer():
     yield idx_o
     yield spatial_features
     # yield semantic_features
-    yield self.dataset.obj_classes
+    yield torch.LongTensor(classes_img).cuda()
 
     if self.stage == "train":
       yield rel_soP_prior

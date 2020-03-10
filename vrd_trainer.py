@@ -117,7 +117,7 @@ class vrd_trainer():
     # - 0: no spatial info
     # - 1: 8-way relative location vector
     # - 2: dual mask
-    self.net_args.use_spat = 0
+    self.net_args.use_spat = 1
 
     # Size of the representation for each modality when fusing features
     self.net_args.n_fus_neurons = 256
@@ -136,8 +136,8 @@ class vrd_trainer():
     self.net.load_pretrained_conv(osp.join(globals.data_dir, "VGG_imagenet.npy"))
 
     # Initial object embedding with word2vec
-    with open("../data/vrd/params_emb.pkl") as f:
-       emb_init = pickle.load(f)
+    with open("data/vrd/params_emb.pkl", 'rb') as f:
+       emb_init = pickle.load(f, encoding="latin1")
     self.net.state_dict()['emb.weight'].copy_(torch.from_numpy(emb_init))
 
     print("Initializing optimizer...")

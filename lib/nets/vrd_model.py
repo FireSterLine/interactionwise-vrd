@@ -114,7 +114,7 @@ class vrd_model(nn.Module):
     if(self.args.use_sem):
       # self.fc_semantic = FC(2*300, self.args.n_fus_neurons)
       # self.total_fus_neurons += self.args.n_fus_neurons
-      self.emb = nn.Embedding(self.n_obj, 300)
+      self.emb = nn.Embedding(self.args.n_obj, 300)
       set_trainability(self.emb, requires_grad=False)
       self.fc_semantic = FC(300*2, 256)
       self.total_fus_neurons += self.args.n_fus_neurons
