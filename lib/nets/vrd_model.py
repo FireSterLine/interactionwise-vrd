@@ -127,7 +127,7 @@ class vrd_model(nn.Module):
     self.fc_fusion = FC(self.total_fus_neurons, 256)
     self.fc_rel    = FC(256, self.args.n_pred, relu = False)
 
-  def forward(self, img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, semantic_features):
+  def forward(self, img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes):
 
 
 
@@ -186,14 +186,12 @@ class vrd_model(nn.Module):
       # lo = self.fc_spatial(lo)
       # x_fused = torch.cat((x_fused, lo), 1)
 
-    # TODO: use embedding layer like they do
     if(self.args.use_sem):
       # x_sem  = self.fc_semantic(semantic_features)
       # x_fused = torch.cat((x_fused, x_sem), 1)
-      
-      # semantic_features in this case is simply a list of objects
-      # TODO: Rename this 
-      emb = self.emb(semantic_features)
+
+      # obj_classes in this case is simply a list of objects in the image
+      emb = self.emb(obj_classes)
       emb = torch.squeeze(emb, 1)
       emb_subject = torch.index_select(emb, dim=0, index=idx_s)
       emb_object = torch.index_select(emb, dim=0, index=idx_o)
@@ -226,7 +224,7 @@ class vrd_model(nn.Module):
       if params_name.find("bn.") >= 0 or not "conv" in params_name or "spat" in params_name:
         continue
       # print(params_name, val)
-      i, j = int(params_name[4]), int(params_name[6]) + 1 
+      i, j = int(params_name[4]), int(params_name[6]) + 1
       # print(i, j)
       ptype = "weights" if params_name[-1] == "t" else "biases"
       key = "conv{}_{}".format(i, j)

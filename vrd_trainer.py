@@ -63,7 +63,7 @@ class vrd_trainer():
     print("vrd_trainer() called with args:")
     print([dataset_name, pretrained])
 
-    self.session_name = "test" # Training session name?
+    self.session_name = "test-fromscratch" # Training session name?
     self.start_epoch = 0
     self.max_epochs = 20 # 200
     self.checkpoint_frequency = 10
@@ -132,7 +132,7 @@ class vrd_trainer():
     # Initialize the model in some way ...
     print("Initializing weights...")
     weights_normal_init(self.net, dev=0.01)
-    self.net.load_pretrained_conv(osp.join(globals.data_dir, "VGG_imagenet.npy"))
+    self.net.load_pretrained_conv(osp.join(globals.data_dir, "VGG_imagenet.npy"), fix_layers=True)
 
     # Initial object embedding with word2vec
     with open("data/vrd/params_emb.pkl", 'rb') as f:
@@ -161,6 +161,7 @@ class vrd_trainer():
       # opt_params.append({'params': self.net.fc_spatial.parameters(), 'lr': self.lr*10})
     if(self.net_args.use_sem):
       opt_params.append({'params': self.net.fc_semantic.parameters(), 'lr': self.lr*10})
+
     self.optimizer = torch.optim.Adam(opt_params,
             lr=self.lr,
             # momentum=self.momentum,
@@ -228,28 +229,21 @@ class vrd_trainer():
     self.net.train()
 
     # Obtain next annotation input and target
-    #for spatial_features, semantic_features, target in self.datalayer:
+    #  for spatial_features, obj_classes, target in self.datalayer:
     losses = utils.AverageMeter()
     for step in range(self.iters_per_epoch):
 
-      # img_blob, \
-      # obj_boxes, u_boxes, \
-      # idx_s, idx_o, \
-      # spatial_features, semantic_features, \
-      # rel_sop_prior, target = next(self.datalayer)
       img_blob, \
       obj_boxes, u_boxes, \
       idx_s, idx_o, \
       spatial_features, obj_classes, \
       rel_sop_prior, target = next(self.datalayer)
-      
+
       if target.size()[1] == 0:
         continue
 
       # Forward pass & Backpropagation step
       self.optimizer.zero_grad()
-      # obj_scores, rel_scores = self.net(img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, semantic_features)
-      
       obj_scores, rel_scores = self.net(img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
 
       # applying some preprocessing to the rel_sop_prior before factoring it into the score
@@ -290,14 +284,14 @@ class vrd_trainer():
     N = 100 # What's this? (num of rel_res) (with this you can compute R@i for any i<=N)
 
     while True:
-      
+
       try:
-        img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, semantic_features, classes, ori_bboxes = next(test_data_layer)
+        img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes, classes, ori_bboxes = next(test_data_layer)
       except ValueError:
       # except StopIteration:
         print("break")
         break
-      
+
       if(img_blob is None):
         print("NONE", end="")
         rlp_labels_cell.append(None)
@@ -313,7 +307,7 @@ class vrd_trainer():
       sub_bboxes_im  = np.zeros((N, 4), dtype = np.float) # Subj bboxes
       obj_bboxes_im  = np.zeros((N, 4), dtype = np.float) # Obj bboxes
 
-      obj_scores, rel_scores = self.net(img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, semantic_features)
+      obj_scores, rel_scores = self.net(img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
       rel_prob = rel_scores.data.cpu().numpy()
       rel_res = np.dstack(np.unravel_index(np.argsort(-rel_prob.ravel()), rel_prob.shape))[0][:N]
 
