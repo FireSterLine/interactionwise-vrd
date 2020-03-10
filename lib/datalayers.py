@@ -61,11 +61,19 @@ class VRDDataLayer():
       else:
         raise StopIteration
         return
+    
+    while True:
+      (im_id, _rels) = self.imgrels[self.cur_imgrels]
+      
+      self.cur_imgrels += 1
 
-    (im_id, _rels) = self.imgrels[self.cur_imgrels]
+      rels = deepcopy(_rels)
 
-    rels = deepcopy(_rels)
-
+      n_rel = len(rels)
+    
+      if n_rel != 0:
+        break
+    
     im = utils.read_img(osp.join(self.dataset.img_dir, im_id))
     ih = im.shape[0]
     iw = im.shape[1]
@@ -104,10 +112,7 @@ class VRDDataLayer():
     # Objects' boxes
     obj_boxes = np.zeros((boxes_img.shape[0], 5)) # , dtype=np.float32)
     obj_boxes[:, 1:5] = boxes_img * im_scale
-
-
-    n_rel = len(rels)
-
+    
     # union bounding boxes
     u_boxes = np.zeros((n_rel, 5))
 
@@ -168,8 +173,6 @@ class VRDDataLayer():
         pos_idx += 1
 
       i_rel += 1
-
-    self.cur_imgrels += 1
 
 
     # print(target)

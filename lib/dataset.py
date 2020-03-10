@@ -85,6 +85,7 @@ class dataset():
   def getImgRels(self, stage):
     """ Load list of rel-annotations per images """
     with open(osp.join(self.metadata_dir, "data_img_rels_{}.json".format(stage)), 'r') as rfile:
+    # with open(osp.join(self.metadata_dir, "data{}.json".format(stage)), 'r') as rfile:
       return json.load(rfile) # Maybe pickle this?
 
   def getAnno(self):
@@ -104,6 +105,7 @@ class dataset():
     distribution_pkl_path = osp.join(self.metadata_dir, "{}.pkl".format(type))
 
     try:
+      raise FileNotFoundError
       with open(distribution_pkl_path, 'rb') as fid:
         dist = pickle.load(fid)
       print("Distribution found!")

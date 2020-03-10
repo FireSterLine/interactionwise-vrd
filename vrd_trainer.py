@@ -68,7 +68,7 @@ class vrd_trainer():
     self.checkpoint_frequency = 10
 
     # Does this have to be a constant?
-    self.iters_per_epoch = 200
+    self.iters_per_epoch = 50
 
     self.batch_size = 1 # TODO
     self.num_workers = 0
@@ -242,10 +242,14 @@ class vrd_trainer():
       idx_s, idx_o, \
       spatial_features, obj_classes, \
       rel_sop_prior, target = next(self.datalayer)
+      
+      if target.size()[1] == 0:
+        continue
 
       # Forward pass & Backpropagation step
       self.optimizer.zero_grad()
       # obj_scores, rel_scores = self.net(img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, semantic_features)
+      
       obj_scores, rel_scores = self.net(img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
 
       # applying some preprocessing to the rel_sop_prior before factoring it into the score

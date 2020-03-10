@@ -280,7 +280,7 @@ class VGPrep(DataPreparer):
 
 if __name__ == '__main__':
     # select the dataset to generate the data for. This can either be 'vrd' or 'vg'
-    dataset = 'vg'
+    dataset = 'vrd'
     # select whether to generate image_rels or annotations
     # if true, image_rels will be generated
     # if false, annotations will be generated
