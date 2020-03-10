@@ -113,11 +113,11 @@ def eval_recall_at_N(ds_name, N, res, use_rel = True, use_zero_shot = False):
     pred["sub_bboxes"]  = copy.deepcopy(res["sub_bboxes_ours"])
     pred["obj_bboxes"]  = copy.deepcopy(res["obj_bboxes_ours"])
 
-    print(pred.keys())
-    print("tuple_label: {}".format(len(pred["tuple_label"])))
-    print("tuple_confs: {}".format(len(pred["tuple_confs"])))
-    print("sub_bboxes: {}".format(len(pred["sub_bboxes"])))
-    print("obj_bboxes: {}".format(len(pred["obj_bboxes"])))
+    #print(pred.keys())
+    #print("tuple_label: {}".format(len(pred["tuple_label"])))
+    #print("tuple_confs: {}".format(len(pred["tuple_confs"])))
+    #print("sub_bboxes: {}".format(len(pred["sub_bboxes"])))
+    #print("obj_bboxes: {}".format(len(pred["obj_bboxes"])))
     
     #print("tuple_confs[0]: {}".format((pred["tuple_confs"][0]).shape))
     #print(pred["tuple_confs"][0])

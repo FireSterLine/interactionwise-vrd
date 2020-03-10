@@ -199,13 +199,13 @@ class vrd_trainer():
 
     # headers = ["Epoch","Pre R@50", "ZS", "R@100", "ZS", "Rel R@50", "ZS", "R@100", "ZS"]
     # headers = ["Epoch","Pre R@50", "ZS", "R@100", "ZS"]
-    headers = ["Epoch","Pre R@50", "R@100"]
+    headers = ["Epoch","Pre R@50", "Pre R@100"]
     res = []
     for epoch in range(self.start_epoch, self.start_epoch + self.max_epochs):
 
       print("Epoch {}".format(epoch))
 
-      # self.__train_epoch(epoch)
+      self.__train_epoch(epoch)
       # res.append((epoch,) + test_pre_net(net, args) + test_rel_net(net, args))
       res.append((epoch,) + self.test_pre_net())
       with open("results-{}.txt".format(self.session_name), 'w') as f:
@@ -223,7 +223,6 @@ class vrd_trainer():
           # "pooling_mode": cfg.POOLING_MODE,
           # "class_agnostic": self.class_agnostic,
         }, save_name)
-      self.__train_epoch(epoch)
 
   def __train_epoch(self, epoch):
     self.net.train()
@@ -288,19 +287,15 @@ class vrd_trainer():
       try:
         img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes, classes, ori_bboxes = next(test_data_layer)
       except ValueError:
-      # except StopIteration:
-        print("break")
+        # print("break")
         break
 
       if(img_blob is None):
-        print("NONE", end="")
         rlp_labels_cell.append(None)
         tuple_confs_cell.append(None)
         sub_bboxes_cell.append(None)
         obj_bboxes_cell.append(None)
         continue
-      # else:
-      #   print("NANI")
 
       tuple_confs_im = np.zeros((N,),   dtype = np.float) # Confidence...
       rlp_labels_im  = np.zeros((N, 3), dtype = np.float) # Rel triples

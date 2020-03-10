@@ -61,7 +61,6 @@ class VRDDataLayer():
           self.cur_imgrels = 0
         else:
           raise StopIteration
-          print("ciao")
           return
     
       (im_id, _rels) = self.imgrels[self.cur_imgrels]
@@ -76,7 +75,6 @@ class VRDDataLayer():
         if n_rel != 0:
           break
         elif self.stage == "test":
-          print("no-ne")
           yield None
           yield None
           yield None
@@ -88,7 +86,6 @@ class VRDDataLayer():
           yield None
           return
       elif self.stage == "test":
-        # print("none")
         yield None
         yield None
         yield None
