@@ -95,9 +95,12 @@ class dataset():
     #   self._anno = [x for x in anno if x is not None and len(x['classes'])>1]
 
   # TODO: instead of simply return it, store it in self and return a reference to, say, self.soP
-  def getDistribution(self, type, force = True):
+  def getDistribution(self, type, force = True, stage = "train"):
     """ Computes and returns some distributional data """
-
+    
+    if stage == "test":
+        raise Error("Can't compute distribution on \"{}\" split".format(stage))
+    
     distribution_pkl_path = osp.join(self.metadata_dir, "{}.pkl".format(type))
 
     try:
@@ -111,7 +114,7 @@ class dataset():
         if type == "soP":
           sop_counts = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: int())))
 
-          with open(osp.join(self.metadata_dir, "{}_data.json".format(self.name)), 'r') as rfile:
+          with open(osp.join(self.metadata_dir, "data{}.json".format(stage)), 'r') as rfile:
             data = json.load(rfile)
 
           for _, elems in data.items():

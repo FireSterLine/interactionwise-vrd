@@ -12,7 +12,7 @@ import torch
 from gensim.models import KeyedVectors
 
 import utils, globals
-from copy import copy
+from copy import copy, deepcopy
 # TODO: expand so that it supports batch sizes > 1
 
 class VRDDataLayer():
@@ -37,9 +37,11 @@ class VRDDataLayer():
     self.n_obj   = self.dataset.n_obj
     self.n_pred  = self.dataset.n_pred
 
-    self.imgrels   = [(k,v) for k,v in self.dataset.getImgRels(self.stage).items()]
+    self.imgrels   = deepcopy([(k,v) for k,v in self.dataset.getImgRels(self.stage).items()])
+    # self.imgrels   = deepcopy([(k,v) for k,v in self.dataset.getImgRels(self.stage).items()])[:10]
     self.n_imgrels = len(self.imgrels)
     self.cur_imgrels = 0
+    self.wrap_around = ( self.stage == "train" )
 
     self.batch_size = 1
     # TODO: take care of the remaining
@@ -53,7 +55,16 @@ class VRDDataLayer():
 
   def __next__(self):
 
-    (im_id, rels) = self.imgrels[self.cur_imgrels]
+    if self.cur_imgrels >= self.n_imgrels:
+      if self.wrap_around:
+        self.cur_imgrels = 0
+      else:
+        raise StopIteration
+        return
+
+    (im_id, _rels) = self.imgrels[self.cur_imgrels]
+
+    rels = deepcopy(_rels)
 
     im = utils.read_img(osp.join(self.dataset.img_dir, im_id))
     ih = im.shape[0]
@@ -159,8 +170,6 @@ class VRDDataLayer():
       i_rel += 1
 
     self.cur_imgrels += 1
-    if(self.cur_imgrels >= self.n_imgrels):
-      self.cur_imgrels = 0
 
 
     # print(target)

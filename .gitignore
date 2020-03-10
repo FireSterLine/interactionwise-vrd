@@ -27,6 +27,7 @@ data/genome/*/*.json
 data/genome/*.json
 data/vrd/sg_dataset*
 data/**/*.pkl
+data/**/*.mat
 data/*.npy
 
 data/word2vec_model/

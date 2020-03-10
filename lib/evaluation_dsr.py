@@ -1,28 +1,29 @@
+# TODO: don't use this, make our own
 import scipy.io as sio
 import numpy as np
 import pickle
 import copy
 import time
 import sys
+import pdb
 import os.path as osp
 this_dir = osp.dirname(osp.realpath(__file__))
 # print this_dir
 
-# TODO: don't use this, make our own
 def eval_per_image(i, gt, pred, use_rel, gt_thr = 0.5, return_match = False):
-    gt_tupLabel = gt['tuple_label'][i].astype(np.float32)
+    gt_tupLabel = gt["tuple_label"][i].astype(np.float32)
     num_gt_tuple = gt_tupLabel.shape[0]
-    if(num_gt_tuple == 0 or pred['tuple_confs'][i] is None):
+    if(num_gt_tuple == 0 or pred["tuple_confs"][i] is None):
         return 0, 0
     if(not use_rel):
         gt_tupLabel = gt_tupLabel[:, (0,2)]
-    gt_objBox = gt['obj_bboxes'][i].astype(np.float32)
-    gt_subBox = gt['sub_bboxes'][i].astype(np.float32)
+    gt_objBox = gt["obj_bboxes"][i].astype(np.float32)
+    gt_subBox = gt["sub_bboxes"][i].astype(np.float32)
 
     gt_detected = np.zeros((num_gt_tuple, 1), np.float32)
-    labels = pred['tuple_label'][i].astype(np.float32)
-    boxSub = pred['sub_bboxes'][i].astype(np.float32)
-    boxObj = pred['obj_bboxes'][i].astype(np.float32)
+    labels = pred["tuple_label"][i].astype(np.float32)
+    boxSub = pred["sub_bboxes"][i].astype(np.float32)
+    boxObj = pred["obj_bboxes"][i].astype(np.float32)
     num_tuple = labels.shape[0]
 
     tp = np.zeros((num_tuple,1))
@@ -74,50 +75,71 @@ def eval_per_image(i, gt, pred, use_rel, gt_thr = 0.5, return_match = False):
         return tp
     return tp.sum(), num_gt_tuple
 
+# Recall quantifies the number of positive class predictions
+#   made out of all positive examples in the dataset.
+# R@50
 def eval_recall_at_N(ds_name, N, res, use_rel = True, use_zero_shot = False):
-    if(ds_name == 'vrd'):
-        num_imgs = 1000
-        gt = sio.loadmat('../data/vrd/gt.mat')
-        gt['tuple_label'] = gt['gt_tuple_label'][0]
-        gt['obj_bboxes'] = gt['gt_obj_bboxes'][0]
-        gt['sub_bboxes'] = gt['gt_sub_bboxes'][0]
+    if(ds_name == "vrd"):
+        gt = sio.loadmat("data/vrd/gt.mat")
+        gt["tuple_label"] = gt["gt_tuple_label"][0]
+        gt["obj_bboxes"]  = gt["gt_obj_bboxes"][0]
+        gt["sub_bboxes"]  = gt["gt_sub_bboxes"][0]
+        
+        # num_imgs = 1000
+        num_imgs = len(res["rlp_confs_ours"])
+        
         if(use_zero_shot):
-            zs = sio.loadmat('../data/vrd/zeroShot.mat')['zeroShot'][0];
+            zs = sio.loadmat("data/vrd/zeroShot.mat")["zeroShot"][0];
             for ii in range(num_imgs):
                 if(zs[ii].shape[0] == 0):
                     continue
                 idx = zs[ii] == 1
-                gt['tuple_label'][ii] = gt['tuple_label'][ii][idx[0]]
-                gt['obj_bboxes'][ii] = gt['obj_bboxes'][ii][idx[0]]
-                gt['sub_bboxes'][ii] = gt['sub_bboxes'][ii][idx[0]]
+                gt["tuple_label"][ii] = gt["tuple_label"][ii][idx[0]]
+                gt["obj_bboxes"][ii]  = gt["obj_bboxes"][ii][idx[0]]
+                gt["sub_bboxes"][ii]  = gt["sub_bboxes"][ii][idx[0]]
     else:
         # Testing all images is quite slow.
         num_imgs = 8995
         if(use_zero_shot):
-            gt_path = '../data/%s/zs_gt.pkl'%ds_name
+            gt_path = "../data/{}/zs_gt.pkl".format(ds_name)
         else:
-            gt_path = '../data/%s/gt.pkl'%ds_name
+            gt_path = "../data/{}/gt.pkl".format(ds_name)
         with open(gt_path, 'rb') as fid:
             gt = pickle.load(fid)
 
     pred = {}
-    pred['tuple_label'] = copy.deepcopy(res['rlp_labels_ours'])
-    pred['tuple_confs'] = copy.deepcopy(res['rlp_confs_ours'])
-    pred['sub_bboxes']  = copy.deepcopy(res['sub_bboxes_ours'])
-    pred['obj_bboxes']  = copy.deepcopy(res['obj_bboxes_ours'])
+    pred["tuple_label"] = copy.deepcopy(res["rlp_labels_ours"])
+    pred["tuple_confs"] = copy.deepcopy(res["rlp_confs_ours"])
+    pred["sub_bboxes"]  = copy.deepcopy(res["sub_bboxes_ours"])
+    pred["obj_bboxes"]  = copy.deepcopy(res["obj_bboxes_ours"])
+
+    print(pred.keys())
+    print("tuple_label: {}".format(len(pred["tuple_label"])))
+    print("tuple_confs: {}".format(len(pred["tuple_confs"])))
+    print("sub_bboxes: {}".format(len(pred["sub_bboxes"])))
+    print("obj_bboxes: {}".format(len(pred["obj_bboxes"])))
+    
+    print("tuple_confs[0]: {}".format((pred["tuple_confs"][0]).shape))
+    print(pred["tuple_confs"][0])
+    # pdb.set_trace()
 
     for ii in range(num_imgs):
-        if(pred['tuple_confs'][ii] is None):
+        # ...if(not ii in pred["tuple_confs"]): #  or pred["tuple_confs"][ii] is None):
+        #     continue
+        pred["tuple_confs"][ii] = np.array(pred["tuple_confs"][ii])
+        if(pred["tuple_confs"][ii].shape[0] == 0):
             continue
-        pred['tuple_confs'][ii] = np.array(pred['tuple_confs'][ii])
-        if(pred['tuple_confs'][ii].shape[0] == 0):
-            continue
-        idx_order = np.array(pred['tuple_confs'][ii]).argsort()[::-1][:N]
-        pred['tuple_label'][ii] = pred['tuple_label'][ii][idx_order,:]
-        pred['tuple_confs'][ii] = pred['tuple_confs'][ii][idx_order]
-        pred['sub_bboxes'][ii]  = pred['sub_bboxes'][ii][idx_order,:]
-        pred['obj_bboxes'][ii]  = pred['obj_bboxes'][ii][idx_order,:]
+        idx_order = np.array(pred["tuple_confs"][ii]).argsort()[::-1][:N]
+        pred["tuple_label"][ii] = pred["tuple_label"][ii][idx_order,:]
+        pred["tuple_confs"][ii] = pred["tuple_confs"][ii][idx_order]
+        pred["sub_bboxes"][ii]  = pred["sub_bboxes"][ii][idx_order,:]
+        pred["obj_bboxes"][ii]  = pred["obj_bboxes"][ii][idx_order,:]
+
+    if idx_order.shape[0] < N:
+        raise ValueError("Can't compute R@{}: input is malformed ({})".format(N, pred["tuple_label"].shape))
+
     # from IPython import embed; embed()
+    # Evaluate each image
     tp_num = 0
     num_pos_tuple = 0
     for i in range(num_imgs):
@@ -168,7 +190,7 @@ def eval_obj_img(gt_boxes, gt_cls, pred_boxes, pred_cls, gt_thr=0.5, return_flag
     return pos_num, loc_num
 
 def eval_object_recognition_top_N(proposals_path):
-    with open('VRD_test.pkl', 'rb') as fid:
+    with open("VRD_test.pkl", 'rb') as fid:
         anno = pickle.load(fid)
 
     with open(proposals_path, 'rb') as fid:
@@ -180,14 +202,14 @@ def eval_object_recognition_top_N(proposals_path):
         if(anno[ii] is None):
             continue
         anno_img = anno[ii]
-        gt_boxes = anno_img['boxes'].astype(np.float32)
-        gt_cls = anno_img['classes'].astype(np.float32)
-        pred_boxes = proposals['boxes'][ii].astype(np.float32)
-        pred_cls = proposals['cls'][ii].astype(np.float32)
+        gt_boxes = anno_img["boxes"].astype(np.float32)
+        gt_cls = anno_img["classes"].astype(np.float32)
+        pred_boxes = proposals["boxes"][ii].astype(np.float32)
+        pred_cls = proposals["cls"][ii].astype(np.float32)
         pos_num_img, loc_num_img = eval_obj_img(gt_boxes, gt_cls, pred_boxes, pred_cls)
         pos_num += pos_num_img
         loc_num += loc_num_img
     print(pos_num/(pos_num+loc_num))
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

@@ -198,7 +198,8 @@ class vrd_trainer():
     res_file = "output-{}.txt".format(self.session_name)
 
     # headers = ["Epoch","Pre R@50", "ZS", "R@100", "ZS", "Rel R@50", "ZS", "R@100", "ZS"]
-    headers = ["Epoch","Pre R@50", "ZS", "R@100", "ZS"]
+    # headers = ["Epoch","Pre R@50", "ZS", "R@100", "ZS"]
+    headers = ["Epoch","Pre R@50", "R@100"]
     res = []
     for epoch in range(self.start_epoch, self.start_epoch + self.max_epochs):
 
@@ -267,7 +268,7 @@ class vrd_trainer():
       image_blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, rel_labels, rel_so_prior = self.datalayer.forward()
 
     """
-  
+
   # TODO: move in evaluation?
   def test_pre_net(self):
     import numpy as np
@@ -277,54 +278,66 @@ class vrd_trainer():
     test_data_layer = VRDDataLayer(self.dataset_args, "test")
 
     res = {}
-    rlp_labels_ours  = []
+    rlp_labels_cell  = []
     tuple_confs_cell = []
     sub_bboxes_cell  = []
     obj_bboxes_cell  = []
 
-    for img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, semantic_features, classes, ori_bboxes in iter(test_data_layer):
+    N = 100 # What's this? (num of rel_res) (with this you can compute R@i for any i<=N)
 
-      tuple_confs_im = []
-      rlp_labels_im  = np.zeros((100, 3), dtype = np.float)
-      sub_bboxes_im  = np.zeros((100, 4), dtype = np.float)
-      obj_bboxes_im  = np.zeros((100, 4), dtype = np.float)
+    while True:
+      try:
+        img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, semantic_features, classes, ori_bboxes = next(test_data_layer)
+      except ValueError:
+        break
+
+      tuple_confs_im = np.zeros((N,),   dtype = np.float) # Confidence...
+      rlp_labels_im  = np.zeros((N, 3), dtype = np.float) # Rel triples
+      sub_bboxes_im  = np.zeros((N, 4), dtype = np.float) # Subj bboxes
+      obj_bboxes_im  = np.zeros((N, 4), dtype = np.float) # Obj bboxes
 
       obj_scores, rel_scores = self.net(img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, semantic_features)
       rel_prob = rel_scores.data.cpu().numpy()
-      rel_res = np.dstack(np.unravel_index(np.argsort(-rel_prob.ravel()), rel_prob.shape))[0][:100]
+      rel_res = np.dstack(np.unravel_index(np.argsort(-rel_prob.ravel()), rel_prob.shape))[0][:N]
 
       for ii in range(rel_res.shape[0]):
         rel = rel_res[ii, 1]
         tuple_idx = rel_res[ii, 0]
+
         conf = rel_prob[tuple_idx, rel]
-        tuple_confs_im.append(conf)
+        tuple_confs_im[ii] = conf
+
         rlp_labels_im[ii] = [classes[idx_s[tuple_idx]], rel, classes[idx_o[tuple_idx]]]
+
         sub_bboxes_im[ii] = ori_bboxes[idx_s[tuple_idx]]
         obj_bboxes_im[ii] = ori_bboxes[idx_o[tuple_idx]]
-      if(test_data_layer.ds_name =="vrd"):
+
+      # Is this because of the background ... ?
+      if(test_data_layer.ds_name == "vrd"):
         rlp_labels_im += 1
 
-      tuple_confs_im = np.array(tuple_confs_im)
-      rlp_labels_ours.append(rlp_labels_im)
       tuple_confs_cell.append(tuple_confs_im)
+      rlp_labels_cell.append(rlp_labels_im)
       sub_bboxes_cell.append(sub_bboxes_im)
       obj_bboxes_cell.append(obj_bboxes_im)
 
-    res["rlp_labels_ours"] = rlp_labels_ours
     res["rlp_confs_ours"]  = tuple_confs_cell
+    res["rlp_labels_ours"] = rlp_labels_cell
     res["sub_bboxes_ours"] = sub_bboxes_cell
     res["obj_bboxes_ours"] = obj_bboxes_cell
 
-    rec_50     = eval_recall_at_N(self.args.ds_name, 50,  res, use_zero_shot = False)
-    rec_50_zs  = eval_recall_at_N(self.args.ds_name, 50,  res, use_zero_shot = True)
-    rec_100    = eval_recall_at_N(self.args.ds_name, 100, res, use_zero_shot = False)
-    rec_100_zs = eval_recall_at_N(self.args.ds_name, 100, res, use_zero_shot = True)
+    rec_50     = eval_recall_at_N(test_data_layer.ds_name, 50,  res, use_zero_shot = False)
+    # rec_50_zs  = eval_recall_at_N(test_data_layer.ds_name, 50,  res, use_zero_shot = True)
+    rec_100    = eval_recall_at_N(test_data_layer.ds_name, 100, res, use_zero_shot = False)
+    # rec_100_zs = eval_recall_at_N(test_data_layer.ds_name, 100, res, use_zero_shot = True)
     time2 = time.time()
 
-    print ("CLS TEST r50:%f, r50_zs:%f, r100:%f, r100_zs:%f" % (rec_50, rec_50_zs, rec_100, rec_100_zs))
+    # print ("CLS TEST r50:%f, r50_zs:%f, r100:%f, r100_zs:%f" % (rec_50, rec_50_zs, rec_100, rec_100_zs))
+    print ("CLS TEST r50:%f, r100:%f" % (rec_50, rec_100))
     print ("TEST Time:%s" % (time.strftime('%H:%M:%S', time.gmtime(int(time2 - time1)))))
 
-    return rec_50, rec_50_zs, rec_100, rec_100_zs
+    # return rec_50, rec_50_zs, rec_100, rec_100_zs
+    return rec_50, rec_100
 
 if __name__ == '__main__':
   trainer = vrd_trainer()
