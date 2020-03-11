@@ -84,7 +84,8 @@ class vrd_trainer():
 
     # load data layer
     print("Initializing data layer...")
-    self.datalayer = VRDDataLayer(self.dataset_args, "train")
+    self.datalayer = VRDDataLayer(self.dataset_args, "train",
+            shuffle=True)
 
     # TODO: Pytorch DataLoader()
     # self.dataset = VRDDataset()

@@ -9,6 +9,7 @@ from lib.blob import prep_im_for_blob
 from lib.dataset import dataset
 import math
 import torch
+import random
 from gensim.models import KeyedVectors
 
 import utils, globals
@@ -18,7 +19,7 @@ from copy import copy, deepcopy
 class VRDDataLayer():
   """ Iterate through the dataset and yield the input and target for the network """
 
-  def __init__(self, ds_info, stage):
+  def __init__(self, ds_info, stage, shuffle = False):
     ds_info = copy(ds_info)
     if isinstance(ds_info, str):
       ds_name = ds_info
@@ -37,8 +38,16 @@ class VRDDataLayer():
     self.n_obj   = self.dataset.n_obj
     self.n_pred  = self.dataset.n_pred
 
+    self.shuffle   = shuffle
     self.imgrels   = deepcopy(self.dataset.getImgRels(self.stage))
+
+    if self.stage == "train" and self.shuffle:
+      print("shuf!")
+      random.shuffle(self.imgrels)
+
+    
     # self.imgrels   = deepcopy([(k,v) for k,v in self.dataset.getImgRels(self.stage).items()])[:10]
+    
     self.n_imgrels = len(self.imgrels)
     self.cur_imgrels = 0
     self.wrap_around = ( self.stage == "train" )
