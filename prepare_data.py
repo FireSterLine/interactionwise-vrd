@@ -398,6 +398,10 @@ if __name__ == '__main__':
     else:
         obj = VGPrep()
 
+    # this is to generate the data in img_rels format using the original annotations in VRD
     # obj.prepare_data(generate_img_rels)
+    
+    # these are to generate the data in img_rels format using the {train,test}.pkl files provided
+    # by DSR
     obj.convert_train_test_dsr_to_img_rels(type='train')
     obj.convert_train_test_dsr_to_img_rels(type='test')
