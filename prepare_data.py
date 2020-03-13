@@ -33,6 +33,79 @@ class VRDPrep(DataPreparer):
             self.test_dsr = pickle.load(f, encoding="latin1")
 
 
+    def convert_train_test_dsr_to_img_rels(self, type='train'):
+        '''
+            This function loads the {train,test}.pkl which contains the original format of the data
+            from the vrd-dsr repo, and converts it to the img_rels format (same as the one generated)
+            by the _generate_img_relationships function.
+        '''
+        objects_id_to_label_mapping = self._generate_mapping(self.objects_vocab_file)
+        predicates_id_to_label_mapping = self._generate_mapping(self.predicates_vocab_file)
+
+        vrd_data = []
+        if type == 'train':
+            data = self.train_dsr
+        elif type == 'test':
+            data = self.test_dsr
+        else:
+            return
+        for elem in data:
+            if elem is None:
+                vrd_data.append((None, None))
+                continue
+            img_path = "/".join(elem['img_path'].split("/")[-2:])
+            bounding_boxes = elem['boxes']
+            subjects = elem['ix1']
+            objects = elem['ix2']
+            classes = elem['classes']
+            relations = elem['rel_classes']
+            relationships = []
+            for index in range(len(relations)):
+                subject_id = classes[subjects[index]]
+                subject_label = objects_id_to_label_mapping[subject_id]
+                subject_bbox = {
+                    'ymin': int(bounding_boxes[subjects[index]][1]),
+                    'ymax': int(bounding_boxes[subjects[index]][3]),
+                    'xmin': int(bounding_boxes[subjects[index]][0]),
+                    'xmax': int(bounding_boxes[subjects[index]][2])
+                }
+
+                object_id = classes[objects[index]]
+                object_label = objects_id_to_label_mapping[object_id]
+                object_bbox = {
+                    'ymin': int(bounding_boxes[objects[index]][1]),
+                    'ymax': int(bounding_boxes[objects[index]][3]),
+                    'xmin': int(bounding_boxes[objects[index]][0]),
+                    'xmax': int(bounding_boxes[objects[index]][2])
+                }
+                
+                for pred in relations[index]:
+                    predicate_id = pred
+                    predicate_label = predicates_id_to_label_mapping[predicate_id]
+
+                    rel_data = defaultdict(lambda: dict())
+                    rel_data['subject']['id'] = int(subject_id)
+                    rel_data['subject']['name'] = subject_label
+                    rel_data['subject']['bbox'] = subject_bbox
+
+                    rel_data['object']['id'] = int(object_id)
+                    rel_data['object']['name'] = object_label
+                    rel_data['object']['bbox'] = object_bbox
+
+                    rel_data['predicate']['id'] = int(predicate_id)
+                    rel_data['predicate']['name'] = predicate_label
+
+                    relationships.append(dict(rel_data))
+
+            if len(relationships) > 0:
+                vrd_data.append((img_path, relationships))
+            else:
+                print(img_path)
+
+        print(vrd_data[0])
+        with open("data/vrd/dsr_to_img_rels_{}.json".format(type), 'w') as wfile:
+            json.dump(vrd_data, wfile)
+
     def prepare_data(self, generate_img_rels):
         if generate_img_rels is True:
             output_file_format = "./data/vrd/data_img_rels_{}.json"
@@ -325,4 +398,6 @@ if __name__ == '__main__':
     else:
         obj = VGPrep()
 
-    obj.prepare_data(generate_img_rels)
+    # obj.prepare_data(generate_img_rels)
+    obj.convert_train_test_dsr_to_img_rels(type='train')
+    obj.convert_train_test_dsr_to_img_rels(type='test')
