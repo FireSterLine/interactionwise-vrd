@@ -57,8 +57,8 @@ from lib.evaluation_dsr import eval_recall_at_N, eval_obj_img # TODO remove this
 
 class vrd_trainer():
 
-  def __init__(self, dataset_name="vrd", pretrained="epoch_4_checkpoint.pth.tar"):
-  # def __init__(self, dataset_name="vrd", pretrained=False):
+  # def __init__(self, dataset_name="vrd", pretrained="epoch_4_checkpoint.pth.tar"):
+  def __init__(self, dataset_name="vrd", pretrained=False):
 
     print("vrd_trainer() called with args:")
     print([dataset_name, pretrained])
@@ -69,7 +69,8 @@ class vrd_trainer():
     self.checkpoint_frequency = 10
 
     # Does this have to be a constant?
-    self.iters_per_epoch = 4000
+    # self.iters_per_epoch = 4000
+    self.iters_per_epoch = 3780
 
     self.batch_size = 1 # TODO
     self.num_workers = 0

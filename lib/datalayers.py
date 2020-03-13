@@ -204,8 +204,6 @@ class VRDDataLayer():
         target[0, pos_idx] = i_rel*self.dataset.n_pred + rel_label
         pos_idx += 1
 
-      i_rel += 1
-
 
     # print(target)
 
