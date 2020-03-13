@@ -41,71 +41,53 @@ class VRDDataLayer():
     self.shuffle   = shuffle
     self.imgrels   = deepcopy(self.dataset.getImgRels(self.stage))
 
+    # TODO: check if this works
+    if self.stage == "train":
+        self.imgrels = [(k,v) if k != None for k,v in self.imgrels]
     if self.stage == "train" and self.shuffle:
       print("shuf!")
       random.shuffle(self.imgrels)
 
-    
-    # self.imgrels   = deepcopy([(k,v) for k,v in self.dataset.getImgRels(self.stage).items()])[:10]
-    
     self.n_imgrels = len(self.imgrels)
-    self.cur_imgrels = 0
+    self._cur = 0
     self.wrap_around = ( self.stage == "train" )
 
     self.batch_size = 1
     # TODO: take care of the remaining
     self.n_imgrel_batches = self.n_imgrels // self.batch_size
 
+
     # print("Loading Word2Vec model...")
     # self.w2v_model = KeyedVectors.load_word2vec_format(osp.join(globals.data_dir, globals.w2v_model_path), binary=True)
 
-  def __iter__(self):
-      return self
-
-  def __next__(self):
+  def next(self, objdet_res = False):
 
     while True:
-      if self.cur_imgrels >= self.n_imgrels:
+      if self._cur >= self.n_imgrels:
         if self.wrap_around:
-          self.cur_imgrels = 0
+          self._cur = 0
         else:
           raise StopIteration
           return
-    
-      (im_id, _rels) = self.imgrels[self.cur_imgrels]
-      self.cur_imgrels += 1
-      
+
+      (im_id, _rels) = self.imgrels[self._cur]
+
+      self._cur += 1
+
       if im_id is not None:
 
         rels = deepcopy(_rels)
 
         n_rel = len(rels)
-    
+
         if n_rel != 0:
           break
         elif self.stage == "test":
-          yield None
-          yield None
-          yield None
-          yield None
-          yield None
-          yield None
-          yield None
-          yield None
-          yield None
-          return
+          return None, None, None
       elif self.stage == "test":
-        yield None
-        yield None
-        yield None
-        yield None
-        yield None
-        yield None
-        yield None
-        yield None
-        yield None
-        return
-    
+        return None, None, None
+
+
     im = utils.read_img(osp.join(self.dataset.img_dir, im_id))
     ih = im.shape[0]
     iw = im.shape[1]
@@ -115,7 +97,7 @@ class VRDDataLayer():
     img_blob[0] = image_blob
 
 
-    # TODO: instead of computing boxes_img here, put it in the preprocess
+    # TODO: instead of computing obj_boxes_out here, put it in the preprocess
     #  (and maybe transform relationships to contain object indices instead of whole objects)
     # Note: from here on, rel["subject"] and rel["object"] contain indices to objs
     objs = []
@@ -132,19 +114,29 @@ class VRDDataLayer():
 
     n_objs = len(objs)
 
-    boxes_img = np.zeros((n_objs, 4))
-    classes_img = np.zeros((n_objs))
+    # Object classes
 
-    for i_obj,obj in enumerate(objs):
-      boxes_img[i_obj] = utils.bboxDictToNumpy(obj["bbox"])
-      classes_img[i_obj] = obj["id"]
+    if objdet_res != False:
+      obj_boxes_out  = objdet_res["boxes"]
+      obj_classes    = objdet_res["classes"]
+      pred_confs_img = objdet_res["confs"] # Note: We don't actually care about the confidence scores here
 
+      n_rel = len(obj_classes)*(len(obj_classes)-1)
 
+      if n_rel == 0:
+        return None, None, None, None
+    else:
+      obj_boxes_out = np.zeros((n_objs, 4))
+      obj_classes = np.zeros((n_objs))
 
-    # Objects' boxes
-    obj_boxes = np.zeros((boxes_img.shape[0], 5)) # , dtype=np.float32)
-    obj_boxes[:, 1:5] = boxes_img * im_scale
-    
+      for i_obj,obj in enumerate(objs):
+        obj_boxes_out[i_obj] = utils.bboxDictToNumpy(obj["bbox"])
+        obj_classes[i_obj] = obj["id"]
+
+    # Object boxes
+    obj_boxes = np.zeros((obj_boxes_out.shape[0], 5)) # , dtype=np.float32)
+    obj_boxes[:, 1:5] = obj_boxes_out * im_scale
+
     # union bounding boxes
     u_boxes = np.zeros((n_rel, 5))
 
@@ -169,45 +161,73 @@ class VRDDataLayer():
     # Indices for objects and subjects
     idx_s,idx_o = [],[]
 
-    for i_rel,rel in enumerate(rels):
+    if objdet_res != False:
+      i_rel = 0
+      for s_idx,sub_cls in enumerate(obj_classes):
+        for o_idx,obj_cls in enumerate(obj_classes):
+          if(s_idx == o_idx):
+            continue
+          # Subject and object local indices (useful when selecting ROI results)
+          idx_s.append(s_idx)
+          idx_o.append(o_idx)
 
-      # Subject and object bounding boxes
-      sBBox = utils.bboxDictToNumpy(objs[rel["subject"]]["bbox"])
-      oBBox = utils.bboxDictToNumpy(objs[rel["object"]]["bbox"])
+          # Subject and object bounding boxes
+          sBBox = obj_boxes_out[s_idx]
+          oBBox = obj_boxes_out[o_idx]
 
-      # get the union bounding box
-      rBBox = utils.getUnionBBox(sBBox, oBBox, ih, iw)
-      # store the union box (= relation box) of the union bounding box here, with the id i_rel_inst
-      u_boxes[i_rel, 1:5] = np.array(rBBox) * im_scale
+          # store the union box (= relation box) of the union bounding box here, with the id i_rel_inst
+          u_boxes[i_rel, 1:5] = np.array(rBBox) * im_scale
 
-      # Subject and object local indices (useful when selecting ROI results)
-      idx_s.append(rel["subject"])
-      idx_o.append(rel["object"])
+          # store the scaled dimensions of the union bounding box here, with the id i_rel
+          spatial_features[i_rel] = utils.getRelativeLoc(sBBox, oBBox)
 
-      # store the scaled dimensions of the union bounding box here, with the id i_rel
-      spatial_features[i_rel] = utils.getRelativeLoc(sBBox, oBBox)
+          # semantic features of obj and subj
+          # semantic_features[i_rel] = utils.getSemanticVector(objs[rel["subject"]]["name"], objs[rel["object"]]["name"], self.w2v_model)
+          semantic_features[i_rel] = np.zeros(600)
 
-      # semantic features of obj and subj
-      # semantic_features[i_rel] = utils.getSemanticVector(objs[rel["subject"]]["name"], objs[rel["object"]]["name"], self.w2v_model)
-      semantic_features[i_rel] = np.zeros(600)
+          # store the probability distribution of this subject-object pair from the soP_prior
+          rel_soP_prior[i_rel] = self.soP_prior[sub_cls][obj_cls]
 
-      # store the probability distribution of this subject-object pair from the soP_prior
-      s_cls_id = objs[rel["subject"]]["id"]
-      o_cls_id = objs[rel["object"]]["id"]
-      rel_soP_prior[i_rel] = self.soP_prior[s_cls_id][o_cls_id]
+          i_rel += 1
+    else:
+      for i_rel,rel in enumerate(rels):
 
-      # TODO: this target is not the one we want
-      # target[i_rel][rel["predicate"]["id"]] = 1.
-      # TODO: enable multi-class predicate (rel_classes: list of predicates for every pair)
-      rel_classes = [rel["predicate"]["id"]]
-      for rel_label in rel_classes:
-        target[0, pos_idx] = i_rel*self.dataset.n_pred + rel_label
-        pos_idx += 1
+        # Subject and object local indices (useful when selecting ROI results)
+        idx_s.append(rel["subject"])
+        idx_o.append(rel["object"])
 
-      i_rel += 1
+        # Subject and object bounding boxes
+        sBBox = utils.bboxDictToNumpy(objs[rel["subject"]]["bbox"])
+        oBBox = utils.bboxDictToNumpy(objs[rel["object"]]["bbox"])
+
+        # get the union bounding box
+        rBBox = utils.getUnionBBox(sBBox, oBBox, ih, iw)
+
+        # store the union box (= relation box) of the union bounding box here, with the id i_rel_inst
+        u_boxes[i_rel, 1:5] = np.array(rBBox) * im_scale
+
+        # store the scaled dimensions of the union bounding box here, with the id i_rel
+        spatial_features[i_rel] = utils.getRelativeLoc(sBBox, oBBox)
+
+        # semantic features of obj and subj
+        # semantic_features[i_rel] = utils.getSemanticVector(objs[rel["subject"]]["name"], objs[rel["object"]]["name"], self.w2v_model)
+        semantic_features[i_rel] = np.zeros(600)
+
+        # store the probability distribution of this subject-object pair from the soP_prior
+        s_cls = objs[rel["subject"]]["id"]
+        o_cls = objs[rel["object"]]["id"]
+        rel_soP_prior[i_rel] = self.soP_prior[s_cls][o_cls]
+
+        # TODO: this target is not the one we want
+        # target[i_rel][rel["predicate"]["id"]] = 1.
+        # TODO: enable multi-class predicate (rel_classes: list of predicates for every pair)
+        rel_classes = [rel["predicate"]["id"]]
+        for rel_label in rel_classes:
+          target[0, pos_idx] = i_rel*self.dataset.n_pred + rel_label
+          pos_idx += 1
 
 
-    # print(target)
+    obj_classes_out = obj_classes
 
     # Note: the transpose should move the color channel to being the
     #  last dimension
@@ -218,27 +238,35 @@ class VRDDataLayer():
     idx_o             = torch.LongTensor(idx_o).cuda()
     spatial_features  = torch.FloatTensor(spatial_features).cuda()
     semantic_features = torch.FloatTensor(semantic_features).cuda()
+    obj_classes       = torch.LongTensor(obj_classes).cuda()
 
     rel_soP_prior = torch.FloatTensor(rel_soP_prior).cuda()
     target        = torch.LongTensor(target).cuda()
-    # target        = torch.LongTensor(target).cuda()
 
-
-    yield img_blob
-    yield obj_boxes
-    yield u_boxes
-    yield idx_s
-    yield idx_o
-    yield spatial_features
-    # yield semantic_features
-    yield torch.LongTensor(classes_img).cuda()
+    net_input = (img_blob           \
+               , obj_boxes          \
+               , u_boxes            \
+               , idx_s              \
+               , idx_o              \
+               , spatial_features   \
+               , obj_classes        \
+          \   #, semantic_features  \
+      )
 
     if self.stage == "train":
-      yield rel_soP_prior
-      yield target
+      return net_input
+            , rel_soP_prior
+            , target
     elif self.stage == "test":
-      yield classes_img
-      yield boxes_img
+      if objdet_res == False:
+        return net_input
+              , obj_classes_out
+              , obj_boxes_out
+      else:
+        return net_input
+              , obj_classes_out
+              , rel_soP_prior
+              , obj_boxes_out
 
-if __name__ == '__main__':
+if __name__ == "__main__":
   pass
