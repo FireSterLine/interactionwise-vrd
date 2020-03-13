@@ -199,8 +199,7 @@ class vrd_trainer():
     res_file = "output-{}.txt".format(self.session_name)
 
     # headers = ["Epoch","Pre R@50", "ZS", "R@100", "ZS", "Rel R@50", "ZS", "R@100", "ZS"]
-    # headers = ["Epoch","Pre R@50", "ZS", "R@100", "ZS"]
-    headers = ["Epoch","Pre R@50", "Pre R@100"]
+    headers = ["Epoch","Pre R@50", "ZS", "R@100", "ZS"]
     res = []
     for epoch in range(self.start_epoch, self.start_epoch + self.max_epochs):
 
@@ -334,17 +333,15 @@ class vrd_trainer():
     res["obj_bboxes_ours"] = obj_bboxes_cell
 
     rec_50     = eval_recall_at_N(test_data_layer.ds_name, 50,  res, use_zero_shot = False)
-    # rec_50_zs  = eval_recall_at_N(test_data_layer.ds_name, 50,  res, use_zero_shot = True)
+    rec_50_zs  = eval_recall_at_N(test_data_layer.ds_name, 50,  res, use_zero_shot = True)
     rec_100    = eval_recall_at_N(test_data_layer.ds_name, 100, res, use_zero_shot = False)
-    # rec_100_zs = eval_recall_at_N(test_data_layer.ds_name, 100, res, use_zero_shot = True)
+    rec_100_zs = eval_recall_at_N(test_data_layer.ds_name, 100, res, use_zero_shot = True)
     time2 = time.time()
 
-    # print ("CLS TEST r50:%f, r50_zs:%f, r100:%f, r100_zs:%f" % (rec_50, rec_50_zs, rec_100, rec_100_zs))
-    print ("CLS TEST R@50: %f, R@100: %f" % (rec_50, rec_100))
+    print ("CLS TEST:\nAll:\tR@50: %6.3f\tR@100: %6.3f\nZShot:\tR@50: %6.3f\tR@100: %6.3f" % (rec_50, rec_100, rec_50_zs, rec_100_zs))
     print ("TEST Time:%s" % (time.strftime('%H:%M:%S', time.gmtime(int(time2 - time1)))))
 
-    # return rec_50, rec_50_zs, rec_100, rec_100_zs
-    return rec_50, rec_100
+    return rec_50, rec_50_zs, rec_100, rec_100_zs
 
 if __name__ == '__main__':
   trainer = vrd_trainer()

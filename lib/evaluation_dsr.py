@@ -13,9 +13,9 @@ this_dir = osp.dirname(osp.realpath(__file__))
 def eval_per_image(i, gt, pred, use_rel, gt_thr = 0.5, return_match = False):
     gt_tupLabel = gt["tuple_label"][i].astype(np.float32)
     num_gt_tuple = gt_tupLabel.shape[0]
-    if(num_gt_tuple == 0 or pred["tuple_confs"][i] is None):
+    if num_gt_tuple == 0 or pred["tuple_confs"][i] is None:
         return 0, 0
-    if(not use_rel):
+    if not use_rel:
         gt_tupLabel = gt_tupLabel[:, (0,2)]
     gt_objBox = gt["obj_bboxes"][i].astype(np.float32)
     gt_subBox = gt["sub_bboxes"][i].astype(np.float32)
@@ -62,7 +62,7 @@ def eval_per_image(i, gt, pred, use_rel, gt_thr = 0.5, return_match = False):
                 ov = min(ovO, ovS)
 
                 # makes sure that this object is detected according
-                # to its individual threshold
+                #   to its individual threshold
                 if ov >= ovmax:
                     ovmax=ov;
                     kmax=k;
@@ -71,23 +71,21 @@ def eval_per_image(i, gt, pred, use_rel, gt_thr = 0.5, return_match = False):
             gt_detected[kmax] = 1;
         else:
             fp[j] = 1;
-    if(return_match):
+    if return_match:
         return tp
     return tp.sum(), num_gt_tuple
 
 # Recall quantifies the number of positive class predictions
 #   made out of all positive examples in the dataset.
-# R@50
 def eval_recall_at_N(ds_name, N, res, use_rel = True, use_zero_shot = False):
     if(ds_name == "vrd"):
         gt = sio.loadmat("data/vrd/gt.mat")
         gt["tuple_label"] = gt["gt_tuple_label"][0]
         gt["obj_bboxes"]  = gt["gt_obj_bboxes"][0]
         gt["sub_bboxes"]  = gt["gt_sub_bboxes"][0]
-        
-        num_imgs = 1000
-        # num_imgs = len(res["rlp_confs_ours"])
-        
+
+        num_imgs = len(gt["obj_bboxes"])
+
         if(use_zero_shot):
             zs = sio.loadmat("data/vrd/zeroShot.mat")["zeroShot"][0];
             for ii in range(num_imgs):
@@ -106,6 +104,10 @@ def eval_recall_at_N(ds_name, N, res, use_rel = True, use_zero_shot = False):
             gt_path = "../data/{}/gt.pkl".format(ds_name)
         with open(gt_path, 'rb') as fid:
             gt = pickle.load(fid)
+            print(gt.keys())
+
+    if num_imgs != len(res["rlp_confs_ours"]):
+        raise ValueError("Can't compare results against ground truths (test results are malformed). {} != {}".format(num_imgs, len(res["rlp_confs_ours"])))
 
     pred = {}
     pred["tuple_label"] = copy.deepcopy(res["rlp_labels_ours"])
@@ -113,15 +115,8 @@ def eval_recall_at_N(ds_name, N, res, use_rel = True, use_zero_shot = False):
     pred["sub_bboxes"]  = copy.deepcopy(res["sub_bboxes_ours"])
     pred["obj_bboxes"]  = copy.deepcopy(res["obj_bboxes_ours"])
 
-    #print(pred.keys())
-    #print("tuple_label: {}".format(len(pred["tuple_label"])))
-    #print("tuple_confs: {}".format(len(pred["tuple_confs"])))
-    #print("sub_bboxes: {}".format(len(pred["sub_bboxes"])))
-    #print("obj_bboxes: {}".format(len(pred["obj_bboxes"])))
-    
     #print("tuple_confs[0]: {}".format((pred["tuple_confs"][0]).shape))
     #print(pred["tuple_confs"][0])
-    # pdb.set_trace()
 
     for ii in range(num_imgs):
         if(pred["tuple_confs"][ii] is None):
@@ -135,10 +130,9 @@ def eval_recall_at_N(ds_name, N, res, use_rel = True, use_zero_shot = False):
         pred["sub_bboxes"][ii]  = pred["sub_bboxes"][ii][idx_order,:]
         pred["obj_bboxes"][ii]  = pred["obj_bboxes"][ii][idx_order,:]
 
-        #if idx_order.shape[0] <= N:
-        #  raise ValueError("Can't compute R@{}: input is malformed ({})".format(N, pred["tuple_label"][ii].shape))
+        if idx_order.shape[0] != N:
+            raise ValueError("Can't compute R@{}: input is malformed (idx_order.shape: {}, pred[\"tuple_confs\"][{}].shape").format(N, idx_order.shape, pred["tuple_confs"][ii].shape))
 
-    # from IPython import embed; embed()
     # Evaluate each image
     tp_num = 0
     num_pos_tuple = 0
