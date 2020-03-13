@@ -57,8 +57,8 @@ from lib.evaluation_dsr import eval_recall_at_N, eval_obj_img # TODO remove this
 
 class vrd_trainer():
 
-  #def __init__(self, dataset_name="vrd", pretrained="epoch_4_checkpoint.pth.tar"):
-  def __init__(self, dataset_name="vrd", pretrained=False):
+  def __init__(self, dataset_name="vrd", pretrained="epoch_4_checkpoint.pth.tar"):
+  # def __init__(self, dataset_name="vrd", pretrained=False):
 
     print("vrd_trainer() called with args:")
     print([dataset_name, pretrained])
