@@ -131,7 +131,7 @@ def eval_recall_at_N(ds_name, N, res, use_rel = True, use_zero_shot = False):
         pred["obj_bboxes"][ii]  = pred["obj_bboxes"][ii][idx_order,:]
 
         if idx_order.shape[0] != N:
-            raise ValueError("Can't compute R@{}: input is malformed (idx_order.shape: {}, pred[\"tuple_confs\"][{}].shape").format(N, idx_order.shape, pred["tuple_confs"][ii].shape))
+            raise ValueError("Can't compute R@{}: input is malformed (idx_order.shape: {}, pred[\"tuple_confs\"][{}].shape".format(N, idx_order.shape, pred["tuple_confs"][ii].shape))
 
     # Evaluate each image
     tp_num = 0

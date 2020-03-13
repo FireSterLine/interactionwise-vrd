@@ -205,7 +205,7 @@ class vrd_trainer():
 
       print("Epoch {}".format(epoch))
 
-      self.__train_epoch(epoch)
+      # self.__train_epoch(epoch)
       # res.append((epoch,) + test_pre_net(net, args) + test_rel_net(net, args))
       res.append((epoch,) + self.test_pre_net())
       with open("results-{}.txt".format(self.session_name), 'w') as f:
@@ -224,6 +224,8 @@ class vrd_trainer():
           # "class_agnostic": self.class_agnostic,
         }, save_name)
 
+      self.__train_epoch(epoch)
+  
   def __train_epoch(self, epoch):
     self.net.train()
 
