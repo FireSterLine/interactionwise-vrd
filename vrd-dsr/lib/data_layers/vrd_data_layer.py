@@ -101,6 +101,8 @@ class VrdDataLayer(object):
     def forward_test(self):
         """Get blobs and copy them into this layer's top blob vector."""
         anno_img = self._anno[self._cur]
+
+        
         if(anno_img is None): # Jesus why?
             self._cur += 1
             if(self._cur >= len(self._anno)):

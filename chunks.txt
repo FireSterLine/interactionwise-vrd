@@ -1,0 +1,113 @@
+import pickle
+with open("data/vrd/train.pkl", 'rb') as f:
+  train = pickle.load(f, encoding="latin1")
+
+with open("data/vrd/test.pkl", 'rb') as f:
+  test = pickle.load(f, encoding="latin1")
+
+len(train)
+len(test)
+
+
+test[0].keys() # dict_keys(['img_path', 'boxes', 'classes', 'ix2', 'ix1', 'rel_classes'])
+test[0]["img_path"] # '../data/sg_dataset/sg_test_images/3845770407_1a8cd41230_b.jpg'
+test[0]["boxes"].shape # (10, 4)
+test[0]["classes"].shape # (10,)
+test[0]["ix2"].shape # (12,)
+test[0]["ix1"].shape # (12,)
+len(test[0]["rel_classes"]) # 12
+len(test[0]["rel_classes"][0])
+
+
+from lib.dataset import dataset
+
+dataset_args = {"ds_name" : "vrd", "with_bg_obj" : False, "with_bg_pred" : False}
+
+dataset = dataset("vrd", dataset_args)
+
+test_imgrels = dataset.getImgRels("test")
+
+test_imgrels_list = [(k,v) for k,v in dataset.getImgRels("test").items()]
+
+if len(test_imgrels) != len(test):
+  print("ERR!")
+
+if len(test_imgrels_list) != len(test):
+  print("ERR!")
+
+print(test[0])
+for i,imgrel in enumerate(test_imgrels_list):
+  k, v = imgrel
+  if "3845770407_1a8cd41230_b.jpg" in k:
+    print(imgrel)
+    break
+
+
+
+
+import json
+with open("data/vrd/datatest.json", 'rb') as f:
+  data_old = json.load(f)
+
+with open("data/vrd/data_img_rels_test.json", 'rb') as f:
+  data_new = json.load(f)
+
+
+
+import json
+with open("data/vrd/datatrain.json", 'rb') as f:
+  data_old = json.load(f)
+
+with open("data/vrd/data_img_rels_train.json", 'rb') as f:
+  data_new = json.load(f)
+
+
+  import json
+  with open("data/vrd/sg_dataset/sg_test_annotations.json", 'rb') as f:
+    data = json.load(f)
+
+  for i in data:
+    if i["filename"] == "9055930159_9560984041_b.jpg":
+      print(i['relationships'])
+
+
+
+
+
+
+
+
+class gen():
+   def __init__(self):
+     self.a = 2
+   def __iter__(self):
+    return self
+   def __next__(self, i):
+     if self.a == 4:
+       return
+     yield self.a*i
+     yield self.a
+     self.a += 1
+
+a = gen()
+
+
+for i,j in iter(a):
+  print(i)
+  print(j)
+
+for i,j in a:
+  print(i)
+  print(j)
+
+for i in a:
+  print(i)
+
+while True:
+  i = next(a, 2)
+  print(i)
+
+
+while True:
+  i = a.__next__(2)
+  print(i)
