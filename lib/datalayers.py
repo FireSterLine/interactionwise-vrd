@@ -43,7 +43,7 @@ class VRDDataLayer():
 
     # TODO: check if this works
     if self.stage == "train":
-        self.imgrels = [(k,v) if k != None for k,v in self.imgrels]
+        self.imgrels = [(k,v) for k,v in self.imgrels if k != None]
     if self.stage == "train" and self.shuffle:
       print("shuf!")
       random.shuffle(self.imgrels)
@@ -83,9 +83,15 @@ class VRDDataLayer():
         if n_rel != 0:
           break
         elif self.stage == "test":
-          return None, None, None
+          if objdet_res != False:
+            return None, None, None, None
+          else:
+            return None, None, None
       elif self.stage == "test":
-        return None, None, None
+        if objdet_res != False:
+          return None, None, None, None
+        else:
+          return None, None, None
 
 
     im = utils.read_img(osp.join(self.dataset.img_dir, im_id))
@@ -152,6 +158,7 @@ class VRDDataLayer():
 
     # this will contain the probability distribution of each subject-object pair ID over all 70 predicates
     rel_soP_prior = np.zeros((n_rel, self.dataset.n_pred))
+    # print(n_rel)
 
     # Target output for the network
     target = -1*np.ones((1, self.dataset.n_pred*n_rel))
@@ -160,6 +167,8 @@ class VRDDataLayer():
 
     # Indices for objects and subjects
     idx_s,idx_o = [],[]
+    
+    # print(obj_classes)
 
     if objdet_res != False:
       i_rel = 0
@@ -175,6 +184,9 @@ class VRDDataLayer():
           sBBox = obj_boxes_out[s_idx]
           oBBox = obj_boxes_out[o_idx]
 
+          # get the union bounding box
+          rBBox = utils.getUnionBBox(sBBox, oBBox, ih, iw)
+
           # store the union box (= relation box) of the union bounding box here, with the id i_rel_inst
           u_boxes[i_rel, 1:5] = np.array(rBBox) * im_scale
 
@@ -184,7 +196,7 @@ class VRDDataLayer():
           # semantic features of obj and subj
           # semantic_features[i_rel] = utils.getSemanticVector(objs[rel["subject"]]["name"], objs[rel["object"]]["name"], self.w2v_model)
           semantic_features[i_rel] = np.zeros(600)
-
+    
           # store the probability distribution of this subject-object pair from the soP_prior
           rel_soP_prior[i_rel] = self.soP_prior[sub_cls][obj_cls]
 
@@ -240,7 +252,7 @@ class VRDDataLayer():
     semantic_features = torch.FloatTensor(semantic_features).cuda()
     obj_classes       = torch.LongTensor(obj_classes).cuda()
 
-    rel_soP_prior = torch.FloatTensor(rel_soP_prior).cuda()
+    # rel_soP_prior = torch.FloatTensor(rel_soP_prior).cuda()
     target        = torch.LongTensor(target).cuda()
 
     net_input = (img_blob           \
@@ -250,22 +262,22 @@ class VRDDataLayer():
                , idx_o              \
                , spatial_features   \
                , obj_classes        \
-          \   #, semantic_features  \
+              #, semantic_features  \
       )
 
     if self.stage == "train":
-      return net_input
-            , rel_soP_prior
+      return net_input      \
+            , rel_soP_prior \
             , target
     elif self.stage == "test":
       if objdet_res == False:
-        return net_input
-              , obj_classes_out
+        return net_input          \
+              , obj_classes_out   \
               , obj_boxes_out
       else:
-        return net_input
-              , obj_classes_out
-              , rel_soP_prior
+        return net_input          \
+              , obj_classes_out   \
+              , rel_soP_prior     \
               , obj_boxes_out
 
 if __name__ == "__main__":
