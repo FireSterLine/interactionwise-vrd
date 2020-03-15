@@ -29,11 +29,11 @@ class vrd(imdb):
         imdb.__init__(self, 'vrd_' + image_set)
         self._image_set = image_set
         self._devkit_path = self._get_default_path()
-        self._data_path = osp.join(self._devkit_path, 'images/%s' % image_set)
+        self._data_path = osp.join(self._devkit_path, 'sg_dataset', 'sg_%s_images' % (self._image_set))
         self._classes = ['__background__'] + self._object_classes()
-        self._class_to_ind = dict(zip(self._classes, xrange(self.num_classes)))
+        self._class_to_ind = dict(zip(self._classes, range(self.num_classes)))
 
-        with open('data/VRD/%s.pkl'%(image_set), 'rb') as fid:
+        with open('data/vrd/%s.pkl'%(image_set), 'rb') as fid:
             anno = cPickle.load(fid, encoding = "latin1")
             self._anno = [x for x in anno if x is not None]
 
@@ -70,7 +70,7 @@ class vrd(imdb):
         image_index = []
         for img_idx, anno_img in enumerate(self._anno):
           image_path = anno_img['img_path'].split('/')[-1]
-          image_path = osp.join('data/VRD/images/', self._image_set, image_path)
+          image_path = osp.join('data/vrd', 'sg_dataset', 'sg_%s_images' % (self._image_set), image_path)
           assert os.path.exists(image_path), \
             'Path does not exist: {}'.format(image_path)
           image_index.append(image_path)
@@ -80,7 +80,7 @@ class vrd(imdb):
         """
         Return the default path where VRD is expected to be installed.
         """
-        return os.path.join(cfg.DATA_DIR, 'VRD')
+        return os.path.join(cfg.DATA_DIR, 'vrd')
 
     def gt_roidb(self):
         """
@@ -157,7 +157,7 @@ class vrd(imdb):
         raw_data = sio.loadmat(filename)['boxes'].ravel()
 
         box_list = []
-        for i in xrange(raw_data.shape[0]):
+        for i in range(raw_data.shape[0]):
             boxes = raw_data[i][:, (1, 0, 3, 2)] - 1
             keep = ds_utils.unique_boxes(boxes)
             boxes = boxes[keep, :]
@@ -221,11 +221,12 @@ class vrd(imdb):
         with open(det_file, 'wb') as f:
             cPickle.dump(proposals, f, cPickle.HIGHEST_PROTOCOL)
 
-        res = self.evaluate_recall(candidate_boxes=proposals['boxes'], thresholds=[0.5], area='all')
-        out_name   = output_dir.split('/')[-1]
-        output_dir = '/'.join(output_dir.split('/')[0:-1])
-        with open(osp.join(output_dir, 'recall.txt'), 'a') as f:
-            f.write('%s, Recall:%f\n'%(out_name, res['recalls'][0]))
+        # TODO: bring back? (Gio)
+        #res = self.evaluate_recall(candidate_boxes=proposals['boxes'], thresholds=[0.5], area='all')
+        #out_name   = output_dir.split('/')[-1]
+        #output_dir = '/'.join(output_dir.split('/')[0:-1])
+        #with open(osp.join(output_dir, 'recall.txt'), 'a') as f:
+        #    f.write('%s, Recall:%f\n'%(out_name, res['recalls'][0]))
 
 if __name__ == '__main__':
     imdb = vrd_det('test')

@@ -193,10 +193,11 @@ class detector():
     im_data_pt = im_data_pt.permute(0, 3, 1, 2)
     im_info_pt = torch.from_numpy(im_info_np)
 
-    self.im_data.data.resize_(im_data_pt.size()).copy_(im_data_pt)
-    self.im_info.data.resize_(im_info_pt.size()).copy_(im_info_pt)
-    self.gt_boxes.data.resize_(1, 1, 5).zero_()
-    self.num_boxes.data.resize_(1).zero_()
+    with torch.no_grad():
+        self.im_data.resize_(im_data_pt.size()).copy_(im_data_pt)
+        self.im_info.resize_(im_info_pt.size()).copy_(im_info_pt)
+        self.gt_boxes.resize_(1, 1, 5).zero_()
+        self.num_boxes.resize_(1).zero_()
 
     det_tic = time.time()
 
@@ -264,7 +265,9 @@ class detector():
         cls_dets = torch.cat((cls_boxes, cls_scores.unsqueeze(1)), 1)
         # cls_dets = torch.cat((cls_boxes, cls_scores), 1)
         cls_dets = cls_dets[order]
-        keep = nms(cls_dets, cfg.TEST.NMS, force_cpu=not cfg.USE_GPU_NMS)
+        # keep = nms(cls_dets, cfg.TEST.NMS, force_cpu=not cfg.USE_GPU_NMS)
+        keep = nms(cls_boxes[order, :], cls_scores[order], cfg.TEST.NMS)
+
         cls_dets = cls_dets[keep.view(-1).long()]        
         if vis:
           im2show = res_detections(im2show, j, self.vrd_classes[j], cls_dets.cpu().numpy(), res, 0.5)
