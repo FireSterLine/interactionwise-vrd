@@ -213,9 +213,9 @@ class vrd_trainer():
       print("Epoch {}".format(epoch))
 
       # self.__train_epoch(epoch)
-      res.append((epoch,) + self.test_pre_net() + self.test_rel_net())
+      #res.append((epoch,) + self.test_pre_net() + self.test_rel_net())
       # res.append((epoch,) + self.test_pre_net())
-      # res.append((epoch,) + self.test_rel_net())
+      res.append((epoch,) + self.test_rel_net())
       with open("results-{}.txt".format(self.session_name), 'w') as f:
         f.write(tabulate(res, headers))
 
@@ -386,8 +386,8 @@ class vrd_trainer():
       obj_bboxes_cell  = []
       predict = []
       
-      print(len(anno))
-      print(len(proposals["cls"]))
+      if len(anno) != len(proposals["cls"]):
+        print("ERROR: something is wrong in prediction: {} != {}".format(len(anno), len(proposals["cls"])))
 
       for step,anno_img in enumerate(anno):
 
@@ -416,7 +416,7 @@ class vrd_trainer():
         obj_score, rel_score = self.net(*net_input) # img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
 
         _, obj_pred = obj_score[:, 1::].data.topk(1, 1, True, True)
-        obj_score = F.softmax(obj_score)[:, 1::].data.cpu().numpy()
+        obj_score = F.softmax(obj_score, dim=1)[:, 1::].data.cpu().numpy()
 
         rel_prob = rel_score.data.cpu().numpy()
         rel_prob += np.log(0.5*(rel_sop_prior+1.0 / test_data_layer.n_pred))
@@ -472,6 +472,9 @@ class vrd_trainer():
       res["rlp_labels_ours"] = rlp_labels_cell
       res["sub_bboxes_ours"] = sub_bboxes_cell
       res["obj_bboxes_ours"] = obj_bboxes_cell
+
+      if len(anno) != len(res["obj_bboxes_ours"]):
+        print("ERROR: something is wrong in prediction: {} != {}".format(len(anno), len(res["obj_bboxes_ours"])))
 
       rec_50     = eval_recall_at_N(test_data_layer.ds_name, 50,  res, use_zero_shot = False)
       rec_50_zs  = eval_recall_at_N(test_data_layer.ds_name, 50,  res, use_zero_shot = True)
