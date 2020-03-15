@@ -48,9 +48,8 @@ SESSION=1
 EPOCH=20
 CHECKPOINT=7559
 
-python test_net.py --dataset vg --net res101 --checksession $SESSION --checkepoch $EPOCH --checkpoint $CHECKPOINT --cuda
-python demo.py     --dataset vg --net res101 --checksession $SESSION --checkepoch $EPOCH --checkpoint $CHECKPOINT --cuda
-
+python test_net.py --dataset vrd --net vgg16 --checksession $SESSION --checkepoch $EPOCH --checkpoint $CHECKPOINT --cuda
+python demo.py     --dataset vrd --net vgg16 --checksession $SESSION --checkepoch $EPOCH --checkpoint $CHECKPOINT --cuda
 
 
 BATCH_SIZE=4

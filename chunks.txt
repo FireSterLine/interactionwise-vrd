@@ -70,9 +70,32 @@ with open("data/vrd/data_img_rels_train.json", 'rb') as f:
     if i["filename"] == "9055930159_9560984041_b.jpg":
       print(i['relationships'])
 
+import pickle
+with open("output/vgg16/vrd_test/faster_rcnn_10/proposal_faster_rcnn.pkl", 'rb') as f:
+  propnew = pickle.load(f, encoding="latin1")
 
+with open("data/vrd/proposal.pkl", 'rb') as f:
+  propold = pickle.load(f, encoding="latin1")
 
+propnew.keys()
+propold.keys()
 
+len(propnew["confs"])
+len(propold["confs"])
+
+propnew["confs"][0][0]
+propold["confs"][0][0]
+
+print("propnew\tpropold")
+for i in range(max(len(propnew["boxes"][0]), len(propold["boxes"][0]))):
+  print(i, end="\t")
+  if i < len(propnew["boxes"][0]): print(propnew["boxes"][0][i], end="\t")
+  if i < len(propnew["confs"][0]): print(propnew["confs"][0][i], end="\t")
+  if i < len(propnew["cls"][0]):   print(propnew["cls"][0][i],   end="\t")
+  if i < len(propold["boxes"][0]): print(propold["boxes"][0][i], end="\t")
+  if i < len(propold["confs"][0]): print(propold["confs"][0][i], end="\t")
+  if i < len(propold["cls"][0]):   print(propold["cls"][0][i],   end="\t")
+  print()
 
 
 
@@ -111,3 +134,32 @@ while True:
 while True:
   i = a.__next__(2)
   print(i)
+
+
+import pickle
+
+with open("data/vrd/proposal.pkl", 'rb') as f:
+  proposal = pickle.load(f, encoding="latin1")
+
+for i,a in enumerate(proposal["boxes"]):
+  for x,y in enumerate(a):
+    if len(y) != 1:
+      print("!")
+      print(i,x)
+
+for i,a in enumerate(proposal["cls"]):
+  for x,y in enumerate(a):
+    if len(y) != 1:
+      print("!")
+      print(i,x)
+
+
+for i,a in enumerate(proposal["confs"]):
+  for x,y in enumerate(a):
+    if len(y) != 1:
+      print("!")
+      print(i,x)
+
+import torch
+with open("faster-rcnn/models/faster_rcnn_1_20_7559.pth", 'rb') as f:
+  train = torch.load(f, encoding="latin1")
