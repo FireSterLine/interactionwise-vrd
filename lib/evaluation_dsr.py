@@ -117,7 +117,11 @@ def eval_recall_at_N(ds_name, N, res, use_rel = True, use_zero_shot = False):
 
     #print("tuple_confs[0]: {}".format((pred["tuple_confs"][0]).shape))
     #print(pred["tuple_confs"][0])
-
+    
+    if num_imgs != len(pred["tuple_confs"]):
+        print("WARNING: prediction on test set yield wrong size: {} != {}".format(num_imgs, len(pred["tuple_confs"])))
+    
+    # Reorder by confidence
     for ii in range(num_imgs):
         if(pred["tuple_confs"][ii] is None):
             continue

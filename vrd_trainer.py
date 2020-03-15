@@ -9,6 +9,7 @@ import time
 import torch
 import torch.nn as nn
 import torch.nn.init
+import torch.nn.functional as F
 
 from easydict import EasyDict
 import globals, utils
@@ -70,7 +71,8 @@ class vrd_trainer():
 
     # Does this have to be a constant?
     # TODO Try: 3700-3800
-    self.iters_per_epoch = 4000
+    # self.iters_per_epoch = 4000
+    self.iters_per_epoch = 3780
 
     self.batch_size = 1 # TODO
     self.num_workers = 0
@@ -83,7 +85,8 @@ class vrd_trainer():
     self.dataset_args = {"ds_name" : self.dataset_name, "with_bg_obj" : False, "with_bg_pred" : False}
     self.pretrained = pretrained
 
-    self.use_obj_prior = True
+    # TODO: self.use_obj_prior = True
+    self.use_obj_prior = False
 
     # load data layer
     print("Initializing data layer...")
@@ -201,16 +204,18 @@ class vrd_trainer():
   def train(self):
     res_file = "output-{}.txt".format(self.session_name)
 
-    # headers = ["Epoch","Pre R@50", "ZS", "R@100", "ZS", "Rel R@50", "ZS", "R@100", "ZS"]
-    headers = ["Epoch","Pre R@50", "ZS", "R@100", "ZS"]
+    headers = ["Epoch", "Pre R@50", "ZS", "R@100", "ZS", "Rel R@50", "ZS", "R@100", "ZS"]
+    #headers = ["Epoch", "Pre R@50", "ZS", "R@100", "ZS"]
+    #headers = ["Epoch", "Rel R@50", "ZS", "R@100", "ZS"]
     res = []
     for epoch in range(self.start_epoch, self.start_epoch + self.max_epochs):
 
       print("Epoch {}".format(epoch))
 
       # self.__train_epoch(epoch)
-      # res.append((epoch,) + test_pre_net(net, args) + test_rel_net(net, args))
-      res.append((epoch,) + self.test_pre_net())
+      #res.append((epoch,) + self.test_pre_net() + self.test_rel_net())
+      # res.append((epoch,) + self.test_pre_net())
+      res.append((epoch,) + self.test_rel_net())
       with open("results-{}.txt".format(self.session_name), 'w') as f:
         f.write(tabulate(res, headers))
 
@@ -237,21 +242,18 @@ class vrd_trainer():
     losses = utils.AverageMeter()
     for step in range(self.iters_per_epoch):
 
-      (img_blob, \
-      obj_boxes, u_boxes, \
-      idx_s, idx_o, \
-      spatial_features, obj_classes), \
-      rel_sop_prior, target = self.datalayer.next()
+      net_input, rel_sop_prior, target = self.datalayer.next()
 
       if target.size()[1] == 0:
         continue
 
       # Forward pass & Backpropagation step
       self.optimizer.zero_grad()
-      obj_scores, rel_scores = self.net(img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
+      obj_scores, rel_scores = self.net(*net_input) # img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
 
       # applying some preprocessing to the rel_sop_prior before factoring it into the score
-      rel_sop_prior = -0.5 * ( rel_sop_prior + 1.0 /   test_data_layer.n_pred)
+      rel_sop_prior = torch.FloatTensor(rel_sop_prior).cuda()
+      rel_sop_prior = -0.5 * ( rel_sop_prior + 1.0 / self.datalayer.n_pred)
       loss = self.criterion((rel_sop_prior + rel_scores).view(1, -1), target)
       # loss = self.criterion((rel_scores).view(1, -1), target)
       losses.update(loss.item())
@@ -290,25 +292,27 @@ class vrd_trainer():
     while True:
 
       try:
-        (img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes), \
+        net_input, \
           obj_classes_out, ori_bboxes = test_data_layer.next()
       except StopIteration:
         print("StopIteration")
         break
 
-      if(img_blob is None):
+      if(net_input is None):
         rlp_labels_cell.append(None)
         tuple_confs_cell.append(None)
         sub_bboxes_cell.append(None)
         obj_bboxes_cell.append(None)
         continue
 
+      img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes = net_input
+      
       tuple_confs_im = np.zeros((N,),   dtype = np.float) # Confidence...
       rlp_labels_im  = np.zeros((N, 3), dtype = np.float) # Rel triples
       sub_bboxes_im  = np.zeros((N, 4), dtype = np.float) # Subj bboxes
       obj_bboxes_im  = np.zeros((N, 4), dtype = np.float) # Obj bboxes
 
-      obj_scores, rel_scores = self.net(img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
+      obj_scores, rel_scores = self.net(*net_input)
       rel_prob = rel_scores.data.cpu().numpy()
       rel_res = np.dstack(np.unravel_index(np.argsort(-rel_prob.ravel()), rel_prob.shape))[0][:N]
 
@@ -349,20 +353,21 @@ class vrd_trainer():
 
     return rec_50, rec_50_zs, rec_100, rec_100_zs
 
-  def test_rel_net():
+  def test_rel_net(self):
+      import numpy as np
       self.net.eval()
       time1 = time.time()
 
-      test_data_layer = VrdDataLayer(self.dataset_name, "test")
+      test_data_layer = VRDDataLayer(self.dataset_name, "test")
 
       with open("data/%s/test.pkl" % (self.dataset_name), 'rb') as fid:
-        anno = pickle.load(fid)
+        anno = pickle.load(fid, encoding="latin1")
 
       # TODO: proposals is not ordered, but a dictionary with im_path keys
       # TODO: expand so that we don't need the proposals pickle, and we generate it if it's not there, using Faster-RCNN?
       # TODO: move the proposals file path to a different one (maybe in Faster-RCNN)
-      with open("data/%s/proposals.pkl" % (self.dataset_name), 'rb') as fid:
-        proposals = pickle.load(fid)
+      with open("data/%s/proposal.pkl" % (self.dataset_name), 'rb') as fid:
+        proposals = pickle.load(fid, encoding="latin1")
         # TODO: zip these
         pred_boxes   = proposals["boxes"]
         pred_classes = proposals["cls"]
@@ -380,38 +385,43 @@ class vrd_trainer():
       sub_bboxes_cell  = []
       obj_bboxes_cell  = []
       predict = []
+      
+      if len(anno) != len(proposals["cls"]):
+        print("ERROR: something is wrong in prediction: {} != {}".format(len(anno), len(proposals["cls"])))
 
-      step = 0
+      for step,anno_img in enumerate(anno):
 
-      while True:
-
-        anno_img = anno[step]
-        gt_boxes = anno_img["boxes"].astype(np.float32)
-        gt_cls = np.array(anno_img["classes"]).astype(np.float32)
-
-        objdet_res = {"boxes" : pred_boxes[step], "classes" : pred_classes[step], "confs" : pred_confs[step]}
+        objdet_res = {"boxes"   : pred_boxes[step], \
+                      "classes" : pred_classes[step].reshape(-1), \
+                      "confs"   : pred_confs[step].reshape(-1)
+                      }
 
         try:
-          (img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes), \
+          net_input, \
             obj_classes_out, rel_sop_prior, ori_bboxes = test_data_layer.next(objdet_res)
         except StopIteration:
           print("StopIteration")
           break
 
-        if(img_blob is None):
+        if(net_input is None):
           rlp_labels_cell.append(None)
           tuple_confs_cell.append(None)
           sub_bboxes_cell.append(None)
           obj_bboxes_cell.append(None)
           continue
 
-        obj_score, rel_score = self.net(img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
+        gt_boxes = anno_img["boxes"].astype(np.float32)
+        gt_cls = np.array(anno_img["classes"]).astype(np.float32)
+        
+        obj_score, rel_score = self.net(*net_input) # img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
 
         _, obj_pred = obj_score[:, 1::].data.topk(1, 1, True, True)
-        obj_score = F.softmax(obj_score)[:, 1::].data.cpu().numpy()
+        obj_score = F.softmax(obj_score, dim=1)[:, 1::].data.cpu().numpy()
 
         rel_prob = rel_score.data.cpu().numpy()
         rel_prob += np.log(0.5*(rel_sop_prior+1.0 / test_data_layer.n_pred))
+        
+        img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes = net_input
 
         pos_num_img, loc_num_img = eval_obj_img(gt_boxes, gt_cls, ori_bboxes, obj_pred.cpu().numpy(), gt_thr=0.5)
         gt_num += gt_boxes.shape[0]
@@ -427,16 +437,16 @@ class vrd_trainer():
         for tuple_idx in range(rel_prob.shape[0]):
           for rel in range(rel_prob.shape[1]):
             if(self.use_obj_prior):
-              if(pred_confs.ndim == 1):
-                conf = np.log(pred_confs[ix1[tuple_idx]]) + np.log(pred_confs[ix2[tuple_idx]]) + rel_prob[tuple_idx, rel]
+              if(objdet_res["confs"].ndim == 1):
+                conf = np.log(objdet_res["confs"][idx_s[tuple_idx]]) + np.log(objdet_res["confs"][idx_o[tuple_idx]]) + rel_prob[tuple_idx, rel]
               else:
-                conf = np.log(pred_confs[ix1[tuple_idx], 0]) + np.log(pred_confs[ix2[tuple_idx], 0]) + rel_prob[tuple_idx, rel]
+                conf = np.log(objdet_res["confs"][idx_s[tuple_idx], 0]) + np.log(objdet_res["confs"][idx_o[tuple_idx], 0]) + rel_prob[tuple_idx, rel]
             else:
               conf = rel_prob[tuple_idx, rel]
             tuple_confs_im.append(conf)
-            sub_bboxes_im[n_idx] = ori_bboxes[ix1[tuple_idx]]
-            obj_bboxes_im[n_idx] = ori_bboxes[ix2[tuple_idx]]
-            rlp_labels_im[n_idx] = [obj_classes_out[ix1[tuple_idx]], rel, obj_classes_out[ix2[tuple_idx]]]
+            sub_bboxes_im[n_idx] = ori_bboxes[idx_s[tuple_idx]]
+            obj_bboxes_im[n_idx] = ori_bboxes[idx_o[tuple_idx]]
+            rlp_labels_im[n_idx] = [obj_classes_out[idx_s[tuple_idx]], rel, obj_classes_out[idx_o[tuple_idx]]]
             n_idx += 1
 
         # Is this because of the background ... ?
@@ -463,13 +473,16 @@ class vrd_trainer():
       res["sub_bboxes_ours"] = sub_bboxes_cell
       res["obj_bboxes_ours"] = obj_bboxes_cell
 
+      if len(anno) != len(res["obj_bboxes_ours"]):
+        print("ERROR: something is wrong in prediction: {} != {}".format(len(anno), len(res["obj_bboxes_ours"])))
+
       rec_50     = eval_recall_at_N(test_data_layer.ds_name, 50,  res, use_zero_shot = False)
       rec_50_zs  = eval_recall_at_N(test_data_layer.ds_name, 50,  res, use_zero_shot = True)
       rec_100    = eval_recall_at_N(test_data_layer.ds_name, 100, res, use_zero_shot = False)
       rec_100_zs = eval_recall_at_N(test_data_layer.ds_name, 100, res, use_zero_shot = True)
       time2 = time.time()
 
-      print ("CLS OBJ TEST POS:%f, LOC:%f, GT:%f, Precision:%f, Recall:%f") % (pos_num, loc_num, gt_num, pos_num/(pos_num+loc_num), pos_num/gt_num)
+      print ("CLS OBJ TEST POS:%f, LOC:%f, GT:%f, Precision:%f, Recall:%f" % (pos_num, loc_num, gt_num, pos_num/(pos_num+loc_num), pos_num/gt_num))
       print ("CLS REL TEST:\nAll:\tR@50: %6.3f\tR@100: %6.3f\nZShot:\tR@50: %6.3f\tR@100: %6.3f" % (rec_50, rec_100, rec_50_zs, rec_100_zs))
       print ("TEST Time:%s" % (time.strftime('%H:%M:%S', time.gmtime(int(time2 - time1)))))
 
