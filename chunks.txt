@@ -86,6 +86,16 @@ len(propold["confs"])
 propnew["confs"][0][0]
 propold["confs"][0][0]
 
+
+
+
+import pickle
+with open("output/vgg16/vrd_test/faster_rcnn_10/proposal_faster_rcnn.pkl", 'rb') as f:
+  propnew = pickle.load(f, encoding="latin1")
+
+with open("data/vrd/proposal.pkl", 'rb') as f:
+  propold = pickle.load(f, encoding="latin1")
+
 print("propnew\tpropold")
 for i in range(max(len(propnew["boxes"][0]), len(propold["boxes"][0]))):
   print(i, end="\t")
