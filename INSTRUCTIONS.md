@@ -1,3 +1,5 @@
+# THESE ARE THE INSTRUCTIONS TO SET UP EVERYTHING. THIS DOCUMENT IS A
+# WHOLE TODO thingy
 # Setting up datasets, models and packages
 
 ### Libraries
@@ -46,6 +48,8 @@ Download the checkpoint:
 `./scripts/gd.pl "https://drive.google.com/uc?id=1_jWnvWNwlJ2ZqKbDMHsSs4BjTblg0FSe&export=download" "models/epoch_4_checkpoint.pth.tar"`
 
 To download the Faster R-CNN pretrained model, we downloaded locally and uploaded to server via scp (in the models folder
+Actually, no:
+scripts/gd.pl https://drive.google.com/file/d/11YQ7Ctj7kaau6WTx5MKkbw6PIxJAyvsZ/view faster_rcnn_1_20_7559.pth
 
 replace this image in vrd_test
 https://raw.githubusercontent.com/GriffinLiang/vrd-dsr/master/data/vrd/4392556686_44d71ff5a0_o.jpg

@@ -204,18 +204,18 @@ class vrd_trainer():
   def train(self):
     res_file = "output-{}.txt".format(self.session_name)
 
-    headers = ["Epoch", "Rel R@50", "ZS", "R@100", "ZS"]
-    # headers = ["Epoch", "Pre R@50", "ZS", "R@100", "ZS", "Rel R@50", "ZS", "R@100", "ZS"]
-    # headers = ["Epoch", "Pre R@50", "ZS", "R@100", "ZS"]
+    headers = ["Epoch", "Pre R@50", "ZS", "R@100", "ZS", "Rel R@50", "ZS", "R@100", "ZS"]
+    #headers = ["Epoch", "Pre R@50", "ZS", "R@100", "ZS"]
+    #headers = ["Epoch", "Rel R@50", "ZS", "R@100", "ZS"]
     res = []
     for epoch in range(self.start_epoch, self.start_epoch + self.max_epochs):
 
       print("Epoch {}".format(epoch))
 
       # self.__train_epoch(epoch)
-      res.append((epoch,) + self.test_rel_net())
-      # res.append((epoch,) + self.test_pre_net() + self.test_rel_net())
+      res.append((epoch,) + self.test_pre_net() + self.test_rel_net())
       # res.append((epoch,) + self.test_pre_net())
+      # res.append((epoch,) + self.test_rel_net())
       with open("results-{}.txt".format(self.session_name), 'w') as f:
         f.write(tabulate(res, headers))
 
