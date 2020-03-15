@@ -43,9 +43,11 @@ class VRDDataLayer():
 
     # TODO: check if this works
     if self.stage == "train":
-        self.imgrels = [(k,v) for k,v in self.imgrels if k != None]
-    if self.stage == "train" and self.shuffle:
-      print("shuf!")
+      self.imgrels = [(k,v) for k,v in self.imgrels if k != None]
+    
+    if self.shuffle:
+      if self.stage != "train":
+        print("WARNING! You shouldn't shuffle if not during training")
       random.shuffle(self.imgrels)
 
     self.n_imgrels = len(self.imgrels)

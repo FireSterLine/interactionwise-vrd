@@ -85,8 +85,7 @@ class vrd_trainer():
     self.dataset_args = {"ds_name" : self.dataset_name, "with_bg_obj" : False, "with_bg_pred" : False}
     self.pretrained = pretrained
 
-    # TODO: self.use_obj_prior = True
-    self.use_obj_prior = False
+    self.use_obj_prior = True
 
     # load data layer
     print("Initializing data layer...")
