@@ -25,6 +25,7 @@ data/genome/*/xml
 data/genome/*/json
 data/genome/*/*.json
 data/genome/*.json
+data/vrd/*.json
 data/vrd/sg_dataset*
 data/**/*.pkl
 data/**/*.mat
