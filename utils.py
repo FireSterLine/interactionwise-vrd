@@ -4,6 +4,8 @@ import numpy as np
 
 # TODO: figure out what pixel means to use, how to compute them:
 #  do they come from the dataset used for training, perhaps?
+# Read here: https://github.com/GriffinLiang/vrd-dsr/issues/12
+# If you use the pretrained, you should use the same value. Boh
 vrd_pixel_means = np.array([[[102.9801, 115.9465, 122.7717]]])
 
 
