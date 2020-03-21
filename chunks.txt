@@ -87,7 +87,21 @@ propnew["confs"][0][0]
 propold["confs"][0][0]
 
 
+ln -sf {../../interactionwise-azfar,../interactionwise-gio}/data/pretrained_model
+ln -sf {../../interactionwise-azfar,../interactionwise-gio}/data/demo
+ln -sf {../../interactionwise-azfar,../interactionwise-gio}/data/scripts
+ln -sf {../../interactionwise-azfar,../interactionwise-gio}/data/vg
+ln -sf {../../interactionwise-azfar,../interactionwise-gio}/data/word2vec_model
+ln -sf {../../interactionwise-azfar,../interactionwise-gio}/data/VGG_imagenet.npy
+ln -sf {../interactionwise-azfar,../interactionwise-gio}/other
 
+ln -sf {../../../interactionwise-azfar,../interactionwise-gio}/data/genome/visual_genome_python_driver
+ln -sf {../../../interactionwise-azfar,../interactionwise-gio}/data/genome/coco_splits
+ln -sf {../../../interactionwise-azfar,../interactionwise-gio}/data/genome/xml/
+
+ln -sf ../iwenv3 iwenv3
+mkdir models
+ln -sf ../interactionwise{-azfar,-gio}/
 
 import pickle
 with open("output/vgg16/vrd_test/faster_rcnn_10/proposal_faster_rcnn.pkl", 'rb') as f:
@@ -172,4 +186,9 @@ for i,a in enumerate(proposal["confs"]):
 
 import torch
 with open("faster-rcnn/models/faster_rcnn_1_20_7559.pth", 'rb') as f:
+  train = torch.load(f, encoding="latin1")
+      print(i,x)
+
+import torch
+with open("models/epoch_4_checkpoint.pth.tar", 'rb') as f:
   train = torch.load(f, encoding="latin1")
