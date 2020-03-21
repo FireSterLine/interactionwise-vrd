@@ -56,69 +56,68 @@ class vrd_trainer():
 
   def __init__(self,
       checkpoint = False,
-      data_args = {
-        "ds_name"      : "vrd",
-        "with_bg_obj"  : False,
-        "with_bg_pred" : False
-      },
-      # Architecture (or model) type
-      model_args = {
-          # Constructor
-          "type" : "DSRModel",
-          # In addition to the visual features of the union box,
-          #  use those of subject and object individually?
-          "use_so" : True,
+      args = {
+        # Dataset in use
+        "data" : {
+          "ds_name"      : "vrd",
+          "with_bg_obj"  : False,
+          "with_bg_pred" : False
+        },
+        # Architecture (or model) type
+        "model" : {
+            # Constructor
+            "type" : "DSRModel",
+            # In addition to the visual features of the union box,
+            #  use those of subject and object individually?
+            "use_so" : True,
 
-          # Use visual features
-          "use_vis" : True,
+            # Use visual features
+            "use_vis" : True,
 
-          # Use semantic features (TODO: this becomes the size of the semantic features)
-          "use_sem" : True,
+            # Use semantic features (TODO: this becomes the size of the semantic features)
+            "use_sem" : True,
 
-          # Three types of spatial features:
-          # - 0: no spatial info
-          # - 1: 8-way relative location vector
-          # - 2: dual mask
-          "use_spat" : 0,
+            # Three types of spatial features:
+            # - 0: no spatial info
+            # - 1: 8-way relative location vector
+            # - 2: dual mask
+            "use_spat" : 0,
 
-          # Size of the representation for each modality when fusing features
-          "n_fus_neurons" : 256,
+            # Size of the representation for each modality when fusing features
+            "n_fus_neurons" : 256,
 
-          # Use batch normalization or not
-          "use_bn" : False,
+            # Use batch normalization or not
+            "use_bn" : False,
+          }
+        ],
+        # Evaluation Arguments
+        "eval" : {
+          "use_obj_prior" : True
+        },
+        # Training parameters
+        "training" : {
+          "epoch" : 0,
+          "num_epochs" : 20,
+          "checkpoint_freq" : 5,
+
+          # TODO make this such that -1 means "one full dataset round" (and maybe -2 is two full.., -3 is three but whatevs)
+          "iters_per_epoch"  : -1,
+          # Number of lines printed with loss ...TODO explain smart freq
+          "prints_freq" : 10,
+
+          # TODO
+          "batch_size" : 1,
+
+          "test_pre" : True,
+          "test_rel" : False,
         }
-      ],
-      # Evaluation Arguments
-      eval_args = {
-        "use_obj_prior" : True
-      },
-      # Training parameters
-      training = {
-        "epoch" : 0,
-        "num_epochs" : 20,
-        "checkpoint_freq" : 5,
-
-        # TODO make this such that -1 means "one full dataset round" (and maybe -2 is two full.., -3 is three but whatevs)
-        "iters_per_epoch"  : -1,
-        # Number of lines printed with loss ...TODO explain smart freq
-        "prints_freq" : 10,
-
-        # TODO
-        "batch_size" : 1,
-
-        "test_pre" : True,
-        "test_rel" : False,
       }):
 
     print("vrd_trainer() called with args:")
-    print([checkpoint, data_args, model_args, eval_args, training])
+    print([checkpoint, args])
 
-    self.checkpoint      = checkpoint
-
-    self.data_args    = bunchify(data_args)
-    self.model_args   = bunchify(model_args)
-    self.eval_args    = bunchify(eval_args)
-    self.training     = bunchify(training)
+    self.checkpoint = checkpoint
+    self.args       = args
 
     self.session_name    = "test-new-training"
 
@@ -134,25 +133,11 @@ class vrd_trainer():
 
       checkpoint = torch.load(checkpoint_path)
 
-      # Data arguments
-      if not checkpoint.get("data_args") is None:
-        self.data_args = checkpoint["data_args"]
-
-      # Model arguments
-      if not checkpoint.get("model_args") is None:
-        self.model_args   = checkpoint["model_args"]
-
-      # Evaluation arguments
-      if not checkpoint.get("eval_args") is None:
-        self.eval_args   = checkpoint["eval_args"]
-
-      # Training arguments
-      if not checkpoint.get("training") is None:
-        self.training = checkpoint["training"]
+      # Arguments
+      self.args = checkpoint["args"]
 
       if not checkpoint.get("epoch") is None:          # (patching)
-        self.training.epoch = checkpoint["epoch"]
-
+        self.args["training"]["epoch"] = checkpoint["epoch"]
 
       # Session name
       utils.patch_key(checkpoint, "session", "session_name") # (patching)
@@ -174,6 +159,11 @@ class vrd_trainer():
       model_state_dict = None
       # Optimizer state dictionary
       optimizer_state_dict = None
+
+    self.data_args    = bunchify(self.args["data"])
+    self.model_args   = bunchify(self.args["model"])
+    self.eval_args    = bunchify(self.args["eval"])
+    self.training     = bunchify(self.args["training"])
 
 
     # Data
@@ -265,11 +255,7 @@ class vrd_trainer():
       # Save checkpoint
       if utils.smart_fequency_check(self.training.epoch, self.training.num_epochs, self.training.checkpoint_freq):
         utils.save_checkpoint({
-          "data_args"             : self.data_args,
-          "model_args"            : self.model_args,
-          "eval_args"             : self.eval_args,
-          "training"              : self.training,
-
+          "args"                  : self.args,
           "session_name"          : self.session_name,
           "model_state_dict"      : self.model.state_dict(),
           "optimizer_state_dict"  : self.optimizer.state_dict(),
