@@ -119,7 +119,8 @@ class vrd_trainer():
     self.checkpoint = checkpoint
     self.args       = args
 
-    self.session_name    = "test-new-training"
+    self.session_name = "test-new-training"
+    self.state        = None
 
 
     # Load checkpoint, if any
@@ -144,27 +145,20 @@ class vrd_trainer():
       self.session_name = checkpoint["session_name"]
 
 
+      # State
       # Model state dictionary
-      utils.patch_key(checkpoint, "state_dict", "model_state_dict") # (patching)
-      utils.patch_key(checkpoint["model_state_dict"], "fc_semantic.fc.weight", "fc_so_emb.fc.weight") # (patching)
-      utils.patch_key(checkpoint["model_state_dict"], "fc_semantic.fc.bias",   "fc_so_emb.fc.bias") # (patching)
+      utils.patch_key(checkpoint, "state", ["state", "model_state_dict"]) # (patching)
+      utils.patch_key(checkpoint["state"]["model_state_dict"], "fc_semantic.fc.weight", "fc_so_emb.fc.weight") # (patching)
+      utils.patch_key(checkpoint["state"]["model_state_dict"], "fc_semantic.fc.bias",   "fc_so_emb.fc.bias") # (patching)
       # TODO: is this different than the weights used for initialization...? del checkpoint["model_state_dict"]["emb.weight"]
-      model_state_dict = checkpoint["model_state_dict"]
-
       # Optimizer state dictionary
-      utils.patch_key(checkpoint, "optimizer", "optimizer_state_dict") # (patching)
-      optimizer_state_dict = checkpoint["model_state_dict"]
-    else:
-      # Model state dictionary
-      model_state_dict = None
-      # Optimizer state dictionary
-      optimizer_state_dict = None
+      utils.patch_key(checkpoint, "optimizer", ["state", "optimizer_state_dict"]) # (patching)
+      self.state = checkpoint["state"]
 
     self.data_args    = bunchify(self.args["data"])
     self.model_args   = bunchify(self.args["model"])
     self.eval_args    = bunchify(self.args["eval"])
     self.training     = bunchify(self.args["training"])
-
 
     # Data
     print("Initializing data...")
@@ -185,9 +179,9 @@ class vrd_trainer():
     print("Initializing VRD Model...")
     print("Model args: ", self.model_args)
     self.model = VRDModel(self.model_args).cuda()
-    if not model_state_dict is None:
+    if not self.state is None:
       # TODO: Make sure that this doesn't need the random initialization first
-      self.model.load_state_dict(model_state_dict)
+      self.model.load_state_dict(self.state["model_state_dict"])
     else:
       # Random initialization
       utils.weights_normal_init(self.model, dev=0.01)
@@ -208,8 +202,8 @@ class vrd_trainer():
     self.optimizer = self.model.OriginalAdamOptimizer()
     # TODO: loss_type...
     self.criterion = nn.MultiLabelMarginLoss().cuda()
-    if not optimizer_state_dict is None:
-      self.optimizer.load_state_dict(optimizer_state_dict)
+    if not self.state["optimizer_state_dict"] is None:
+      self.optimizer.load_state_dict(self.state["optimizer_state_dict"])
 
 
   # Perform the complete training process
@@ -254,12 +248,15 @@ class vrd_trainer():
 
       # Save checkpoint
       if utils.smart_fequency_check(self.training.epoch, self.training.num_epochs, self.training.checkpoint_freq):
+        self.state = {
+          "model_state_dict"     : self.model.state_dict(),
+          "optimizer_state_dict" : self.optimizer.state_dict()
+        }
         utils.save_checkpoint({
-          "args"                  : self.args,
-          "session_name"          : self.session_name,
-          "model_state_dict"      : self.model.state_dict(),
-          "optimizer_state_dict"  : self.optimizer.state_dict(),
-          "result"                : dict(zip(res_headers, res_row)),
+          "args"          : self.args,
+          "session_name"  : self.session_name,
+          "state"         : self.state,
+          "result"        : dict(zip(res_headers, res_row)),
         }, osp.join(save_dir, "checkpoint_epoch_{}.pth.tar".format(self.training.epoch)))
 
       self.__train_epoch()

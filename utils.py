@@ -13,12 +13,6 @@ save_checkpoint     = frcnn_net_utils.save_checkpoint
 # If you use the pretrained, you should use the same value. Boh
 vrd_pixel_means = np.array([[[102.9801, 115.9465, 122.7717]]])
 
-def patch_key(d, old_key, new_key):
-  if not d.get(old_key) is None:
-    if not d.get(new_key) is None:
-      raise ValueError("Patching dictionary failed: old = d[\"{}\"] = {},  new = d[\"{}\"] = {}".format(old_key, d[old_key], new_key, d[new_key]))
-    else:
-      d[new_key] = d.pop(old_key)
 
 # Bbox as a dict to numpy array
 def bboxDictToNumpy(bbox_dict):
@@ -112,19 +106,6 @@ class LeveledAverageMeter(object):
   def sum(self, level = 0): return self._sum[level]
   def avg(self, level = 0): return self.sum(level) / self.count(level)
 
-# https://stackoverflow.com/questions/31174295/getattr-and-setattr-on-nested-subobjects-chained-properties
-import functools
-
-def rsetattr(obj, attr, val):
-  pre, _, post = attr.rpartition('.')
-  return setattr(rgetattr(obj, pre) if pre else obj, post, val)
-
-# using wonder's beautiful simplification: https://stackoverflow.com/questions/31174295/getattr-and-setattr-on-nested-objects/31174427?noredirect=1#comment86638618_31174427
-
-def rgetattr(obj, attr, *args):
-  def _getattr(obj, attr):
-    return getattr(obj, attr, *args)
-  return functools.reduce(_getattr, [obj] + attr.split('.'))
 
 # Smart frequency = a frequency that can be a relative (a precentage) or absolute (integer)
 def smart_fequency_check(iter, num_iters, smart_frequency):
@@ -140,3 +121,51 @@ def time_diff_str(time1, time2 = None):
   else:
     dtime = time2 - time1
   return time.strftime('%H:%M:%S', time.gmtime(int(dtime)))
+
+# https://stackoverflow.com/questions/31174295/getattr-and-setattr-on-nested-subobjects-chained-properties
+from functools import reduce
+
+def rsetattr(obj, attr, val):
+  pre, _, post = attr.rpartition('.')
+  return setattr(rgetattr(obj, pre) if pre else obj, post, val)
+
+# using wonder's beautiful simplification: https://stackoverflow.com/questions/31174295/getattr-and-setattr-on-nested-objects/31174427?noredirect=1#comment86638618_31174427
+
+def rgetattr(obj, attr, *args):
+  def _getattr(obj, attr):
+    return getattr(obj, attr, *args)
+  return reduce(_getattr, [obj] + attr.split('.'))
+
+# https://stackoverflow.com/a/52260663
+def get(dataDict, mapList, dig = False):
+    """Iterate nested dictionary"""
+    def dict_setdef(c,k):
+      c[k] = c.get(k, {})
+      return c[k]
+
+    if not dig:
+      fun = dict.get
+    else:
+      fun = dict_setdef
+
+    return reduce(fun, mapList, dataDict)
+
+def listify(elem_or_list):
+  return elem_or_list if isinstance(elem_or_list, list) else [elem_or_list]
+
+def patch_key(d, old_key, new_key):
+  old_key = listify(old_key)
+  new_key = listify(new_key)
+  if not get(d, old_key) is None:
+    if not get(d, new_key) is None:
+      raise ValueError("Patching dictionary failed: old = d[\"{}\"] = {},  new = d[\"{}\"] = {}".format(old_key, get(d, old_key), new_key, get(d, new_key)))
+    else:
+      last_new_key = new_key.pop()
+      last_old_key = old_key.pop()
+      new_d = get(d, new_key, True)
+      old_d = get(d, old_key)
+      d[last_new_key] = old_d.pop(last_old_key)
+
+a ={'1': 'ciao', '2': {'21': 'YEAH', '22': 'YEAH'}, '3': 'ciaos'}
+patch_key(a, ['2', '21'], '4')
+a
