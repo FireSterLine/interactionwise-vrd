@@ -134,5 +134,9 @@ def smart_fequency_check(iter, num_iters, smart_frequency):
     abs_freq = int(num_iters*smart_frequency)
   return (iter % abs_freq) == 0
 
-def time_diff_str(time1, time2):
-  return time.strftime('%H:%M:%S', time.gmtime(int(time2 - time1)))
+def time_diff_str(time1, time2 = None):
+  if time2 is None:
+    dtime = time1
+  else:
+    dtime = time2 - time1
+  return time.strftime('%H:%M:%S', time.gmtime(int(dtime)))
