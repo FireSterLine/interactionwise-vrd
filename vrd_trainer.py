@@ -2,7 +2,6 @@ import os
 import os.path as osp
 import sys
 import pickle
-import argparse
 from tabulate import tabulate
 import time
 
@@ -11,11 +10,10 @@ import torch.nn as nn
 import torch.nn.init
 import torch.nn.functional as F
 
-from easydict import EasyDict
+from bunch import bunchify
 import globals, utils
 from lib.nets.vrd_model import vrd_model
 from lib.datalayers import VRDDataLayer
-from model.utils.net_utils import weights_normal_init, save_checkpoint
 from lib.evaluation_dsr import eval_recall_at_N, eval_obj_img # TODO remove this module
 #, save_net, load_net, \
 #      adjust_learning_rate, , clip_gradient
@@ -25,7 +23,33 @@ from lib.evaluation_dsr import eval_recall_at_N, eval_obj_img # TODO remove this
 
 
 
+class DSRAdamOptimizer():
 
+  self.lr = 0.00001
+  # self.momentum = 0.9
+  self.weight_decay = 0.0005
+
+  # opt_params = list(self.net.parameters())
+  opt_params = [
+    {'params': self.net.fc8.parameters(),       'lr': self.lr*10},
+    {'params': self.net.fc_fusion.parameters(), 'lr': self.lr*10},
+    {'params': self.net.fc_rel.parameters(),    'lr': self.lr*10},
+  ]
+  if(self.model_args.use_so):
+    opt_params.append({'params': self.net.fc_so.parameters(), 'lr': self.lr*10})
+  if(self.model_args.use_spat == 1):
+    opt_params.append({'params': self.net.fc_spatial.parameters(), 'lr': self.lr*10})
+  elif(self.model_args.use_spat == 2):
+    raise NotImplementedError
+    # opt_params.append({'params': self.net.conv_lo.parameters(), 'lr': self.lr*10})
+    # opt_params.append({'params': self.net.fc_spatial.parameters(), 'lr': self.lr*10})
+  if(self.model_args.use_sem):
+    opt_params.append({'params': self.net.fc_semantic.parameters(), 'lr': self.lr*10})
+
+  return torch.optim.Adam(opt_params,
+          lr=self.lr,
+          # momentum=self.momentum,
+          weight_decay=self.weight_decay)
 
 
 
@@ -58,218 +82,267 @@ from lib.evaluation_dsr import eval_recall_at_N, eval_obj_img # TODO remove this
 
 class vrd_trainer():
 
-  def __init__(self, dataset_name="vrd", pretrained="epoch_4_checkpoint.pth.tar"):
-  # def __init__(self, dataset_name="vrd", pretrained=False):
+  def __init__(self,
+      checkpoint = False,
+      data_args = {
+        "ds_name"      : "vrd",
+        "with_bg_obj"  : False,
+        "with_bg_pred" : False
+      },
+      # Architecture (or model) type
+      model_type = "dsr-net",
+      # The argument dictionary giving shape to the model
+      model_args = {
+        # In addition to the visual features of the union box,
+        #  use those of subject and object individually?
+        "use_so" : True,
+
+        # Use visual features
+        self.model_args.use_vis = True,
+
+        # Use semantic features (TODO: this becomes the size of the semantic features)
+        self.model_args.use_sem = True,
+
+        # Three types of spatial features:
+        # - 0: no spatial info
+        # - 1: 8-way relative location vector
+        # - 2: dual mask
+        self.model_args.use_spat = 0,
+
+        # Size of the representation for each modality when fusing features
+        self.model_args.n_fus_neurons = 256,
+
+        # Use batch normalization or not
+        self.model_args.use_bn = False,
+      },
+      # Training parameters
+      training = {
+        "epoch" : 0,
+        "num_epochs" : 20,
+        "checkpoint_freq" : 5,
+
+        # TODO make this such that -1 means "one full dataset round" (and maybe -2 is two full.., -3 is three but whatevs)
+        "iters_per_epoch"  : -1,
+        # Number of lines printed with loss ...TODO explain smart freq
+        "prints_freq" : 10,
+
+        # TODO
+        "batch_size" : 1,
+
+        "test_pre" : True,
+        "test_rel" : False,
+      }):
 
     print("vrd_trainer() called with args:")
-    print([dataset_name, pretrained])
+    print([checkpoint, data_args, model_args, training])
 
-    self.session_name = "test-fromscratch" # Training session name?
-    self.start_epoch = 0
-    self.max_epochs = 20 # 200
-    self.checkpoint_frequency = 10
+    self.checkpoint      = checkpoint
 
-    # Does this have to be a constant?
-    # TODO Try: 3700-3800
-    # self.iters_per_epoch = 4000
-    self.iters_per_epoch = 3780
+    self.data_args    = bunchify(data_args)
+    self.model_args   = bunchify(model_args)
+    self.training     = bunchify(training)
 
-    self.batch_size = 1 # TODO
-    self.num_workers = 0
+    self.session_name    = "test-new-training"
 
-    self.save_dir = osp.join(globals.models_dir, self.session_name)
-    if not osp.exists(self.save_dir):
-      os.mkdir(self.save_dir)
 
-    self.dataset_name = dataset_name
-    self.dataset_args = {"ds_name" : self.dataset_name, "with_bg_obj" : False, "with_bg_pred" : False}
-    self.pretrained = pretrained
+    # Load checkpoint, if any
+    if isinstance(self.checkpoint, str):
 
-    self.use_obj_prior = True
+      checkpoint_path = osp.join(globals.models_dir, self.checkpoint)
+      print("Loading checkpoint... ({})".format(checkpoint_path))
 
-    # load data layer
-    print("Initializing data layer...")
-    self.datalayer = VRDDataLayer(self.dataset_args, "train",
-            shuffle=True)
+      if not osp.isfile(checkpoint_path):
+        raise Exception("Checkpoint not found: {}".format(checkpoint_path))
 
-    # TODO: Pytorch DataLoader()
+      checkpoint = torch.load(checkpoint_path)
+
+      # Data arguments
+      if not checkpoint.get("data_args") is None:
+        self.data_args = checkpoint["data_args"]
+
+      # Model arguments
+      if not checkpoint.get("model_args") is None:
+        self.model_args   = checkpoint["model_args"]
+
+      # Training arguments
+      if not checkpoint.get("training") is None:
+        self.training = checkpoint["training"]
+
+      if not checkpoint.get("epoch") is None:          # (patching)
+        self.training.epoch = checkpoint["epoch"]
+
+
+      # Session name
+      utils.patch_key(checkpoint, "session", "session_name") # (patching)
+      self.session_name = checkpoint["session_name"]
+
+
+      # Model state dictionary
+      utils.patch_key(checkpoint, "state_dict", "model_state_dict") # (patching)
+      utils.patch_key(checkpoint["model_state_dict"], "fc_semantic.fc.weight", "fc_so_emb.fc.weight") # (patching)
+      utils.patch_key(checkpoint["model_state_dict"], "fc_semantic.fc.bias",   "fc_so_emb.fc.bias") # (patching)
+      # TODO: is this different than the weights used for initialization...? del checkpoint["model_state_dict"]["emb.weight"]
+      model_state_dict = checkpoint["model_state_dict"]
+
+      # Optimizer state dictionary
+      utils.patch_key(checkpoint, "optimizer", "optimizer_state_dict") # (patching)
+      optimizer_state_dict = checkpoint["model_state_dict"]
+    else:
+      # Model state dictionary
+      model_state_dict = None
+      # Optimizer state dictionary
+      optimizer_state_dict = None
+
+
+    # Data
+    print("Initializing data...")
+    print("Data args: ", self.data_args)
+    self.datalayer = VRDDataLayer(self.data_args, "train")
+    # TODO: Pytorch DataLoader instead:
+    # self.num_workers = 0
     # self.dataset = VRDDataset()
     # self.datalayer = torch.utils.data.DataLoader(self.dataset,
-    #                  batch_size=self.batch_size,
+    #                  batch_size=self.training.batch_size,
     #                  # sampler= Random ...,
     #                  num_workers=self.num_workers)
 
-    load_pretrained = isinstance(self.pretrained, str)
 
+    # Model
+    self.model_args.n_obj  = self.datalayer.n_obj
+    self.model_args.n_pred = self.datalayer.n_pred
     print("Initializing VRD Model...")
+    print("Model args: ", self.model_args)
+    self.net = vrd_model(self.model_args).cuda()
+    if not model_state_dict is None:
+      # TODO: Make sure that this doesn't need the random initialization first
+      self.net.load_state_dict(model_state_dict)
+    else:
+      # Random initialization
+      utils.weights_normal_init(self.net, dev=0.01)
+      # Load VGG layers
+      self.net.load_pretrained_conv(osp.join(globals.data_dir, "VGG_imagenet.npy"), fix_layers=True)
+      # Load existing (word2vec?) embeddings
+      with open(osp.join(globals.data_dir, "vrd", "params_emb.pkl", 'rb') as f:
+        self.net.state_dict()["emb.weight"].copy_(torch.from_numpy(pickle.load(f, encoding="latin1")))
 
-    self.net_args = EasyDict()
-
-    self.net_args.n_obj  = self.datalayer.n_obj
-    self.net_args.n_pred = self.datalayer.n_pred
-
-    # This decides whether, in addition to the visual features of union box,
-    #  those of subject and object individually are used or not
-    self.net_args.use_so = True
-
-    # Use visual features
-    self.net_args.use_vis = True
-
-    # Use semantic features (TODO: this becomes the size of the semantic features)
-    self.net_args.use_sem = True
-
-    # Three types of spatial features:
-    # - 0: no spatial info
-    # - 1: 8-way relative location vector
-    # - 2: dual mask
-    self.net_args.use_spat = 0
-
-    # Size of the representation for each modality when fusing features
-    self.net_args.n_fus_neurons = 256
-
-    # Use batch normalization or not
-    self.net_args.use_bn = False
-
-    # initialize the model using the args set above
-    print("Args: ", self.net_args)
-    self.net = vrd_model(self.net_args) # TODO: load_pretrained affects how the model is initialized?
-    self.net.cuda()
-
-    # Initialize the model in some way ...
-    print("Initializing weights...")
-    weights_normal_init(self.net, dev=0.01)
-    self.net.load_pretrained_conv(osp.join(globals.data_dir, "VGG_imagenet.npy"), fix_layers=True)
-
-    # Initial object embedding with word2vec
-    with open("data/vrd/params_emb.pkl", 'rb') as f:
-       emb_init = pickle.load(f, encoding="latin1")
-    self.net.state_dict()["emb.weight"].copy_(torch.from_numpy(emb_init))
-
-    print("Initializing optimizer...")
+    # Training
+    print("Initializing training...")
+    print("Training args: ", self.model_args)
+    optimizer...
+    self.optimizer = DSRAdamOptimizer(...)
+    loss_type...
     self.criterion = nn.MultiLabelMarginLoss().cuda()
-    self.lr = 0.00001
-    # self.momentum = 0.9
-    self.weight_decay = 0.0005
+    if not optimizer_state_dict is None:
+      self.optimizer.load_state_dict(optimizer_state_dict)
 
-    # opt_params = list(self.net.parameters())
-    opt_params = [
-      {'params': self.net.fc8.parameters(),       'lr': self.lr*10},
-      {'params': self.net.fc_fusion.parameters(), 'lr': self.lr*10},
-      {'params': self.net.fc_rel.parameters(),    'lr': self.lr*10},
-    ]
-    if(self.net_args.use_so):
-      opt_params.append({'params': self.net.fc_so.parameters(), 'lr': self.lr*10})
-    if(self.net_args.use_spat == 1):
-      opt_params.append({'params': self.net.fc_spatial.parameters(), 'lr': self.lr*10})
-    elif(self.net_args.use_spat == 2):
-      raise NotImplementedError
-      # opt_params.append({'params': self.net.conv_lo.parameters(), 'lr': self.lr*10})
-      # opt_params.append({'params': self.net.fc_spatial.parameters(), 'lr': self.lr*10})
-    if(self.net_args.use_sem):
-      opt_params.append({'params': self.net.fc_semantic.parameters(), 'lr': self.lr*10})
+    # TODO: evaluation args
+    self.use_obj_prior = True
 
-    self.optimizer = torch.optim.Adam(opt_params,
-            lr=self.lr,
-            # momentum=self.momentum,
-            weight_decay=self.weight_decay)
-
-    if load_pretrained:
-      model_path = osp.join(globals.models_dir, self.pretrained)
-
-      print("Loading model... (checkpoint {})".format(model_path))
-
-      if not osp.isfile(model_path):
-        raise Exception("Pretrained model not found: {}".format(model_path))
-
-      checkpoint = torch.load(model_path)
-      self.start_epoch = checkpoint["epoch"]
-      # self.session = checkpoint["session"]
-
-      state_dict = checkpoint["state_dict"]
-      try:
-        self.net.load_state_dict(state_dict)
-      except RuntimeError:
-        def patch_model_state_dict(state_dict):
-          state_dict["fc_semantic.fc.weight"] = state_dict["fc_so_emb.fc.weight"]
-          state_dict["fc_semantic.fc.bias"] = state_dict["fc_so_emb.fc.bias"]
-          # del state_dict["emb.weight"]
-          del state_dict["fc_so_emb.fc.weight"]
-          del state_dict["fc_so_emb.fc.bias"]
-          return state_dict
-        self.net.load_state_dict(patch_model_state_dict(state_dict))
-
-      self.optimizer.load_state_dict(checkpoint["optimizer"])
-
+  # Perform the complete training process
   def train(self):
-    res_file = "output-{}.txt".format(self.session_name)
+    save_dir = osp.join(globals.models_dir, self.session_name)
+    if not osp.exists(save_dir):
+      os.mkdir(save_dir)
+    save_file = osp.join(globals.models_dir, "{}.txt".format(self.session_name))
 
-    headers = ["Epoch", "Pre R@50", "ZS", "R@100", "ZS", "Rel R@50", "ZS", "R@100", "ZS"]
-    #headers = ["Epoch", "Pre R@50", "ZS", "R@100", "ZS"]
-    #headers = ["Epoch", "Rel R@50", "ZS", "R@100", "ZS"]
+    # Prepare result table
+    res_headers = ["Epoch"]
+    if self.training.test_pre:
+      res_headers += ["Pre R@50", "ZS", "R@100", "ZS"]
+    if self.training.test_rel:
+      res_headers += ["Rel R@50", "ZS", "R@100", "ZS"]
     res = []
-    for epoch in range(self.start_epoch, self.start_epoch + self.max_epochs):
 
-      print("Epoch {}".format(epoch))
+    end_epoch = self.training.epoch + self.training.num_epochs
+    while self.training.epoch < end_epoch:
 
-      # self.__train_epoch(epoch)
-      #res.append((epoch,) + self.test_pre_net() + self.test_rel_net())
-      # res.append((epoch,) + self.test_pre_net())
-      res.append((epoch,) + self.test_rel_net())
-      with open("results-{}.txt".format(self.session_name), 'w') as f:
-        f.write(tabulate(res, headers))
+      print("Epoch {}".format(self.training.epoch))
 
-      if epoch % self.checkpoint_frequency == 0:
-        save_name = osp.join(self.save_dir, "checkpoint_epoch_{}.pth.tar".format(epoch))
-        save_checkpoint({
-          "session": self.session_name,
-          "epoch": epoch,
-          "state_dict": self.net.state_dict(),
-          "optimizer_state_dict": self.optimizer.state_dict(),
-          # "net_args": net_args
-          # "loss": loss,
-          # "pooling_mode": cfg.POOLING_MODE,
-          # "class_agnostic": self.class_agnostic,
-        }, save_name)
+      # self.__train_epoch(self.training.epoch)
 
-      self.__train_epoch(epoch)
-  
-  def __train_epoch(self, epoch):
+      # Test results
+      res_row = (self.training.epoch,)
+      if self.training.test_pre:
+        res_row += self.test_pre_net()
+      if self.training.test_rel:
+        res_row += self.test_rel_net()
+      res.append(res_row)
+
+      with open(save_file, 'w') as f:
+        f.write(tabulate(res, res_headers))
+
+      # Save checkpoint
+      if utils.smart_fequency_check(self.training.epoch, self.training.num_epochs, self.training.checkpoint_freq):
+        utils.save_checkpoint({
+          "data_args"             : self.data_args,
+          "model_args"            : self.model_args,
+          "training"              : self.training,
+
+          "session_name"          : self.session_name,
+          "model_state_dict"      : self.net.state_dict(),
+          "optimizer_state_dict"  : self.optimizer.state_dict(),
+          "result"                : dict(zip(res_headers, res_row)),
+        }, osp.join(save_dir, "checkpoint_epoch_{}.pth.tar".format(self.training.epoch)))
+
+      self.__train_epoch()
+
+      self.training.epoch += 1
+
+  def __train_epoch(self):
     self.net.train()
 
-    # Obtain next annotation input and target
-    #  for spatial_features, obj_classes, target in self.datalayer:
-    losses = utils.AverageMeter()
-    for step in range(self.iters_per_epoch):
+    time1 = time.time()
+    losses = utils.LeveledAverageMeter(2)
 
+    # Iterate over the dataset
+    n_iter = self.training.iters_per_epoch
+    if n_iter < 0:
+      # TODO: check that vrd during training ignores None images
+      n_iter = self.datalayer.N * (-n_iter)
+
+    for iter in range(n_iter):
+
+      # Obtain next annotation input and target
       net_input, rel_sop_prior, target = self.datalayer.next()
 
+      # TODO: is this necessary? If it's what I think, the datalayer should already ignore these
       if target.size()[1] == 0:
         continue
 
       # Forward pass & Backpropagation step
       self.optimizer.zero_grad()
-      obj_scores, rel_scores = self.net(*net_input) # img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
+      obj_scores, rel_scores = self.net(*net_input)
 
-      # applying some preprocessing to the rel_sop_prior before factoring it into the score
+      # Preprocessing the rel_sop_prior before factoring it into the loss
       rel_sop_prior = torch.FloatTensor(rel_sop_prior).cuda()
       rel_sop_prior = -0.5 * ( rel_sop_prior + 1.0 / self.datalayer.n_pred)
       loss = self.criterion((rel_sop_prior + rel_scores).view(1, -1), target)
       # loss = self.criterion((rel_scores).view(1, -1), target)
+
       losses.update(loss.item())
       loss.backward()
       self.optimizer.step()
 
-    print("Epoch loss: {}".format(losses.avg))
-    losses.reset()
+      # TODO: I'd like to move that thing here, but maybe I can't call item() after backward?
+      # losses.update(loss.item())
+
+      if utils.smart_fequency_check(step, n_iter, self.training.prints_per_epoch):
+        print("\t{:4d}: LOSS: {: 6.3f}".format(step, losses.avg(0)))
+        losses.reset(0)
+
+    self.training.loss = losses.avg(1)
+    time2 = time.time()
+
+    print("TRAIN Loss: {: 6.3f}".format(self.training.loss))
+    print("TRAIN Time: {}".format(utils.time_diff_str(time1, time2)))
 
     """
-    for step in range(epoch_num):
+    for iter in range(epoch_num):
 
       # the rel_sop_prior here is a subset of the 100*70*70 dimensional so_prior array, which contains the predicate prob distribution for all object pairs
       # the rel_sop_prior here contains the predicate probability distribution of only the object pairs in this annotation
       # Also, it might be helpful to keep in mind that this data layer currently works for a single annotation at a time - no batching is implemented!
       image_blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, rel_labels, rel_sop_prior = self.datalayer.forward()
-
     """
 
   # TODO: move in evaluation?
@@ -278,7 +351,8 @@ class vrd_trainer():
     self.net.eval()
     time1 = time.time()
 
-    test_data_layer = VRDDataLayer(self.dataset_args, "test")
+    # TODO: just one VRD test layer
+    test_data_layer = VRDDataLayer(self.data_args, "test")
 
     res = {}
     rlp_labels_cell  = []
@@ -305,7 +379,7 @@ class vrd_trainer():
         continue
 
       img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes = net_input
-      
+
       tuple_confs_im = np.zeros((N,),   dtype = np.float) # Confidence...
       rlp_labels_im  = np.zeros((N, 3), dtype = np.float) # Rel triples
       sub_bboxes_im  = np.zeros((N, 4), dtype = np.float) # Subj bboxes
@@ -347,8 +421,8 @@ class vrd_trainer():
     rec_100_zs = eval_recall_at_N(test_data_layer.ds_name, 100, res, use_zero_shot = True)
     time2 = time.time()
 
-    print ("CLS TEST:\nAll:\tR@50: %6.3f\tR@100: %6.3f\nZShot:\tR@50: %6.3f\tR@100: %6.3f" % (rec_50, rec_100, rec_50_zs, rec_100_zs))
-    print ("TEST Time:%s" % (time.strftime('%H:%M:%S', time.gmtime(int(time2 - time1)))))
+    print("CLS PRED TEST:\nAll:\tR@50: {: 6.3f}\tR@100: {: 6.3f}\nZShot:\tR@50: {: 6.3f}\tR@100: {: 6.3f}".format(rec_50, rec_100, rec_50_zs, rec_100_zs))
+    print("TEST Time: {}".format(utils.time_diff_str(time1, time2)))
 
     return rec_50, rec_50_zs, rec_100, rec_100_zs
 
@@ -357,15 +431,15 @@ class vrd_trainer():
       self.net.eval()
       time1 = time.time()
 
-      test_data_layer = VRDDataLayer(self.dataset_name, "test")
+      test_data_layer = VRDDataLayer(self.data_args.ds_name, "test")
 
-      with open("data/%s/test.pkl" % (self.dataset_name), 'rb') as fid:
+      with open("data/{}/test.pkl".format(self.data_args.ds_name), 'rb') as fid:
         anno = pickle.load(fid, encoding="latin1")
 
       # TODO: proposals is not ordered, but a dictionary with im_path keys
       # TODO: expand so that we don't need the proposals pickle, and we generate it if it's not there, using Faster-RCNN?
       # TODO: move the proposals file path to a different one (maybe in Faster-RCNN)
-      with open("data/%s/proposal.pkl" % (self.dataset_name), 'rb') as fid:
+      with open("data/{}/proposal.pkl".format(self.data_args.ds_name), 'rb') as fid:
         proposals = pickle.load(fid, encoding="latin1")
         # TODO: zip these
         pred_boxes   = proposals["boxes"]
@@ -384,7 +458,7 @@ class vrd_trainer():
       sub_bboxes_cell  = []
       obj_bboxes_cell  = []
       predict = []
-      
+
       if len(anno) != len(proposals["cls"]):
         print("ERROR: something is wrong in prediction: {} != {}".format(len(anno), len(proposals["cls"])))
 
@@ -411,7 +485,7 @@ class vrd_trainer():
 
         gt_boxes = anno_img["boxes"].astype(np.float32)
         gt_cls = np.array(anno_img["classes"]).astype(np.float32)
-        
+
         obj_score, rel_score = self.net(*net_input) # img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
 
         _, obj_pred = obj_score[:, 1::].data.topk(1, 1, True, True)
@@ -419,14 +493,14 @@ class vrd_trainer():
 
         rel_prob = rel_score.data.cpu().numpy()
         rel_prob += np.log(0.5*(rel_sop_prior+1.0 / test_data_layer.n_pred))
-        
+
         img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes = net_input
 
         pos_num_img, loc_num_img = eval_obj_img(gt_boxes, gt_cls, ori_bboxes, obj_pred.cpu().numpy(), gt_thr=0.5)
         gt_num += gt_boxes.shape[0]
         pos_num += pos_num_img
         loc_num += loc_num_img
-        
+
         tuple_confs_im = []
         rlp_labels_im  = np.zeros((rel_prob.shape[0]*rel_prob.shape[1], 3), dtype = np.float)
         sub_bboxes_im  = np.zeros((rel_prob.shape[0]*rel_prob.shape[1], 4), dtype = np.float)
@@ -449,7 +523,7 @@ class vrd_trainer():
             n_idx += 1
 
         # Is this because of the background ... ?
-        if(self.dataset_name == "vrd"):
+        if(self.data_args.ds_name == "vrd"):
           rlp_labels_im += 1
 
         # Why is this needed? ...
@@ -481,13 +555,15 @@ class vrd_trainer():
       rec_100_zs = eval_recall_at_N(test_data_layer.ds_name, 100, res, use_zero_shot = True)
       time2 = time.time()
 
-      print ("CLS OBJ TEST POS:%f, LOC:%f, GT:%f, Precision:%f, Recall:%f" % (pos_num, loc_num, gt_num, pos_num/(pos_num+loc_num), pos_num/gt_num))
-      print ("CLS REL TEST:\nAll:\tR@50: %6.3f\tR@100: %6.3f\nZShot:\tR@50: %6.3f\tR@100: %6.3f" % (rec_50, rec_100, rec_50_zs, rec_100_zs))
-      print ("TEST Time:%s" % (time.strftime('%H:%M:%S', time.gmtime(int(time2 - time1)))))
+      print("CLS OBJ TEST POS: {: 6.3f}, LOC: {: 6.3f}, GT: {: 6.3f}, Precision: {: 6.3f}, Recall: {: 6.3f}".format(pos_num, loc_num, gt_num, pos_num/(pos_num+loc_num), pos_num/gt_num))
+      print("CLS REL TEST:\nAll:\tR@50: {: 6.3f}\tR@100: {: 6.3f}\nZShot:\tR@50: {: 6.3f}\tR@100: {: 6.3f}".format(rec_50, rec_100, rec_50_zs, rec_100_zs))
+      print("TEST Time: {}".format(utils.time_diff_str(time1, time2)))
 
       return rec_50, rec_50_zs, rec_100, rec_100_zs
 
 if __name__ == '__main__':
   trainer = vrd_trainer()
+  # trainer = vrd_trainer(checkpoint = False, self.data_args.ds_name = "vrd")
+  # trainer = vrd_trainer(checkpoint = "epoch_4_checkpoint.pth.tar")
 
   trainer.train()

@@ -1,6 +1,11 @@
 import os
 import cv2
 import numpy as np
+import model.utils.net_utils as frcnn_net_utils
+import time
+
+weights_normal_init = frcnn_net_utils.weights_normal_init
+save_checkpoint     = frcnn_net_utils.save_checkpoint
 
 # TODO: figure out what pixel means to use, how to compute them:
 #  do they come from the dataset used for training, perhaps?
@@ -8,6 +13,12 @@ import numpy as np
 # If you use the pretrained, you should use the same value. Boh
 vrd_pixel_means = np.array([[[102.9801, 115.9465, 122.7717]]])
 
+def patch_key(d, old_key, new_key):
+  if not d.get(old_key) is None:
+    if not d.get(new_key) is None:
+      raise ValueError("Patching dictionary failed: old = d[\"{}\"] = {},  new = d[\"{}\"] = {}".format(old_key, d[old_key], new_key, d[new_key]))
+    else:
+      d[new_key] = d.pop(old_key)
 
 # Bbox as a dict to numpy array
 def bboxDictToNumpy(bbox_dict):
@@ -54,7 +65,7 @@ def getSemanticVector(subject_label, object_label, w2v_model):
     subject_vector = w2v_model[subject_label]
   except KeyError:
     subject_vector = np.zeros(300)
-  
+
   try:
     object_vector = w2v_model[object_label]
   except KeyError:
@@ -69,34 +80,59 @@ def read_img(im_file):
     raise FileNotFoundError("Image file not found: " + im_file)
   return np.array(cv2.imread(im_file))
 
-class AverageMeter(object):
+# LeveledAverageMeter, inspired from AverageMeter:
+#  https://github.com/pytorch/examples/blob/490243127c02a5ea3348fa4981ecd7e9bcf6144c/imagenet/main.py#L359
+class LeveledAverageMeter(object):
   """ Computes and stores the average and current value """
-  def __init__(self):
-    self.reset()
+  def __init__(self, n_levels = 1):
+    self._n_levels = n_levels
 
-  def reset(self):
-    self.val = 0
-    self.avg = 0
-    self.sum = 0
-    self.count = 0
+    self._cnt = [0] * self._n_levels
+    self._val = [0] * self._n_levels
+    self._sum = [0] * self._n_levels
 
-  def update(self, val, n=1):
-    self.val = val
-    self.sum += val * n
-    self.count += n
-    self.avg = self.sum / self.count
+  # Reset some layers' values
+  def reset(self, level = 0):
+    if level >= self._n_levels:
+      raise ValueError("Error: LeveledAverageMeter can't reset more levels than it has")
+    for i in range(level+1):
+      self._cnt[i] = 0
+      self._val[i] = 0
+      self._sum[i] = 0
 
+  # "Add" values to all layers
+  def update(self, val, n = 1):
+    for i in range(self._n_levels):
+      self._cnt[i] += n
+      self._val[i]  = val
+      self._sum[i] += val * n
+
+  def cnt(self, level = 0): return self._cnt[level]
+  def val(self, level = 0): return self._val[level]
+  def sum(self, level = 0): return self._sum[level]
+  def avg(self, level = 0): return self.sum(level) / self.count(level)
 
 # https://stackoverflow.com/questions/31174295/getattr-and-setattr-on-nested-subobjects-chained-properties
 import functools
 
 def rsetattr(obj, attr, val):
-    pre, _, post = attr.rpartition('.')
-    return setattr(rgetattr(obj, pre) if pre else obj, post, val)
+  pre, _, post = attr.rpartition('.')
+  return setattr(rgetattr(obj, pre) if pre else obj, post, val)
 
 # using wonder's beautiful simplification: https://stackoverflow.com/questions/31174295/getattr-and-setattr-on-nested-objects/31174427?noredirect=1#comment86638618_31174427
 
 def rgetattr(obj, attr, *args):
-    def _getattr(obj, attr):
-        return getattr(obj, attr, *args)
-    return functools.reduce(_getattr, [obj] + attr.split('.'))
+  def _getattr(obj, attr):
+    return getattr(obj, attr, *args)
+  return functools.reduce(_getattr, [obj] + attr.split('.'))
+
+# Smart frequency = a frequency that can be a relative (a precentage) or absolute (integer)
+def smart_fequency_check(iter, num_iters, smart_frequency):
+  if isinstance(smart_frequency, int):
+    abs_freq = smart_frequency
+  else:
+    abs_freq = int(num_iters*smart_frequency)
+  return (iter % abs_freq) == 0
+
+def time_diff_str(time1, time2):
+  return time.strftime('%H:%M:%S', time.gmtime(int(time2 - time1)))

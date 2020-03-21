@@ -32,6 +32,10 @@ class VRDDataLayer():
     self.ds_name = ds_name
     self.stage   = stage
 
+    # TODO: this is not perfect (but indeed there's no need to shuffle in training)
+    if self.stage != "train" and shuffle == True:
+      shuffle = False
+
     self.dataset = dataset(self.ds_name, **ds_args)
     self.soP_prior = self.dataset.getDistribution(type="soP", force=True)
 
@@ -44,7 +48,7 @@ class VRDDataLayer():
     # TODO: check if this works
     if self.stage == "train":
       self.imgrels = [(k,v) for k,v in self.imgrels if k != None]
-    
+
     if self.shuffle:
       if self.stage != "train":
         print("WARNING! You shouldn't shuffle if not during training")
@@ -54,10 +58,11 @@ class VRDDataLayer():
     self._cur = 0
     self.wrap_around = ( self.stage == "train" )
 
+    # TODO batch_size
     self.batch_size = 1
-    # TODO: take care of the remaining
-    self.n_imgrel_batches = self.n_imgrels // self.batch_size
-
+    # and then TODO: take care of the remaining
+    self.N = self.n_imgrels // self.batch_size
+    # self.n_imgrels % self.batch_size != 0 ...
 
     # print("Loading Word2Vec model...")
     # self.w2v_model = KeyedVectors.load_word2vec_format(osp.join(globals.data_dir, globals.w2v_model_path), binary=True)
@@ -169,7 +174,7 @@ class VRDDataLayer():
 
     # Indices for objects and subjects
     idx_s,idx_o = [],[]
-    
+
     # print(obj_classes)
 
     if objdet_res != False:
@@ -198,7 +203,7 @@ class VRDDataLayer():
           # semantic features of obj and subj
           # semantic_features[i_rel] = utils.getSemanticVector(objs[rel["subject"]]["name"], objs[rel["object"]]["name"], self.w2v_model)
           semantic_features[i_rel] = np.zeros(600)
-    
+
           # store the probability distribution of this subject-object pair from the soP_prior
           rel_soP_prior[i_rel] = self.soP_prior[sub_cls][obj_cls]
 
