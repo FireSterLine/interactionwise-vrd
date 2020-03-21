@@ -12,7 +12,7 @@ import torch.nn.functional as F
 
 from bunch import bunchify
 import globals, utils
-from lib.nets.vrd_model import vrd_model
+from lib.vrd_models import VRDModel
 from evaluator import Evaluator
 #, save_net, load_net, \
 #      adjust_learning_rate, , clip_gradient
@@ -22,33 +22,6 @@ from evaluator import Evaluator
 
 
 
-class DSRAdamOptimizer():
-
-  self.lr = 0.00001
-  # self.momentum = 0.9
-  self.weight_decay = 0.0005
-
-  # opt_params = list(self.net.parameters())
-  opt_params = [
-    {'params': self.net.fc8.parameters(),       'lr': self.lr*10},
-    {'params': self.net.fc_fusion.parameters(), 'lr': self.lr*10},
-    {'params': self.net.fc_rel.parameters(),    'lr': self.lr*10},
-  ]
-  if(self.model_args.use_so):
-    opt_params.append({'params': self.net.fc_so.parameters(), 'lr': self.lr*10})
-  if(self.model_args.use_spat == 1):
-    opt_params.append({'params': self.net.fc_spatial.parameters(), 'lr': self.lr*10})
-  elif(self.model_args.use_spat == 2):
-    raise NotImplementedError
-    # opt_params.append({'params': self.net.conv_lo.parameters(), 'lr': self.lr*10})
-    # opt_params.append({'params': self.net.fc_spatial.parameters(), 'lr': self.lr*10})
-  if(self.model_args.use_sem):
-    opt_params.append({'params': self.net.fc_semantic.parameters(), 'lr': self.lr*10})
-
-  return torch.optim.Adam(opt_params,
-          lr=self.lr,
-          # momentum=self.momentum,
-          weight_decay=self.weight_decay)
 
 
 
@@ -89,31 +62,32 @@ class vrd_trainer():
         "with_bg_pred" : False
       },
       # Architecture (or model) type
-      model_type = "dsr-net",
-      # The argument dictionary giving shape to the model
       model_args = {
-        # In addition to the visual features of the union box,
-        #  use those of subject and object individually?
-        "use_so" : True,
+          # Constructor
+          "type" : "DSRModel",
+          # In addition to the visual features of the union box,
+          #  use those of subject and object individually?
+          "use_so" : True,
 
-        # Use visual features
-        "use_vis" : True,
+          # Use visual features
+          "use_vis" : True,
 
-        # Use semantic features (TODO: this becomes the size of the semantic features)
-        "use_sem" : True,
+          # Use semantic features (TODO: this becomes the size of the semantic features)
+          "use_sem" : True,
 
-        # Three types of spatial features:
-        # - 0: no spatial info
-        # - 1: 8-way relative location vector
-        # - 2: dual mask
-        "use_spat" : 0,
+          # Three types of spatial features:
+          # - 0: no spatial info
+          # - 1: 8-way relative location vector
+          # - 2: dual mask
+          "use_spat" : 0,
 
-        # Size of the representation for each modality when fusing features
-        "n_fus_neurons" : 256,
+          # Size of the representation for each modality when fusing features
+          "n_fus_neurons" : 256,
 
-        # Use batch normalization or not
-        "use_bn" : False,
-      },
+          # Use batch normalization or not
+          "use_bn" : False,
+        }
+      ],
       # Evaluation Arguments
       eval_args = {
         "use_obj_prior" : True
@@ -220,18 +194,18 @@ class vrd_trainer():
     self.model_args.n_pred = self.datalayer.n_pred
     print("Initializing VRD Model...")
     print("Model args: ", self.model_args)
-    self.net = vrd_model(self.model_args).cuda()
+    self.model = VRDModel(self.model_args).cuda()
     if not model_state_dict is None:
       # TODO: Make sure that this doesn't need the random initialization first
-      self.net.load_state_dict(model_state_dict)
+      self.model.load_state_dict(model_state_dict)
     else:
       # Random initialization
-      utils.weights_normal_init(self.net, dev=0.01)
+      utils.weights_normal_init(self.model, dev=0.01)
       # Load VGG layers
-      self.net.load_pretrained_conv(osp.join(globals.data_dir, "VGG_imagenet.npy"), fix_layers=True)
+      self.model.load_pretrained_conv(osp.join(globals.data_dir, "VGG_imagenet.npy"), fix_layers=True)
       # Load existing (word2vec?) embeddings
       with open(osp.join(globals.data_dir, "vrd", "params_emb.pkl", 'rb') as f:
-        self.net.state_dict()["emb.weight"].copy_(torch.from_numpy(pickle.load(f, encoding="latin1")))
+        self.model.state_dict()["emb.weight"].copy_(torch.from_numpy(pickle.load(f, encoding="latin1")))
 
     # Evaluation
     print("Initializing evaluation...")
@@ -240,10 +214,9 @@ class vrd_trainer():
 
     # Training
     print("Initializing training...")
-    print("Training args: ", self.model_args)
-    optimizer...
-    self.optimizer = DSRAdamOptimizer(...)
-    loss_type...
+    print("Training args: ", self.training)
+    self.optimizer = self.model.OriginalAdamOptimizer()
+    # TODO: loss_type...
     self.criterion = nn.MultiLabelMarginLoss().cuda()
     if not optimizer_state_dict is None:
       self.optimizer.load_state_dict(optimizer_state_dict)
@@ -274,12 +247,12 @@ class vrd_trainer():
       # Test results
       res_row = (self.training.epoch,)
       if self.training.test_pre:
-        rec_50, rec_50_zs, rec_100, rec_100_zs, dtime = self.eval.test_pre(self.net)
+        rec_50, rec_50_zs, rec_100, rec_100_zs, dtime = self.eval.test_pre(self.model)
         res_row += [rec_50, rec_50_zs, rec_100, rec_100_zs]
         print("CLS PRED TEST:\nAll:\tR@50: {: 6.3f}\tR@100: {: 6.3f}\nZShot:\tR@50: {: 6.3f}\tR@100: {: 6.3f}".format(rec_50, rec_100, rec_50_zs, rec_100_zs))
         print("TEST Time: {}".format(utils.time_diff_str(dtime)))
       if self.training.test_rel:
-        rec_50, rec_50_zs, rec_100, rec_100_zs, pos_num, loc_num, gt_num, dtime = self.eval.test_rel(self.net)
+        rec_50, rec_50_zs, rec_100, rec_100_zs, pos_num, loc_num, gt_num, dtime = self.eval.test_rel(self.model)
         res_row += [rec_50, rec_50_zs, rec_100, rec_100_zs]
         print("CLS OBJ TEST POS: {: 6.3f}, LOC: {: 6.3f}, GT: {: 6.3f}, Precision: {: 6.3f}, Recall: {: 6.3f}".format(pos_num, loc_num, gt_num, pos_num/(pos_num+loc_num), pos_num/gt_num))
         print("CLS REL TEST:\nAll:\tR@50: {: 6.3f}\tR@100: {: 6.3f}\nZShot:\tR@50: {: 6.3f}\tR@100: {: 6.3f}".format(rec_50, rec_100, rec_50_zs, rec_100_zs))
@@ -294,10 +267,11 @@ class vrd_trainer():
         utils.save_checkpoint({
           "data_args"             : self.data_args,
           "model_args"            : self.model_args,
+          "eval_args"             : self.eval_args,
           "training"              : self.training,
 
           "session_name"          : self.session_name,
-          "model_state_dict"      : self.net.state_dict(),
+          "model_state_dict"      : self.model.state_dict(),
           "optimizer_state_dict"  : self.optimizer.state_dict(),
           "result"                : dict(zip(res_headers, res_row)),
         }, osp.join(save_dir, "checkpoint_epoch_{}.pth.tar".format(self.training.epoch)))
@@ -307,7 +281,7 @@ class vrd_trainer():
       self.training.epoch += 1
 
   def __train_epoch(self):
-    self.net.train()
+    self.model.train()
 
     time1 = time.time()
     losses = utils.LeveledAverageMeter(2)
@@ -329,7 +303,7 @@ class vrd_trainer():
 
       # Forward pass & Backpropagation step
       self.optimizer.zero_grad()
-      obj_scores, rel_scores = self.net(*net_input)
+      obj_scores, rel_scores = self.model(*net_input)
 
       # Preprocessing the rel_sop_prior before factoring it into the loss
       rel_sop_prior = torch.FloatTensor(rel_sop_prior).cuda()

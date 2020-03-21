@@ -99,10 +99,10 @@ class dataset():
   # TODO: instead of simply return it, store it in self and return a reference to, say, self.soP
   def getDistribution(self, type, force = True, stage = "train"):
     """ Computes and returns some distributional data """
-    
+
     if stage == "test":
-        raise Error("Can't compute distribution on \"{}\" split".format(stage))
-    
+        raise ValueError("Can't compute distribution on \"{}\" split".format(stage))
+
     distribution_pkl_path = osp.join(self.metadata_dir, "{}.pkl".format(type))
 
     try:

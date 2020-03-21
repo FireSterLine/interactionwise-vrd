@@ -12,16 +12,16 @@ from lib.network import set_trainability, FC, Conv2d
 from easydict import EasyDict
 import utils
 
-class vrd_model(nn.Module):
+class DSRModel(nn.Module):
   def __init__(self, args):
-    super(vrd_model, self).__init__()
+    super(DSRModel, self).__init__()
 
     self.args = args
 
     if not hasattr(self.args, "n_obj"):
-      raise Error("Can't build vrd model without knowing n_obj")
+      raise ValueError("Can't build vrd model without knowing n_obj")
     if not hasattr(self.args, "n_pred"):
-      raise Error("Can't build vrd model without knowing n_pred")
+      raise ValueError("Can't build vrd model without knowing n_pred")
 
     # This decides whether, in addition to the visual features of union box,
     #  those of subject and object individually are used or not
@@ -266,5 +266,30 @@ class vrd_model(nn.Module):
       if fix_layers:
         set_trainability(getattr(self, source_layer), requires_grad=False)
 
-if __name__ == '__main__':
-  m = vrd_model()
+  def OriginalAdamOptimizer(
+      lr = 0.00001,
+      # momentum = 0.9,
+      weight_decay = 0.0005,
+      ):
+
+    # opt_params = list(self.parameters())
+    opt_params = [
+      {'params': self.fc8.parameters(),       'lr': lr*10},
+      {'params': self.fc_fusion.parameters(), 'lr': lr*10},
+      {'params': self.fc_rel.parameters(),    'lr': lr*10},
+    ]
+    if(self.args.use_so):
+      opt_params.append({'params': self.fc_so.parameters(), 'lr': lr*10})
+    if(self.args.use_spat == 1):
+      opt_params.append({'params': self.fc_spatial.parameters(), 'lr': lr*10})
+    elif(self.args.use_spat == 2):
+      raise NotImplementedError
+      # opt_params.append({'params': self.conv_lo.parameters(), 'lr': lr*10})
+      # opt_params.append({'params': self.fc_spatial.parameters(), 'lr': lr*10})
+    if(self.args.use_sem):
+      opt_params.append({'params': self.fc_semantic.parameters(), 'lr': lr*10})
+
+    return torch.optim.Adam(opt_params,
+            lr = lr,
+            # momentum = momentum,
+            weight_decay = weight_decay)
