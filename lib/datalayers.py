@@ -6,11 +6,12 @@ import cv2
 import pickle
 import sys
 from lib.blob import prep_im_for_blob
-from lib.dataset import dataset
+from lib.dataset import dataset # TODO: return VRDDataset
 import math
 import torch
 import random
 from gensim.models import KeyedVectors
+import warnings
 
 import utils, globals
 from copy import copy, deepcopy
@@ -19,51 +20,46 @@ from copy import copy, deepcopy
 class VRDDataLayer():
   """ Iterate through the dataset and yield the input and target for the network """
 
-  def __init__(self, ds_info, stage, shuffle = False):
-    ds_info = copy(ds_info)
-    if isinstance(ds_info, str):
-      ds_name = ds_info
-      ds_args = {}
-    else:
-      ds_name = ds_info["ds_name"]
-      del ds_info["ds_name"]
-      ds_args = ds_info
+  def __init__(self, data_info, stage, shuffle = False):
 
-    self.ds_name = ds_name
+    self.ds_args = utils.data_info_to_data_args(data_info)
     self.stage   = stage
 
-    # TODO: this is not perfect (but indeed there's no need to shuffle in training)
-    if self.stage != "train" and shuffle == True:
-      shuffle = False
+    # There's never need to shuffle in testing
+    if shuffle:
+      if self.stage != "train":
+        warnings.warn("Shuffling during '{}' was prevented".format(self.stage), UserWarning)
+        shuffle = False
 
-    self.dataset = dataset(self.ds_name, **ds_args)
-    self.soP_prior = self.dataset.getDistribution(type="soP", force=True)
+    self.shuffle = shuffle
 
+
+
+    self.dataset = dataset(**self.ds_args)
     self.n_obj   = self.dataset.n_obj
     self.n_pred  = self.dataset.n_pred
 
-    self.shuffle   = shuffle
+    self.soP_prior = self.dataset.getDistribution(type="soP", force=True)
+
     self.imgrels   = deepcopy(self.dataset.getImgRels(self.stage))
 
     # TODO: check if this works
+    # Ignore None elements during training
     if self.stage == "train":
       self.imgrels = [(k,v) for k,v in self.imgrels if k != None]
 
     if self.shuffle:
-      if self.stage != "train":
-        print("WARNING! You shouldn't shuffle if not during training")
       random.shuffle(self.imgrels)
 
     self.n_imgrels = len(self.imgrels)
     self._cur = 0
     self.wrap_around = ( self.stage == "train" )
 
-    # TODO batch_size
+    # TODO batch_size, and then take care of the remaining (self.n_imgrels % self.batch_size != 0 ...)
     self.batch_size = 1
-    # and then TODO: take care of the remaining
     self.N = self.n_imgrels // self.batch_size
-    # self.n_imgrels % self.batch_size != 0 ...
 
+    # TODO: restore this
     # print("Loading Word2Vec model...")
     # self.w2v_model = KeyedVectors.load_word2vec_format(osp.join(globals.data_dir, globals.w2v_model_path), binary=True)
 
@@ -287,5 +283,32 @@ class VRDDataLayer():
               , rel_soP_prior     \
               , obj_boxes_out
 
-if __name__ == "__main__":
-  pass
+from torch.utils.data import IterableDataset
+
+"""
+class VRDDataLayer(IterableDataset):
+
+  "#"" Iterate through the dataset and yield the input and target for the network "#""
+
+  def __init__(self, data_info, stage, shuffle = False):
+    super(VRDDataLayer).__init__()
+    ...
+  ...
+  def __iter__(self):
+    worker_info = torch.utils.data.get_worker_info()
+    if worker_info is None:  # single-process data loading, return the full iterator
+      iter_start = self.start
+      iter_end = self.end
+    else:  # in a worker process
+      # split workload
+      per_worker = int(math.ceil((self.end - self.start) / float(worker_info.num_workers)))
+      worker_id = worker_info.id
+      iter_start = self.start + worker_id * per_worker
+      iter_end = min(iter_start + per_worker, self.end)
+    return iter(range(iter_start, iter_end))
+
+ds = VRDDataLayer(start=3, end=7)
+
+print(list(torch.utils.data.DataLoader(ds, num_workers=self.num_workers... but note that this messes up the order ( see https://pytorch.org/docs/stable/data.html#torch.utils.data.IterableDataset ))))
+
+"""

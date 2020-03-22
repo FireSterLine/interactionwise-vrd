@@ -67,8 +67,8 @@ class Evaluator():
         obj_bboxes_im[ii] = ori_bboxes[idx_o[tuple_idx]]
 
       # TODO: check
-      # Is this because of the background ... ?
-      if(test_data_layer.ds_name == "vrd"):
+      # Is this because of the background ... ? If so, use proper flags instead of the name...
+      if(self.data_args.name == "vrd"):
         rlp_labels_im += 1
 
       tuple_confs_cell.append(tuple_confs_im)
@@ -81,10 +81,10 @@ class Evaluator():
     res["sub_bboxes_ours"] = sub_bboxes_cell
     res["obj_bboxes_ours"] = obj_bboxes_cell
 
-    rec_50     = eval_recall_at_N(test_data_layer.ds_name, 50,  res, use_zero_shot = False)
-    rec_50_zs  = eval_recall_at_N(test_data_layer.ds_name, 50,  res, use_zero_shot = True)
-    rec_100    = eval_recall_at_N(test_data_layer.ds_name, 100, res, use_zero_shot = False)
-    rec_100_zs = eval_recall_at_N(test_data_layer.ds_name, 100, res, use_zero_shot = True)
+    rec_50     = eval_recall_at_N(self.data_args.name, 50,  res, use_zero_shot = False)
+    rec_50_zs  = eval_recall_at_N(self.data_args.name, 50,  res, use_zero_shot = True)
+    rec_100    = eval_recall_at_N(self.data_args.name, 100, res, use_zero_shot = False)
+    rec_100_zs = eval_recall_at_N(self.data_args.name, 100, res, use_zero_shot = True)
     time2 = time.time()
 
     return rec_50, rec_50_zs, rec_100, rec_100_zs, (time2-time1)
@@ -95,15 +95,15 @@ class Evaluator():
     vrd_model.eval()
     time1 = time.time()
 
-    test_data_layer = VRDDataLayer(self.data_args.ds_name, "test")
+    test_data_layer = VRDDataLayer(self.data_args.name, "test")
 
-    with open(osp.join("data", self.data_args.ds_name, "test.pkl"), 'rb') as fid:
+    with open(osp.join("data", self.data_args.name, "test.pkl"), 'rb') as fid:
       anno = pickle.load(fid, encoding="latin1")
 
     # TODO: proposals is not ordered, but a dictionary with im_path keys
     # TODO: expand so that we don't need the proposals pickle, and we generate it if it's not there, using Faster-RCNN?
     # TODO: move the proposals file path to a different one (maybe in Faster-RCNN)
-    with open(osp.join("data", self.data_args.ds_name, "proposal.pkl"), 'rb') as fid:
+    with open(osp.join("data", self.data_args.name, "proposal.pkl"), 'rb') as fid:
       proposals = pickle.load(fid, encoding="latin1")
       # TODO: zip these
       pred_boxes   = proposals["boxes"]
@@ -188,7 +188,7 @@ class Evaluator():
 
       # TODO: check
       # Is this because of the background ... ?
-      if(self.data_args.ds_name == "vrd"):
+      if(self.data_args.name == "vrd"):
         rlp_labels_im += 1
 
       # Why is this needed? ...
@@ -214,10 +214,10 @@ class Evaluator():
     if len(anno) != len(res["obj_bboxes_ours"]):
       print("ERROR: something is wrong in prediction: {} != {}".format(len(anno), len(res["obj_bboxes_ours"])))
 
-    rec_50     = eval_recall_at_N(test_data_layer.ds_name, 50,  res, use_zero_shot = False)
-    rec_50_zs  = eval_recall_at_N(test_data_layer.ds_name, 50,  res, use_zero_shot = True)
-    rec_100    = eval_recall_at_N(test_data_layer.ds_name, 100, res, use_zero_shot = False)
-    rec_100_zs = eval_recall_at_N(test_data_layer.ds_name, 100, res, use_zero_shot = True)
+    rec_50     = eval_recall_at_N(self.data_args.name, 50,  res, use_zero_shot = False)
+    rec_50_zs  = eval_recall_at_N(self.data_args.name, 50,  res, use_zero_shot = True)
+    rec_100    = eval_recall_at_N(self.data_args.name, 100, res, use_zero_shot = False)
+    rec_100_zs = eval_recall_at_N(self.data_args.name, 100, res, use_zero_shot = True)
     time2 = time.time()
 
     return rec_50, rec_50_zs, rec_100, rec_100_zs, pos_num, loc_num, gt_num, (time2 - time1)

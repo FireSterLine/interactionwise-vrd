@@ -13,6 +13,7 @@ import torch.nn.functional as F
 from bunch import bunchify
 import globals, utils
 from lib.vrd_models import VRDModel
+from lib.datalayers import VRDDataLayer
 from evaluator import Evaluator
 #, save_net, load_net, \
 #      adjust_learning_rate, , clip_gradient
@@ -59,9 +60,9 @@ class vrd_trainer():
       args = {
         # Dataset in use
         "data" : {
-          "ds_name"      : "vrd",
+          "name"      : "vrd",
           "with_bg_obj"  : False,
-          "with_bg_pred" : False
+          "with_bg_pred" : False,
         },
         # Architecture (or model) type
         "model" : {
@@ -96,6 +97,8 @@ class vrd_trainer():
         },
         # Training parameters
         "training" : {
+          "use_shuffle"    : True, # TODO: check if shuffle works
+
           "epoch" : 0,
           "num_epochs" : 20,
           "checkpoint_freq" : 5,
@@ -116,11 +119,13 @@ class vrd_trainer():
     print("vrd_trainer() called with args:")
     print([checkpoint, args])
 
+    self.session_name = "test-new-training"
+
     self.checkpoint = checkpoint
     self.args       = args
 
-    self.session_name = "test-new-training"
-    self.state        = None
+    self.state      = {}
+
 
 
     # Load checkpoint, if any
@@ -134,20 +139,20 @@ class vrd_trainer():
 
       checkpoint = torch.load(checkpoint_path)
 
+      # Session name
+      utils.patch_key(checkpoint, "session", "session_name") # (patching)
+      self.session_name = checkpoint["session_name"]
+
       # Arguments
       self.args = checkpoint["args"]
 
       if not checkpoint.get("epoch") is None:          # (patching)
         self.args["training"]["epoch"] = checkpoint["epoch"]
 
-      # Session name
-      utils.patch_key(checkpoint, "session", "session_name") # (patching)
-      self.session_name = checkpoint["session_name"]
-
 
       # State
       # Model state dictionary
-      utils.patch_key(checkpoint, "state", ["state", "model_state_dict"]) # (patching)
+      utils.patch_key(checkpoint, "state_dict", ["state", "model_state_dict"]) # (patching)
       utils.patch_key(checkpoint["state"]["model_state_dict"], "fc_semantic.fc.weight", "fc_so_emb.fc.weight") # (patching)
       utils.patch_key(checkpoint["state"]["model_state_dict"], "fc_semantic.fc.bias",   "fc_so_emb.fc.bias") # (patching)
       # TODO: is this different than the weights used for initialization...? del checkpoint["model_state_dict"]["emb.weight"]
@@ -163,7 +168,8 @@ class vrd_trainer():
     # Data
     print("Initializing data...")
     print("Data args: ", self.data_args)
-    self.datalayer = VRDDataLayer(self.data_args, "train")
+    # TODO: VRDDataLayer has to know what to yield (DRS -> img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
+    self.datalayer = VRDDataLayer(self.data_args, "train", use_shuffle)
     # TODO: Pytorch DataLoader instead:
     # self.num_workers = 0
     # self.dataset = VRDDataset()
@@ -179,7 +185,7 @@ class vrd_trainer():
     print("Initializing VRD Model...")
     print("Model args: ", self.model_args)
     self.model = VRDModel(self.model_args).cuda()
-    if not self.state is None:
+    if "model_state_dict" in self.state:
       # TODO: Make sure that this doesn't need the random initialization first
       self.model.load_state_dict(self.state["model_state_dict"])
     else:
@@ -202,7 +208,7 @@ class vrd_trainer():
     self.optimizer = self.model.OriginalAdamOptimizer()
     # TODO: loss_type...
     self.criterion = nn.MultiLabelMarginLoss().cuda()
-    if not self.state["optimizer_state_dict"] is None:
+    if "optimizer_state_dict" in self.state:
       self.optimizer.load_state_dict(self.state["optimizer_state_dict"])
 
 
@@ -248,13 +254,14 @@ class vrd_trainer():
 
       # Save checkpoint
       if utils.smart_fequency_check(self.training.epoch, self.training.num_epochs, self.training.checkpoint_freq):
-        self.state = {
-          "model_state_dict"     : self.model.state_dict(),
-          "optimizer_state_dict" : self.optimizer.state_dict()
-        }
+
+        # TODO: the loss should be a result: self.result.loss (which is ignored at loading,only used when saving checkpoint)...
+        self.state["model_state_dict"]     = self.model.state_dict()
+        self.state["optimizer_state_dict"] = self.optimizer.state_dict()
+
         utils.save_checkpoint({
-          "args"          : self.args,
           "session_name"  : self.session_name,
+          "args"          : self.args,
           "state"         : self.state,
           "result"        : dict(zip(res_headers, res_row)),
         }, osp.join(save_dir, "checkpoint_epoch_{}.pth.tar".format(self.training.epoch)))
@@ -267,6 +274,7 @@ class vrd_trainer():
     self.model.train()
 
     time1 = time.time()
+    # TODO check if LeveledAverageMeter works
     losses = utils.LeveledAverageMeter(2)
 
     # Iterate over the dataset
@@ -305,22 +313,22 @@ class vrd_trainer():
         print("\t{:4d}: LOSS: {: 6.3f}".format(step, losses.avg(0)))
         losses.reset(0)
 
-    self.training.loss = losses.avg(1)
+    self.state["loss"] = losses.avg(1)
     time2 = time.time()
 
-    print("TRAIN Loss: {: 6.3f}".format(self.training.loss))
+    print("TRAIN Loss: {: 6.3f}".format(self.state["loss"]))
     print("TRAIN Time: {}".format(utils.time_diff_str(time1, time2)))
 
     """
       # the rel_sop_prior here is a subset of the 100*70*70 dimensional so_prior array, which contains the predicate prob distribution for all object pairs
       # the rel_sop_prior here contains the predicate probability distribution of only the object pairs in this annotation
       # Also, it might be helpful to keep in mind that this data layer currently works for a single annotation at a time - no batching is implemented!
-      image_blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, rel_labels, rel_sop_prior = self.datalayer.forward()
+      image_blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, rel_labels, rel_sop_prior = self.datalayer...
     """
 
 if __name__ == "__main__":
   trainer = vrd_trainer()
-  # trainer = vrd_trainer(checkpoint = False, self.data_args.ds_name = "vrd")
+  # trainer = vrd_trainer(checkpoint = False, self.data_args.name = "vrd")
   # trainer = vrd_trainer(checkpoint = "epoch_4_checkpoint.pth.tar")
 
   trainer.train()

@@ -17,12 +17,12 @@ import globals
 
 class dataset():
 
-  def __init__(self, name="vg", subset=None, with_bg_obj=True, with_bg_pred=False):
+  def __init__(self, name, subset=None, with_bg_obj=True, with_bg_pred=False):
 
-    self.name = name
-    self.subset = None
-    self.with_bg_obj = True
-    self.with_bg_pred = False
+    self.name         = name
+    self.subset       = subset
+    self.with_bg_obj  = with_bg_obj
+    self.with_bg_pred = with_bg_pred
 
     self.img_dir = None
     self.metadata_dir = None

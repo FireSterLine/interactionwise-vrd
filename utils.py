@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 import model.utils.net_utils as frcnn_net_utils
 import time
+from copy import deepcopy
 
 weights_normal_init = frcnn_net_utils.weights_normal_init
 save_checkpoint     = frcnn_net_utils.save_checkpoint
@@ -66,6 +67,13 @@ def getSemanticVector(subject_label, object_label, w2v_model):
     object_vector = np.zeros(300)
   combined_vector = np.concatenate((subject_vector, object_vector), axis=0)
   return combined_vector
+
+# data_info may be just the dataset name
+def data_info_to_data_args(data_info):
+  if isinstance(data_info, str):
+    data_info = {"name" : data_info}
+  return data_info
+
 
 # Wrapper for cv2.imread
 def read_img(im_file):
