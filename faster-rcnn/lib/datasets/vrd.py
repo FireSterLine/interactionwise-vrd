@@ -33,7 +33,7 @@ class vrd(imdb):
         self._classes = ['__background__'] + self._object_classes()
         self._class_to_ind = dict(zip(self._classes, range(self.num_classes)))
 
-        with open('data/vrd/%s.pkl'%(image_set), 'rb') as fid:
+        with open(osp.join('data', 'vrd' '{}.pkl'.format(image_set)), 'rb') as fid:
             anno = cPickle.load(fid, encoding = "latin1")
             self._anno = [x for x in anno if x is not None]
 
@@ -48,7 +48,7 @@ class vrd(imdb):
 
     def _object_classes(self):
         import json
-        with open('data/vrd/objects.json') as f:
+        with open(osp.join('data', 'vrd', 'objects.json')) as f:
             classes = json.load(f) # [ x.strip() for x in f.readlines() ]
 
         # classes = [x.strip() for x in open(osp.join(self._devkit_path, 'obj.txt')).readlines()]
@@ -58,7 +58,7 @@ class vrd(imdb):
         """
         Return the absolute path to image i in the image sequence.
         """
-        return self._image_index[i] 
+        return self._image_index[i]
 
     def image_id_at(self, i):
         return i
@@ -70,7 +70,7 @@ class vrd(imdb):
         image_index = []
         for img_idx, anno_img in enumerate(self._anno):
           image_path = anno_img['img_path'].split('/')[-1]
-          image_path = osp.join('data/vrd', 'sg_dataset', 'sg_%s_images' % (self._image_set), image_path)
+          image_path = osp.join('data', 'vrd', 'sg_dataset', 'sg_%s_images' % (self._image_set), image_path)
           assert os.path.exists(image_path), \
             'Path does not exist: {}'.format(image_path)
           image_index.append(image_path)
@@ -188,7 +188,7 @@ class vrd(imdb):
 
             overlaps = scipy.sparse.csr_matrix(overlaps)
 
-            gt_roidb.append({'boxes' : boxes,                             
+            gt_roidb.append({'boxes' : boxes,
                              'gt_classes': gt_classes,
                              'gt_overlaps' : overlaps,
                              'flipped' : False,
@@ -200,7 +200,7 @@ class vrd(imdb):
         # if os.path.exists(det_file):
         #     with open(det_file, 'rb') as fid:
         #         proposals = cPickle.load(fid)
-        #     print '{} ss roidb loaded from {}'.format(self.name, det_file)            
+        #     print '{} ss roidb loaded from {}'.format(self.name, det_file)
         # else:
         proposals = {}
         proposals['boxes'] = []

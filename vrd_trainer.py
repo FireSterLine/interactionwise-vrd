@@ -14,7 +14,7 @@ from bunch import bunchify
 import globals, utils
 from lib.vrd_models import VRDModel
 from lib.datalayers import VRDDataLayer
-from evaluator import Evaluator
+from evaluator import VRDEvaluator
 #, save_net, load_net, \
 #      adjust_learning_rate, , clip_gradient
 
@@ -97,6 +97,17 @@ class vrd_trainer():
         },
         # Training parameters
         "training" : {
+          "opt" : {
+            "lr"           : 0.00001,
+            # "momentum"   : 0.9,
+            "weight_decay" : 0.0005,
+          },
+
+          # Adjust learning rate every lr_decay_step epochs
+          # TODO: check if this works:
+          #"lr_decay_step"  : 3,
+          #"lr_decay_gamma" : .1,
+
           "use_shuffle"    : True, # TODO: check if shuffle works
 
           "epoch" : 0,
@@ -160,6 +171,7 @@ class vrd_trainer():
       utils.patch_key(checkpoint, "optimizer", ["state", "optimizer_state_dict"]) # (patching)
       self.state = checkpoint["state"]
 
+    # TODO: idea, don't use data_args.name but data.name?
     self.data_args    = bunchify(self.args["data"])
     self.model_args   = bunchify(self.args["model"])
     self.eval_args    = bunchify(self.args["eval"])
@@ -200,13 +212,13 @@ class vrd_trainer():
     # Evaluation
     print("Initializing evaluation...")
     print("Evaluation args: ", self.eval_args)
-    self.eval = Evaluator(self.data_args, self.eval_args)
+    self.eval = VRDEvaluator(self.data_args, self.eval_args)
 
     # Training
     print("Initializing training...")
     print("Training args: ", self.training)
-    self.optimizer = self.model.OriginalAdamOptimizer()
-    # TODO: loss_type...
+    self.optimizer = self.model.OriginalAdamOptimizer(**self.training.opt)
+    # TODO: create loss_type argument...
     self.criterion = nn.MultiLabelMarginLoss().cuda()
     if "optimizer_state_dict" in self.state:
       self.optimizer.load_state_dict(self.state["optimizer_state_dict"])
@@ -231,6 +243,13 @@ class vrd_trainer():
     while self.training.epoch < end_epoch:
 
       print("Epoch {}".format(self.training.epoch))
+
+
+      # TODO check if this works (Note that you'd have to make it work cross-sessions as well)
+      # if (self.training.epoch % (self.training.lr_decay_step + 1)) == 0:
+      #   print("*adjust_learning_rate*")
+      #   adjust_learning_rate(self.optimizer, self.training.lr_decay_gamma)
+      # TODO do it with the scheduler, see if it's the same: https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
 
       # self.__train_epoch(self.training.epoch)
 

@@ -5,8 +5,9 @@ import model.utils.net_utils as frcnn_net_utils
 import time
 from copy import deepcopy
 
-weights_normal_init = frcnn_net_utils.weights_normal_init
-save_checkpoint     = frcnn_net_utils.save_checkpoint
+weights_normal_init  = frcnn_net_utils.weights_normal_init
+save_checkpoint      = frcnn_net_utils.save_checkpoint
+adjust_learning_rate = frcnn_net_utils.adjust_learning_rate
 
 # TODO: figure out what pixel means to use, how to compute them:
 #  do they come from the dataset used for training, perhaps?

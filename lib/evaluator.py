@@ -3,7 +3,7 @@ from lib.datalayers import VRDDataLayer
 from lib.evaluation_dsr import eval_recall_at_N, eval_obj_img # TODO remove this module
 import time
 
-class Evaluator():
+class VRDEvaluator():
   """ Evaluator for Predicate Prediction and Relationship Prediction """
 
   def __init__(self, data_args, args = { "use_obj_prior" : True }):

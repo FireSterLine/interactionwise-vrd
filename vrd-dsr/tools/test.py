@@ -25,7 +25,7 @@ def parse_args():
                         default=None, type=str)
     parser.add_argument('--dataset', dest='ds_name',
                         help='dataset name',
-                        default=None, type=str)    
+                        default=None, type=str)
     parser.add_argument('--model_type', dest='model_type',
                         help='model type: RANK_IM_ALL, RANK_IM, LOC',
                         default=None, type=str)
@@ -34,7 +34,7 @@ def parse_args():
     parser.add_argument('--no_obj', dest='use_obj', action='store_false')
     parser.set_defaults(use_obj=True)
     parser.add_argument('--no_obj_prior', dest='use_obj_prior', action='store_false')
-    parser.set_defaults(use_obj_prior=True)        
+    parser.set_defaults(use_obj_prior=True)
     parser.add_argument('--loc_type', default=0, type=int)
     parser.add_argument('--epochs', default=5, type=int, metavar='N',
                         help='number of total epochs to run')
@@ -46,7 +46,7 @@ def parse_args():
                         metavar='N', help='print frequency (default: 10)')
     parser.add_argument('--resume', default='', type=str, metavar='PATH',
                         help='path to latest checkpoint (default: none)')
-    
+
     if len(sys.argv) == 1:
         parser.print_help()
         sys.exit(1)
@@ -58,7 +58,7 @@ if __name__ == '__main__':
     global args
     args = parse_args()
     args.proposal = '../data/vrd/proposal.pkl'
-    args.resume = '../models/%s/epoch_%d_checkpoint.pth.tar'%(args.name, args.epochs-1)
+    args.resume = '../models/%s/epoch_%d_checkpoint.pth.tar'%(args.name, (args.epochs-1))
     print args
     print 'Evaluating...'
     # Data
