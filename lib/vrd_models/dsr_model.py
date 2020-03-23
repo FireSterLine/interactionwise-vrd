@@ -161,7 +161,7 @@ class DSRModel(nn.Module):
     x_u = self.fc7(x_u)
     x_u = self.dropout0(x_u)
 
-    x_fused = torch.empty((u_boxes.size()[0], 0)).cuda()
+    x_fused = torch.empty((u_boxes.size()[0], 0), device=utils.device)
 
     if(self.args.use_vis):
       x_u = self.fc8(x_u)
@@ -291,5 +291,4 @@ class DSRModel(nn.Module):
 
     return torch.optim.Adam(opt_params,
             lr = lr,
-            # momentum = momentum,
             weight_decay = weight_decay)

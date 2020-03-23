@@ -4,6 +4,7 @@ import numpy as np
 import model.utils.net_utils as frcnn_net_utils
 import time
 from copy import deepcopy
+import torch
 
 weights_normal_init  = frcnn_net_utils.weights_normal_init
 save_checkpoint      = frcnn_net_utils.save_checkpoint
@@ -14,6 +15,15 @@ adjust_learning_rate = frcnn_net_utils.adjust_learning_rate
 # Read here: https://github.com/GriffinLiang/vrd-dsr/issues/12
 # If you use the pretrained, you should use the same value. Boh
 vrd_pixel_means = np.array([[[102.9801, 115.9465, 122.7717]]])
+
+# Pytorch CUDA Fallback
+# TODO: check if this works and then use it everywhere instead of cuda()
+try:
+  device = torch.device("cuda")
+  torch.LongTensor(device=device)
+except RuntimeError:
+  device = torch.device("cpu")
+  torch.LongTensor(device=device)
 
 
 # Bbox as a dict to numpy array

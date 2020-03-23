@@ -3,6 +3,7 @@ from lib.datalayers import VRDDataLayer
 from lib.evaluation_dsr import eval_recall_at_N, eval_obj_img # TODO remove this module
 import time
 
+# TODO: check, is all of this using the GPU, or can we improve the time?
 class VRDEvaluator():
   """ Evaluator for Predicate Prediction and Relationship Prediction """
 

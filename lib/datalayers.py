@@ -2,12 +2,9 @@ import numpy as np
 import os.path as osp
 import scipy.io as sio
 import scipy
-import cv2
 import pickle
-import sys
 from lib.blob import prep_im_for_blob
 from lib.dataset import dataset # TODO: return VRDDataset
-import math
 import torch
 import random
 from gensim.models import KeyedVectors
@@ -16,21 +13,21 @@ import warnings
 import utils, globals
 from copy import copy, deepcopy
 # TODO: expand so that it supports batch sizes > 1
+from torch.utils import data
 
+# TODO class VRDDataLayer(data.Dataset):
 class VRDDataLayer():
   """ Iterate through the dataset and yield the input and target for the network """
 
   def __init__(self, data_info, stage, shuffle = False):
 
+    # There's never need to shuffle in testing
+    if shuffle and stage != "train":
+      warnings.warn("Shuffling during '{}' was prevented".format(stage), UserWarning)
+      shuffle = False
+
     self.ds_args = utils.data_info_to_data_args(data_info)
     self.stage   = stage
-
-    # There's never need to shuffle in testing
-    if shuffle:
-      if self.stage != "train":
-        warnings.warn("Shuffling during '{}' was prevented".format(self.stage), UserWarning)
-        shuffle = False
-
     self.shuffle = shuffle
 
 
@@ -51,22 +48,91 @@ class VRDDataLayer():
     if self.shuffle:
       random.shuffle(self.imgrels)
 
-    self.n_imgrels = len(self.imgrels)
+    self.N = len(self.imgrels)
     self._cur = 0
     self.wrap_around = ( self.stage == "train" )
 
-    # TODO batch_size, and then take care of the remaining (self.n_imgrels % self.batch_size != 0 ...)
-    self.batch_size = 1
-    self.N = self.n_imgrels // self.batch_size
+    # self.objdet_res = False
 
     # TODO: restore this
     # print("Loading Word2Vec model...")
     # self.w2v_model = KeyedVectors.load_word2vec_format(osp.join(globals.data_dir, globals.w2v_model_path), binary=True)
 
+  """
+  TODO
+  def __len__(self):
+    return self.N
+
+  def __getitem__(self, index):
+
+-  def next(self, objdet_res = False):
+-
+-    while True:
+-      if self._cur >= self.n_imgrels:
+-        if self.wrap_around:
+-          self._cur = 0
+-        else:
+-          raise StopIteration
+-          return
+-
+-      (im_id, _rels) = self.imgrels[self._cur]
+-
+-      self._cur += 1
+-
+-      if im_id is not None:
+-
+-        rels = deepcopy(_rels)
+-
+-        n_rel = len(rels)
+-
+-        if n_rel != 0:
+-          break
+-        elif self.stage == "test":
+-          if objdet_res != False:
+-            return None, None, None, None
+-          else:
+-            return None, None, None
++​
++  def __getitem__(self, index):
++​
++    objdet_res = False
++    # while True:
++    #   if self._cur >= self.n_imgrels:
++    #     if self.wrap_around:
++    #       self._cur = 0
++    #     else:
++    #       raise StopIteration
++    #       return
++​
++    (im_id, _rels) = self.imgrels[index]
++​
++    if im_id is not None:
++​
++      rels = deepcopy(_rels)
++​
++      n_rel = len(rels)
++​
++      if n_rel != 0:
++        pass
+       elif self.stage == "test":
+         if objdet_res != False:
+           return None, None, None, None
+         else:
+           return None, None, None
+-
+-
++    elif self.stage == "test":
++      if objdet_res != False:
++        return None, None, None, None
++      else:
++        return None, None, None
++​
+  """
+
   def next(self, objdet_res = False):
 
     while True:
-      if self._cur >= self.n_imgrels:
+      if self._cur >= self.N:
         if self.wrap_around:
           self._cur = 0
         else:
@@ -109,9 +175,9 @@ class VRDDataLayer():
     # TODO: instead of computing obj_boxes_out here, put it in the preprocess
     #  (and maybe transform relationships to contain object indices instead of whole objects)
     # Note: from here on, rel["subject"] and rel["object"] contain indices to objs
-    objs = []
+    objs  = []
     boxes = []
-    for i_rel,rel in enumerate(rels):
+    for i_rel, rel in enumerate(rels):
 
       i_obj = len(objs)
       objs.append(rel["subject"])
@@ -128,9 +194,9 @@ class VRDDataLayer():
     if objdet_res != False:
       obj_boxes_out  = objdet_res["boxes"]
       obj_classes    = objdet_res["classes"]
-      pred_confs_img = objdet_res["confs"] # Note: We don't actually care about the confidence scores here
+      pred_confs_img = objdet_res["confs"]  # Note: We don't actually care about the confidence scores here
 
-      n_rel = len(obj_classes)*(len(obj_classes)-1)
+      n_rel = len(obj_classes) * (len(obj_classes) - 1)
 
       if n_rel == 0:
         return None, None, None, None
@@ -138,12 +204,12 @@ class VRDDataLayer():
       obj_boxes_out = np.zeros((n_objs, 4))
       obj_classes = np.zeros((n_objs))
 
-      for i_obj,obj in enumerate(objs):
+      for i_obj, obj in enumerate(objs):
         obj_boxes_out[i_obj] = utils.bboxDictToNumpy(obj["bbox"])
         obj_classes[i_obj] = obj["id"]
 
     # Object boxes
-    obj_boxes = np.zeros((obj_boxes_out.shape[0], 5)) # , dtype=np.float32)
+    obj_boxes = np.zeros((obj_boxes_out.shape[0], 5))  # , dtype=np.float32)
     obj_boxes[:, 1:5] = obj_boxes_out * im_scale
 
     # union bounding boxes
@@ -157,26 +223,26 @@ class VRDDataLayer():
     #               self._getDualMask(ih, iw, oBBox)]
 
     # TODO: add tiny comment...
-    semantic_features = np.zeros((n_rel, 2*300))
+    semantic_features = np.zeros((n_rel, 2 * 300))
 
     # this will contain the probability distribution of each subject-object pair ID over all 70 predicates
     rel_soP_prior = np.zeros((n_rel, self.dataset.n_pred))
     # print(n_rel)
 
     # Target output for the network
-    target = -1*np.ones((1, self.dataset.n_pred*n_rel))
+    target = -1 * np.ones((1, self.dataset.n_pred * n_rel))
     pos_idx = 0
     # target = np.zeros((n_rel, self.n_pred))
 
     # Indices for objects and subjects
-    idx_s,idx_o = [],[]
+    idx_s, idx_o = [], []
 
     # print(obj_classes)
 
     if objdet_res != False:
       i_rel = 0
-      for s_idx,sub_cls in enumerate(obj_classes):
-        for o_idx,obj_cls in enumerate(obj_classes):
+      for s_idx, sub_cls in enumerate(obj_classes):
+        for o_idx, obj_cls in enumerate(obj_classes):
           if(s_idx == o_idx):
             continue
           # Subject and object local indices (useful when selecting ROI results)
@@ -205,7 +271,7 @@ class VRDDataLayer():
 
           i_rel += 1
     else:
-      for i_rel,rel in enumerate(rels):
+      for i_rel, rel in enumerate(rels):
 
         # Subject and object local indices (useful when selecting ROI results)
         idx_s.append(rel["subject"])
@@ -238,7 +304,7 @@ class VRDDataLayer():
         # TODO: enable multi-class predicate (rel_classes: list of predicates for every pair)
         rel_classes = [rel["predicate"]["id"]]
         for rel_label in rel_classes:
-          target[0, pos_idx] = i_rel*self.dataset.n_pred + rel_label
+          target[0, pos_idx] = i_rel * self.dataset.n_pred + rel_label
           pos_idx += 1
 
 
@@ -246,17 +312,17 @@ class VRDDataLayer():
 
     # Note: the transpose should move the color channel to being the
     #  last dimension
-    img_blob          = torch.FloatTensor(img_blob).permute(0, 3, 1, 2).cuda()
-    obj_boxes         = torch.FloatTensor(obj_boxes).cuda()
-    u_boxes           = torch.FloatTensor(u_boxes).cuda()
-    idx_s             = torch.LongTensor(idx_s).cuda()
-    idx_o             = torch.LongTensor(idx_o).cuda()
-    spatial_features  = torch.FloatTensor(spatial_features).cuda()
-    semantic_features = torch.FloatTensor(semantic_features).cuda()
-    obj_classes       = torch.LongTensor(obj_classes).cuda()
+    img_blob          = torch.FloatTensor(img_blob,          device=utils.device).permute(0, 3, 1, 2)
+    obj_boxes         = torch.FloatTensor(obj_boxes,         device=utils.device)
+    u_boxes           = torch.FloatTensor(u_boxes,           device=utils.device)
+    idx_s             = torch.LongTensor(idx_s,              device=utils.device)
+    idx_o             = torch.LongTensor(idx_o,              device=utils.device)
+    spatial_features  = torch.FloatTensor(spatial_features,  device=utils.device)
+    semantic_features = torch.FloatTensor(semantic_features, device=utils.device)
+    obj_classes       = torch.LongTensor(obj_classes,        device=utils.device)
 
-    # rel_soP_prior = torch.FloatTensor(rel_soP_prior).cuda()
-    target        = torch.LongTensor(target).cuda()
+    # rel_soP_prior = torch.FloatTensor(rel_soP_prior, device=utils.device)
+    target        = torch.LongTensor(target,                 device=utils.device)
 
     net_input = (img_blob           \
                , obj_boxes          \
@@ -283,12 +349,22 @@ class VRDDataLayer():
               , rel_soP_prior     \
               , obj_boxes_out
 
-from torch.utils.data import IterableDataset
+"""
+ds_info = {"ds_name": "vrd", "with_bg_obj": False, "with_bg_pred": False}
+datalayer = VRDDataLayer(ds_info, "train", shuffle=False)
+a = datalayer[0]
+​
+# this only works with batch size 1!
+train_generator = data.DataLoader(
+    dataset=datalayer,
+    drop_last=True,
+    batch_size=1,
+    shuffle=True
+)
+"""
 
 """
-class VRDDataLayer(IterableDataset):
-
-  "#"" Iterate through the dataset and yield the input and target for the network "#""
+...data.IterableDataset
 
   def __init__(self, data_info, stage, shuffle = False):
     super(VRDDataLayer).__init__()

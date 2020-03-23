@@ -196,7 +196,7 @@ class vrd_trainer():
     self.model_args.n_pred = self.datalayer.n_pred
     print("Initializing VRD Model...")
     print("Model args: ", self.model_args)
-    self.model = VRDModel(self.model_args).cuda()
+    self.model = VRDModel(self.model_args).to(device=device)
     if "model_state_dict" in self.state:
       # TODO: Make sure that this doesn't need the random initialization first
       self.model.load_state_dict(self.state["model_state_dict"])
@@ -219,7 +219,7 @@ class vrd_trainer():
     print("Training args: ", self.training)
     self.optimizer = self.model.OriginalAdamOptimizer(**self.training.opt)
     # TODO: create loss_type argument...
-    self.criterion = nn.MultiLabelMarginLoss().cuda()
+    self.criterion = nn.MultiLabelMarginLoss().to(utils.device)
     if "optimizer_state_dict" in self.state:
       self.optimizer.load_state_dict(self.state["optimizer_state_dict"])
 
@@ -316,7 +316,7 @@ class vrd_trainer():
       obj_scores, rel_scores = self.model(*net_input)
 
       # Preprocessing the rel_sop_prior before factoring it into the loss
-      rel_sop_prior = torch.FloatTensor(rel_sop_prior).cuda()
+      rel_sop_prior = torch.FloatTensor(rel_sop_prior, device=utils.device)
       rel_sop_prior = -0.5 * ( rel_sop_prior + 1.0 / self.datalayer.n_pred)
       loss = self.criterion((rel_sop_prior + rel_scores).view(1, -1), target)
       # loss = self.criterion((rel_scores).view(1, -1), target)
