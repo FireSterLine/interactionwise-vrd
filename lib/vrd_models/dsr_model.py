@@ -266,7 +266,7 @@ class DSRModel(nn.Module):
       if fix_layers:
         set_trainability(getattr(self, source_layer), requires_grad=False)
 
-  def OriginalAdamOptimizer(
+  def OriginalAdamOptimizer(self,
       lr = 0.00001,
       # momentum = 0.9,
       weight_decay = 0.0005,

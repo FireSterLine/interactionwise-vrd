@@ -197,7 +197,7 @@ class vrd_trainer():
     self.model_args.n_pred = self.datalayer.n_pred
     print("Initializing VRD Model...")
     print("Model args: ", self.model_args)
-    self.model = VRDModel(self.model_args).to(device=device)
+    self.model = VRDModel(self.model_args).to(device=utils.device)
     if "model_state_dict" in self.state:
       # TODO: Make sure that this doesn't need the random initialization first
       self.model.load_state_dict(self.state["model_state_dict"])
@@ -207,7 +207,7 @@ class vrd_trainer():
       # Load VGG layers
       self.model.load_pretrained_conv(osp.join(globals.data_dir, "VGG_imagenet.npy"), fix_layers=True)
       # Load existing (word2vec?) embeddings
-      with open(osp.join(globals.data_dir, "vrd", "params_emb.pkl", 'rb')) as f:
+      with open(osp.join(globals.data_dir, "vrd", "params_emb.pkl"), 'rb') as f:
         self.model.state_dict()["emb.weight"].copy_(torch.from_numpy(pickle.load(f, encoding="latin1")))
 
     # Evaluation

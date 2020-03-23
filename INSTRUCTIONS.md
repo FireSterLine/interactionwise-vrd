@@ -20,6 +20,13 @@ Mirror: `https://www.dropbox.com/s/62qxqt477vhb59e/faster_rcnn_1_20_7559.pth?dl=
 
 ### Bash script for downloading datasets
 
+`cd data/vrd
+wget http://imagenet.stanford.edu/internal/jcjohns/scene_graphs/sg_dataset.zip
+unzip sg_datset
+mv 4392556686_44d71ff5a0_o.jpg sg_dataset/sg_test_images/4392556686_44d71ff5a0_o.gif
+cd ../..`
+
+<!--
 `cd data/`
 
 To download the VRD dataset: 
@@ -29,7 +36,8 @@ Unzip VRD dataset:
 `unzip sg_datset`
 
 Move a file, and convert it from .gif to .jpg: 
-`mv sg_dataset/sg_test_images/4392556686_44d71ff5a0_o.gif vrd/4392556686_44d71ff5a0_o.jpg`
+`mv vrd/4392556686_44d71ff5a0_o.jpg sg_dataset/sg_test_images/4392556686_44d71ff5a0_o.gif`
+-->
 
 Download the annotations: 
 `wget http://cs.stanford.edu/people/ranjaykrishna/vrd/dataset.zip`
@@ -38,16 +46,19 @@ Download the annotations:
 <!---wget https://drive.google.com/drive/folders/1V8q2i2gHUpSAXTY4Mf6k06WHDVn6MXQ7 -->
 
 For downloading the VGG model trained on ImageNet: 
-`wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=0ByuDEGFYmWsbNVF5eExySUtMZmM' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=0ByuDEGFYmWsbNVF5eExySUtMZmM" -O VGG_imagenet.npy && rm -rf /tmp/cookies.txt`
+<!-- `wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=0ByuDEGFYmWsbNVF5eExySUtMZmM' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=0ByuDEGFYmWsbNVF5eExySUtMZmM" -O VGG_imagenet.npy && rm -rf /tmp/cookies.txt`
 
 For downloading so\_prior.pkl (I couldn't figure a way to download this through wget, so I downloaded locally) and then just used scp. This has to be put in the `~/data/vrd/ folder`
 `scp ./so_prior.pkl findwise@10.10.9.30:/opt/interactionwise/interactionwise-vrd/data/vrd/so_prior.pkl`
 
 For downloading VG dataset:
 `wget --load-cookies /tmp/cookies.txt "https://docs.google.com/uc?export=download&confirm=$(wget --quiet --save-cookies /tmp/cookies.txt --keep-session-cookies --no-check-certificate 'https://docs.google.com/uc?export=download&id=1QrxXRE4WBPDVN81bYsecCxrlzDkR2zXZ' -O- | sed -rn 's/.*confirm=([0-9A-Za-z_]+).*/\1\n/p')&id=1QrxXRE4WBPDVN81bYsecCxrlzDkR2zXZ" -O vg.zip && rm -rf /tmp/cookies.txt`
+-->
 
 Download the checkpoint:
 `./scripts/gd.pl "https://drive.google.com/uc?id=1_jWnvWNwlJ2ZqKbDMHsSs4BjTblg0FSe&export=download" "models/epoch_4_checkpoint.pth.tar"`
+`./scripts/gd.pl "https://drive.google.com/file/d/0ByuDEGFYmWsbNVF5eExySUtMZmM/view" "data/VGG_imagenet.npy"`
+`./scripts/gd.pl "https://drive.google.com/file/d/1e1agFQ32QYZim-Vj07NyZieJnQaQ7YKa/view" "data/vrd/so_prior.pkl"`
 
 To download the Faster R-CNN pretrained model, we downloaded locally and uploaded to server via scp (in the models folder
 Actually, no:
