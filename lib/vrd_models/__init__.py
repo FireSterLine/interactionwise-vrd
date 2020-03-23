@@ -1,4 +1,4 @@
-from .DSRModel import DSRModel
+from .dsr_model import DSRModel
 
 def VRDModel(model_args):
   args = model_args

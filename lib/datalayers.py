@@ -7,7 +7,7 @@ from lib.blob import prep_im_for_blob
 from lib.dataset import dataset # TODO: return VRDDataset
 import torch
 import random
-from gensim.models import KeyedVectors
+# from gensim.models import KeyedVectors
 import warnings
 
 import utils, globals

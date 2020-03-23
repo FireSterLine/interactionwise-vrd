@@ -2,6 +2,8 @@
 # WHOLE TODO thingy
 # Setting up datasets, models and packages
 
+pip install git+https://github.com/Infinidat/munch
+
 ### Libraries
 
 `curl -LO https://download.pytorch.org/whl/cu80/torch-0.2.0.post3-cp27-cp27mu-manylinux1_x86_64.whl`

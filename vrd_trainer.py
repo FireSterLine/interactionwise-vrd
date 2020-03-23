@@ -4,24 +4,22 @@ import sys
 import pickle
 from tabulate import tabulate
 import time
+import json
 
 import torch
 import torch.nn as nn
 import torch.nn.init
 import torch.nn.functional as F
 
-from bunch import bunchify
+from munch import munchify
 import globals, utils
 from lib.vrd_models import VRDModel
 from lib.datalayers import VRDDataLayer
-from evaluator import VRDEvaluator
+from lib.evaluator import VRDEvaluator
 #, save_net, load_net, \
 #      adjust_learning_rate, , clip_gradient
 
 # from lib.model import train_net, test_pre_net, test_rel_net
-
-
-
 
 
 
@@ -66,31 +64,30 @@ class vrd_trainer():
         },
         # Architecture (or model) type
         "model" : {
-            # Constructor
-            "type" : "DSRModel",
-            # In addition to the visual features of the union box,
-            #  use those of subject and object individually?
-            "use_so" : True,
+          # Constructor
+          "type" : "DSRModel",
+          # In addition to the visual features of the union box,
+          #  use those of subject and object individually?
+          "use_so" : True,
 
-            # Use visual features
-            "use_vis" : True,
+          # Use visual features
+          "use_vis" : True,
 
-            # Use semantic features (TODO: this becomes the size of the semantic features)
-            "use_sem" : True,
+          # Use semantic features (TODO: this becomes the size of the semantic features)
+          "use_sem" : True,
 
-            # Three types of spatial features:
-            # - 0: no spatial info
-            # - 1: 8-way relative location vector
-            # - 2: dual mask
-            "use_spat" : 0,
+          # Three types of spatial features:
+          # - 0: no spatial info
+          # - 1: 8-way relative location vector
+          # - 2: dual mask
+          "use_spat" : 0,
 
-            # Size of the representation for each modality when fusing features
-            "n_fus_neurons" : 256,
+          # Size of the representation for each modality when fusing features
+          "n_fus_neurons" : 256,
 
-            # Use batch normalization or not
-            "use_bn" : False,
-          }
-        ],
+          # Use batch normalization or not
+          "use_bn" : False,
+        },
         # Evaluation Arguments
         "eval" : {
           "use_obj_prior" : True
@@ -127,8 +124,12 @@ class vrd_trainer():
         }
       }):
 
-    print("vrd_trainer() called with args:")
-    print([checkpoint, args])
+    print("Arguments:")
+    if checkpoint:
+      print("Checkpoint: {}", checkpoint)
+    else:
+      print("No Checkpoint")
+    print("args:", json.dumps(args, indent=2, sort_keys=True))
 
     self.session_name = "test-new-training"
 
@@ -172,16 +173,16 @@ class vrd_trainer():
       self.state = checkpoint["state"]
 
     # TODO: idea, don't use data_args.name but data.name?
-    self.data_args    = bunchify(self.args["data"])
-    self.model_args   = bunchify(self.args["model"])
-    self.eval_args    = bunchify(self.args["eval"])
-    self.training     = bunchify(self.args["training"])
+    self.data_args    = munchify(self.args["data"])
+    self.model_args   = munchify(self.args["model"])
+    self.eval_args    = munchify(self.args["eval"])
+    self.training     = munchify(self.args["training"])
 
     # Data
     print("Initializing data...")
     print("Data args: ", self.data_args)
     # TODO: VRDDataLayer has to know what to yield (DRS -> img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
-    self.datalayer = VRDDataLayer(self.data_args, "train", use_shuffle)
+    self.datalayer = VRDDataLayer(self.data_args, "train", self.training.use_shuffle)
     # TODO: Pytorch DataLoader instead:
     # self.num_workers = 0
     # self.dataset = VRDDataset()
@@ -206,7 +207,7 @@ class vrd_trainer():
       # Load VGG layers
       self.model.load_pretrained_conv(osp.join(globals.data_dir, "VGG_imagenet.npy"), fix_layers=True)
       # Load existing (word2vec?) embeddings
-      with open(osp.join(globals.data_dir, "vrd", "params_emb.pkl", 'rb') as f:
+      with open(osp.join(globals.data_dir, "vrd", "params_emb.pkl", 'rb')) as f:
         self.model.state_dict()["emb.weight"].copy_(torch.from_numpy(pickle.load(f, encoding="latin1")))
 
     # Evaluation
@@ -248,7 +249,7 @@ class vrd_trainer():
       # TODO check if this works (Note that you'd have to make it work cross-sessions as well)
       # if (self.training.epoch % (self.training.lr_decay_step + 1)) == 0:
       #   print("*adjust_learning_rate*")
-      #   adjust_learning_rate(self.optimizer, self.training.lr_decay_gamma)
+      #   utils.adjust_learning_rate(self.optimizer, self.training.lr_decay_gamma)
       # TODO do it with the scheduler, see if it's the same: https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
 
       # self.__train_epoch(self.training.epoch)
