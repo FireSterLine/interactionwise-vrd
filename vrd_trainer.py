@@ -107,7 +107,6 @@ class vrd_trainer():
 
           "use_shuffle"    : True, # TODO: check if shuffle works
 
-          "epoch" : 0,
           "num_epochs" : 20,
           "checkpoint_freq" : 5,
 
@@ -124,6 +123,11 @@ class vrd_trainer():
         }
       }):
 
+    # Local Patch:
+    # If we run on a CPU, we only train for an epoch
+    if(utils.device == torch.device("cpu")):
+      args["training"]["num_epochs"] = 1
+
     print("Arguments:")
     if checkpoint:
       print("Checkpoint: {}", checkpoint)
@@ -131,12 +135,12 @@ class vrd_trainer():
       print("No Checkpoint")
     print("args:", json.dumps(args, indent=2, sort_keys=True))
 
+
     self.session_name = "test-new-training"
 
     self.checkpoint = checkpoint
     self.args       = args
-
-    self.state      = {}
+    self.state      = {"epoch" : 0}
 
 
 
@@ -149,24 +153,25 @@ class vrd_trainer():
       if not osp.isfile(checkpoint_path):
         raise Exception("Checkpoint not found: {}".format(checkpoint_path))
 
-      checkpoint = torch.load(checkpoint_path)
+      checkpoint = utils.load_checkpoint(checkpoint_path)
+      #print(checkpoint.keys())
 
       # Session name
       utils.patch_key(checkpoint, "session", "session_name") # (patching)
-      self.session_name = checkpoint["session_name"]
+      if "session_name" in checkpoint:
+        self.session_name = checkpoint["session_name"]
 
       # Arguments
-      self.args = checkpoint["args"]
-
-      if not checkpoint.get("epoch") is None:          # (patching)
-        self.args["training"]["epoch"] = checkpoint["epoch"]
-
+      if "args" in checkpoint:
+        self.args = checkpoint["args"]
 
       # State
+      # Epoch
+      utils.patch_key(checkpoint, "epoch", ["state", "epoch"]) # (patching)
       # Model state dictionary
       utils.patch_key(checkpoint, "state_dict", ["state", "model_state_dict"]) # (patching)
-      utils.patch_key(checkpoint["state"]["model_state_dict"], "fc_semantic.fc.weight", "fc_so_emb.fc.weight") # (patching)
-      utils.patch_key(checkpoint["state"]["model_state_dict"], "fc_semantic.fc.bias",   "fc_so_emb.fc.bias") # (patching)
+      utils.patch_key(checkpoint["state"]["model_state_dict"], "fc_so_emb.fc.weight", "fc_semantic.fc.weight") # (patching)
+      utils.patch_key(checkpoint["state"]["model_state_dict"], "fc_so_emb.fc.bias",   "fc_semantic.fc.bias") # (patching)
       # TODO: is this different than the weights used for initialization...? del checkpoint["model_state_dict"]["emb.weight"]
       # Optimizer state dictionary
       utils.patch_key(checkpoint, "optimizer", ["state", "optimizer_state_dict"]) # (patching)
@@ -224,9 +229,10 @@ class vrd_trainer():
     if "optimizer_state_dict" in self.state:
       self.optimizer.load_state_dict(self.state["optimizer_state_dict"])
 
-
   # Perform the complete training process
   def train(self):
+    print("train()")
+
     save_dir = osp.join(globals.models_dir, self.session_name)
     if not osp.exists(save_dir):
       os.mkdir(save_dir)
@@ -240,40 +246,35 @@ class vrd_trainer():
       res_headers += ["Rel R@50", "ZS", "R@100", "ZS"]
     res = []
 
-    end_epoch = self.training.epoch + self.training.num_epochs
-    while self.training.epoch < end_epoch:
+    end_epoch = self.state["epoch"] + self.training.num_epochs
+    while self.state["epoch"] < end_epoch:
 
-      print("Epoch {}".format(self.training.epoch))
+      print("Epoch {}".format(self.state["epoch"]))
 
 
       # TODO check if this works (Note that you'd have to make it work cross-sessions as well)
-      # if (self.training.epoch % (self.training.lr_decay_step + 1)) == 0:
+      # if (self.state["epoch"] % (self.training.lr_decay_step + 1)) == 0:
       #   print("*adjust_learning_rate*")
       #   utils.adjust_learning_rate(self.optimizer, self.training.lr_decay_gamma)
       # TODO do it with the scheduler, see if it's the same: https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
 
-      # self.__train_epoch(self.training.epoch)
+      # self.__train_epoch(self.state["epoch"])
 
       # Test results
-      res_row = (self.training.epoch,)
+      res_row = (self.state["epoch"],)
       if self.training.test_pre:
-        rec_50, rec_50_zs, rec_100, rec_100_zs, dtime = self.eval.test_pre(self.model)
+        rec_50, rec_50_zs, rec_100, rec_100_zs, dtime = self.test_pre()
         res_row += [rec_50, rec_50_zs, rec_100, rec_100_zs]
-        print("CLS PRED TEST:\nAll:\tR@50: {: 6.3f}\tR@100: {: 6.3f}\nZShot:\tR@50: {: 6.3f}\tR@100: {: 6.3f}".format(rec_50, rec_100, rec_50_zs, rec_100_zs))
-        print("TEST Time: {}".format(utils.time_diff_str(dtime)))
       if self.training.test_rel:
-        rec_50, rec_50_zs, rec_100, rec_100_zs, pos_num, loc_num, gt_num, dtime = self.eval.test_rel(self.model)
+        rec_50, rec_50_zs, rec_100, rec_100_zs, dtime = self.test_rel()
         res_row += [rec_50, rec_50_zs, rec_100, rec_100_zs]
-        print("CLS OBJ TEST POS: {: 6.3f}, LOC: {: 6.3f}, GT: {: 6.3f}, Precision: {: 6.3f}, Recall: {: 6.3f}".format(pos_num, loc_num, gt_num, pos_num/(pos_num+loc_num), pos_num/gt_num))
-        print("CLS REL TEST:\nAll:\tR@50: {: 6.3f}\tR@100: {: 6.3f}\nZShot:\tR@50: {: 6.3f}\tR@100: {: 6.3f}".format(rec_50, rec_100, rec_50_zs, rec_100_zs))
-        print("TEST Time: {}".format(utils.time_diff_str(dtime)))
       res.append(res_row)
 
       with open(save_file, 'w') as f:
         f.write(tabulate(res, res_headers))
 
       # Save checkpoint
-      if utils.smart_fequency_check(self.training.epoch, self.training.num_epochs, self.training.checkpoint_freq):
+      if utils.smart_fequency_check(self.state["epoch"], self.training.num_epochs, self.training.checkpoint_freq):
 
         # TODO: the loss should be a result: self.result.loss (which is ignored at loading,only used when saving checkpoint)...
         self.state["model_state_dict"]     = self.model.state_dict()
@@ -284,11 +285,11 @@ class vrd_trainer():
           "args"          : self.args,
           "state"         : self.state,
           "result"        : dict(zip(res_headers, res_row)),
-        }, osp.join(save_dir, "checkpoint_epoch_{}.pth.tar".format(self.training.epoch)))
+        }, osp.join(save_dir, "checkpoint_epoch_{}.pth.tar".format(self.state["epoch"])))
 
       self.__train_epoch()
 
-      self.training.epoch += 1
+      self.state["epoch"] += 1
 
   def __train_epoch(self):
     self.model.train()
@@ -345,10 +346,23 @@ class vrd_trainer():
       # Also, it might be helpful to keep in mind that this data layer currently works for a single annotation at a time - no batching is implemented!
       image_blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, rel_labels, rel_sop_prior = self.datalayer...
     """
+  def test_pre(self):
+    rec_50, rec_50_zs, rec_100, rec_100_zs, dtime = self.eval.test_pre(self.model)
+    print("CLS PRED TEST:\nAll:\tR@50: {: 6.3f}\tR@100: {: 6.3f}\nZShot:\tR@50: {: 6.3f}\tR@100: {: 6.3f}".format(rec_50, rec_100, rec_50_zs, rec_100_zs))
+    print("TEST Time: {}".format(utils.time_diff_str(dtime)))
+    return rec_50, rec_50_zs, rec_100, rec_100_zs, dtime
+
+  def test_rel(self):
+    rec_50, rec_50_zs, rec_100, rec_100_zs, pos_num, loc_num, gt_num, dtime = self.eval.test_rel(self.model)
+    print("CLS REL TEST:\nAll:\tR@50: {: 6.3f}\tR@100: {: 6.3f}\nZShot:\tR@50: {: 6.3f}\tR@100: {: 6.3f}".format(rec_50, rec_100, rec_50_zs, rec_100_zs))
+    print("CLS OBJ TEST POS: {: 6.3f}, LOC: {: 6.3f}, GT: {: 6.3f}, Precision: {: 6.3f}, Recall: {: 6.3f}".format(pos_num, loc_num, gt_num, pos_num/(pos_num+loc_num), pos_num/gt_num))
+    print("TEST Time: {}".format(utils.time_diff_str(dtime)))
+    return rec_50, rec_50_zs, rec_100, rec_100_zs, dtime
 
 if __name__ == "__main__":
-  trainer = vrd_trainer()
+  # trainer = vrd_trainer()
   # trainer = vrd_trainer(checkpoint = False, self.data_args.name = "vrd")
-  # trainer = vrd_trainer(checkpoint = "epoch_4_checkpoint.pth.tar")
-
-  trainer.train()
+  trainer = vrd_trainer(checkpoint = "epoch_4_checkpoint.pth.tar")
+  trainer.test_pre()
+  trainer.test_rel()
+  #trainer.train()

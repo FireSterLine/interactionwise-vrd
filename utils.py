@@ -6,10 +6,6 @@ import time
 from copy import deepcopy
 import torch
 
-weights_normal_init  = frcnn_net_utils.weights_normal_init
-save_checkpoint      = frcnn_net_utils.save_checkpoint
-adjust_learning_rate = frcnn_net_utils.adjust_learning_rate
-
 # TODO: figure out what pixel means to use, how to compute them:
 #  do they come from the dataset used for training, perhaps?
 # Read here: https://github.com/GriffinLiang/vrd-dsr/issues/12
@@ -21,9 +17,20 @@ vrd_pixel_means = np.array([[[102.9801, 115.9465, 122.7717]]])
 try:
   device = torch.device("cuda")
   torch.LongTensor(device=device)
+
+  from model.roi_layers.roi_pool import ROIPool as FRCNN_ROIPool
+  ROIPool=FRCNN_ROIPool
 except RuntimeError:
   device = torch.device("cpu")
   torch.LongTensor(device=device)
+
+  import torchvision
+  ROIPool=torchvision.ops.RoIPool
+
+weights_normal_init  = frcnn_net_utils.weights_normal_init
+save_checkpoint      = frcnn_net_utils.save_checkpoint
+load_checkpoint      = lambda path : torch.load(path, map_location = device)
+adjust_learning_rate = frcnn_net_utils.adjust_learning_rate
 
 
 # Bbox as a dict to numpy array
@@ -157,17 +164,25 @@ def rgetattr(obj, attr, *args):
 
 # https://stackoverflow.com/a/52260663
 def get(dataDict, mapList, dig = False):
-    """Iterate nested dictionary"""
-    def dict_setdef(c,k):
-      c[k] = c.get(k, {})
-      return c[k]
+  """Iterate nested dictionary"""
+  if not dig:
+    def dict_get(c,k):
+      if c is None:
+        return None
+      if k in c and c[k] is None:
+        c[k] = {}
+      # print(("c,k,dict.get(c,k)",(c,k,dict.get(c,k))))
+      return dict.get(c,k)
 
-    if not dig:
-      fun = dict.get
-    else:
-      fun = dict_setdef
-
-    return reduce(fun, mapList, dataDict)
+    # fun = dict.get
+    fun = dict_get
+  else:
+    def dict_setget(c,k):
+      if not k in c:
+        c[k] = {}
+      return dict.get(c,k)
+    fun = dict_setget
+  return reduce(fun, mapList, dataDict)
 
 def listify(elem_or_list):
   return elem_or_list if isinstance(elem_or_list, list) else [elem_or_list]
@@ -180,11 +195,31 @@ def patch_key(d, old_key, new_key):
       raise ValueError("Patching dictionary failed: old = d[\"{}\"] = {},  new = d[\"{}\"] = {}".format(old_key, get(d, old_key), new_key, get(d, new_key)))
     else:
       last_new_key = new_key.pop()
+      # print(("last_new_key", last_new_key))
       last_old_key = old_key.pop()
+      # print(("last_old_key", last_old_key))
       new_d = get(d, new_key, True)
+      # print(("new_d", new_d))
       old_d = get(d, old_key)
-      d[last_new_key] = old_d.pop(last_old_key)
+      # print(("old_d", old_d))
+      new_d[last_new_key] = old_d.pop(last_old_key)
+      # Deflate {}s
+      while not old_d and len(old_key) > 0:
+        last_key = old_key.pop()
+        old_d = get(d, old_key)
+        del old_d[last_key]
+        # print((("last_key","old_d"),(last_key,old_d)))
 
-a ={'1': 'ciao', '2': {'21': 'YEAH', '22': 'YEAH'}, '3': 'ciaos'}
-patch_key(a, ['2', '21'], '4')
+"""
+import importlib
+importlib.reload(utils)
+a = {'1': 'ciao', '2': {'21': {'YEAH':{'YEAH':{'YEAH':"yeah"}}}, '22': 'YEAH'}, '3': 'ciaos'}
+utils.patch_key(a, ['2', '21', 'YEAH', 'YEAH', 'YEAH'], '4')
 a
+utils.patch_key(a, '4', ['2', '21', 'YEAH', 'YEAH'])
+a
+# utils.patch_key(a, ['2', '22'], '4')
+# a
+# utils.patch_key(a, '4', ['2', '22'])
+# a
+"""

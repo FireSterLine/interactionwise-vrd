@@ -56,7 +56,7 @@ For downloading VG dataset:
 -->
 
 Download the checkpoint:
-`./scripts/gd.pl "https://drive.google.com/uc?id=1_jWnvWNwlJ2ZqKbDMHsSs4BjTblg0FSe&export=download" "models/epoch_4_checkpoint.pth.tar"`
+`./scripts/gd.pl "https://drive.google.com/file/d/1_jWnvWNwlJ2ZqKbDMHsSs4BjTblg0FSe/view" "models/epoch_4_checkpoint.pth.tar"`
 `./scripts/gd.pl "https://drive.google.com/file/d/0ByuDEGFYmWsbNVF5eExySUtMZmM/view" "data/VGG_imagenet.npy"`
 `./scripts/gd.pl "https://drive.google.com/file/d/1e1agFQ32QYZim-Vj07NyZieJnQaQ7YKa/view" "data/vrd/so_prior.pkl"`
 
