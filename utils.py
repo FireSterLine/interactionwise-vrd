@@ -14,18 +14,15 @@ vrd_pixel_means = np.array([[[102.9801, 115.9465, 122.7717]]])
 
 # Pytorch CUDA Fallback
 # TODO: check if this works and then use it everywhere instead of cuda()
-try:
-  device = torch.device("cuda")
-  torch.LongTensor(device=device)
-
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+torch.LongTensor(device=device)
+if torch.cuda.is_available():
   from model.roi_layers.roi_pool import ROIPool as FRCNN_ROIPool
-  ROIPool=FRCNN_ROIPool
-except RuntimeError:
-  device = torch.device("cpu")
-  torch.LongTensor(device=device)
-
+  ROIPool = FRCNN_ROIPool
+else:
   import torchvision
-  ROIPool=torchvision.ops.RoIPool
+  ROIPool = torchvision.ops.RoIPool
+
 
 weights_normal_init  = frcnn_net_utils.weights_normal_init
 save_checkpoint      = frcnn_net_utils.save_checkpoint
