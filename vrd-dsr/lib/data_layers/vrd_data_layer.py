@@ -44,20 +44,28 @@ class VrdDataLayer(object):
             self._so_prior = pickle.load(fid)
 
     def forward(self):
-        if(self.stage == 'train'):
-            return self.forward_train_rank_im()
+      if(self.stage == 'train'):
+        return self.forward_train_rank_im()   # return (blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2), rel_labels, rel_so_prior
+      else:
+        if(self.proposals_path is None):
+          return self.forward_test()          # return (blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2), anno_img['boxes']
         else:
-            if(self.proposals_path is None):
-                return self.forward_test()
-            else:
-                if(self.model_type == 'LOC'):
-                    return self.forward_det_loc()
-                else:
-                    return self.forward_det()
+          if(self.model_type == 'LOC'):
+            return self.forward_det_loc()     # return (blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2), boxes_img, pred_confs_img, rel_so_prior
+          else:
+            return self.forward_det()         # return (blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2), boxes_img, pred_confs_img, rel_so_prior
 
     def forward_train_rank_im(self):
         """Get blobs and copy them into this layer's top blob vector."""
         anno_img = self._anno[self._cur]
+
+
+
+
+
+
+
+
         im_path = anno_img['img_path']
         im = cv2.imread(im_path)
         ih = im.shape[0]
@@ -66,33 +74,40 @@ class VrdDataLayer(object):
         image_blob, im_scale = prep_im_for_blob(im, PIXEL_MEANS)
         blob = np.zeros((1,)+image_blob.shape, dtype=np.float32)
         blob[0] = image_blob
+
         boxes = np.zeros((anno_img['boxes'].shape[0], 5))
         boxes[:, 1:5] = anno_img['boxes'] * im_scale
         classes = np.array(anno_img['classes'])
         ix1 = np.array(anno_img['ix1'])
         ix2 = np.array(anno_img['ix2'])
         rel_classes = anno_img['rel_classes']
-
         n_rel_inst = len(rel_classes)
         rel_boxes = np.zeros((n_rel_inst, 5))
-        rel_labels = -1*np.ones((1, n_rel_inst*self._num_relations))
         SpatialFea = np.zeros((n_rel_inst, 2, 32, 32))
+        rel_labels = -1*np.ones((1, n_rel_inst*self._num_relations))
         rel_so_prior = np.zeros((n_rel_inst, self._num_relations))
+
+
+
+
+
         pos_idx = 0
         for ii in range(len(rel_classes)):
-            sBBox = anno_img['boxes'][ix1[ii]]
-            oBBox = anno_img['boxes'][ix2[ii]]
-            rBBox = self._getUnionBBox(sBBox, oBBox, ih, iw)
-            rel_boxes[ii, 1:5] = np.array(rBBox) * im_scale
-            SpatialFea[ii] = [self._getDualMask(ih, iw, sBBox), \
-                              self._getDualMask(ih, iw, oBBox)]
-            rel_so_prior[ii] = self._so_prior[classes[ix1[ii]], classes[ix2[ii]]]
-            for r in rel_classes[ii]:
-                rel_labels[0, pos_idx] = ii*self._num_relations + r
-                pos_idx += 1
+                sBBox = anno_img['boxes'][ix1[ii]]
+                oBBox = anno_img['boxes'][ix2[ii]]
+                rBBox = self._getUnionBBox(sBBox, oBBox, ih, iw)
+                rel_boxes[ii, 1:5] = np.array(rBBox) * im_scale
+                SpatialFea[ii] = [self._getDualMask(ih, iw, sBBox), \
+                                  self._getDualMask(ih, iw, oBBox)]
+                rel_so_prior[ii] = self._so_prior[classes[ix1[ii]], classes[ix2[ii]]]
+                for r in rel_classes[ii]:
+                    rel_labels[0, pos_idx] = ii*self._num_relations + r
+                    pos_idx += 1
         image_blob = image_blob.astype(np.float32, copy=False)
         boxes = boxes.astype(np.float32, copy=False)
         classes = classes.astype(np.float32, copy=False)
+
+
         self._cur += 1
         if(self._cur >= len(self._anno)):
             self._cur = 0
@@ -102,7 +117,8 @@ class VrdDataLayer(object):
         """Get blobs and copy them into this layer's top blob vector."""
         anno_img = self._anno[self._cur]
 
-        
+
+
         if(anno_img is None): # Jesus why?
             self._cur += 1
             if(self._cur >= len(self._anno)):
@@ -123,33 +139,41 @@ class VrdDataLayer(object):
         ix1 = np.array(anno_img['ix1'])
         ix2 = np.array(anno_img['ix2'])
         rel_classes = anno_img['rel_classes']
-
         n_rel_inst = len(rel_classes)
         rel_boxes = np.zeros((n_rel_inst, 5))
-
         SpatialFea = np.zeros((n_rel_inst, 2, 32, 32))
         # SpatialFea = np.zeros((n_rel_inst, 8))
 
-        for ii in range(n_rel_inst):
-            sBBox = anno_img['boxes'][ix1[ii]]
-            oBBox = anno_img['boxes'][ix2[ii]]
-            rBBox = self._getUnionBBox(sBBox, oBBox, ih, iw)
 
-            soMask = [self._getDualMask(ih, iw, sBBox), \
-                      self._getDualMask(ih, iw, oBBox)]
-            rel_boxes[ii, 1:5] = np.array(rBBox) * im_scale
-            SpatialFea[ii] = soMask
-            # SpatialFea[ii] = self._getRelativeLoc(sBBox, oBBox)
+
+
+
+
+
+        for ii in range(n_rel_inst):
+                sBBox = anno_img['boxes'][ix1[ii]]
+                oBBox = anno_img['boxes'][ix2[ii]]
+                rBBox = self._getUnionBBox(sBBox, oBBox, ih, iw)
+                rel_boxes[ii, 1:5] = np.array(rBBox) * im_scale
+                SpatialFea[ii] = [self._getDualMask(ih, iw, sBBox), \
+                                  self._getDualMask(ih, iw, oBBox)]
+                # SpatialFea[ii] = self._getRelativeLoc(sBBox, oBBox)
+
+
 
         image_blob = image_blob.astype(np.float32, copy=False)
         boxes = boxes.astype(np.float32, copy=False)
         classes = classes.astype(np.float32, copy=False)
+
+
         self._cur += 1
         if(self._cur >= len(self._anno)):
             self._cur = 0
         return blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, anno_img['boxes']
 
+    # Spatial Mask
     def forward_det(self):
+
         anno_img = self._anno[self._cur]
         boxes_img = self._boxes[self._cur]
         pred_cls_img = self._pred_cls[self._cur]
@@ -173,6 +197,7 @@ class VrdDataLayer(object):
         classes = pred_cls_img
         ix1 = []
         ix2 = []
+
         n_rel_inst = len(pred_cls_img)*(len(pred_cls_img)-1)
         rel_boxes = np.zeros((n_rel_inst, 5))
         SpatialFea = np.zeros((n_rel_inst, 2, 32, 32))
@@ -205,6 +230,7 @@ class VrdDataLayer(object):
             self._cur = 0
         return blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, boxes_img, pred_confs_img, rel_so_prior
 
+    # Spatial Vector
     def forward_det_loc(self):
         anno_img = self._anno[self._cur]
         boxes_img = self._boxes[self._cur]

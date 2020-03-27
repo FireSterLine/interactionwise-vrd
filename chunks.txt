@@ -160,29 +160,6 @@ while True:
   print(i)
 
 
-import pickle
-
-with open("data/vrd/proposal.pkl", 'rb') as f:
-  proposal = pickle.load(f, encoding="latin1")
-
-for i,a in enumerate(proposal["boxes"]):
-  for x,y in enumerate(a):
-    if len(y) != 1:
-      print("!")
-      print(i,x)
-
-for i,a in enumerate(proposal["cls"]):
-  for x,y in enumerate(a):
-    if len(y) != 1:
-      print("!")
-      print(i,x)
-
-
-for i,a in enumerate(proposal["confs"]):
-  for x,y in enumerate(a):
-    if len(y) != 1:
-      print("!")
-      print(i,x)
 
 import torch
 with open("faster-rcnn/models/faster_rcnn_1_20_7559.pth", 'rb') as f:

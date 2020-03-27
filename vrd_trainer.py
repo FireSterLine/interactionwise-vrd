@@ -126,7 +126,7 @@ class vrd_trainer():
     # Local Patch:
     # If we run on a CPU, we only train for an epoch
     if(utils.device == torch.device("cpu")):
-      args["training"]["num_epochs"] = 1
+      args["training"]["num_epochs"] = 0
 
     print("Arguments:")
     if checkpoint:

@@ -1,4 +1,7 @@
 # TODO: don't use this, make our own
+# Is it possible to use the matlab code from vrd?
+#  https://github.com/Prof-Lu-Cewu/Visual-Relationship-Detection/tree/master/evaluation
+
 import scipy.io as sio
 import numpy as np
 import pickle
@@ -117,10 +120,10 @@ def eval_recall_at_N(ds_name, N, res, use_rel = True, use_zero_shot = False):
 
     #print("tuple_confs[0]: {}".format((pred["tuple_confs"][0]).shape))
     #print(pred["tuple_confs"][0])
-    
+
     if num_imgs != len(pred["tuple_confs"]):
         print("WARNING: prediction on test set yield wrong size: {} != {}".format(num_imgs, len(pred["tuple_confs"])))
-    
+
     # Reorder by confidence
     for ii in range(num_imgs):
         if(pred["tuple_confs"][ii] is None):
@@ -187,6 +190,7 @@ def eval_obj_img(gt_boxes, gt_cls, pred_boxes, pred_cls, gt_thr=0.5, return_flag
         return dets, gts
     return pos_num, loc_num
 
+# What to do with this?
 def eval_object_recognition_top_N(proposals_path):
     with open("VRD_test.pkl", 'rb') as fid:
         anno = pickle.load(fid)

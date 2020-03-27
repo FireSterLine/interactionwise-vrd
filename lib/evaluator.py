@@ -3,6 +3,9 @@ from lib.datalayers import VRDDataLayer
 from lib.evaluation_dsr import eval_recall_at_N, eval_obj_img # TODO remove this module
 import time
 
+# TODO: remove this and use dataset.dir instead
+import globals
+
 # TODO: check, is all of this using the GPU, or can we improve the time?
 class VRDEvaluator():
   """ Evaluator for Predicate Prediction and Relationship Prediction """
@@ -20,7 +23,6 @@ class VRDEvaluator():
     # TODO: just one VRD test layer
     test_data_layer = VRDDataLayer(self.data_args, "test")
 
-    res = {}
     rlp_labels_cell  = []
     tuple_confs_cell = []
     sub_bboxes_cell  = []
@@ -31,8 +33,7 @@ class VRDEvaluator():
     while True:
 
       try:
-        net_input, \
-          obj_classes_out, ori_bboxes = test_data_layer.next()
+        net_input, obj_classes_out, ori_bboxes = test_data_layer.next()
       except StopIteration:
         print("StopIteration")
         break
@@ -77,10 +78,12 @@ class VRDEvaluator():
       sub_bboxes_cell.append(sub_bboxes_im)
       obj_bboxes_cell.append(obj_bboxes_im)
 
-    res["rlp_confs_ours"]  = tuple_confs_cell
-    res["rlp_labels_ours"] = rlp_labels_cell
-    res["sub_bboxes_ours"] = sub_bboxes_cell
-    res["obj_bboxes_ours"] = obj_bboxes_cell
+    res = {
+      "rlp_confs_ours"  : tuple_confs_cell,
+      "rlp_labels_ours" : rlp_labels_cell,
+      "sub_bboxes_ours" : sub_bboxes_cell,
+      "obj_bboxes_ours" : obj_bboxes_cell,
+    }
 
     rec_50     = eval_recall_at_N(self.data_args.name, 50,  res, use_zero_shot = False)
     rec_50_zs  = eval_recall_at_N(self.data_args.name, 50,  res, use_zero_shot = True)
@@ -117,7 +120,6 @@ class VRDEvaluator():
     loc_num = 0.0
     gt_num  = 0.0
 
-    res = {}
     rlp_labels_cell  = []
     tuple_confs_cell = []
     sub_bboxes_cell  = []
@@ -129,14 +131,14 @@ class VRDEvaluator():
 
     for step,anno_img in enumerate(anno):
 
-      objdet_res = {"boxes"   : pred_boxes[step], \
-                    "classes" : pred_classes[step].reshape(-1), \
-                    "confs"   : pred_confs[step].reshape(-1)
-                    }
+      objdet_res = {
+        "boxes"   : pred_boxes[step],
+        "classes" : pred_classes[step].reshape(-1),
+        "confs"   : pred_confs[step].reshape(-1)
+      }
 
       try:
-        net_input, \
-          obj_classes_out, rel_sop_prior, ori_bboxes = test_data_layer.next(objdet_res)
+        net_input, obj_classes_out, rel_sop_prior, ori_bboxes = test_data_layer.next(objdet_res)
       except StopIteration:
         print("StopIteration")
         break
@@ -207,10 +209,12 @@ class VRDEvaluator():
 
       step += 1
 
-    res["rlp_confs_ours"]  = tuple_confs_cell
-    res["rlp_labels_ours"] = rlp_labels_cell
-    res["sub_bboxes_ours"] = sub_bboxes_cell
-    res["obj_bboxes_ours"] = obj_bboxes_cell
+    res = {
+      "rlp_confs_ours"  : tuple_confs_cell,
+      "rlp_labels_ours" : rlp_labels_cell,
+      "sub_bboxes_ours" : sub_bboxes_cell,
+      "obj_bboxes_ours" : obj_bboxes_cell,
+    }
 
     if len(anno) != len(res["obj_bboxes_ours"]):
       print("ERROR: something is wrong in prediction: {} != {}".format(len(anno), len(res["obj_bboxes_ours"])))

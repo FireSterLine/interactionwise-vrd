@@ -8,7 +8,6 @@ models
 
 images
 images_det
-img-vrd
 
 #data/*
 #!data/genome/*
