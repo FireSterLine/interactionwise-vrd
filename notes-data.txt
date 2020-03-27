@@ -1,0 +1,24 @@
+
+This is what I understood about the available data for VRD Dataset:
+ What are the official annotations?
+ I don't know, either the ones found in sg_dataset/sg_*_annotations.json or the ones in annotations_*.json.
+ The first ones are probably from the Scene Graphs paper; the second ones PROBABLY from the Language Prior paper.
+ The train.pkl & test.pkl given by the DSR guys contain different information, compared with the "official":
+ - First of all, the bounding boxes look off-by-one compared with annotations_*.json.
+ - However, the bounding boxes in annotations_*.json (differently from the ones in sg_dataset/sg_*_annotations.json)
+    never have zeros (maybe it's because language priors guys used matlab https://www.google.com/search?client=firefox-b-d&sxsrf=ALeKk03BzMuxxT1dOIaXsld5jPyYGcfL6Q%3A1585250235244&ei=u_98Xo_IDtSQ8gLYzqeIDw&q=matlab+index+0+or+1&oq=matlab+index+0+or+1&gs_l=psy-ab.3..0i7i30j0j0i7i5i30j0i8i30l2j0i333l4.10422.10866..11124...0.2..0.113.588.4j2......0....1..gws-wiz.......0i71j0i8i7i30.Vk4voQ2fIR0&ved=0ahUKEwjPkZup7bjoAhVUiFwKHVjnCfEQ4dUDCAo&uact=5 )
+ - Some things look like corrections, and you can visualize
+
+gt.mat and zeroShot.mat are provided by Language Priors ( https://github.com/Prof-Lu-Cewu/Visual-Relationship-Detection )
+proposals.pkl given by dsr, gives the same object detections used by Language Priors ( LP provide it in results/det_result.mat )
+
+Sources of Visual Relationships Data:
+https://github.com/GriffinLiang/vrd-dsr/issues/2
+  They say that the proposals.pkl contains the proposals used for ECCV2016 paper (Visual Relationship Detection with Language Priors).
+https://drive.google.com/drive/folders/1V8q2i2gHUpSAXTY4Mf6k06WHDVn6MXQ7
+https://drive.google.com/drive/folders/1BvtjCnlORMg4l92kNgZ2g1YaHYj9Dy3X
+https://github.com/yangxuntu/vrd
+
+https://drive.google.com/file/d/1BzP8DN2MAz76IvQTlpNOYla_bNC9gQuN/view
+https://share.weiyun.com/55KK78Y
+https://cs.stanford.edu/~danfei/scene-graph/

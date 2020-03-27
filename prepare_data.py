@@ -5,6 +5,8 @@ import os.path as osp
 from collections import defaultdict
 import pickle
 
+# TODO: use globals.data, for instance
+
 class DataPreparer:
     def prepare_data(self, generate_img_rels):
         pass
@@ -78,7 +80,7 @@ class VRDPrep(DataPreparer):
                     'xmin': int(bounding_boxes[objects[index]][0]),
                     'xmax': int(bounding_boxes[objects[index]][2])
                 }
-                
+
                 for pred in relations[index]:
                     predicate_id = pred
                     predicate_label = predicates_id_to_label_mapping[predicate_id]
@@ -167,7 +169,7 @@ class VRDPrep(DataPreparer):
                         break
                 vrd_data_test_sorted.append((im_path, vrd_data_test[im_path]))
                 del vrd_data_test[im_path]
-            
+
             print(len(vrd_data_test_sorted))
             json.dump(vrd_data_test_sorted, wfile)
 
@@ -196,19 +198,19 @@ class VRDPrep(DataPreparer):
             subject_label = object_mapping[subject_id]
             # this is as per the format described in the README of the VRD dataset
             subject_bbox = {
-                'ymin': ann['subject']['bbox'][0],
-                'ymax': ann['subject']['bbox'][1],
-                'xmin': ann['subject']['bbox'][2],
-                'xmax': ann['subject']['bbox'][3]
+                'ymin': ann['subject']['bbox'][0]-1,
+                'ymax': ann['subject']['bbox'][1]-1,
+                'xmin': ann['subject']['bbox'][2]-1,
+                'xmax': ann['subject']['bbox'][3]-1
             }
 
             object_id = ann['object']['category']
             object_label = object_mapping[object_id]
             object_bbox = {
-                'ymin': ann['object']['bbox'][0],
-                'ymax': ann['object']['bbox'][1],
-                'xmin': ann['object']['bbox'][2],
-                'xmax': ann['object']['bbox'][3]
+                'ymin': ann['object']['bbox'][0]-1,
+                'ymax': ann['object']['bbox'][1]-1,
+                'xmin': ann['object']['bbox'][2]-1,
+                'xmax': ann['object']['bbox'][3]-1
             }
 
             predicate_id = ann['predicate']
@@ -240,18 +242,18 @@ class VRDPrep(DataPreparer):
             subject_id = int(ann['subject']['category'])
             # this is as per the format described in the README of the VRD dataset
             subject_bbox = {
-                'ymin': ann['subject']['bbox'][0],
-                'ymax': ann['subject']['bbox'][1],
-                'xmin': ann['subject']['bbox'][2],
-                'xmax': ann['subject']['bbox'][3]
+                'ymin': ann['subject']['bbox'][0]-1,
+                'ymax': ann['subject']['bbox'][1]-1,
+                'xmin': ann['subject']['bbox'][2]-1,
+                'xmax': ann['subject']['bbox'][3]-1
             }
 
             object_id = int(ann['object']['category'])
             object_bbox = {
-                'ymin': ann['object']['bbox'][0],
-                'ymax': ann['object']['bbox'][1],
-                'xmin': ann['object']['bbox'][2],
-                'xmax': ann['object']['bbox'][3]
+                'ymin': ann['object']['bbox'][0]-1,
+                'ymax': ann['object']['bbox'][1]-1,
+                'xmin': ann['object']['bbox'][2]-1,
+                'xmax': ann['object']['bbox'][3]-1
             }
 
             predicate_id = int(ann['predicate'])
