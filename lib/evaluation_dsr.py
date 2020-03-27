@@ -81,8 +81,9 @@ def eval_per_image(i, gt, pred, use_rel, gt_thr = 0.5, return_match = False):
 # Recall quantifies the number of positive class predictions
 #   made out of all positive examples in the dataset.
 def eval_recall_at_N(ds_name, N, res, use_rel = True, use_zero_shot = False):
+    # TODO: uniform this, just use the freaking pickle!!
     if(ds_name == "vrd"):
-        gt = sio.loadmat("data/vrd/gt.mat")
+        gt = sio.loadmat("data/vrd/eval/gt.mat")
         gt["tuple_label"] = gt["gt_tuple_label"][0]
         gt["obj_bboxes"]  = gt["gt_obj_bboxes"][0]
         gt["sub_bboxes"]  = gt["gt_sub_bboxes"][0]
@@ -102,9 +103,9 @@ def eval_recall_at_N(ds_name, N, res, use_rel = True, use_zero_shot = False):
         # Testing all images is quite slow.
         num_imgs = 8995
         if(use_zero_shot):
-            gt_path = "../data/{}/zs_gt.pkl".format(ds_name)
+            gt_path = osp.join("data", "{}", "gt_zs.pkl").format(ds_name)
         else:
-            gt_path = "../data/{}/gt.pkl".format(ds_name)
+            gt_path = osp.join("data", "{}", "gt.pkl").format(ds_name)
         with open(gt_path, 'rb') as fid:
             gt = pickle.load(fid)
             print(gt.keys())
@@ -192,7 +193,7 @@ def eval_obj_img(gt_boxes, gt_cls, pred_boxes, pred_cls, gt_thr=0.5, return_flag
 
 # What to do with this?
 def eval_object_recognition_top_N(proposals_path):
-    with open("VRD_test.pkl", 'rb') as fid:
+    with open("data/vrd/test.pkl", 'rb') as fid:
         anno = pickle.load(fid)
 
     with open(proposals_path, 'rb') as fid:

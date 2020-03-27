@@ -190,7 +190,7 @@ def pre_demo():
     with open('data/vrd/test.pkl', 'rb') as fid:
         anno = cPickle.load(fid)
 
-    with open('data/vrd/proposal.pkl', 'rb') as fid:
+    with open('data/vrd/eval/det_res.pkl', 'rb') as fid:
         proposals = cPickle.load(fid)
 
     anno_img = anno[0]

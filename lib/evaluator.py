@@ -101,13 +101,13 @@ class VRDEvaluator():
 
     test_data_layer = VRDDataLayer(self.data_args.name, "test")
 
-    with open(osp.join("data", self.data_args.name, "test.pkl"), 'rb') as fid:
+    with open(osp.join(globals.data_dir, self.data_args.name, "test.pkl"), 'rb') as fid:
       anno = pickle.load(fid, encoding="latin1")
 
     # TODO: proposals is not ordered, but a dictionary with im_path keys
     # TODO: expand so that we don't need the proposals pickle, and we generate it if it's not there, using Faster-RCNN?
     # TODO: move the proposals file path to a different one (maybe in Faster-RCNN)
-    with open(osp.join("data", self.data_args.name, "proposal.pkl"), 'rb') as fid:
+    with open(osp.join(globals.data_dir, self.data_args.name, "eval", "det_res.pkl"), 'rb') as fid:
       proposals = pickle.load(fid, encoding="latin1")
       # TODO: zip these
       pred_boxes   = proposals["boxes"]

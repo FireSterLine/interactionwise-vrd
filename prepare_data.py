@@ -387,6 +387,20 @@ class VGPrep(DataPreparer):
         }
         return relationships
 
+# This function creates the pickles used for the evaluation on the for VRD Dataset
+# The ground truths and object detections are provided by Visual Relationships with Language Priors (files available on GitHub)
+# But for now we can use
+def prepareVRDEval_fromLP():
+    data_dir = "data/vrd"
+    # TODO... prepare the pickles
+    import scipy.io as sio
+    det_result = sio.loadmat(osp.join(data_dir, eval, "from-language-prior/det_result.mat"))
+    zeroShot   = sio.loadmat(osp.join(data_dir, eval, "from-language-prior/zeroShot.mat"))
+    gt         = sio.loadmat(osp.join(data_dir, eval, "from-language-prior/gt.mat"))
+    # Fixe the matlab-is-1-indexed problem
+    osp.join(data_dir, "det_res.pkl")
+    osp.join(data_dir, "gt_zs.pkl")
+    osp.join(data_dir, "gt.pkl")
 
 if __name__ == '__main__':
     # select the dataset to generate the data for. This can either be 'vrd' or 'vg'
@@ -402,8 +416,10 @@ if __name__ == '__main__':
 
     # this is to generate the data in img_rels format using the original annotations in VRD
     # obj.prepare_data(generate_img_rels)
-    
+
     # these are to generate the data in img_rels format using the {train,test}.pkl files provided
     # by DSR
     obj.convert_train_test_dsr_to_img_rels(type='train')
     obj.convert_train_test_dsr_to_img_rels(type='test')
+
+    prepareVRDEval_fromLP()
