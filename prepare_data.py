@@ -129,6 +129,8 @@ class VRDPrep(DataPreparer):
 
         self.prepare_vocabs("obj.txt", "rel.txt")
 
+        # TODO: Additionally handle files like {test,train}_image_metadata.json
+
         # LOAD DATA
         annotations_train = self.readjson("annotations_train.json")
         annotations_test  = self.readjson("annotations_test.json")

@@ -24,7 +24,7 @@ data/genome/*/xml
 data/genome/*/json
 data/genome/*/*.json
 data/genome/*.json
-data/vrd/*.json
+!data/vrd/*.json
 data/sg_dataset.zip
 data/vrd/sg_dataset*
 #data/vrd/4392556686_44d71ff5a0_o.jpg
