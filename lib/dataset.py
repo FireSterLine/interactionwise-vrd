@@ -31,13 +31,6 @@ class dataset():
       self.img_dir = osp.join(globals.data_dir, "vrd", "sg_dataset")
       self.metadata_dir = osp.join(globals.data_dir, "vrd")
 
-      # load the vocabularies for objects and predicates
-      with open(osp.join(self.metadata_dir, "objects.json"), 'r') as rfile:
-        obj_classes = json.load(rfile)
-
-      with open(osp.join(self.metadata_dir, "predicates.json"), 'r') as rfile:
-        pred_classes = json.load(rfile)
-
     elif self.name == "vg":
 
       if self.subset == None:
@@ -48,17 +41,16 @@ class dataset():
       self.img_dir = osp.join(globals.data_dir, "vg")
       self.metadata_dir = osp.join(globals.data_dir, "genome", self.subset)
 
-      # load the vocabularies for objects and predicates
-      with open(osp.join(self.metadata_dir, "objects_vocab.txt"), 'r') as f:
-        obj_vocab = f.readlines()
-        obj_classes = np.asarray([x.strip('\n') for x in obj_vocab])
-
-      with open(osp.join(self.metadata_dir, "relations_vocab.txt"), 'r') as f:
-        pred_vocab = f.readlines()
-        pred_classes = np.asarray([x.strip('\n') for x in pred_vocab])
-
     else:
       raise Exception("Unknown dataset: {}".format(self.name))
+
+    # load the vocabularies for objects and predicates
+    with open(osp.join(self.metadata_dir, "objects.json"), 'r') as rfile:
+      obj_classes = json.load(rfile)
+
+    with open(osp.join(self.metadata_dir, "predicates.json"), 'r') as rfile:
+      pred_classes = json.load(rfile)
+
 
     if with_bg_obj:
         obj_additional = np.asarray(["__background__"])
@@ -76,7 +68,7 @@ class dataset():
     self.pred_classes = np.append(pred_classes, pred_additional).tolist()
     self.n_pred = len(self.pred_classes)
 
-    # Need these?
+    # Need these? Or use utils.invert_dict, fra
     # self.class_to_ind     = dict(zip(self._classes, xrange(self._num_classes)))
     # self.relations_to_ind = dict(zip(self._relations, xrange(self._num_relations)))
 
@@ -108,7 +100,7 @@ class dataset():
     try:
       # raise FileNotFoundError
       # with open(distribution_pkl_path, 'rb') as fid:
-      with open("data/vrd/so_prior.pkl", 'rb') as fid:
+      with open(osp.join(self.metadata_dir, "so_prior.pkl"), 'rb') as fid:
         dist = pickle.load(fid, encoding='latin1')
       print("Distribution found!")
       return dist
