@@ -257,6 +257,14 @@ class vrd_trainer():
       #   print("*adjust_learning_rate*")
       #   utils.adjust_learning_rate(self.optimizer, self.training.lr_decay_gamma)
       # TODO do it with the scheduler, see if it's the same: https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
+      
+      # TODO: after the third epoch, we divide learning rate by 3
+      # the authors mention doing this in their paper, but we couldn't find it in the actual code
+      #if epoch == 2:
+      #  print("Dividing the learning rate by 10 at epoch {}!".format(epoch))
+      #  for i in range(len(self.optimizer.param_groups)):
+      #    self.optimizer.param_groups[i]['lr'] /= 10
+
 
       # self.__train_epoch(self.state["epoch"])
 

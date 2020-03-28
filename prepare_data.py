@@ -108,9 +108,9 @@ class VRDPrep(DataPreparer):
         with open("data/vrd/dsr_to_img_rels_{}.json".format(type), 'w') as wfile:
             json.dump(vrd_data, wfile)
 
-    def prepare_data(self, generate_img_rels):
+    def prepare_data(self, generate_img_rels, granularity):
         if generate_img_rels is True:
-            output_file_format = "./data/vrd/data_img_rels_{}.json"
+            output_file_format = "./data/vrd/data_{}_level_{{}}.json".format(granularity) # TODO: rename _level_
         else:
             output_file_format = "./data/vrd/data_annotations_{}.json"
 
@@ -143,13 +143,21 @@ class VRDPrep(DataPreparer):
             # Reorder such that images are ordered same as dsr
             vrd_data_train_sorted = []
             for i in self.train_dsr:
-                if i == None:
-                    vrd_data_train_sorted.append((None,None))
+                if i is None:
+                    vrd_data_train_sorted.append((None, None))
                     continue
+                # this loop is to iterate through the data until we get to the element that is the current loop
+                # element - this is to ensure that the order remains the same
                 for im_path in vrd_data_train:
                     if osp.basename(i["img_path"]) in im_path:
                         break
-                vrd_data_train_sorted.append((im_path, vrd_data_train[im_path]))
+                if granularity == 'rel':
+                    for elem in vrd_data_train[im_path]:
+                        vrd_data_train_sorted.append((im_path, elem))
+                elif granularity == 'img':
+                    vrd_data_train_sorted.append((im_path, vrd_data_train[im_path]))
+                else:
+                    raise ValueError("Error. Unknown granularity: {}".format(granularity))
                 del vrd_data_train[im_path]
 
             print(len(vrd_data_train_sorted))
@@ -161,13 +169,21 @@ class VRDPrep(DataPreparer):
             # Reorder such that images are ordered same as dsr
             vrd_data_test_sorted = []
             for i in self.test_dsr:
-                if i == None:
-                    vrd_data_test_sorted.append((None,None))
+                if i is None:
+                    vrd_data_test_sorted.append((None, None))
                     continue
+                # this loop is to iterate through the data until we get to the element that is the current loop
+                # element - this is to ensure that the order remains the same
                 for im_path in vrd_data_test:
                     if osp.basename(i["img_path"]) in im_path:
                         break
-                vrd_data_test_sorted.append((im_path, vrd_data_test[im_path]))
+                if granularity == 'rel':
+                    for elem in vrd_data_test[im_path]:
+                        vrd_data_test_sorted.append((im_path, elem))
+                elif granularity == 'img':
+                    vrd_data_test_sorted.append((im_path, vrd_data_test[im_path]))
+                else:
+                    raise ValueError("Error. Unknown granularity: {}".format(granularity))
                 del vrd_data_test[im_path]
 
             print(len(vrd_data_test_sorted))
@@ -323,7 +339,6 @@ class VGPrep(DataPreparer):
 
         return label_to_id_mapping
 
-
     def _generate_img_relationships(self, data, object_mapping, predicate_mapping):
         objects_info = {}
         for obj in data['objects']:
@@ -356,7 +371,6 @@ class VGPrep(DataPreparer):
                 relationships.append(rel_data)
 
         return relationships
-
 
     def _generate_annotations(self, data, object_mapping, predicate_mapping):
         objects = {}
@@ -414,12 +428,15 @@ if __name__ == '__main__':
     else:
         obj = VGPrep()
 
-    # this is to generate the data in img_rels format using the original annotations in VRD
-    # obj.prepare_data(generate_img_rels)
-
+    # This is to generate the data in img_rels format using the original annotations in VRD
+    # If batching is set to True, each relationship within an image will be a separate instance, as 
+    # opposed to a set of relationships within an image instance. This is so to facilitate proper 
+    # batching via the PyTorch Dataloader
+    obj.prepare_data(generate_img_rels, granularity='rel')
+    
     # these are to generate the data in img_rels format using the {train,test}.pkl files provided
     # by DSR
-    obj.convert_train_test_dsr_to_img_rels(type='train')
-    obj.convert_train_test_dsr_to_img_rels(type='test')
+    # obj.convert_train_test_dsr_to_img_rels(type='train')
+    # obj.convert_train_test_dsr_to_img_rels(type='test')
 
     prepareVRDEval_fromLP()
