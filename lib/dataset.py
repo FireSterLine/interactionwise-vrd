@@ -76,13 +76,13 @@ class dataset():
   # TODO: select which split ("train", "test", default="traintest")
   def getImgRels(self, stage, granularity):
     """ Load list of rel-annotations per images """
-    # with open(osp.join(self.metadata_dir, "dsr_to_img_rels_{}.json".format(stage)), 'r') as rfile:
+    # with open(osp.join(self.metadata_dir, "dsr_img_rels_{}.json".format(stage)), 'r') as rfile:
     # with open(osp.join(self.metadata_dir, "data_img_rels_{}.json".format(stage)), 'r') as rfile:
-    with open(osp.join(self.metadata_dir, "data_{}_level_{}.json".format(granularity, stage)), 'r') as rfile:
+    with open(osp.join(self.metadata_dir, "data_img_rels_{}_{}.json".format(granularity, stage)), 'r') as rfile:
       return json.load(rfile) # Maybe pickle this?
 
   def getAnno(self):
-    """ Load list of  """
+    """ Load annotations """
     pass
     # with open(osp.join(globals.metadata_dir, "anno.pkl", 'rb') as fid:
     #   anno = pickle.load(fid)

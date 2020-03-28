@@ -201,6 +201,14 @@ def patch_key(d, old_key, new_key):
         del old_d[last_key]
         # print((("last_key","old_d"),(last_key,old_d)))
 
+# Read a list from a file, line-by-line
+def load_txt_list(filename):
+    l = []
+    with  open(filename, 'r') as rfile:
+        for index, line in enumerate(rfile):
+            l.append(line.strip())
+    return l
+
 # Invert a dictionary or a list
 def invert_dict(d):
   if isinstance(d, dict):   d_pairs = d.items()
