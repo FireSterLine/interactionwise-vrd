@@ -22,35 +22,6 @@ from lib.evaluator import VRDEvaluator
 # from lib.model import train_net, test_pre_net, test_rel_net
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class vrd_trainer():
 
   def __init__(self,
@@ -257,7 +228,7 @@ class vrd_trainer():
       #   print("*adjust_learning_rate*")
       #   utils.adjust_learning_rate(self.optimizer, self.training.lr_decay_gamma)
       # TODO do it with the scheduler, see if it's the same: https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
-      
+
       # TODO: after the third epoch, we divide learning rate by 3
       # the authors mention doing this in their paper, but we couldn't find it in the actual code
       #if epoch == 2:

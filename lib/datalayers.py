@@ -2,6 +2,7 @@ import numpy as np
 import os.path as osp
 import scipy.io as sio
 import scipy
+
 import pickle
 from lib.blob import prep_im_for_blob
 from lib.dataset import dataset # TODO: return VRDDataset

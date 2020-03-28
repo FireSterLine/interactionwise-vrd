@@ -8,11 +8,13 @@ from lib.blob import prep_im_for_blob, im_list_to_blob
 from lib.dataset import dataset
 import torch
 import random
-from torch.utils import data
+
+
 
 import utils
 from copy import copy, deepcopy
 from matplotlib import pyplot
+from torch.utils import data
 
 
 # TODO: expand so that it supports batch sizes > 1
@@ -66,8 +68,8 @@ class VRDDataLayer(data.Dataset):
 
         # self.max_shape = self._get_max_shape()
         '''
-        this is the max shape that was identified by running the function above on the 
-        VRD dataset. It takes too long to run, so it's better if we run this once on 
+        this is the max shape that was identified by running the function above on the
+        VRD dataset. It takes too long to run, so it's better if we run this once on
         any new dataset, and store and initialize those values as done here
         '''
         self.max_shape = (1000, 1000, 3)

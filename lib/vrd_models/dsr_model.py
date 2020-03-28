@@ -7,7 +7,7 @@ import torch.nn as nn
 
 import sys
 import os.path as osp
-from lib.network import set_trainability, FC, Conv2d
+from lib.network import set_trainability, FC, Conv2d, ROIPool
 from easydict import EasyDict
 import utils
 
@@ -71,7 +71,7 @@ class DSRModel(nn.Module):
 
     # Guide for jwyang's ROI Pooling Layers:
     #  https://medium.com/@andrewjong/how-to-use-roi-pool-and-roi-align-in-your-neural-networks-pytorch-1-0-b43e3d22d073
-    self.roi_pool = utils.ROIPool((7, 7), 1.0/16)
+    self.roi_pool = ROIPool((7, 7), 1.0/16)
 
     self.dropout0 = nn.Dropout()
 
