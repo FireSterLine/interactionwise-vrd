@@ -108,7 +108,7 @@ class VRDPrep(DataPreparer):
 
     def prepare_data(self, generate_img_rels, granularity):
         if generate_img_rels is True:
-            output_file_format = "./data/vrd/data_{}_level_{}.json"
+            output_file_format = "./data/vrd/data_{}_level_{{}}.json".format(granularity) # TODO: rename _level_
         else:
             output_file_format = "./data/vrd/data_annotations_{}.json"
 
@@ -135,7 +135,7 @@ class VRDPrep(DataPreparer):
             else:
                 vrd_data[img_path] = self._generate_annotations(anns)
 
-        with open(output_file_format.format(granularity, "train"), 'w') as wfile:
+        with open(output_file_format.format("train"), 'w') as wfile:
             vrd_data_train = self._filter_by_subdir(vrd_data, "sg_train_images")
 
             # Reorder such that images are ordered same as dsr
@@ -152,14 +152,16 @@ class VRDPrep(DataPreparer):
                 if granularity == 'rel':
                     for elem in vrd_data_train[im_path]:
                         vrd_data_train_sorted.append((im_path, elem))
-                else:
+                elif granularity == 'img':
                     vrd_data_train_sorted.append((im_path, vrd_data_train[im_path]))
+                else:
+                    raise ValueError("Error. Unknown granularity: {}".format(granularity))
                 del vrd_data_train[im_path]
 
             print(len(vrd_data_train_sorted))
             json.dump(vrd_data_train_sorted, wfile)
 
-        with open(output_file_format.format(granularity, "test"), 'w') as wfile:
+        with open(output_file_format.format("test"), 'w') as wfile:
             vrd_data_test = self._filter_by_subdir(vrd_data, "sg_test_images")
 
             # Reorder such that images are ordered same as dsr
@@ -176,8 +178,10 @@ class VRDPrep(DataPreparer):
                 if granularity == 'rel':
                     for elem in vrd_data_test[im_path]:
                         vrd_data_test_sorted.append((im_path, elem))
-                else:
+                elif granularity == 'img':
                     vrd_data_test_sorted.append((im_path, vrd_data_test[im_path]))
+                else:
+                    raise ValueError("Error. Unknown granularity: {}".format(granularity))
                 del vrd_data_test[im_path]
             
             print(len(vrd_data_test_sorted))

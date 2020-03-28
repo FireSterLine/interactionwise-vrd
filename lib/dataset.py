@@ -86,7 +86,6 @@ class dataset():
     """ Load list of rel-annotations per images """
     # with open(osp.join(self.metadata_dir, "dsr_to_img_rels_{}.json".format(stage)), 'r') as rfile:
     # with open(osp.join(self.metadata_dir, "data_img_rels_{}.json".format(stage)), 'r') as rfile:
-    # with open(osp.join(self.metadata_dir, "data{}.json".format(stage)), 'r') as rfile:
     with open(osp.join(self.metadata_dir, "data_{}_level_{}.json".format(granularity, stage)), 'r') as rfile:
       return json.load(rfile) # Maybe pickle this?
 
