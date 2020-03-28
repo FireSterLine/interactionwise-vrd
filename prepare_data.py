@@ -42,9 +42,6 @@ class DataPreparer:
         self.obj_vocab  = self.readjson(self.objects_vocab_file)
         self.pred_vocab = self.readjson(self.predicates_vocab_file)
 
-    def load_data(self):
-        pass
-
     # This function converts to img_rels
     def _generate_img_rels(self, anns): pass
     def _generate_anno(self, anns):     pass
@@ -132,8 +129,7 @@ class VRDPrep(DataPreparer):
 
         self.prepare_vocabs("obj.txt", "rel.txt")
 
-    def load_data(self):
-
+        # LOAD DATA
         annotations_train = self.readjson("annotations_train.json")
         annotations_test  = self.readjson("annotations_test.json")
 
@@ -316,8 +312,7 @@ class VGPrep(DataPreparer):
 
         self.prepare_vocabs("objects_vocab.txt", "relations_vocab.txt")
 
-    def load_data(self):
-
+        # LOAD DATA
         objects_label_to_id_mapping    = utils.invert_dict(self.obj_vocab)
         predicates_label_to_id_mapping = utils.invert_dict(self.pred_vocab)
 
@@ -441,21 +436,20 @@ if __name__ == '__main__':
     generate_img_rels = True
 
     data_preparer_vrd = VRDPrep()
-    data_preparer_vrd.load_data()
     data_preparer_vrd.prepareEvalFromLP()
     data_preparer_vrd.save_data("anno")
-    data_preparer_vrd.save_data("img_rels")
+    data_preparer_vrd.save_data("img_rels", "img")
+    # This is to generate the data in img_rels format using the original annotations in VRD
+    # If batching is set to True, each relationship within an image will be a separate instance, as
+    # opposed to a set of relationships within an image instance. This is so to facilitate proper
+    # batching via the PyTorch Dataloader
+    data_preparer_vrd.save_data("img_rels", "rel")
 
     # Generate the data in img_rels format using the {train,test}.pkl files provided by DSR
     data_preparer_vrd.loadsave_img_rels_dsr()
 
 
     data_preparer_vg  = VGPrep()
-
-
-    # This is to generate the data in img_rels format using the original annotations in VRD
-    # If batching is set to True, each relationship within an image will be a separate instance, as
-    # opposed to a set of relationships within an image instance. This is so to facilitate proper
-    # batching via the PyTorch Dataloader
-    data_preparer.load_data()
-    data_preparer.save_data(granularity='rel')
+    data_preparer_vrd.save_data("anno")
+    data_preparer_vrd.save_data("img_rels", "img")
+    data_preparer_vrd.save_data("img_rels", "rel")
