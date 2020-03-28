@@ -1,8 +1,13 @@
 import sys
-import json
-from glob import glob
 import os.path as osp
+from glob import glob
+
 from collections import defaultdict
+
+import numpy as np
+import scipy.io as sio
+
+import json
 import pickle
 
 # TODO: use globals.data, for instance
@@ -403,18 +408,43 @@ class VGPrep(DataPreparer):
 
 # This function creates the pickles used for the evaluation on the for VRD Dataset
 # The ground truths and object detections are provided by Visual Relationships with Language Priors (files available on GitHub)
-# But for now we can use
+#  as matlab .mat objects.
 def prepareVRDEval_fromLP():
-    data_dir = "data/vrd"
-    # TODO... prepare the pickles
-    import scipy.io as sio
-    det_result = sio.loadmat(osp.join(data_dir, eval, "from-language-prior/det_result.mat"))
-    zeroShot   = sio.loadmat(osp.join(data_dir, eval, "from-language-prior/zeroShot.mat"))
-    gt         = sio.loadmat(osp.join(data_dir, eval, "from-language-prior/gt.mat"))
-    # Fixe the matlab-is-1-indexed problem
-    osp.join(data_dir, "det_res.pkl")
-    osp.join(data_dir, "gt_zs.pkl")
-    osp.join(data_dir, "gt.pkl")
+    data_dir = osp.join("data", "vrd")
+
+    det_result = sio.loadmat(osp.join(data_dir, "eval", "from-language-priors", "det_result.mat"))
+    det_result_output_path = osp.join(data_dir, "eval", "det_res.pkl")
+    # TODO: gt         = sio.loadmat(osp.join(data_dir, "eval", "from-language-priors", "gt.mat"))
+    gt_output_path = osp.join(data_dir, "eval", "gt.pkl")
+    # TODO: gt_zs   = sio.loadmat(osp.join(data_dir, "eval", "from-language-priors", "zeroShot.mat"))
+    gt_zs_output_path = osp.join(data_dir, "eval", "gt_zs.pkl")
+
+    assert len(det_result["detection_bboxes"]) == 1, "ERROR. Malformed .mat file"
+    assert len(det_result["detection_labels"]) == 1, "ERROR. Malformed .mat file"
+    assert len(det_result["detection_confs"])  == 1, "ERROR. Malformed .mat file"
+
+    det_result_pkl = {}
+    det_result_pkl["boxes"] = []
+    det_result_pkl["cls"]   = []
+    det_result_pkl["confs"] = []
+
+    for i,(lp_boxes, lp_cls, lp_confs) in \
+            enumerate(zip(det_result["detection_bboxes"][0],
+                          det_result["detection_labels"][0],
+                          det_result["detection_confs"][0])):
+
+        # Fix the matlab-is-1-indexed problem
+        transf_lp_boxes = lp_boxes-1
+        transf_lp_cls   = lp_cls-1
+        transf_lp_confs = lp_confs
+
+        det_result_pkl["boxes"].append(np.array(transf_lp_boxes, dtype=np.int))
+        det_result_pkl["cls"]  .append(np.array(transf_lp_cls,   dtype=np.int))
+        det_result_pkl["confs"].append(np.array(transf_lp_confs, dtype=np.float32))
+
+    with open(det_result_output_path, 'wb') as f:
+        pickle.dump(det_result_pkl, f)
+
 
 if __name__ == '__main__':
     # select the dataset to generate the data for. This can either be 'vrd' or 'vg'
@@ -429,11 +459,11 @@ if __name__ == '__main__':
         obj = VGPrep()
 
     # This is to generate the data in img_rels format using the original annotations in VRD
-    # If batching is set to True, each relationship within an image will be a separate instance, as 
-    # opposed to a set of relationships within an image instance. This is so to facilitate proper 
+    # If batching is set to True, each relationship within an image will be a separate instance, as
+    # opposed to a set of relationships within an image instance. This is so to facilitate proper
     # batching via the PyTorch Dataloader
     obj.prepare_data(generate_img_rels, granularity='rel')
-    
+
     # these are to generate the data in img_rels format using the {train,test}.pkl files provided
     # by DSR
     # obj.convert_train_test_dsr_to_img_rels(type='train')

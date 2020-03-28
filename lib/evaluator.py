@@ -108,7 +108,7 @@ class VRDEvaluator():
     # TODO: expand so that we don't need the proposals pickle, and we generate it if it's not there, using Faster-RCNN?
     # TODO: move the proposals file path to a different one (maybe in Faster-RCNN)
     with open(osp.join(globals.data_dir, self.data_args.name, "eval", "det_res.pkl"), 'rb') as fid:
-      proposals = pickle.load(fid, encoding="latin1")
+      proposals = pickle.load(fid)
       # TODO: zip these
       pred_boxes   = proposals["boxes"]
       pred_classes = proposals["cls"]

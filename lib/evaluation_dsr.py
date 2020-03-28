@@ -83,7 +83,7 @@ def eval_per_image(i, gt, pred, use_rel, gt_thr = 0.5, return_match = False):
 def eval_recall_at_N(ds_name, N, res, use_rel = True, use_zero_shot = False):
     # TODO: uniform this, just use the freaking pickle!!
     if(ds_name == "vrd"):
-        gt = sio.loadmat("data/vrd/eval/gt.mat")
+        gt = sio.loadmat("data/vrd/eval/from-language-priors/gt.mat")
         gt["tuple_label"] = gt["gt_tuple_label"][0]
         gt["obj_bboxes"]  = gt["gt_obj_bboxes"][0]
         gt["sub_bboxes"]  = gt["gt_sub_bboxes"][0]
@@ -91,7 +91,7 @@ def eval_recall_at_N(ds_name, N, res, use_rel = True, use_zero_shot = False):
         num_imgs = len(gt["obj_bboxes"])
 
         if(use_zero_shot):
-            zs = sio.loadmat("data/vrd/zeroShot.mat")["zeroShot"][0];
+            zs = sio.loadmat("data/vrd/eval/from-language-priors/zeroShot.mat")["zeroShot"][0];
             for ii in range(num_imgs):
                 if(zs[ii].shape[0] == 0):
                     continue
@@ -103,9 +103,9 @@ def eval_recall_at_N(ds_name, N, res, use_rel = True, use_zero_shot = False):
         # Testing all images is quite slow.
         num_imgs = 8995
         if(use_zero_shot):
-            gt_path = osp.join("data", "{}", "gt_zs.pkl").format(ds_name)
+            gt_path = osp.join("data", "{}", "eval", "gt_zs.pkl").format(ds_name)
         else:
-            gt_path = osp.join("data", "{}", "gt.pkl").format(ds_name)
+            gt_path = osp.join("data", "{}", "eval", "gt.pkl").format(ds_name)
         with open(gt_path, 'rb') as fid:
             gt = pickle.load(fid)
             print(gt.keys())
