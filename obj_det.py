@@ -307,7 +307,7 @@ class obj_detector():
     nms_time = misc_toc - misc_tic
 
     if show:
-      result_path = osp.join(globals.images_det_dir, im_file[:-4] + ".jpg")
+      result_path = osp.join(globals.images_dir, im_file[:-4] + "_det.jpg")
       cv2.imwrite(result_path, im2show)
 
     sys.stdout.write("im_detect: {:.3f}s {:.3f}s   \r".format(detect_time, nms_time))
@@ -324,7 +324,7 @@ if __name__ == "__main__":
 
   print("Loading test images...")
 
-  imglist = os.listdir(globals.images_dir)
+  imglist = filter(lambda img_name : not "_det" in img_name, os.listdir(globals.images_dir))
   num_images = len(imglist)
 
   print("Loaded {} images.".format(num_images))

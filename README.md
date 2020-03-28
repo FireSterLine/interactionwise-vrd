@@ -2,6 +2,8 @@
 # WHOLE TODO thingy
 # Setting up datasets, models and packages
 
+Before the end, we should create scripts to (download and?) setup the datasets
+
 pip install git+https://github.com/Infinidat/munch
 
 ### Libraries

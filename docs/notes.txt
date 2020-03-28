@@ -1,0 +1,6 @@
+Notes 26/03 Meeting:
+  Losses:Cross-entropy based on the distance,L2,Cosine distance
+  Try learning without the multi-label thing?
+  What about multiple p labels for an (s,o)?
+  predict confidence
+  softmax(-distance)
