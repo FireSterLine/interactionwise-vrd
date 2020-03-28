@@ -10,7 +10,7 @@ with open(osp.join("data", "vrd", "{}.pkl".format("test")), 'rb') as fid:
 for stage in ["test", "train"]:
   with open(osp.join("data", "vrd", "{}.pkl".format(stage)), 'rb') as fid:
     data_pkl = pickle.load(fid, encoding="latin1")
-  #TEST prepare_data from dsr pickles with open("data/vrd/dsr_to_img_rels_{}.json".format(stage), 'rb') as f:
+  #TEST prepare_data from dsr pickles with open("data/vrd/dsr_img_rels_{}.json".format(stage), 'rb') as f:
   #  margin=0
   with open("data/vrd/data_img_rels_{}.json".format(stage), 'rb') as f:
     data_new = json.load(f)

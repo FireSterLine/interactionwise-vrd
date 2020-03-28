@@ -201,6 +201,13 @@ def patch_key(d, old_key, new_key):
         del old_d[last_key]
         # print((("last_key","old_d"),(last_key,old_d)))
 
+# Invert a dictionary or a list
+def invert_dict(d):
+  if isinstance(d, dict):   d_pairs = d.items()
+  elif isinstance(d, list): d_pairs = enumerate(d)
+  else: raise ValueError("Can't invert to dict object of type {}".format(repr(type(d))))
+  return {v: k for k, v in d_pairs}
+
 """
 import importlib
 importlib.reload(utils)
