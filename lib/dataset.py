@@ -74,19 +74,18 @@ class dataset():
 
 
   # TODO: select which split ("train", "test", default="traintest")
-  def getImgRels(self, stage, granularity):
-    """ Load list of rel-annotations per images """
-    # with open(osp.join(self.metadata_dir, "dsr_img_rels_{}.json".format(stage)), 'r') as rfile:
-    # with open(osp.join(self.metadata_dir, "data_img_rels_{}.json".format(stage)), 'r') as rfile:
-    with open(osp.join(self.metadata_dir, "data_img_rels_{}_{}.json".format(granularity, stage)), 'r') as rfile:
+  def getRelst(self, stage, granularity = "img"):
+    """ Load list of relationships """
+    # with open(osp.join(self.metadata_dir, "dsr_relst_{}.json".format(stage)), 'r') as rfile:
+    with open(osp.join(self.metadata_dir, "data_relst_{}_{}.json".format(granularity, stage)), 'r') as rfile:
       return json.load(rfile) # Maybe pickle this?
 
-  def getAnno(self):
-    """ Load annotations """
+  def getAnnos(self):
+    """ Load annos """
     pass
-    # with open(osp.join(globals.metadata_dir, "anno.pkl", 'rb') as fid:
-    #   anno = pickle.load(fid)
-    #   self._anno = [x for x in anno if x is not None and len(x['classes'])>1]
+    # with open(osp.join(globals.metadata_dir, "annos.pkl", 'rb') as fid:
+    #   annos = pickle.load(fid)
+    #   self._annos = [x for x in annos if x is not None and len(x['classes'])>1]
 
   # TODO: instead of simply return it, store it in self and return a reference to, say, self.soP
   def getDistribution(self, type, force = True, stage = "train"):
@@ -114,10 +113,10 @@ class dataset():
           print("Distribution not found - generating it from scratch!")
           sop_counts = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: int())))
 
-          with open(osp.join(self.metadata_dir, "data_img_rels_{}.json".format(stage)), 'r') as rfile:
-            img_rels = json.load(rfile)
+          with open(osp.join(self.metadata_dir, "data_relst_{}.json".format(stage)), 'r') as rfile:
+            relst = json.load(rfile)
 
-          for img,rels in img_rels:
+          for img,rels in relst:
             for elem in rels:
               subject_label   = elem["subject"]["name"]
               object_label    = elem["object"]["name"]

@@ -25,9 +25,9 @@ dataset_args = {"ds_name" : "vrd", "with_bg_obj" : False, "with_bg_pred" : False
 
 dataset = dataset("vrd", dataset_args)
 
-test_imgrels = dataset.getImgRels("test")
+test_imgrels = dataset.getRelst("test")
 
-test_imgrels_list = [(k,v) for k,v in dataset.getImgRels("test").items()]
+test_imgrels_list = [(k,v) for k,v in dataset.getRelst("test").items()]
 
 if len(test_imgrels) != len(test):
   print("ERR!")
@@ -49,7 +49,7 @@ import json
 with open("data/vrd/datatest.json", 'rb') as f:
   data_old = json.load(f)
 
-with open("data/vrd/data_img_rels_test.json", 'rb') as f:
+with open("data/vrd/data_relst_test.json", 'rb') as f:
   data_new = json.load(f)
 
 
@@ -58,7 +58,7 @@ import json
 with open("data/vrd/datatrain.json", 'rb') as f:
   data_old = json.load(f)
 
-with open("data/vrd/data_img_rels_train.json", 'rb') as f:
+with open("data/vrd/data_relst_train.json", 'rb') as f:
   data_new = json.load(f)
 
 

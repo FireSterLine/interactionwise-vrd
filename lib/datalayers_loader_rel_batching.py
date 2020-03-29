@@ -45,7 +45,7 @@ class VRDDataLayer(data.Dataset):
         self.n_pred = self.dataset.n_pred
 
         self.shuffle = shuffle
-        self.imgrels = deepcopy(self.dataset.getImgRels(self.stage, self.granularity))
+        self.imgrels = deepcopy(self.dataset.getRelst(self.stage, self.granularity))
 
         # TODO: check if this works
         if self.stage == "train":

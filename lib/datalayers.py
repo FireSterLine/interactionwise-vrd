@@ -39,7 +39,7 @@ class VRDDataLayer():
 
     self.soP_prior = self.dataset.getDistribution(type="soP", force=True)
 
-    self.imgrels   = deepcopy(self.dataset.getImgRels(self.stage))
+    self.imgrels   = deepcopy(self.dataset.getRelst(self.stage))
 
     # TODO: check if this works
     # Ignore None elements during training
@@ -176,8 +176,18 @@ class VRDDataLayer():
     # TODO: instead of computing obj_boxes_out here, put it in the preprocess
     #  (and maybe transform relationships to contain object indices instead of whole objects)
     # Note: from here on, rel["subject"] and rel["object"] contain indices to objs
-    objs  = []
-    boxes = []
+
+    ####
+    # ATTENTION: this was maybe leading to troubles!!! "Duplicate" objects are added twice!
+    # Another possible reason of failing is: our bboxDictToList has a different order
+    ####
+    # TODO: switch to annos:
+    #  subject -> sub
+    #  object -> obj
+    #  obj"id" -> obj"cls"
+    #  "predicate"{id,name} -> "pred" (id)
+    #  no need for bboxDictToNumpy anymore, it's a list, maybe create a tensor directly?
+    objs = []
     for i_rel, rel in enumerate(rels):
 
       i_obj = len(objs)

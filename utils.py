@@ -26,10 +26,14 @@ adjust_learning_rate = frcnn_net_utils.adjust_learning_rate
 
 # Bbox as a dict to numpy array
 def bboxDictToNumpy(bbox_dict):
-  return np.array([bbox_dict["xmin"],
-                    bbox_dict["ymin"],
-                    bbox_dict["xmax"],
-                    bbox_dict["ymax"]])
+  return np.array(bboxDictToList(bbox_dict))
+
+# Bbox as a dict to list
+def bboxDictToList(bbox_dict):
+  return [bbox_dict["xmin"],
+          bbox_dict["ymin"],
+          bbox_dict["xmax"],
+          bbox_dict["ymax"]]
 
 
 # Union box of two boxes
