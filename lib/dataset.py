@@ -89,7 +89,7 @@ class dataset():
     #   annos = pickle.load(fid)
     #   self._annos = [x for x in annos if x is not None and len(x['classes'])>1]
 
-  def getDistribution(self, type, force = True, stage = "train"):
+  def getDistribution(self, type, stage = "train"):
     """ Computes and returns some distributional data """
 
     if stage == "test":
@@ -101,17 +101,15 @@ class dataset():
     if type == "soP":
       assert stage == "train", "Wait a second, why do you want the soP for the train split?"
       try:
-        raise FileNotFoundError
+        # TODO: use our soP prior: raise FileNotFoundError
         # with open(distribution_pkl_path, 'rb') as fid:
         with open(osp.join(self.metadata_dir, "so_prior.pkl"), 'rb') as fid:
-          print("Distribution found!")
+          print("Distribution {} found!".format(type))
           distribution = pickle.load(fid, encoding='latin1')
       except FileNotFoundError:
-        print("Distribution not found: {}".format(distribution_pkl_path))
-        if force:
-          print("Generating it from scratch...")
-          distribution = self._generate_soP_distr(self.getRelst(stage))
-          pickle.dump(distribution, open(distribution_pkl_path, 'wb'))
+        print("Distribution {} not found: {}. Generating...".format(type, distribution_pkl_path))
+        distribution = self._generate_soP_distr(self.getRelst(stage))
+        pickle.dump(distribution, open(distribution_pkl_path, 'wb'))
     else:
       raise Exception("Unknown distribution requested: {}".format(type))
 
@@ -137,7 +135,6 @@ class dataset():
       for obj_idx in range(self.n_obj):
         total_count = sop_counts[sub_idx][obj_idx].sum()
         if total_count == 0:
-          print(sub_idx,obj_idx)
           continue
         sop_counts[sub_idx][obj_idx] /= float(total_count)
 

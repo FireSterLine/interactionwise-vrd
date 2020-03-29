@@ -37,7 +37,7 @@ class VRDDataLayer():
     self.n_obj   = self.dataset.n_obj
     self.n_pred  = self.dataset.n_pred
 
-    self.soP_prior = self.dataset.getDistribution(type="soP", force=True)
+    self.soP_prior = self.dataset.getDistribution("soP")
 
     self.imgrels   = deepcopy(self.dataset.getRelst(self.stage))
 

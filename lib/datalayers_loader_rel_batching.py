@@ -39,7 +39,7 @@ class VRDDataLayer(data.Dataset):
         self.granularity = "rel"
 
         self.dataset = dataset(self.ds_name, **ds_args)
-        self.soP_prior = self.dataset.getDistribution(type="soP", force=True)
+        self.soP_prior = self.dataset.getDistribution("soP")
 
         self.n_obj = self.dataset.n_obj
         self.n_pred = self.dataset.n_pred

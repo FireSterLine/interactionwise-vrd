@@ -49,7 +49,7 @@ class vr_detector():
 
     # soP_prior is a N*M*N dimension array, which contains the prior probability distribution of
     #  each object pair over all 70 predicates.
-    self.soP_prior = self.dataset.getDistribution("soP", True)
+    self.soP_prior = self.dataset.getDistribution("soP")
 
     load_pretrained = isinstance(self.pretrained, str)
 
