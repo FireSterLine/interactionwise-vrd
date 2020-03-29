@@ -319,36 +319,49 @@ class VRDPrep(DataPreparer):
         gt_output_path         = osp.join("eval", "gt.pkl")
         gt_zs_output_path      = osp.join("eval", "gt_zs.pkl")
 
+        def prepareGT():
+          gt = self.readmat(gt_path)
+          gt_pkl = {}
+          gt_pkl["tuple_label"] = gt["gt_tuple_label"][0]
+          gt_pkl["obj_bboxes"]  = gt["gt_obj_bboxes"][0]
+          gt_pkl["sub_bboxes"]  = gt["gt_sub_bboxes"][0]
+          self.writepickle(gt_pkl, gt_output_path)
 
-        det_result = self.readmat(det_result_path)
-        # TODO
-        #gt         = self.readmat(gt_path)
-        #gt_zs      = self.readmat(gt_zs_path)
+          gt_zs_pkl = gt_pkl
 
-        assert len(det_result["detection_bboxes"]) == 1, "ERROR. Malformed .mat file"
-        assert len(det_result["detection_labels"]) == 1, "ERROR. Malformed .mat file"
-        assert len(det_result["detection_confs"])  == 1, "ERROR. Malformed .mat file"
+          # TODO: prepare gt_zs ... copy code from evaluation_dsr
+          #self.writepickle(gt_zs_pkl, gt_zs_output_path)
 
-        det_result_pkl = {}
-        det_result_pkl["boxes"] = []
-        det_result_pkl["cls"]   = []
-        det_result_pkl["confs"] = []
+        def prepareDetRes():
+          det_result = self.readmat(det_result_path)
 
-        for i,(lp_boxes, lp_cls, lp_confs) in \
-                enumerate(zip(det_result["detection_bboxes"][0],
-                              det_result["detection_labels"][0],
-                              det_result["detection_confs"][0])):
+          assert len(det_result["detection_bboxes"]) == 1, "ERROR. Malformed .mat file"
+          assert len(det_result["detection_labels"]) == 1, "ERROR. Malformed .mat file"
+          assert len(det_result["detection_confs"])  == 1, "ERROR. Malformed .mat file"
 
-            # The -1s fixes the matlab-is-1-indexed problem
-            transf_lp_boxes = lp_boxes-1
-            transf_lp_cls   = lp_cls-1
-            transf_lp_confs = lp_confs
+          det_result_pkl = {}
+          det_result_pkl["boxes"] = []
+          det_result_pkl["cls"]   = []
+          det_result_pkl["confs"] = []
 
-            det_result_pkl["boxes"].append(np.array(transf_lp_boxes, dtype=np.int))
-            det_result_pkl["cls"]  .append(np.array(transf_lp_cls,   dtype=np.int))
-            det_result_pkl["confs"].append(np.array(transf_lp_confs, dtype=np.float32))
+          for i,(lp_boxes, lp_cls, lp_confs) in \
+                  enumerate(zip(det_result["detection_bboxes"][0],
+                                det_result["detection_labels"][0],
+                                det_result["detection_confs"][0])):
 
-        self.writepickle(det_result_pkl, det_result_output_path)
+              # The -1s fixes the matlab-is-1-indexed problem
+              transf_lp_boxes = lp_boxes-1
+              transf_lp_cls   = lp_cls-1
+              transf_lp_confs = lp_confs
+
+              det_result_pkl["boxes"].append(np.array(transf_lp_boxes, dtype=np.int))
+              det_result_pkl["cls"]  .append(np.array(transf_lp_cls,   dtype=np.int))
+              det_result_pkl["confs"].append(np.array(transf_lp_confs, dtype=np.float32))
+
+          self.writepickle(det_result_pkl, det_result_output_path)
+
+        prepareDetRes()
+        prepareGT()
 
 class VGPrep(DataPreparer):
     def __init__(self, num_objects, num_attributes, num_predicates):
@@ -417,6 +430,7 @@ if __name__ == '__main__':
 
     data_preparer_vrd = VRDPrep()
     data_preparer_vrd.prepareEvalFromLP()
+    """
     data_preparer_vrd.save_data("relst")
     # This is to generate the data in relst format using the original annotations in VRD
     # If batching is set to True, each relationship within an image will be a separate instance, as
@@ -427,6 +441,7 @@ if __name__ == '__main__':
 
     # Generate the data in relst format using the {train,test}.pkl files provided by DSR
     data_preparer_vrd.loadsave_relst_dsr()
+    """
 
     """
     # TODO: test to see if VG preparation works

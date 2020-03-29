@@ -171,6 +171,9 @@ with open("models/epoch_4_checkpoint.pth.tar", 'rb') as f:
   train = torch.load(f, encoding="latin1")
 
 
+
+
+
 # so prior
 
 import pickle
@@ -187,3 +190,13 @@ for i in range(100):
 # THERE IS A "bear" "wear" "ball" in their prior! why?
 sop[89][88]
 so_prior[89][88]
+
+
+import os.path as osp
+import pickle
+ds_name = 'vrd'
+gt_path = osp.join("data", "{}", "eval", "gt.pkl").format(ds_name)
+with open(gt_path, 'rb') as fid:
+  gt = pickle.load(fid, encoding="latin1")
+  print(gt.keys())
+  print(len(gt["obj_bboxes"]))

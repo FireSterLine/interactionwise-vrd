@@ -82,6 +82,7 @@ def eval_per_image(i, gt, pred, use_rel, gt_thr = 0.5, return_match = False):
 #   made out of all positive examples in the dataset.
 def eval_recall_at_N(ds_name, N, res, use_rel = True, use_zero_shot = False):
     # TODO: uniform this, just use the freaking pickle!!
+    # TODO: don't read matlab file, read pickle instead: data/vrd/eval/gt.pkl
     if(ds_name == "vrd"):
         gt = sio.loadmat("data/vrd/eval/from-language-priors/gt.mat")
         gt["tuple_label"] = gt["gt_tuple_label"][0]
