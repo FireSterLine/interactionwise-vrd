@@ -1,4 +1,6 @@
 import numpy as np
+import torch
+
 from lib.datalayers import VRDDataLayer
 from lib.evaluation_dsr import eval_recall_at_N, eval_obj_img # TODO remove this module
 import time
@@ -16,7 +18,7 @@ class VRDEvaluator():
 
   def test_pre(self, vrd_model):
     """ Test model on Predicate Prediction """
-    torch.no_grad():
+    with torch.no_grad():
       vrd_model.eval()
       time1 = time.time()
 
@@ -97,7 +99,7 @@ class VRDEvaluator():
   # Relationship Prediction
   def test_rel(self, vrd_model):
     """ Test model on Relationship Prediction """
-    torch.no_grad():
+    with torch.no_grad():
       vrd_model.eval()
       time1 = time.time()
 

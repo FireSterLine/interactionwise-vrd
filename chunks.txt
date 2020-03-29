@@ -169,3 +169,21 @@ with open("faster-rcnn/models/faster_rcnn_1_20_7559.pth", 'rb') as f:
 import torch
 with open("models/epoch_4_checkpoint.pth.tar", 'rb') as f:
   train = torch.load(f, encoding="latin1")
+
+
+# so prior
+
+import pickle
+with open("data/vrd/so_prior.pkl", 'rb') as f:
+  so_prior = pickle.load(f, encoding="latin1")
+
+with open("data/vrd/soP.pkl", 'rb') as f:
+  sop = pickle.load(f, encoding="latin1")
+
+for i in range(100):
+  for j in range(100):
+    print((i,j), ((so_prior[i][j] - sop[i][j] ) > 0.999))
+
+# THERE IS A "bear" "wear" "ball" in their prior! why?
+sop[89][88]
+so_prior[89][88]

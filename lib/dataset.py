@@ -82,12 +82,13 @@ class dataset():
 
   def getAnnos(self):
     """ Load annos """
+    with open(osp.join(self.metadata_dir, "data_annos_{}_{}.json".format(granularity, stage)), 'r') as rfile:
+      return json.load(rfile) # Maybe pickle this?
     pass
     # with open(osp.join(globals.metadata_dir, "annos.pkl", 'rb') as fid:
     #   annos = pickle.load(fid)
     #   self._annos = [x for x in annos if x is not None and len(x['classes'])>1]
 
-  # TODO: instead of simply return it, store it in self and return a reference to, say, self.soP
   def getDistribution(self, type, force = True, stage = "train"):
     """ Computes and returns some distributional data """
 
@@ -95,57 +96,59 @@ class dataset():
         raise ValueError("Can't compute distribution on \"{}\" split".format(stage))
 
     distribution_pkl_path = osp.join(self.metadata_dir, "{}.pkl".format(type))
+    distribution = None
 
-    try:
-      # raise FileNotFoundError
-      # with open(distribution_pkl_path, 'rb') as fid:
-      with open(osp.join(self.metadata_dir, "so_prior.pkl"), 'rb') as fid:
-        dist = pickle.load(fid, encoding='latin1')
-      print("Distribution found!")
-      return dist
-      # return pickle.load(fid)
-    except FileNotFoundError: # parent of IOError, OSError *and* WindowsError where available
-      if not force:
+    if type == "soP":
+      assert stage == "train", "Wait a second, why do you want the soP for the train split?"
+      try:
+        raise FileNotFoundError
+        # with open(distribution_pkl_path, 'rb') as fid:
+        with open(osp.join(self.metadata_dir, "so_prior.pkl"), 'rb') as fid:
+          print("Distribution found!")
+          distribution = pickle.load(fid, encoding='latin1')
+      except FileNotFoundError:
         print("Distribution not found: {}".format(distribution_pkl_path))
-        return None
-      else:
-        if type == "soP":
-          print("Distribution not found - generating it from scratch!")
-          sop_counts = defaultdict(lambda: defaultdict(lambda: defaultdict(lambda: int())))
+        if force:
+          print("Generating it from scratch...")
+          distribution = self._generate_soP_distr(self.getRelst(stage))
+          pickle.dump(distribution, open(distribution_pkl_path, 'wb'))
+    else:
+      raise Exception("Unknown distribution requested: {}".format(type))
 
-          with open(osp.join(self.metadata_dir, "data_relst_{}.json".format(stage)), 'r') as rfile:
-            relst = json.load(rfile)
+    return distribution
 
-          for img,rels in relst:
-            for elem in rels:
-              subject_label   = elem["subject"]["name"]
-              object_label    = elem["object"]["name"]
-              predicate_label = elem["predicate"]["name"]
+  def _generate_soP_distr(self, relst):
 
-              sop_counts[subject_label][object_label][predicate_label] += 1
+    sop_counts = np.zeros((self.n_obj, self.n_obj, self.n_pred))
 
-          # assert len(sop_counts.keys()) == len(self.obj_classes)
-          distribution = np.zeros((len(self.obj_classes), len(self.obj_classes), len(self.pred_classes)))
+    # Count sop occurrences
+    for img_path,rels in relst:
+      if rels == None:
+        continue
+      for elem in rels:
+        subject_label   = elem["subject"]["id"]
+        object_label    = elem["object"]["id"]
+        predicate_label = elem["predicate"]["id"]
 
-          for out_ix, out_elem in enumerate(self.obj_classes):
-            for in_ix, in_elem in enumerate(self.obj_classes):
-              total_count = sum(sop_counts[out_elem][in_elem].values())
-              if total_count == 0:
-                continue
-              for p_ix, p_elem in enumerate(self.pred_classes):
-                distribution[out_ix][in_ix][p_ix] = float(sop_counts[out_elem][in_elem][p_elem]) / float(total_count)
-        else:
-          raise Exception("Unknown distribution requested: {}".format(type))
+        sop_counts[subject_label][object_label][predicate_label] += 1
 
-        pickle.dump(distribution, open(distribution_pkl_path, 'wb'))
-        return distribution
+    # Divide each line by # of counts
+    for sub_idx in range(self.n_obj):
+      for obj_idx in range(self.n_obj):
+        total_count = sop_counts[sub_idx][obj_idx].sum()
+        if total_count == 0:
+          print(sub_idx,obj_idx)
+          continue
+        sop_counts[sub_idx][obj_idx] /= float(total_count)
+
+    return sop_counts
 
   # TODO
-  def readMetadata(self, data_name):
-    """ Wrapper for read/cache metadata file. This prevents loading the same metadata file more than once """
-
-    if not hasattr(self, data_name):
-      with open(osp.join(self.metadata_dir, "{}.json".format(data_name)), 'r') as rfile:
-        setattr(self, data_name, json.load(rfile))
-
-    return getattr(self, data_name)
+  # def readMetadata(self, data_name):
+  #   """ Wrapper for read/cache metadata file. This prevents loading the same metadata file more than once """
+  #
+  #   if not hasattr(self, data_name):
+  #     with open(osp.join(self.metadata_dir, "{}.json".format(data_name)), 'r') as rfile:
+  #       setattr(self, data_name, json.load(rfile))
+  #
+  #   return getattr(self, data_name)
