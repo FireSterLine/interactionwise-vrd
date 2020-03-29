@@ -34,7 +34,13 @@ class DataPreparer:
         self.objects_vocab_file    = "objects.json"
         self.predicates_vocab_file = "predicates.json"
 
+        self.obj_vocab  = None
+        self.pred_vocab = None
+
+        self.dir = None
+        self.vrd_data = None
         self.cur_format = None
+        self.splits = None
 
     # This function reads the dataset's vocab txt files and loads them
     def prepare_vocabs(self, obj_vocab_file, pred_vocab_file):
@@ -136,7 +142,7 @@ class DataPreparer:
 
     # INPUT/OUTPUT Helpers
     def fullpath(self, filename):
-        return osp.join(globals.data_dir, self.metadata_subfolder, filename)
+        return osp.join(globals.data_dir, self.dir, filename)
 
     # plain files
     def readfile(self, filename):
@@ -166,7 +172,7 @@ class VRDPrep(DataPreparer):
     def __init__(self):
         super(VRDPrep, self).__init__()
 
-        self.metadata_subfolder = "vrd"
+        self.dir = "vrd"
 
         self.train_dsr = self.readpickle("train.pkl")
         self.test_dsr  = self.readpickle("test.pkl")
@@ -345,14 +351,10 @@ class VRDPrep(DataPreparer):
         self.writepickle(det_result_pkl, det_result_output_path)
 
 class VGPrep(DataPreparer):
-    def __init__(self):
+    def __init__(self, num_objects, num_attributes, num_predicates):
         super(VGPrep, self).__init__()
 
-        self.num_objects    = 1600
-        self.num_attributes = 400
-        self.num_predicates = 20
-
-        self.metadata_subfolder = osp.join("genome", "{}-{}-{}".format(self.num_objects, self.num_attributes, self.num_predicates))
+        self.dir = osp.join("genome", "{}-{}-{}".format(num_objects, num_attributes, num_predicates))
 
         self.json_selector = osp.join("json", "*.json")
 
@@ -413,10 +415,6 @@ class VGPrep(DataPreparer):
 
 if __name__ == '__main__':
 
-    # select whether to generate image_rels or annotations
-    # if true,  image_rels  will be generated
-    # if false, annotations will be generated
-
     data_preparer_vrd = VRDPrep()
     data_preparer_vrd.prepareEvalFromLP()
     data_preparer_vrd.save_data("relst")
@@ -432,7 +430,7 @@ if __name__ == '__main__':
 
     """
     # TODO: test to see if VG preparation works
-    data_preparer_vg  = VGPrep()
+    data_preparer_vg  = VGPrep(1600, 400, 20)
     data_preparer_vrd.save_data("annos")
     data_preparer_vrd.save_data("relst")
     data_preparer_vrd.save_data("relst", "rel")
