@@ -82,7 +82,7 @@ def getSemanticVector(subject_label, object_label, w2v_model):
   return combined_vector
 
 # data_info may be just the dataset name
-def data_info_to_data_args(data_info):
+def data_info_to_ds_args(data_info):
   if isinstance(data_info, str):
     data_info = {"name" : data_info}
   return data_info

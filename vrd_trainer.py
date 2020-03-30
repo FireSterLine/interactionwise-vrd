@@ -14,12 +14,10 @@ import torch.nn.functional as F
 from munch import munchify
 import globals, utils
 from lib.vrd_models import VRDModel
-from lib.datalayers import VRDDataLayer
+from lib.datalayer import VRDDataLayer
 from lib.evaluator import VRDEvaluator
 #, save_net, load_net, \
 #      adjust_learning_rate, , clip_gradient
-
-# from lib.model import train_net, test_pre_net, test_rel_net
 
 
 class vrd_trainer():
@@ -195,7 +193,7 @@ class vrd_trainer():
     print("Initializing training...")
     print("Training args: ", self.training)
     self.optimizer = self.model.OriginalAdamOptimizer(**self.training.opt)
-    # TODO: create loss_type argument...
+    # TODO: create loss_type argument... reduction='sum' or reduction='mean'
     self.criterion = nn.MultiLabelMarginLoss().to(utils.device)
     if "optimizer_state_dict" in self.state:
       self.optimizer.load_state_dict(self.state["optimizer_state_dict"])

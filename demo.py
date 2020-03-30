@@ -122,6 +122,7 @@ class vr_detector():
       print(spatial_features)
       print(semantic_features)
 
+      # TODO: switch to from_numpy().to() instead of FloatTensor/LongTensor(, device=)
       spatial_features  = torch.FloatTensor(spatial_features).cuda()
       semantic_features = torch.FloatTensor(semantic_features).cuda()
 

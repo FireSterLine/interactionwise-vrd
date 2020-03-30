@@ -15,7 +15,9 @@ import utils, globals
 from copy import copy, deepcopy
 from torch.utils import data
 
-class VRDDataLayer(data.Dataset):
+# TODO: expand so that it supports batch sizes > 1
+
+class VRDDataLayer():
   """ Iterate through the dataset and yield the input and target for the network """
 
   def __init__(self, data_info, stage, shuffle = False):
@@ -29,9 +31,6 @@ class VRDDataLayer(data.Dataset):
     self.stage   = stage
     self.shuffle = shuffle
 
-    # TODO: Receive this parameter as an argument, don't hardcode this
-    self.granularity = "rel"
-
 
 
     self.dataset = dataset(**self.ds_args)
@@ -40,117 +39,67 @@ class VRDDataLayer(data.Dataset):
 
     self.soP_prior = self.dataset.getDistribution("soP")
 
-    # TODO: switch to annos
-    self.vrd_data = deepcopy(self.dataset.getRelst(self.stage, self.granularity))
-
-    # TODO: change this when you switch to annos?
-    def numrels(vrd_sample):
-      if self.granularity == "rel":
-        return 1
-      elif self.granularity == "img":
-        if isinstance(vrd_sample, list):
-          return len(vrd_sample)
-        elif isinstance(vrd_sample, dict):
-          return len(vrd_sample["rels"]) > 0
+    self.imgrels   = deepcopy(self.dataset.getRelst(self.stage))
 
     # TODO: check if this works
     # Ignore None elements during training
     if self.stage == "train":
-      self.vrd_data = [(k,v) for k,v in self.vrd_data if k != None and numrels(v) > 0]
-
+      self.imgrels = [(k,v) for k,v in self.imgrels if k != None]
 
     if self.shuffle:
-      random.shuffle(self.vrd_data)
+      random.shuffle(self.imgrels)
 
-    self.N = len(self.vrd_data)
+    self.N = len(self.imgrels)
+    self._cur = 0
     self.wrap_around = ( self.stage == "train" )
 
-    # TODO: use this variable to read the det_res pickle
-    self.objdet_res = False
-
-    # NOTE: the max shape is across all the dataset, whereas we would like for it to be for a unique batch.
-    # TODO: write collate_fn using this code
-    '''
-    this is the max shape that was identified by running the function above on the
-    VRD dataset. It takes too long to run, so it's better if we run this once on
-    any new dataset, and store and initialize those values as done here
-    '''
-    self.max_shape = (1000, 1000, 3)
-    # self.max_shape = self._get_max_shape()
-    print("Max shape is: {}".format(self.max_shape))
+    # self.objdet_res = False
 
     # TODO: restore this and make the used model a parameter
     # print("Loading Word2Vec model...")
     # self.w2v_model = KeyedVectors.load_word2vec_format(osp.join(globals.data_dir, globals.w2v_model_path), binary=True)
 
-  def _get_max_shape(self):
-    print("Identifying max shape...")
-    im_shapes = []
-    for img_path, _ in self.vrd_data:
-      if img_path is not None:
-        im = self.dataset.readImg(img_path)
-        image_blob, _ = prep_im_for_blob(im, utils.vrd_pixel_means)
-        im_shapes.append(image_blob.shape)
-    max_shape = np.array(im_shapes).max(axis=0)
-    return max_shape
+  def next(self, objdet_res = False):
 
-  def __len__(self):
-    return self.N
-
-  def __getitem__(self, index):
-
-    (img_path, _rels) = self.vrd_data[index]
-
-    if img_path is None:
-      if self.stage == "test":
-        if det_res is not None:
-          return None, None, None, None
+    while True:
+      if self._cur >= self.N:
+        if self.wrap_around:
+          self._cur = 0
         else:
-          return None, None, None
-      elif self.stage == "train":
-        # TODO: probably None values won't allow batching.
-        warnings.warn("Warning: I'm about to return None values during training. That's not good, probably batching will fail", UserWarning)
-        return None, None, None
+          raise StopIteration
+          return
 
-    # Obtain object detections, if any
-    det_res = None
-    if self.objdet_res != False:
-      det_res = self.objdet_res[index]
+      (im_id, _rels) = self.imgrels[self._cur]
 
-    # TODO: The deepcopy won't be necessary anymore at some point
-    rels = deepcopy(_rels)
+      self._cur += 1
 
-    # Granularity fallback: gran="rel" returns a single relationship
-    if self.granularity == "rel":
-      rels = [rels]
+      if im_id is not None:
 
-    n_rels = len(rels)
+        rels = deepcopy(_rels)
 
-    # Wait a second, shouldn't we test anyway on an image with no relationships? I mean, if we identified some objects, why not? What does DSR do?
-    if n_rels == 0:
-      if self.stage == "test":
-        if det_res is not None:
+        n_rel = len(rels)
+
+        if n_rel != 0:
+          break
+        elif self.stage == "test":
+          if objdet_res != False:
+            return None, None, None, None
+          else:
+            return None, None, None
+      elif self.stage == "test":
+        if objdet_res != False:
           return None, None, None, None
         else:
           return None, None, None
 
-    im = self.dataset.readImg(img_path)
+
+    im = utils.read_img(osp.join(self.dataset.img_dir, im_id))
     ih = im.shape[0]
     iw = im.shape[1]
 
-    # TODO: enable this to temporarily allow batching (write collate_fn then)
-
-    # image_blob, im_scale = prep_im_for_blob(im, utils.vrd_pixel_means)
-    # blob = np.zeros(self.max_shape)
-    # blob[0: image_blob.shape[0], 0:image_blob.shape[1], :] = image_blob
-    # image_blob = blob
-    # img_blob = np.zeros((1,) + image_blob.shape, dtype=np.float32)
-    # img_blob[0] = image_blob
-
-    # TODO: check if this works (it removes the first (not moot) dimension)
     image_blob, im_scale = prep_im_for_blob(im, utils.vrd_pixel_means)
-    img_blob = np.zeros(self.max_shape, dtype=np.float32)
-    img_blob[: image_blob.shape[0], :image_blob.shape[1], :] = image_blob
+    img_blob = np.zeros((1,) + image_blob.shape, dtype=np.float32)
+    img_blob[0] = image_blob
 
 
     # TODO: instead of computing obj_boxes_out here, put it in the preprocess
@@ -182,14 +131,14 @@ class VRDDataLayer(data.Dataset):
 
     # Object classes
 
-    if det_res is not None:
-      obj_boxes_out  = det_res["boxes"]
-      obj_classes    = det_res["classes"]
-      pred_confs_img = det_res["confs"]  # Note: We don't actually care about the confidence scores here
+    if objdet_res != False:
+      obj_boxes_out  = objdet_res["boxes"]
+      obj_classes    = objdet_res["classes"]
+      pred_confs_img = objdet_res["confs"]  # Note: We don't actually care about the confidence scores here
 
-      n_rels = len(obj_classes) * (len(obj_classes) - 1)
+      n_rel = len(obj_classes) * (len(obj_classes) - 1)
 
-      if n_rels == 0:
+      if n_rel == 0:
         return None, None, None, None
     else:
       obj_boxes_out = np.zeros((n_objs, 4))
@@ -204,37 +153,37 @@ class VRDDataLayer(data.Dataset):
     obj_boxes[:, 1:5] = obj_boxes_out * im_scale
 
     # union bounding boxes
-    u_boxes = np.zeros((n_rels, 5))
+    u_boxes = np.zeros((n_rel, 5))
 
     # the dimension 8 here is the size of the spatial feature vector, containing the relative location and log-distance
-    spatial_features = np.zeros((n_rels, 8))
+    spatial_features = np.zeros((n_rel, 8))
     # TODO: introduce the other spatial feature thingy
-    # spatial_features = np.zeros((n_rels, 2, 32, 32))
-    #     spatial_features[ii] = [self._getDualMask(ih, iw, sBBox),
+    # spatial_features = np.zeros((n_rel, 2, 32, 32))
+    #     spatial_features[ii] = [self._getDualMask(ih, iw, sBBox), \
     #               self._getDualMask(ih, iw, oBBox)]
 
     # TODO: add tiny comment...
-    semantic_features = np.zeros((n_rels, 2 * 300))
+    semantic_features = np.zeros((n_rel, 2 * 300))
 
     # this will contain the probability distribution of each subject-object pair ID over all 70 predicates
-    rel_soP_prior = np.zeros((n_rels, self.dataset.n_pred))
-    # print(n_rels)
+    rel_soP_prior = np.zeros((n_rel, self.dataset.n_pred))
+    # print(n_rel)
 
     # Target output for the network
-    target = -1 * np.ones((1, self.dataset.n_pred * n_rels))
+    target = -1 * np.ones((1, self.dataset.n_pred * n_rel))
     pos_idx = 0
-    # target = np.zeros((n_rels, self.n_pred))
+    # target = np.zeros((n_rel, self.n_pred))
 
     # Indices for objects and subjects
     idx_s, idx_o = [], []
 
     # print(obj_classes)
 
-    if det_res is not None:
+    if objdet_res != False:
       i_rel = 0
       for s_idx, sub_cls in enumerate(obj_classes):
         for o_idx, obj_cls in enumerate(obj_classes):
-          if (s_idx == o_idx):
+          if(s_idx == o_idx):
             continue
           # Subject and object local indices (useful when selecting ROI results)
           idx_s.append(s_idx)
@@ -304,10 +253,7 @@ class VRDDataLayer(data.Dataset):
     # Note: the transpose should move the color channel to being the
     #  last dimension
     # TODO: switch to from_numpy().to() instead of FloatTensor/LongTensor(, device=)
-    #  or, actually, build the tensors on the GPU directly, instead of using numpy.
-
-    # img_blob          = torch.FloatTensor(img_blob,          device=utils.device).permute(0, 3, 1, 2)
-    img_blob          = torch.FloatTensor(img_blob,          device=utils.device).permute(2, 0, 1)
+    img_blob          = torch.FloatTensor(img_blob,          device=utils.device).permute(0, 3, 1, 2)
     obj_boxes         = torch.FloatTensor(obj_boxes,         device=utils.device)
     u_boxes           = torch.FloatTensor(u_boxes,           device=utils.device)
     idx_s             = torch.LongTensor(idx_s,              device=utils.device)
@@ -319,60 +265,37 @@ class VRDDataLayer(data.Dataset):
     # rel_soP_prior = torch.FloatTensor(rel_soP_prior, device=utils.device)
     target        = torch.LongTensor(target,                 device=utils.device)
 
-    net_input = (img_blob,
-                 obj_boxes,
-                 u_boxes,
-                 idx_s,
-                 idx_o,
-                 spatial_features,
-                 obj_classes,
-              #  semantic_features,
+    net_input = (img_blob           \
+               , obj_boxes          \
+               , u_boxes            \
+               , idx_s              \
+               , idx_o              \
+               , spatial_features   \
+               , obj_classes        \
+              #, semantic_features  \
       )
 
     if self.stage == "train":
-      return net_input,       \
-              rel_soP_prior,  \
-              target
+      return net_input      \
+            , rel_soP_prior \
+            , target
     elif self.stage == "test":
-      if det_res is not None:
-        return net_input,         \
-                obj_classes_out,  \
-                obj_boxes_out
+      if objdet_res == False:
+        return net_input          \
+              , obj_classes_out   \
+              , obj_boxes_out
       else:
-        return net_input,         \
-                obj_classes_out,  \
-                rel_soP_prior,    \
-                obj_boxes_out
-
-# Batching example:
-data_info = {"name": "vrd", "with_bg_obj" : False, "with_bg_pred" : False}
-datalayer = VRDDataLayer(data_info, "train", shuffle = False)
-train_generator = data.DataLoader(
-  dataset = datalayer,
-  batch_size = 2, # 256,
-  shuffle = True  # Note that this dataloader has a shuffle flag, so we oughta remove it from da dl
-)
-
-for i,a in enumerate(datalayer):
-  if i > 1: break
-  print(i, len(a))
-  print([x.shape for x in a[0]], a[1].shape, a[2].shape)
-  print()
-  input()
-
-for i, a in enumerate(train_generator):
-  print(i, len(a))
-  print([x.shape for x in a[0]], a[1].shape, a[2].shape)
-  print()
-  input()
-  if i > 0: break
-
+        return net_input          \
+              , obj_classes_out   \
+              , rel_soP_prior     \
+              , obj_boxes_out
 
 """
-data_info = {"name": "vrd", "with_bg_obj": False, "with_bg_pred": False}
-datalayer = VRDDataLayer(data_info, "train", shuffle=False)
+ds_info = {"ds_name": "vrd", "with_bg_obj": False, "with_bg_pred": False}
+datalayer = VRDDataLayer(ds_info, "train", shuffle=False)
 a = datalayer[0]
 ​
+# this only works with batch size 1!
 train_generator = data.DataLoader(
     dataset=datalayer,
     drop_last=True,
@@ -382,7 +305,7 @@ train_generator = data.DataLoader(
 """
 
 """
-TODO: make this an data.IterableDataset and allow parallelization?
+...data.IterableDataset
 
   def __init__(self, data_info, stage, shuffle = False):
     super(VRDDataLayer).__init__()

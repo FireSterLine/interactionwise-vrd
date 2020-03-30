@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 
-from lib.datalayers import VRDDataLayer
+from lib.datalayer import VRDDataLayer
 from lib.evaluation_dsr import eval_recall_at_N, eval_obj_img # TODO remove this module
 import time
 

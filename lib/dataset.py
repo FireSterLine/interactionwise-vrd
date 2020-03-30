@@ -9,7 +9,7 @@ import sys
 import math
 import os.path as osp
 from collections import defaultdict
-import globals
+import utils, globals
 
 # TODO: rename to VRDDataset
 # TODO: add flag that forbids/allows caching with pickles
@@ -72,6 +72,8 @@ class dataset():
     # self.class_to_ind     = dict(zip(self._classes, xrange(self._num_classes)))
     # self.relations_to_ind = dict(zip(self._relations, xrange(self._num_relations)))
 
+  def readImg(self, img_path):
+    return utils.read_img(osp.join(self.img_dir, img_path))
 
   # TODO: select which split ("train", "test", default="traintest")
   def getRelst(self, stage, granularity = "img"):
@@ -80,8 +82,9 @@ class dataset():
     with open(osp.join(self.metadata_dir, "data_relst_{}_{}.json".format(granularity, stage)), 'r') as rfile:
       return json.load(rfile) # Maybe pickle this?
 
-  def getAnnos(self):
+  def getAnnos(self, stage):
     """ Load annos """
+    granularity = "img" # TODO: figure out if we need annos for granularity = "rel"
     with open(osp.join(self.metadata_dir, "data_annos_{}_{}.json".format(granularity, stage)), 'r') as rfile:
       return json.load(rfile) # Maybe pickle this?
     pass
