@@ -14,7 +14,7 @@ import torch.nn.functional as F
 from munch import munchify
 import globals, utils
 from lib.vrd_models import VRDModel
-from lib.datalayer import VRDDataLayer
+from lib.datalayers import VRDDataLayer
 from lib.evaluator import VRDEvaluator
 #, save_net, load_net, \
 #      adjust_learning_rate, , clip_gradient
@@ -82,7 +82,7 @@ class vrd_trainer():
           # TODO make this such that -1 means "one full dataset round" (and maybe -2 is two full.., -3 is three but whatevs)
           "iters_per_epoch"  : -1,
           # Number of lines printed with loss ...TODO explain smart freq
-          "prints_freq" : 10,
+          "prints_per_epoch" : 10,
 
           # TODO
           "batch_size" : 1,
@@ -93,9 +93,11 @@ class vrd_trainer():
       }):
 
     # Local Patch:
-    # If we run on a CPU, we only train for an epoch
+    # If we run on a CPU, we reduce the computational load for debugging purposes
     if(utils.device == torch.device("cpu")):
-      args["training"]["num_epochs"] = 0
+      args["training"]["num_epochs"] = 1
+      args["data"]["justafew"] = True
+      args["training"]["prints_per_epoch"] = 1
 
     print("Arguments:")
     if checkpoint:
@@ -152,11 +154,19 @@ class vrd_trainer():
     self.eval_args    = munchify(self.args["eval"])
     self.training     = munchify(self.args["training"])
 
+    # TODO: change split to avoid overfitting on this split! (https://towardsdatascience.com/understanding-pytorch-with-an-example-a-step-by-step-tutorial-81fc5f8c4e8e)
+    #  train_dataset, val_dataset = random_split(dataset, [80, 20])
+
     # Data
     print("Initializing data...")
     print("Data args: ", self.data_args)
     # TODO: VRDDataLayer has to know what to yield (DRS -> img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
     self.datalayer = VRDDataLayer(self.data_args, "train", self.training.use_shuffle)
+    self.dataloader = torch.utils.data.DataLoader(
+      dataset = self.datalayer,
+      batch_size = 1, # 256,
+      shuffle = self.training.use_shuffle
+    )
     # TODO: Pytorch DataLoader instead:
     # self.num_workers = 0
     # self.dataset = VRDDataset()
@@ -238,7 +248,7 @@ class vrd_trainer():
       # self.__train_epoch(self.state["epoch"])
 
       # Test results
-      res_row = (self.state["epoch"],)
+      res_row = [self.state["epoch"]]
       if self.training.test_pre:
         rec_50, rec_50_zs, rec_100, rec_100_zs, dtime = self.test_pre()
         res_row += [rec_50, rec_50_zs, rec_100, rec_100_zs]
@@ -281,13 +291,12 @@ class vrd_trainer():
       # TODO: check that vrd during training ignores None images
       n_iter = self.datalayer.N * (-n_iter)
 
-    for iter in range(n_iter):
-
-      # Obtain next annotation input and target
-      net_input, rel_sop_prior, target = self.datalayer.next()
+    # for iter in range(n_iter):
+    for i_iter,(net_input, rel_sop_prior, target) in enumerate(self.dataloader):
 
       # TODO: is this necessary? If it's what I think, the datalayer should already ignore these
-      if target.size()[1] == 0:
+      if target.size()[0] == 0:
+        print(target.size())
         continue
 
       # Forward pass & Backpropagation step
@@ -295,7 +304,7 @@ class vrd_trainer():
       obj_scores, rel_scores = self.model(*net_input)
 
       # Preprocessing the rel_sop_prior before factoring it into the loss
-      rel_sop_prior = torch.FloatTensor(rel_sop_prior, device=utils.device)
+      rel_sop_prior.to(utils.device)
       rel_sop_prior = -0.5 * ( rel_sop_prior + 1.0 / self.datalayer.n_pred)
       loss = self.criterion((rel_sop_prior + rel_scores).view(1, -1), target)
       # loss = self.criterion((rel_scores).view(1, -1), target)
@@ -307,8 +316,8 @@ class vrd_trainer():
       # TODO: I'd like to move that thing here, but maybe I can't call item() after backward?
       # losses.update(loss.item())
 
-      if utils.smart_fequency_check(step, n_iter, self.training.prints_per_epoch):
-        print("\t{:4d}: LOSS: {: 6.3f}".format(step, losses.avg(0)))
+      if utils.smart_fequency_check(i_iter, n_iter, self.training.prints_per_epoch):
+        print("\t{:4d}: LOSS: {: 6.3f}".format(i_iter, losses.avg(0)))
         losses.reset(0)
 
     self.state["loss"] = losses.avg(1)
@@ -340,6 +349,7 @@ if __name__ == "__main__":
   # trainer = vrd_trainer()
   # trainer = vrd_trainer(checkpoint = False, self.data_args.name = "vrd")
   trainer = vrd_trainer(checkpoint = "epoch_4_checkpoint.pth.tar")
-  trainer.test_pre()
-  trainer.test_rel()
+  trainer.train()
+  #trainer.test_pre()
+  # trainer.test_rel()
   #trainer.train()

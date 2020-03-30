@@ -7,8 +7,7 @@ import torch.nn as nn
 
 import sys
 import os.path as osp
-from lib.network import FC, Conv2d, ROIPool
-from lib.network import batched_index_select, set_trainability
+from lib.network import set_trainability, FC, Conv2d, ROIPool
 from easydict import EasyDict
 import utils
 
@@ -134,10 +133,9 @@ class DSRModel(nn.Module):
 
 
 
-    n_batches = img_blob.size()[0]
+
 
     # Visual features from the whole image
-    # print("img_blob", img_blob.shape)
 
     x_img = self.conv1(img_blob)
     x_img = self.conv2(x_img)
@@ -145,113 +143,60 @@ class DSRModel(nn.Module):
     x_img = self.conv4(x_img)
     x_img = self.conv5(x_img)
 
-    # print("x_img.shape: ", x_img.shape)
-    # print("obj_boxes.shape: ", obj_boxes.shape)
-
     # ROI pooling for combined subjects' and objects' boxes
-
-    # x_so = [self.roi_pool(x_img, obj_boxes[0]) for i in range(n_batches)]
-    # x_so = [self.roi_pool(x_img, obj_boxes[0])]
-    # x_so = torch.tensor(x_so, device=utils.device)
-
-    # turn our (batch_size×n×5) ROI into just (n×5)
-    obj_boxes = obj_boxes.view(-1, obj_boxes.size()[2])
-    u_boxes   =   u_boxes.view(-1,   u_boxes.size()[2])
-    # reset ROI image-ID to align with the 0-indexed minibatch
-    obj_boxes[:, 0] = obj_boxes[:, 0] - obj_boxes[0, 0]
-    u_boxes[:, 0]   =   u_boxes[:, 0]  -  u_boxes[0, 0]
-    # Warning: this is a critical point for batching with batchsize>1. Maybe this will cause trouble, together with the index_select down below
-    x_so = self.roi_pool(x_img, obj_boxes) # .unsqueeze(0) ?
-
-    # print("x_so.shape: ", x_so.shape)
-
+    x_so = self.roi_pool(x_img, obj_boxes)
     x_so = x_so.view(x_so.size()[0], -1)
-    # print("x_so.shape: ", x_so.shape)
-
     x_so = self.fc6(x_so)
     x_so = self.dropout0(x_so)
     x_so = self.fc7(x_so)
     x_so = self.dropout0(x_so)
     obj_scores = self.fc_obj(x_so)
 
-    # print("x_so.shape: ", x_so.shape)
-
     # ROI pooling for union boxes
-    x_u = self.roi_pool(x_img, u_boxes).unsqueeze(0)
-    # print("x_u.shape: ", x_u.shape)
-    x_u = x_u.view(x_u.size()[0], x_u.size()[1], -1)
-    # print("x_u.shape: ", x_u.shape)
+    x_u = self.roi_pool(x_img, u_boxes)
+    x_u = x_u.view(x_u.size()[0], -1)
     x_u = self.fc6(x_u)
     x_u = self.dropout0(x_u)
     x_u = self.fc7(x_u)
     x_u = self.dropout0(x_u)
-    # print("x_u.shape: ", x_u.shape)
 
-    # Mmmm u_boxes.size()[1]
-    x_fused = torch.empty((n_batches, u_boxes.size()[0], 0), device=utils.device)
-
-    # print("u_boxes: ", u_boxes.shape)
+    x_fused = torch.empty((u_boxes.size()[0], 0), device=utils.device)
 
     if(self.args.use_vis):
       x_u = self.fc8(x_u)
-      # print("x_fused: ", x_fused.shape)
-      # print("x_u: ", x_u.shape)
-      x_fused = torch.cat((x_fused, x_u), 2)
-      # print("x_fused++: ", x_fused.shape)
+      x_fused = torch.cat((x_fused, x_u), 1)
 
       # using visual features of subject and object individually too
       if(self.args.use_so):
         x_so = self.fc8(x_so)
-        # print(x_so)
-        # print(idx_s)
-        # print()
-        # print("x_so: ", x_so.shape)
-        # print("idx_s: ", idx_s.shape)
-        # print("idx_s: ", idx_s)
-
-        x_s = torch.index_select(x_so, 0, idx_s[0]).unsqueeze(0) # TODO: warning, use batched_index_select otherwise this won't work
-        x_o = torch.index_select(x_so, 0, idx_o[0]).unsqueeze(0) # TODO: warning, use batched_index_select otherwise this won't work
-        # print()
-        # print("x_s: ", x_s.shape)
-        # print("x_o: ", x_o.shape)
-        x_subobj = torch.cat((x_s, x_o), 2)
-        # print("x_subobj: ", x_subobj.shape)
-        x_subobj = self.fc_so(x_subobj)
-        # print("x_subobj: ", x_subobj.shape)
-        # print()
-        x_fused = torch.cat((x_fused, x_subobj), 2)
+        x_s = torch.index_select(x_so, 0, idx_s)
+        x_o = torch.index_select(x_so, 0, idx_o)
+        x_so = torch.cat((x_s, x_o), 1)
+        x_so = self.fc_so(x_so)
+        x_fused = torch.cat((x_fused, x_so), 1)
 
     if(self.args.use_spat == 1):
       x_spat = self.fc_spatial(spatial_features)
-      x_fused = torch.cat((x_fused, x_spat), 2)
+      x_fused = torch.cat((x_fused, x_spat), 1)
     elif(self.args.use_spat == 2):
       raise NotImplementedError
       # lo = self.conv_lo(SpatialFea)
       # lo = lo.view(lo.size()[0], -1)
       # lo = self.fc_spatial(lo)
-      # x_fused = torch.cat((x_fused, lo), 2)
+      # x_fused = torch.cat((x_fused, lo), 1)
 
     if(self.args.use_sem):
       # x_sem  = self.fc_semantic(semantic_features)
-      # x_fused = torch.cat((x_fused, x_sem), 2)
+      # x_fused = torch.cat((x_fused, x_sem), 1)
 
       # obj_classes in this case is simply a list of objects in the image
-      # print()
-      # print("obj_classes.shape: ", obj_classes.shape)
       emb = self.emb(obj_classes)
-      # print("emb.shape: ", emb.shape)
-      emb = torch.squeeze(emb, 1)[0] # TODO: remove
-      # print("emb.shape: ", emb.shape)
-      # print("idx_s.shape: ", idx_s.shape)
-      emb_subject = torch.index_select(emb, 0, idx_s[0]).unsqueeze(0) # TODO: warning, use batched_index_select otherwise this won't work
-      emb_object  = torch.index_select(emb, 0, idx_o[0]).unsqueeze(0) # TODO: warning, use batched_index_select otherwise this won't work
-      # print("emb_subject.shape: ", emb_subject.shape)
-      emb_s_o = torch.cat((emb_subject, emb_object), dim=2)
-      # print("emb_s_o.shape: ", emb_s_o.shape)
+      emb = torch.squeeze(emb, 1)
+      emb_subject = torch.index_select(emb, dim=0, index=idx_s)
+      emb_object = torch.index_select(emb, dim=0, index=idx_o)
+      emb_s_o = torch.cat((emb_subject, emb_object), dim=1)
       emb = self.fc_semantic(emb_s_o)
-      # print("emb.shape: ", emb.shape)
-      x_fused = torch.cat((x_fused, emb), dim=2)
-      # print("x_fused.shape: ", x_fused.shape)
+      x_fused = torch.cat((x_fused, emb), dim=1)
 
 
 
@@ -260,10 +205,6 @@ class DSRModel(nn.Module):
 
     x_fused = self.fc_fusion(x_fused)
     rel_scores = self.fc_rel(x_fused)
-
-    rel_scores = rel_scores.squeeze(0)
-    # print("obj_scores.shape: ", obj_scores.shape)
-    # print("rel_scores.shape: ", rel_scores.shape)
 
     return obj_scores, rel_scores
 

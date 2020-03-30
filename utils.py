@@ -97,6 +97,7 @@ def read_img(im_file):
 
 # LeveledAverageMeter, inspired from AverageMeter:
 #  https://github.com/pytorch/examples/blob/490243127c02a5ea3348fa4981ecd7e9bcf6144c/imagenet/main.py#L359
+# TODO: check that this works properly
 class LeveledAverageMeter(object):
   """ Computes and stores the average and current value """
   def __init__(self, n_levels = 1):
@@ -125,7 +126,7 @@ class LeveledAverageMeter(object):
   def cnt(self, level = 0): return self._cnt[level]
   def val(self, level = 0): return self._val[level]
   def sum(self, level = 0): return self._sum[level]
-  def avg(self, level = 0): return self.sum(level) / self.count(level)
+  def avg(self, level = 0): return self.sum(level) / self.cnt(level)
 
 
 # Smart frequency = a frequency that can be a relative (a precentage) or absolute (integer)

@@ -74,7 +74,7 @@ class vr_detector():
       self.net.load_state_dict(checkpoint["state_dict"])
 
   def test_vrd_model(self):
-    relst = self.dataset.getRelst()
+    relst = self.dataset.getData("relst")
 
     for im_id,rels in relst.items():
 

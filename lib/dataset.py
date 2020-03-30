@@ -10,6 +10,7 @@ import math
 import os.path as osp
 from collections import defaultdict
 import utils, globals
+import warnings
 
 # TODO: rename to VRDDataset
 # TODO: add flag that forbids/allows caching with pickles
@@ -17,15 +18,21 @@ import utils, globals
 
 class dataset():
 
-  def __init__(self, name, subset=None, with_bg_obj=True, with_bg_pred=False):
+  def __init__(self, name, subset=None, with_bg_obj=True, with_bg_pred=False, justafew=False):
 
     self.name         = name
     self.subset       = subset
     self.with_bg_obj  = with_bg_obj
     self.with_bg_pred = with_bg_pred
+    self.justafew     = justafew
 
-    self.img_dir = None
+    if self.justafew:
+      warnings.warn("Warning: Using less data (because of debugging)", UserWarning)
+
+    self.img_dir      = None
     self.metadata_dir = None
+
+    self._vrd_data_cache = {}
 
     if self.name == "vrd":
       self.img_dir = osp.join(globals.data_dir, "vrd", "sg_dataset")
@@ -75,19 +82,21 @@ class dataset():
   def readImg(self, img_path):
     return utils.read_img(osp.join(self.img_dir, img_path))
 
-  # TODO: select which split ("train", "test", default="traintest")
-  def getRelst(self, stage, granularity = "img"):
-    """ Load list of relationships """
-    # with open(osp.join(self.metadata_dir, "dsr_relst_{}.json".format(stage)), 'r') as rfile:
-    with open(osp.join(self.metadata_dir, "data_relst_{}_{}.json".format(granularity, stage)), 'r') as rfile:
-      return json.load(rfile) # Maybe pickle this?
+  # Need alias for getRelst? Here we go: def getRelst(self, stage, granularity = "img"): return self.getData("relst", stage, granularity)
 
-  def getAnnos(self, stage):
-    """ Load annos """
-    granularity = "img" # TODO: figure out if we need annos for granularity = "rel"
-    with open(osp.join(self.metadata_dir, "data_annos_{}_{}.json".format(granularity, stage)), 'r') as rfile:
-      return json.load(rfile) # Maybe pickle this?
-    pass
+  def getData(self, format, stage, granularity = "img"):
+    # TODO: figure out if we need annos for granularity = "rel"
+    """ Load list of relationships """
+    # print((format, stage, granularity))
+    if not (format, stage, granularity) in self._vrd_data_cache:
+      filename = "data_{}_{}_{}.json".format(format, granularity, stage)
+      # ...filename = "dsr_{}_{}_{}.json".format(format, granularity, stage))
+      print("Data not cached. Reading {}...".format(filename))
+      with open(osp.join(self.metadata_dir, filename), 'r') as rfile:
+        data = json.load(rfile)[:5] if self.justafew else json.load(rfile)
+        self._vrd_data_cache[(format, stage, granularity)] = data
+    return self._vrd_data_cache[(format, stage, granularity)]
+    # Annos:
     # with open(osp.join(globals.metadata_dir, "annos.pkl", 'rb') as fid:
     #   annos = pickle.load(fid)
     #   self._annos = [x for x in annos if x is not None and len(x['classes'])>1]
@@ -111,7 +120,7 @@ class dataset():
           distribution = pickle.load(fid, encoding='latin1')
       except FileNotFoundError:
         print("Distribution {} not found: {}. Generating...".format(type, distribution_pkl_path))
-        distribution = self._generate_soP_distr(self.getRelst(stage))
+        distribution = self._generate_soP_distr(self.getData("relst", stage))
         pickle.dump(distribution, open(distribution_pkl_path, 'wb'))
     else:
       raise Exception("Unknown distribution requested: {}".format(type))

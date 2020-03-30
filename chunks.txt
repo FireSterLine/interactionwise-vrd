@@ -25,9 +25,9 @@ dataset_args = {"ds_name" : "vrd", "with_bg_obj" : False, "with_bg_pred" : False
 
 dataset = dataset("vrd", dataset_args)
 
-test_imgrels = dataset.getRelst("test")
+test_imgrels = dataset.getData("relst", "test")
 
-test_imgrels_list = [(k,v) for k,v in dataset.getRelst("test").items()]
+test_imgrels_list = [(k,v) for k,v in dataset.getData("relst", "test").items()]
 
 if len(test_imgrels) != len(test):
   print("ERR!")

@@ -1,9 +1,12 @@
 import numpy as np
 import torch
 
-from lib.datalayer import VRDDataLayer
+from lib.datalayers import VRDDataLayer
 from lib.evaluation_dsr import eval_recall_at_N, eval_obj_img # TODO remove this module
 import time
+import pickle
+import os.path as osp
+import torch.nn.functional as F
 
 # TODO: remove this and use dataset.dir instead
 import globals
@@ -22,9 +25,14 @@ class VRDEvaluator():
       vrd_model.eval()
       time1 = time.time()
 
-      ...
+      # ...
       # TODO: just one VRD test layer
       test_data_layer = VRDDataLayer(self.data_args, "test")
+      test_dataloader = torch.utils.data.DataLoader(
+        dataset = test_data_layer,
+        batch_size = 1, # 256,
+        shuffle = False,
+      )
 
       rlp_labels_cell  = []
       tuple_confs_cell = []
@@ -33,13 +41,7 @@ class VRDEvaluator():
 
       N = 100 # What's this? (num of rel_res) (with this you can compute R@i for any i<=N)
 
-      while True:
-
-        try:
-          net_input, obj_classes_out, ori_bboxes = test_data_layer.next()
-        except StopIteration:
-          print("StopIteration")
-          break
+      for (tmp_i,(net_input, obj_classes_out, ori_bboxes)) in enumerate(test_dataloader):
 
         if(net_input is None):
           rlp_labels_cell.append(None)
@@ -47,6 +49,8 @@ class VRDEvaluator():
           sub_bboxes_cell.append(None)
           obj_bboxes_cell.append(None)
           continue
+
+        print("{}/{}".format(tmp_i, test_data_layer.N))
 
         img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes = net_input
 
@@ -58,6 +62,12 @@ class VRDEvaluator():
         obj_scores, rel_scores = vrd_model(*net_input)
         rel_prob = rel_scores.data.cpu().numpy()
         rel_res = np.dstack(np.unravel_index(np.argsort(-rel_prob.ravel()), rel_prob.shape))[0][:N]
+
+        # TODO: fix when batch_size>1
+        idx_s           = idx_s[0]
+        idx_o           = idx_o[0]
+        obj_classes_out = obj_classes_out[0]
+        ori_bboxes      = ori_bboxes[0]
 
         for ii in range(rel_res.shape[0]):
           rel = rel_res[ii, 1]
@@ -103,6 +113,7 @@ class VRDEvaluator():
       vrd_model.eval()
       time1 = time.time()
 
+      # test_data_layer = use the other layer and then use args: VRDDataLayer(self.data_args...?, "test")
       test_data_layer = VRDDataLayer(self.data_args.name, "test")
 
       with open(osp.join(globals.data_dir, self.data_args.name, "test.pkl"), 'rb') as fid:

@@ -39,7 +39,7 @@ class VRDDataLayer():
 
     self.soP_prior = self.dataset.getDistribution("soP")
 
-    self.imgrels   = deepcopy(self.dataset.getRelst(self.stage))
+    self.imgrels   = deepcopy(self.dataset.getData("relst", self.stage))
 
     # TODO: check if this works
     # Ignore None elements during training

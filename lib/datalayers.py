@@ -30,7 +30,8 @@ class VRDDataLayer(data.Dataset):
     self.shuffle = shuffle
 
     # TODO: Receive this parameter as an argument, don't hardcode this
-    self.granularity = "rel"
+    # self.granularity = "rel"
+    self.granularity = "img"
 
 
 
@@ -41,7 +42,7 @@ class VRDDataLayer(data.Dataset):
     self.soP_prior = self.dataset.getDistribution("soP")
 
     # TODO: switch to annos
-    self.vrd_data = deepcopy(self.dataset.getRelst(self.stage, self.granularity))
+    self.vrd_data = deepcopy(self.dataset.getData("relst", self.stage, self.granularity))
 
     # TODO: change this when you switch to annos?
     def numrels(vrd_sample):
@@ -69,7 +70,7 @@ class VRDDataLayer(data.Dataset):
     self.objdet_res = False
 
     # NOTE: the max shape is across all the dataset, whereas we would like for it to be for a unique batch.
-    # TODO: write collate_fn using this code
+    # TODO: write collate_fn using this code: https://pytorch.org/docs/stable/data.html#loading-batched-and-non-batched-data
     '''
     this is the max shape that was identified by running the function above on the
     VRD dataset. It takes too long to run, so it's better if we run this once on
@@ -201,10 +202,14 @@ class VRDDataLayer(data.Dataset):
 
     # Object boxes
     obj_boxes = np.zeros((obj_boxes_out.shape[0], 5))  # , dtype=np.float32)
+    # Note: The ROI Pooling layer expects the index of the batch as first column
+    # (https://pytorch.org/docs/stable/torchvision/ops.html#torchvision.ops.roi_pool)
+    obj_boxes[:, 0] = index
     obj_boxes[:, 1:5] = obj_boxes_out * im_scale
 
     # union bounding boxes
     u_boxes = np.zeros((n_rels, 5))
+    u_boxes[:, 0] = index
 
     # the dimension 8 here is the size of the spatial feature vector, containing the relative location and log-distance
     spatial_features = np.zeros((n_rels, 8))
@@ -221,7 +226,7 @@ class VRDDataLayer(data.Dataset):
     # print(n_rels)
 
     # Target output for the network
-    target = -1 * np.ones((1, self.dataset.n_pred * n_rels))
+    target = -1 * np.ones((self.dataset.n_pred * n_rels))
     pos_idx = 0
     # target = np.zeros((n_rels, self.n_pred))
 
@@ -295,7 +300,7 @@ class VRDDataLayer(data.Dataset):
         # TODO: enable multi-class predicate (rel_classes: list of predicates for every pair)
         rel_classes = [rel["predicate"]["id"]]
         for rel_label in rel_classes:
-          target[0, pos_idx] = i_rel * self.dataset.n_pred + rel_label
+          target[pos_idx] = i_rel * self.dataset.n_pred + rel_label
           pos_idx += 1
 
 
@@ -305,7 +310,13 @@ class VRDDataLayer(data.Dataset):
     #  last dimension
     # TODO: switch to from_numpy().to() instead of FloatTensor/LongTensor(, device=)
     #  or, actually, build the tensors on the GPU directly, instead of using numpy.
-
+    # print(idx_s)
+    # print(np.array(idx_s).shape)
+    # print(len(np.array(idx_s).shape))
+    # if len(np.array(idx_s).shape) == 2:
+    #   print(img_path)
+    #   print(idx_s)
+    #   input()
     # img_blob          = torch.FloatTensor(img_blob,          device=utils.device).permute(0, 3, 1, 2)
     img_blob          = torch.FloatTensor(img_blob,          device=utils.device).permute(2, 0, 1)
     obj_boxes         = torch.FloatTensor(obj_boxes,         device=utils.device)
@@ -315,6 +326,8 @@ class VRDDataLayer(data.Dataset):
     spatial_features  = torch.FloatTensor(spatial_features,  device=utils.device)
     semantic_features = torch.FloatTensor(semantic_features, device=utils.device)
     obj_classes       = torch.LongTensor(obj_classes,        device=utils.device)
+
+    # print(idx_s)
 
     # rel_soP_prior = torch.FloatTensor(rel_soP_prior, device=utils.device)
     target        = torch.LongTensor(target,                 device=utils.device)
@@ -334,7 +347,7 @@ class VRDDataLayer(data.Dataset):
               rel_soP_prior,  \
               target
     elif self.stage == "test":
-      if det_res is not None:
+      if det_res is None:
         return net_input,         \
                 obj_classes_out,  \
                 obj_boxes_out
@@ -344,6 +357,7 @@ class VRDDataLayer(data.Dataset):
                 rel_soP_prior,    \
                 obj_boxes_out
 
+"""
 # Batching example:
 data_info = {"name": "vrd", "with_bg_obj" : False, "with_bg_pred" : False}
 datalayer = VRDDataLayer(data_info, "train", shuffle = False)
@@ -366,6 +380,7 @@ for i, a in enumerate(train_generator):
   print()
   input()
   if i > 0: break
+"""
 
 
 """
