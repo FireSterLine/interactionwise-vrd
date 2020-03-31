@@ -261,7 +261,6 @@ class DSRModel(nn.Module):
     x_fused = self.fc_fusion(x_fused)
     rel_scores = self.fc_rel(x_fused)
 
-    rel_scores = rel_scores.squeeze(0)
     # print("obj_scores.shape: ", obj_scores.shape)
     # print("rel_scores.shape: ", rel_scores.shape)
 

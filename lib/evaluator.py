@@ -63,7 +63,7 @@ class VRDEvaluator():
           obj_bboxes_cell.append(None)
           continue
 
-        print("{}/{}".format(tmp_i, test_data_layer.N))
+        #print("{}/{}".format(tmp_i, test_data_layer.N))
 
         img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes = net_input
 
@@ -72,15 +72,17 @@ class VRDEvaluator():
         sub_bboxes_im  = np.zeros((N, 4), dtype = np.float) # Subj bboxes
         obj_bboxes_im  = np.zeros((N, 4), dtype = np.float) # Obj bboxes
 
-        obj_scores, rel_scores = vrd_model(*net_input)
-        rel_prob = rel_scores.data.cpu().numpy()
-        rel_res = np.dstack(np.unravel_index(np.argsort(-rel_prob.ravel()), rel_prob.shape))[0][:N]
+        _, rel_scores = vrd_model(*net_input)
 
         # TODO: fix when batch_size>1
         idx_s           = idx_s[0]
         idx_o           = idx_o[0]
         obj_classes_out = obj_classes_out[0]
         ori_bboxes      = ori_bboxes[0]
+        rel_scores      = rel_scores[0]
+
+        rel_prob = rel_scores.data.cpu().numpy() # Is this the correct way?
+        rel_res = np.dstack(np.unravel_index(np.argsort(-rel_prob.ravel()), rel_prob.shape))[0][:N]
 
         for ii in range(rel_res.shape[0]):
           rel = rel_res[ii, 1]
@@ -182,6 +184,10 @@ class VRDEvaluator():
         gt_cls = np.array(anno_img["classes"]).astype(np.float32)
 
         obj_score, rel_score = vrd_model(*net_input) # img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
+
+        # TODO: remove and fix everyhing else to allow batching
+        obj_score = obj_score[0]
+        rel_score = rel_score[0]
 
         _, obj_pred = obj_score[:, 1::].data.topk(1, 1, True, True)
         obj_score = F.softmax(obj_score, dim=1)[:, 1::].data.cpu().numpy()

@@ -93,7 +93,7 @@ class dataset():
       # ...filename = "dsr_{}_{}_{}.json".format(format, granularity, stage))
       print("Data not cached. Reading {}...".format(filename))
       with open(osp.join(self.metadata_dir, filename), 'r') as rfile:
-        data = json.load(rfile)[0:3] if self.justafew else json.load(rfile)
+        data = json.load(rfile)[:10] if self.justafew else json.load(rfile)
         self._vrd_data_cache[(format, stage, granularity)] = data
     return self._vrd_data_cache[(format, stage, granularity)]
     # Annos:

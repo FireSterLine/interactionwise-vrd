@@ -90,8 +90,6 @@ class vrd_trainer():
           "num_epochs" : 20,
           "checkpoint_freq" : 5,
 
-          # TODO make this such that -1 means "one full dataset round" (and maybe -2 is two full.., -3 is three but whatevs)
-          "iters_per_epoch"  : -1,
           # Number of lines printed with loss ...TODO explain smart freq
           "prints_per_epoch" : 10,
 
@@ -106,9 +104,9 @@ class vrd_trainer():
     # Local Patch:
     # If we run on a CPU, we reduce the computational load for debugging purposes
     if(utils.device == torch.device("cpu")):
-      args["training"]["num_epochs"] = 1
+      args["training"]["num_epochs"] = 4
       args["data"]["justafew"] = True
-      args["training"]["prints_per_epoch"] = 1
+      args["training"]["prints_per_epoch"] = 0.3 # 1
 
 
     print("Arguments:")
@@ -215,8 +213,8 @@ class vrd_trainer():
     print("Initializing training...")
     print("Training args: ", self.training)
     self.optimizer = self.model.OriginalAdamOptimizer(**self.training.opt)
-    # TODO: create loss_type argument... reduction='sum' or reduction='mean'
-    self.criterion = nn.MultiLabelMarginLoss().to(utils.device)
+    # TODO: create loss_type argument... also, use reduction='sum' instead?
+    self.criterion = nn.MultiLabelMarginLoss(reduction="sum").to(utils.device)
     if "optimizer_state_dict" in self.state:
       self.optimizer.load_state_dict(self.state["optimizer_state_dict"])
 
@@ -240,7 +238,7 @@ class vrd_trainer():
     end_epoch = self.state["epoch"] + self.training.num_epochs
     while self.state["epoch"] < end_epoch:
 
-      print("Epoch {}".format(self.state["epoch"]))
+      print("Epoch {}/{}".format((self.state["epoch"]+1), end_epoch))
 
 
       # TODO check if this works (Note that you'd have to make it work cross-sessions as well)
@@ -298,28 +296,30 @@ class vrd_trainer():
     losses = utils.LeveledAverageMeter(2)
 
     # Iterate over the dataset
-    n_iter = self.training.iters_per_epoch
-    if n_iter < 0:
-      # TODO: check that vrd during training ignores None images
-      n_iter = self.datalayer.N * (-n_iter)
-
+    n_iter = len(self.dataloader)
+    
     # for iter in range(n_iter):
-    for i_iter,(net_input, rel_sop_prior, target) in enumerate(self.dataloader):
+    for i_iter,(net_input, rel_soP_prior, target) in enumerate(self.dataloader):
 
-      # TODO: is this necessary? If it's what I think, the datalayer should already ignore these
-      if target.size()[0] == 0:
-        print(target.size())
-        continue
+      print("{}/{}".format(i_iter, n_iter))
+
+      # print(type(net_input))
+      # print(type(rel_soP_prior))
+      # print(type(target))
+
+      batch_size = target.size()[0]
 
       # Forward pass & Backpropagation step
       self.optimizer.zero_grad()
-      obj_scores, rel_scores = self.model(*net_input)
+      _, rel_scores = self.model(*net_input)
 
-      # Preprocessing the rel_sop_prior before factoring it into the loss
-      rel_sop_prior.to(utils.device)
-      rel_sop_prior = -0.5 * ( rel_sop_prior + 1.0 / self.datalayer.n_pred)
-      loss = self.criterion((rel_sop_prior + rel_scores).view(1, -1), target)
-      # loss = self.criterion((rel_scores).view(1, -1), target)
+      # Preprocessing the rel_soP_prior before factoring it into the loss
+      rel_soP_prior.to(utils.device)
+      rel_soP_prior = -0.5 * ( rel_soP_prior + (1.0 / self.datalayer.n_pred))
+
+      # TODO: fix this weird target shape in datalayers and remove this view
+      loss = self.criterion((rel_soP_prior + rel_scores).view(batch_size, -1), target)
+      # loss = self.criterion((rel_scores).view(batch_size, -1), target)
 
       losses.update(loss.item())
       loss.backward()
@@ -339,11 +339,12 @@ class vrd_trainer():
     print("TRAIN Time: {}".format(utils.time_diff_str(time1, time2)))
 
     """
-      # the rel_sop_prior here is a subset of the 100*70*70 dimensional so_prior array, which contains the predicate prob distribution for all object pairs
-      # the rel_sop_prior here contains the predicate probability distribution of only the object pairs in this annotation
+      # the rel_soP_prior here is a subset of the 100*70*70 dimensional so_prior array, which contains the predicate prob distribution for all object pairs
+      # the rel_soP_prior here contains the predicate probability distribution of only the object pairs in this annotation
       # Also, it might be helpful to keep in mind that this data layer currently works for a single annotation at a time - no batching is implemented!
-      image_blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, rel_labels, rel_sop_prior = self.datalayer...
+      image_blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, rel_labels, rel_soP_prior = self.datalayer...
     """
+
   def test_pre(self):
     rec_50, rec_50_zs, rec_100, rec_100_zs, dtime = self.eval.test_pre(self.model)
     print("CLS PRED TEST:\nAll:\tR@50: {: 6.3f}\tR@100: {: 6.3f}\nZShot:\tR@50: {: 6.3f}\tR@100: {: 6.3f}".format(rec_50, rec_100, rec_50_zs, rec_100_zs))
@@ -359,8 +360,8 @@ class vrd_trainer():
 
 if __name__ == "__main__":
   # trainer = vrd_trainer()
-  # trainer = vrd_trainer(checkpoint = False, self.data_args.name = "vrd")
-  trainer = vrd_trainer(checkpoint = "epoch_4_checkpoint.pth.tar")
+  trainer = vrd_trainer(checkpoint = False)
+  # trainer = vrd_trainer(checkpoint = "epoch_4_checkpoint.pth.tar")
   trainer.train()
   #trainer.test_pre()
   # trainer.test_rel()
