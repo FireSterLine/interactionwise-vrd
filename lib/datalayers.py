@@ -7,7 +7,6 @@ import pickle
 from lib.blob import prep_im_for_blob
 from lib.dataset import dataset
 import torch
-import random
 # from gensim.models import KeyedVectors
 import warnings
 
@@ -18,16 +17,10 @@ from torch.utils import data
 class VRDDataLayer(data.Dataset):
   """ Iterate through the dataset and yield the input and target for the network """
 
-  def __init__(self, data_info, stage, shuffle = False):
-
-    # There's never need to shuffle in testing
-    if shuffle and stage != "train":
-      warnings.warn("Shuffling during '{}' was prevented".format(stage), UserWarning)
-      shuffle = False
+  def __init__(self, data_info, stage):
 
     self.ds_args = utils.data_info_to_ds_args(data_info)
     self.stage   = stage
-    self.shuffle = shuffle
 
     # TODO: Receive this parameter as an argument, don't hardcode this
     # self.granularity = "rel"
@@ -59,9 +52,6 @@ class VRDDataLayer(data.Dataset):
     if self.stage == "train":
       self.vrd_data = [(k,v) for k,v in self.vrd_data if k != None and numrels(v) > 0]
 
-
-    if self.shuffle:
-      random.shuffle(self.vrd_data)
 
     self.N = len(self.vrd_data)
     self.wrap_around = ( self.stage == "train" )
@@ -361,11 +351,11 @@ class VRDDataLayer(data.Dataset):
 """
 # Batching example:
 data_info = {"name": "vrd", "with_bg_obj" : False, "with_bg_pred" : False}
-datalayer = VRDDataLayer(data_info, "train", shuffle = False)
+datalayer = VRDDataLayer(data_info, "train")
 train_generator = data.DataLoader(
   dataset = datalayer,
   batch_size = 2, # 256,
-  shuffle = True  # Note that this dataloader has a shuffle flag, so we oughta remove it from da dl
+  shuffle = True
 )
 
 for i,a in enumerate(datalayer):
@@ -386,7 +376,7 @@ for i, a in enumerate(train_generator):
 
 """
 data_info = {"name": "vrd", "with_bg_obj": False, "with_bg_pred": False}
-datalayer = VRDDataLayer(data_info, "train", shuffle=False)
+datalayer = VRDDataLayer(data_info, "train")
 a = datalayer[0]
 ​
 train_generator = data.DataLoader(
@@ -400,7 +390,7 @@ train_generator = data.DataLoader(
 """
 TODO: make this an data.IterableDataset and allow parallelization?
 
-  def __init__(self, data_info, stage, shuffle = False):
+  def __init__(self, data_info, stage):
     super(VRDDataLayer).__init__()
     ...
   ...

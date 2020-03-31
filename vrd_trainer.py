@@ -106,7 +106,7 @@ class vrd_trainer():
     if(utils.device == torch.device("cpu")):
       args["training"]["num_epochs"] = 4
       args["data"]["justafew"] = True
-      args["training"]["prints_per_epoch"] = 0.3 # 1
+      args["training"]["prints_per_epoch"] = 1
 
 
     print("Arguments:")
@@ -153,7 +153,7 @@ class vrd_trainer():
       utils.patch_key(checkpoint, "state_dict", ["state", "model_state_dict"]) # (patching)
       utils.patch_key(checkpoint["state"]["model_state_dict"], "fc_so_emb.fc.weight", "fc_semantic.fc.weight") # (patching)
       utils.patch_key(checkpoint["state"]["model_state_dict"], "fc_so_emb.fc.bias",   "fc_semantic.fc.bias") # (patching)
-      # TODO: is this different than the weights used for initialization...? del checkpoint["model_state_dict"]["emb.weight"]
+      # TODO: is checkpoint["model_state_dict"]["emb.weight"] different from the weights used for initialization...?
       # Optimizer state dictionary
       utils.patch_key(checkpoint, "optimizer", ["state", "optimizer_state_dict"]) # (patching)
       self.state = checkpoint["state"]
@@ -171,20 +171,14 @@ class vrd_trainer():
     print("Initializing data...")
     print("Data args: ", self.data_args)
     # TODO: VRDDataLayer has to know what to yield (DRS -> img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
-    self.datalayer = VRDDataLayer(self.data_args, "train", self.training.use_shuffle)
+    self.datalayer = VRDDataLayer(self.data_args, "train")
     self.dataloader = torch.utils.data.DataLoader(
       dataset = self.datalayer,
-      batch_size = 1, # 256,
-      shuffle = self.training.use_shuffle
+      batch_size = 1, # self.training.batch_size,
+      # sampler= Random ...,
+      # num_workers=self.num_workers
+      shuffle = self.training.use_shuffle,
     )
-    # TODO: Pytorch DataLoader instead:
-    # self.num_workers = 0
-    # self.dataset = VRDDataset()
-    # self.datalayer = torch.utils.data.DataLoader(self.dataset,
-    #                  batch_size=self.training.batch_size,
-    #                  # sampler= Random ...,
-    #                  num_workers=self.num_workers)
-
 
     # Model
     self.model_args.n_obj  = self.datalayer.n_obj
@@ -297,7 +291,7 @@ class vrd_trainer():
 
     # Iterate over the dataset
     n_iter = len(self.dataloader)
-    
+
     # for iter in range(n_iter):
     for i_iter,(net_input, rel_soP_prior, target) in enumerate(self.dataloader):
 
@@ -321,12 +315,11 @@ class vrd_trainer():
       loss = self.criterion((rel_soP_prior + rel_scores).view(batch_size, -1), target)
       # loss = self.criterion((rel_scores).view(batch_size, -1), target)
 
-      losses.update(loss.item())
       loss.backward()
       self.optimizer.step()
 
-      # TODO: I'd like to move that thing here, but maybe I can't call item() after backward?
-      # losses.update(loss.item())
+      # Track loss
+      losses.update(loss.item())
 
       if utils.smart_fequency_check(i_iter, n_iter, self.training.prints_per_epoch):
         print("\t{:4d}: LOSS: {: 6.3f}".format(i_iter, losses.avg(0)))
