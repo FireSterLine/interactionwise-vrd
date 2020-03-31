@@ -93,7 +93,7 @@ class VRDDataLayer():
           return None, None, None
 
 
-    im = utils.read_img(osp.join(self.dataset.img_dir, im_id))
+    im = self.dataset.readImg(self, im_id))
     ih = im.shape[0]
     iw = im.shape[1]
 

@@ -1,0 +1,32 @@
+
+New idea:
+ look for "Let’s build a proper (yet simple" here: https://towardsdatascience.com/understanding-pytorch-with-an-example-a-step-by-step-tutorial-81fc5f8c4e8e
+ They have single paramters. Well, implement the linear projection for a predicate there. Beforee that, check if it's already there somewhere int he code.
+ They claim it is, in the paper.
+
+
+Before batching:
+
+CLS PRED TEST:
+All:	R@50:  90.698	R@100:  95.349
+ZShot:	R@50:  85.714	R@100:  100.000
+TEST Time: 00:00:26
+	   0: LOSS:  0.411
+	   1: LOSS:  0.038
+	   2: LOSS:  0.771
+	   3: LOSS:  0.162
+	   4: LOSS:  0.066
+TRAIN Loss:  0.290
+TRAIN Time: 00:02:28
+
+After introducing the "fake" 1-batching:
+
+CLS PRED TEST:
+All:	R@50:  90.698	R@100:  95.349
+ZShot:	R@50:  85.714	R@100:  100.000
+0: LOSS:  0.044
+1: LOSS:  0.153
+2: LOSS:  0.428
+3: LOSS:  0.066
+4: LOSS:  0.681
+TRAIN Loss:  0.275

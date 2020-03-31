@@ -82,7 +82,7 @@ class VRDDataLayer(data.Dataset):
     for img in self.imgrels:
       img_id, _ = img
       if img_id is not None:
-        im = utils.read_img(osp.join(self.dataset.img_dir, img_id))
+        im = self.dataset.readImg(self, im_id))
         image_blob, _ = prep_im_for_blob(im, utils.vrd_pixel_means)
         im_shapes.append(image_blob.shape)
 
@@ -118,7 +118,7 @@ class VRDDataLayer(data.Dataset):
       else:
         return None, None, None
 
-    im = utils.read_img(osp.join(self.dataset.img_dir, im_id))
+    im = self.dataset.readImg(self, im_id))
     ih = im.shape[0]
     iw = im.shape[1]
 
@@ -295,7 +295,7 @@ class VRDDataLayer(data.Dataset):
       else:
         return net_input, obj_classes_out, rel_soP_prior, obj_boxes_out
 
-
+"""
 ds_info = {"ds_name": "vrd", "with_bg_obj": False, "with_bg_pred": False}
 datalayer = VRDDataLayer(ds_info, "train", shuffle=False)
 a = datalayer[0]
@@ -318,3 +318,4 @@ train_generator = data.DataLoader(
 
 for elem in train_generator:
   print(elem)
+"""

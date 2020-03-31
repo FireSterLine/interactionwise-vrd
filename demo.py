@@ -78,9 +78,9 @@ class vr_detector():
 
     for im_id,rels in relst.items():
 
-      print("IMG: {}".format(osp.join(self.dataset.img_dir, im_id)))
+      print("IMG: {}".format(im_id))
 
-      im = utils.read_img(osp.join(self.dataset.img_dir, im_id))
+      im = self.dataset.readImg(self, im_id))
       ih = im.shape[0]
       iw = im.shape[1]
 

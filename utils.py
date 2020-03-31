@@ -15,7 +15,7 @@ vrd_pixel_means = np.array([[[102.9801, 115.9465, 122.7717]]])
 # Pytorch CUDA Fallback
 # TODO: check if this works and then use it everywhere instead of cuda()
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-torch.LongTensor(device=device)
+torch.LongTensor(device=device) # Test
 
 
 weights_normal_init  = frcnn_net_utils.weights_normal_init
@@ -38,8 +38,8 @@ def bboxDictToList(bbox_dict):
 
 # Union box of two boxes
 def getUnionBBox(aBB, bBB, ih, iw, margin=10):
-  return [max(0, min(aBB[0], bBB[0]) - margin),
-          max(0, min(aBB[1], bBB[1]) - margin),
+  return [max(0,  min(aBB[0], bBB[0]) - margin),
+          max(0,  min(aBB[1], bBB[1]) - margin),
           min(iw, max(aBB[2], bBB[2]) + margin),
           min(ih, max(aBB[3], bBB[3]) + margin)]
 

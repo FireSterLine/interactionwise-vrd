@@ -204,6 +204,7 @@ class VRDDataLayer(data.Dataset):
     obj_boxes = np.zeros((obj_boxes_out.shape[0], 5))  # , dtype=np.float32)
     # Note: The ROI Pooling layer expects the index of the batch as first column
     # (https://pytorch.org/docs/stable/torchvision/ops.html#torchvision.ops.roi_pool)
+    # TODO check that the boxes are in the format x1, y1, x2, y2
     obj_boxes[:, 0] = index
     obj_boxes[:, 1:5] = obj_boxes_out * im_scale
 

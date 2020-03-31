@@ -27,7 +27,7 @@ class dataset():
     self.justafew     = justafew
 
     if self.justafew:
-      warnings.warn("Warning: Using less data (because of debugging)", UserWarning)
+      warnings.warn("Warning: Using less data (because of 'justafew' debugging)", UserWarning)
 
     self.img_dir      = None
     self.metadata_dir = None
