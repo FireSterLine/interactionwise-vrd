@@ -17,7 +17,7 @@ from torch.utils import data
 class VRDDataLayer(data.Dataset):
   """ Iterate through the dataset and yield the input and target for the network """
 
-  def __init__(self, data_info, stage):
+  def __init__(self, data_info, stage, proposals = False):
 
     self.ds_args = utils.data_info_to_ds_args(data_info)
     self.stage   = stage
@@ -57,7 +57,20 @@ class VRDDataLayer(data.Dataset):
     self.wrap_around = ( self.stage == "train" )
 
     # TODO: use this variable to read the det_res pickle
-    self.objdet_res = False
+    self.objdet_res = None
+    if proposals == True:
+      # TODO: proposals is not ordered, but a dictionary with im_path keys
+      # TODO: expand so that we don't need the proposals pickle, and we generate it if it's not there, using Faster-RCNN?
+      # TODO: move the proposals file path to a different one (maybe in Faster-RCNN)
+      with open(osp.join(self.dataset.metadata_dir, "eval", "det_res.pkl"), 'rb') as fid:
+        proposals = pickle.load(fid)
+
+      # TODO: zip these ?
+      self.objdet_res = [ {
+          "boxes"   : proposals["boxes"][i],
+          "classes" : proposals["cls"][i].reshape(-1),
+          "confs"   : proposals["confs"][i].reshape(-1)
+        } for i in range(len(proposals["boxes"]))]
 
     # NOTE: the max shape is across all the dataset, whereas we would like for it to be for a unique batch.
     # TODO: write collate_fn using this code: https://pytorch.org/docs/stable/data.html#loading-batched-and-non-batched-data
@@ -92,21 +105,23 @@ class VRDDataLayer(data.Dataset):
 
     (img_path, _rels) = self.vrd_data[index]
 
-    if img_path is None:
-      if self.stage == "test":
-        if det_res is not None:
-          return None, None, None, None
-        else:
-          return None, None, None
-      elif self.stage == "train":
-        # TODO: probably None values won't allow batching.
-        warnings.warn("Warning: I'm about to return None values during training. That's not good, probably batching will fail", UserWarning)
-        return None, None, None
-
     # Obtain object detections, if any
     det_res = None
-    if self.objdet_res != False:
+    if self.objdet_res is not None:
       det_res = self.objdet_res[index]
+
+    # TODO: remove the nontypes, DataLoader doesn't support it.
+    #   maybe use False instead mmm? Or return the index instead (because the only reason is to keep the alignment with testing ground truths)?
+    if img_path is None:
+      if self.stage == "test":
+        if self.objdet_res is None:
+          return None, None, None
+        else:
+          return None, None, None, None, None
+      elif self.stage == "train":
+        # TODO: probably None values won't allow batching. But this is not a problem in training because None and len(rels)==0 are ignored
+        warnings.warn("Warning: I'm about to return None values during training. That's not good, probably batching will fail", UserWarning)
+        return None, None, None
 
     # TODO: The deepcopy won't be necessary anymore at some point
     rels = deepcopy(_rels)
@@ -120,10 +135,10 @@ class VRDDataLayer(data.Dataset):
     # Wait a second, shouldn't we test anyway on an image with no relationships? I mean, if we identified some objects, why not? What does DSR do?
     if n_rels == 0:
       if self.stage == "test":
-        if det_res is not None:
-          return None, None, None, None
-        else:
+        if self.objdet_res is None:
           return None, None, None
+        else:
+          return None, None, None, None, None
 
     im = self.dataset.readImg(img_path)
     ih = im.shape[0]
@@ -173,7 +188,7 @@ class VRDDataLayer(data.Dataset):
 
     # Object classes
 
-    if det_res is not None:
+    if self.objdet_res is not None:
       obj_boxes_out  = det_res["boxes"]
       obj_classes    = det_res["classes"]
       pred_confs_img = det_res["confs"]  # Note: We don't actually care about the confidence scores here
@@ -181,7 +196,7 @@ class VRDDataLayer(data.Dataset):
       n_rels = len(obj_classes) * (len(obj_classes) - 1)
 
       if n_rels == 0:
-        return None, None, None, None
+        return None, None, None, None, None
     else:
       obj_boxes_out = np.zeros((n_objs, 4))
       obj_classes = np.zeros((n_objs))
@@ -226,7 +241,7 @@ class VRDDataLayer(data.Dataset):
 
     # print(obj_classes)
 
-    if det_res is not None:
+    if self.objdet_res is not None:
       i_rel = 0
       for s_idx, sub_cls in enumerate(obj_classes):
         for o_idx, obj_cls in enumerate(obj_classes):
@@ -338,7 +353,7 @@ class VRDDataLayer(data.Dataset):
               rel_soP_prior,  \
               target
     elif self.stage == "test":
-      if det_res is None:
+      if self.objdet_res is None:
         return net_input,         \
                 obj_classes_out,  \
                 obj_boxes_out
@@ -346,7 +361,8 @@ class VRDDataLayer(data.Dataset):
         return net_input,         \
                 obj_classes_out,  \
                 rel_soP_prior,    \
-                obj_boxes_out
+                obj_boxes_out,    \
+                det_res
 
 """
 # Batching example:

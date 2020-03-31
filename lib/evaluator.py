@@ -7,6 +7,8 @@ import time
 import pickle
 import os.path as osp
 import torch.nn.functional as F
+import warnings
+from copy import deepcopy
 
 # TODO: check, is all of this using the GPU, or can we improve the time?
 class VRDEvaluator():
@@ -75,11 +77,11 @@ class VRDEvaluator():
         _, rel_scores = vrd_model(*net_input)
 
         # TODO: fix when batch_size>1
-        idx_s           = idx_s[0]
-        idx_o           = idx_o[0]
-        obj_classes_out = obj_classes_out[0]
-        ori_bboxes      = ori_bboxes[0]
-        rel_scores      = rel_scores[0]
+        idx_s           = deepcopy(idx_s[0])
+        idx_o           = deepcopy(idx_o[0])
+        obj_classes_out = deepcopy(obj_classes_out[0])
+        ori_bboxes      = deepcopy(ori_bboxes[0])
+        rel_scores      = deepcopy(rel_scores[0])
 
         rel_prob = rel_scores.data.cpu().numpy() # Is this the correct way?
         rel_res = np.dstack(np.unravel_index(np.argsort(-rel_prob.ravel()), rel_prob.shape))[0][:N]
@@ -129,20 +131,20 @@ class VRDEvaluator():
       time1 = time.time()
 
       # test_data_layer = use the other layer and then use args: VRDDataLayer(self.data_args...?, "test")
-      test_data_layer = VRDDataLayer(self.data_args.name, "test")
+      # test_data_layer = VRDDataLayer(self.data_args.name, "test", proposals = True)
+      test_data_args = deepcopy(self.data_args)
+      test_data_args.with_bg_obj  = True
+      test_data_args.with_bg_pred = False
+
+      test_data_layer = VRDDataLayer(test_data_args, "test", proposals = True)
+      test_dataloader = torch.utils.data.DataLoader(
+        dataset = test_data_layer,
+        batch_size = 1, # 256,
+        shuffle = False,
+      )
 
       with open(osp.join(test_data_layer.dataset.metadata_dir, "test.pkl"), 'rb') as fid:
         anno = pickle.load(fid, encoding="latin1")
-
-      # TODO: proposals is not ordered, but a dictionary with im_path keys
-      # TODO: expand so that we don't need the proposals pickle, and we generate it if it's not there, using Faster-RCNN?
-      # TODO: move the proposals file path to a different one (maybe in Faster-RCNN)
-      with open(osp.join(test_data_layer.dataset.metadata_dir, "eval", "det_res.pkl"), 'rb') as fid:
-        proposals = pickle.load(fid)
-        # TODO: zip these
-        pred_boxes   = proposals["boxes"]
-        pred_classes = proposals["cls"]
-        pred_confs   = proposals["confs"]
 
       N = 100 # What's this? (num of rel_res) (with this you can compute R@i for any i<=N)
 
@@ -154,24 +156,17 @@ class VRDEvaluator():
       tuple_confs_cell = []
       sub_bboxes_cell  = []
       obj_bboxes_cell  = []
-      predict = []
 
-      if len(anno) != len(proposals["cls"]):
-        print("ERROR: something is wrong in prediction: {} != {}".format(len(anno), len(proposals["cls"])))
-
-      for step,anno_img in enumerate(anno):
-
-        objdet_res = {
-          "boxes"   : pred_boxes[step],
-          "classes" : pred_classes[step].reshape(-1),
-          "confs"   : pred_confs[step].reshape(-1)
-        }
-
-        try:
-          net_input, obj_classes_out, rel_sop_prior, ori_bboxes = test_data_layer.next(objdet_res)
-        except StopIteration:
-          print("StopIteration")
+      # ... if len(anno) != len(proposals["cls"]):
+      #   print("ERROR: something is wrong in prediction: {} != {}".format(len(anno), len(proposals["cls"])))
+      # print(len(anno))
+      # print(len(test_dataloader))
+      n_iter = min(len(anno), len(test_dataloader))
+      for step,(anno_img, test_data) in enumerate(zip(anno, test_dataloader)):
+        print("{}/{}".format(step,n_iter))
+        if step >= n_iter:
           break
+        net_input, obj_classes_out, rel_soP_prior, ori_bboxes, objdet_res = test_data
 
         if(net_input is None):
           rlp_labels_cell.append(None)
@@ -186,21 +181,41 @@ class VRDEvaluator():
         obj_score, rel_score = vrd_model(*net_input) # img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
 
         # TODO: remove and fix everyhing else to allow batching
-        obj_score = obj_score[0]
-        rel_score = rel_score[0]
+        # obj_score = obj_score[0]
+        #rel_score = rel_score[0]
 
         _, obj_pred = obj_score[:, 1::].data.topk(1, 1, True, True)
+
+        # TODO: use this (what for? Just print, maybe) (it's dim=2 maybe?)
         obj_score = F.softmax(obj_score, dim=1)[:, 1::].data.cpu().numpy()
 
         rel_prob = rel_score.data.cpu().numpy()
-        rel_prob += np.log(0.5*(rel_sop_prior+1.0 / test_data_layer.n_pred))
+        rel_soP_prior = rel_soP_prior.data.cpu().numpy()
+        rel_prob += np.log(0.5*(rel_soP_prior+1.0 / test_data_layer.n_pred))
 
         img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes = net_input
+
+        # print("gt_boxes.shape: \t", gt_boxes.shape)
+        # print("gt_cls.shape: \t", gt_cls.shape)
+        # print("ori_bboxes.shape: \t", ori_bboxes.shape)
+        # print("obj_pred.shape: \t", obj_pred.shape)
+        # print()
+        # TODO: remove this to allow batching
+        idx_s = deepcopy(idx_s[0])
+        idx_o = deepcopy(idx_o[0])
+        ori_bboxes = deepcopy(ori_bboxes[0])
 
         pos_num_img, loc_num_img = eval_obj_img(gt_boxes, gt_cls, ori_bboxes, obj_pred.cpu().numpy(), gt_thr=0.5)
         pos_num += pos_num_img
         loc_num += loc_num_img
         gt_num  += gt_boxes.shape[0]
+
+        # TODO: remove this to allow batching
+        objdet_res["confs"]   = deepcopy(objdet_res["confs"][0])
+        objdet_res["classes"] = deepcopy(objdet_res["classes"][0])
+        objdet_res["boxes"]   = deepcopy(objdet_res["boxes"][0])
+        rel_prob = deepcopy(rel_prob[0])
+        obj_classes_out = deepcopy(obj_classes_out[0])
 
         tuple_confs_im = []
         rlp_labels_im  = np.zeros((rel_prob.shape[0]*rel_prob.shape[1], 3), dtype = np.float)
@@ -208,10 +223,21 @@ class VRDEvaluator():
         obj_bboxes_im  = np.zeros((rel_prob.shape[0]*rel_prob.shape[1], 4), dtype = np.float)
         n_idx = 0
 
+        # print("objdet_res['confs'].shape: ", objdet_res["confs"].shape)
+        # print("rel_prob.shape: ", rel_prob.shape)
+
         for tuple_idx in range(rel_prob.shape[0]):
           for rel in range(rel_prob.shape[1]):
+            # print((tuple_idx, rel))
+            # print("np.log(objdet_res['confs']).shape: ", np.log(objdet_res["confs"]).shape)
+            # print("np.log(objdet_res['confs'][idx_s[tuple_idx]]).shape: ", np.log(objdet_res["confs"][idx_s[tuple_idx]]).shape)
+            # print("objdet_res['confs'].shape: ", objdet_res["confs"].shape)
+            # print("objdet_res['confs'][idx_s[tuple_idx]].shape: ", objdet_res["confs"][idx_s[tuple_idx]].shape)
+            # print("rel_prob[tuple_idx].shape: ", rel_prob[tuple_idx].shape)
+            # print("rel_prob[tuple_idx, rel].shape: ", rel_prob[tuple_idx, rel].shape)
             if(self.args.use_obj_prior):
               if(objdet_res["confs"].ndim == 1):
+                # Maybe we never reach this point? Or maybe it accounts for batching?
                 conf = np.log(objdet_res["confs"][idx_s[tuple_idx]]) + np.log(objdet_res["confs"][idx_o[tuple_idx]]) + rel_prob[tuple_idx, rel]
               else:
                 conf = np.log(objdet_res["confs"][idx_s[tuple_idx], 0]) + np.log(objdet_res["confs"][idx_o[tuple_idx], 0]) + rel_prob[tuple_idx, rel]
@@ -241,8 +267,6 @@ class VRDEvaluator():
         sub_bboxes_cell.append(sub_bboxes_im)
         obj_bboxes_cell.append(obj_bboxes_im)
 
-        step += 1
-
       res = {
         "rlp_confs_ours"  : tuple_confs_cell,
         "rlp_labels_ours" : rlp_labels_cell,
@@ -251,7 +275,7 @@ class VRDEvaluator():
       }
 
       if len(anno) != len(res["obj_bboxes_ours"]):
-        print("ERROR: something is wrong in prediction: {} != {}".format(len(anno), len(res["obj_bboxes_ours"])))
+        warnings.warn("Warning! Rel test results and anno gt do not have the same length: rel test performance might be off! {} != {}".format(len(anno), len(res["obj_bboxes_ours"])), UserWarning)
 
       rec_50     = eval_recall_at_N(self.gt,    50,  res, num_imgs = self.num_imgs)
       rec_50_zs  = eval_recall_at_N(self.gt_zs, 50,  res, num_imgs = self.num_imgs)

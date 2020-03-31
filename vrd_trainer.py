@@ -38,7 +38,7 @@ class vrd_trainer():
       args = {
         # Dataset in use
         "data" : {
-          "name"      : "vrd",
+          "name"         : "vrd",
           "with_bg_obj"  : False,
           "with_bg_pred" : False,
         },
@@ -311,7 +311,7 @@ class vrd_trainer():
       rel_soP_prior.to(utils.device)
       rel_soP_prior = -0.5 * ( rel_soP_prior + (1.0 / self.datalayer.n_pred))
 
-      # TODO: fix this weird target shape in datalayers and remove this view
+      # TODO: fix this weird-shaped target in datalayers and remove this view thingy
       loss = self.criterion((rel_soP_prior + rel_scores).view(batch_size, -1), target)
       # loss = self.criterion((rel_scores).view(batch_size, -1), target)
 
