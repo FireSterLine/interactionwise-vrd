@@ -11,6 +11,7 @@ import json
 import pickle
 import globals
 import utils
+from copy import deepcopy
 
 """
 This script prepares the data from the input format to the one we want.
@@ -327,10 +328,17 @@ class VRDPrep(DataPreparer):
           gt_pkl["sub_bboxes"]  = gt["gt_sub_bboxes"][0]
           self.writepickle(gt_pkl, gt_output_path)
 
-          gt_zs_pkl = gt_pkl
-
-          # TODO: prepare gt_zs ... copy code from evaluation_dsr
-          #self.writepickle(gt_zs_pkl, gt_zs_output_path)
+          gt_zs = self.readmat(gt_zs_path)
+          zs = gt_zs["zeroShot"][0];
+          gt_zs_pkl = deepcopy(gt_pkl)
+          for ii in range(len(gt_pkl["tuple_label"])):
+            if(zs[ii].shape[0] == 0):
+              continue
+            idx = zs[ii] == 1
+            gt_zs_pkl["tuple_label"][ii] = gt_pkl["tuple_label"][ii][idx[0]]
+            gt_zs_pkl["obj_bboxes"][ii]  = gt_pkl["obj_bboxes"][ii][idx[0]]
+            gt_zs_pkl["sub_bboxes"][ii]  = gt_pkl["sub_bboxes"][ii][idx[0]]
+          self.writepickle(gt_zs_pkl, gt_zs_output_path)
 
         def prepareDetRes():
           det_result = self.readmat(det_result_path)

@@ -6,7 +6,19 @@ from tabulate import tabulate
 import time
 import json
 
+import random
+# only for debugging (i.e TODO remove)
+random.seed(0)
+import numpy as np
+# only for debugging (i.e TODO remove)
+np.random.seed(0)
+
 import torch
+# only for debugging (i.e TODO remove)
+torch.manual_seed(0)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+
 import torch.nn as nn
 import torch.nn.init
 import torch.nn.functional as F
@@ -18,7 +30,6 @@ from lib.datalayers import VRDDataLayer
 from lib.evaluator import VRDEvaluator
 #, save_net, load_net, \
 #      adjust_learning_rate, , clip_gradient
-
 
 class vrd_trainer():
 
@@ -98,6 +109,7 @@ class vrd_trainer():
       args["training"]["num_epochs"] = 1
       args["data"]["justafew"] = True
       args["training"]["prints_per_epoch"] = 1
+
 
     print("Arguments:")
     if checkpoint:

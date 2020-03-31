@@ -81,36 +81,11 @@ def eval_per_image(i, gt, pred, use_rel, gt_thr = 0.5, return_match = False):
 
 # Recall quantifies the number of positive class predictions
 #   made out of all positive examples in the dataset.
-def eval_recall_at_N(ds_name, N, res, use_rel = True, use_zero_shot = False):
-  # TODO: uniform this, just use the freaking pickle!!
-  # TODO: don't read matlab file, read pickle instead: data/vrd/eval/gt.pkl
-  if(ds_name == "vrd"):
-    gt = sio.loadmat("data/vrd/eval/from-language-priors/gt.mat")
-    gt["tuple_label"] = gt["gt_tuple_label"][0]
-    gt["obj_bboxes"]  = gt["gt_obj_bboxes"][0]
-    gt["sub_bboxes"]  = gt["gt_sub_bboxes"][0]
+def eval_recall_at_N(gt, N, res, use_rel = True, num_imgs = None):
 
+  # If not specified, num_imgs is the length of the ground truth
+  if num_imgs is None:
     num_imgs = len(gt["obj_bboxes"])
-
-    if(use_zero_shot):
-      zs = sio.loadmat("data/vrd/eval/from-language-priors/zeroShot.mat")["zeroShot"][0];
-      for ii in range(num_imgs):
-        if(zs[ii].shape[0] == 0):
-          continue
-        idx = zs[ii] == 1
-        gt["tuple_label"][ii] = gt["tuple_label"][ii][idx[0]]
-        gt["obj_bboxes"][ii]  = gt["obj_bboxes"][ii][idx[0]]
-        gt["sub_bboxes"][ii]  = gt["sub_bboxes"][ii][idx[0]]
-  else:
-    # Testing all images is quite slow.
-    num_imgs = 8995
-    if(use_zero_shot):
-      gt_path = osp.join("data", "{}", "eval", "gt_zs.pkl").format(ds_name)
-    else:
-      gt_path = osp.join("data", "{}", "eval", "gt.pkl").format(ds_name)
-    with open(gt_path, 'rb') as fid:
-      gt = pickle.load(fid)
-      print(gt.keys())
 
   if num_imgs != len(res["rlp_confs_ours"]):
     # raise ValueError("Can't compare results against ground truths (test results are malformed). {} != {}".format(num_imgs, len(res["rlp_confs_ours"])))

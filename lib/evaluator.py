@@ -8,9 +8,6 @@ import pickle
 import os.path as osp
 import torch.nn.functional as F
 
-# TODO: remove this and use dataset.dir instead
-import globals
-
 # TODO: check, is all of this using the GPU, or can we improve the time?
 class VRDEvaluator():
   """ Evaluator for Predicate Prediction and Relationship Prediction """
@@ -18,6 +15,22 @@ class VRDEvaluator():
   def __init__(self, data_args, args = { "use_obj_prior" : True }):
     self.data_args = data_args
     self.args = args
+
+    # Load ground truths
+    gt_path = osp.join("data", "{}", "eval", "gt.pkl").format(self.data_args.name)
+    with open(gt_path, 'rb') as fid:
+      self.gt = pickle.load(fid)
+
+    gt_zs_path = osp.join("data", "{}", "eval", "gt_zs.pkl").format(self.data_args.name)
+    with open(gt_zs_path, 'rb') as fid:
+      self.gt_zs = pickle.load(fid)
+
+    # If None, the num_imgs that will be used is the size of the ground-truths
+    self.num_imgs = None
+
+    # VG is too slow, so we only test part of it
+    if(self.data_args.name == "vg"):
+      self.num_imgs = 8995
 
   def test_pre(self, vrd_model):
     """ Test model on Predicate Prediction """
@@ -98,10 +111,10 @@ class VRDEvaluator():
         "obj_bboxes_ours" : obj_bboxes_cell,
       }
 
-      rec_50     = eval_recall_at_N(self.data_args.name, 50,  res, use_zero_shot = False)
-      rec_50_zs  = eval_recall_at_N(self.data_args.name, 50,  res, use_zero_shot = True)
-      rec_100    = eval_recall_at_N(self.data_args.name, 100, res, use_zero_shot = False)
-      rec_100_zs = eval_recall_at_N(self.data_args.name, 100, res, use_zero_shot = True)
+      rec_50     = eval_recall_at_N(self.gt,    50,  res, num_imgs = self.num_imgs)
+      rec_50_zs  = eval_recall_at_N(self.gt_zs, 50,  res, num_imgs = self.num_imgs)
+      rec_100    = eval_recall_at_N(self.gt,    100, res, num_imgs = self.num_imgs)
+      rec_100_zs = eval_recall_at_N(self.gt_zs, 100, res, num_imgs = self.num_imgs)
       time2 = time.time()
 
       return rec_50, rec_50_zs, rec_100, rec_100_zs, (time2-time1)
@@ -116,13 +129,13 @@ class VRDEvaluator():
       # test_data_layer = use the other layer and then use args: VRDDataLayer(self.data_args...?, "test")
       test_data_layer = VRDDataLayer(self.data_args.name, "test")
 
-      with open(osp.join(globals.data_dir, self.data_args.name, "test.pkl"), 'rb') as fid:
+      with open(osp.join(test_data_layer.dataset.metadata_dir, "test.pkl"), 'rb') as fid:
         anno = pickle.load(fid, encoding="latin1")
 
       # TODO: proposals is not ordered, but a dictionary with im_path keys
       # TODO: expand so that we don't need the proposals pickle, and we generate it if it's not there, using Faster-RCNN?
       # TODO: move the proposals file path to a different one (maybe in Faster-RCNN)
-      with open(osp.join(globals.data_dir, self.data_args.name, "eval", "det_res.pkl"), 'rb') as fid:
+      with open(osp.join(test_data_layer.dataset.metadata_dir, "eval", "det_res.pkl"), 'rb') as fid:
         proposals = pickle.load(fid)
         # TODO: zip these
         pred_boxes   = proposals["boxes"]
@@ -234,10 +247,10 @@ class VRDEvaluator():
       if len(anno) != len(res["obj_bboxes_ours"]):
         print("ERROR: something is wrong in prediction: {} != {}".format(len(anno), len(res["obj_bboxes_ours"])))
 
-      rec_50     = eval_recall_at_N(self.data_args.name, 50,  res, use_zero_shot = False)
-      rec_50_zs  = eval_recall_at_N(self.data_args.name, 50,  res, use_zero_shot = True)
-      rec_100    = eval_recall_at_N(self.data_args.name, 100, res, use_zero_shot = False)
-      rec_100_zs = eval_recall_at_N(self.data_args.name, 100, res, use_zero_shot = True)
+      rec_50     = eval_recall_at_N(self.gt,    50,  res, num_imgs = self.num_imgs)
+      rec_50_zs  = eval_recall_at_N(self.gt_zs, 50,  res, num_imgs = self.num_imgs)
+      rec_100    = eval_recall_at_N(self.gt,    100, res, num_imgs = self.num_imgs)
+      rec_100_zs = eval_recall_at_N(self.gt_zs, 100, res, num_imgs = self.num_imgs)
       time2 = time.time()
 
       return rec_50, rec_50_zs, rec_100, rec_100_zs, pos_num, loc_num, gt_num, (time2 - time1)
