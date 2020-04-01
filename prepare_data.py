@@ -24,7 +24,7 @@ Notes:
 - An image "annos" is something like {"objects" : [obj1, obj2, ...], "relationships" : [rel1, rel2, ...]}
 - An image "relst" is something like [rel1, rel2, ...]
 - When a database is loaded with load_data, it can be loaded in any convenient format and the flag
-   self.cur_format will be set accordingly
+   self.cur_dformat will be set accordingly
 - Then, one can switch from one format to the other with databse-independent functions.
   This makes sure that the data is the same across different formats
 
@@ -42,7 +42,7 @@ class DataPreparer:
 
         self.dir = None
         self.vrd_data = None
-        self.cur_format = None
+        self.cur_dformat = None
         self.splits = None
 
     # This function reads the dataset's vocab txt files and loads them
@@ -57,16 +57,16 @@ class DataPreparer:
     def _generate_annos(self, anns): pass
 
     # Save data
-    def save_data(self, format, granularity = "img"):
-        self.to_format(format)
+    def save_data(self, dformat, granularity = "img"):
+        self.to_dformat(dformat)
 
-        output_file_format = "data_{}_{}_{{}}.json".format(format, granularity)
+        output_file_format = "data_{}_{}_{{}}.json".format(dformat, granularity)
 
         vrd_data_train = [(k, self.vrd_data[k]) if k is not None else (None, None) for k in self.splits["train"]]
         vrd_data_test  = [(k, self.vrd_data[k]) if k is not None else (None, None) for k in self.splits["test"]]
 
         if granularity == "rel":
-          assert format == "relst", "Mh. Does it make sense to granulate 'rel' with format {}?".format(format)
+          assert dformat == "relst", "Mh. Does it make sense to granulate 'rel' with dformat {}?".format(dformat)
           def granulate(d):
             new_vrd_data = []
             for (img_path, relst) in d:
@@ -75,7 +75,7 @@ class DataPreparer:
                 continue
               for img_rel in relst:
                 new_vrd_data.append((img_path,img_rel))
-              return new_vrd_data
+            return new_vrd_data
           vrd_data_train = granulate(vrd_data_train)
           vrd_data_test  = granulate(vrd_data_test)
         elif granularity == "img":
@@ -87,15 +87,15 @@ class DataPreparer:
         self.writejson(vrd_data_test,  output_file_format.format("test"))
 
     # transform vrd_data to the desired format
-    def to_format(self, to_format):
-        if to_format == self.cur_format:
+    def to_dformat(self, to_dformat):
+        if to_dformat == self.cur_dformat:
             return
-        elif self.cur_format == "relst" and to_format == "annos":
+        elif self.cur_dformat == "relst" and to_dformat == "annos":
             self.relst2annos()
-        elif self.cur_format == "annos" and to_format == "relst":
+        elif self.cur_dformat == "annos" and to_dformat == "relst":
             self.annos2relst()
         else:
-            raise NotImplementedError("Unknown format conversion: {} -> {}".format(self.cur_format, to_format))
+            raise NotImplementedError("Unknown format conversion: {} -> {}".format(self.cur_dformat, to_dformat))
 
     # "annos" format separates objects and relatinoships
     def relst2annos(self):
@@ -129,11 +129,11 @@ class DataPreparer:
             }
 
         self.vrd_data = new_vrd_data
-        self.cur_format = "annos"
+        self.cur_dformat = "annos"
 
     # def annos2relst(self):
     #     TODO
-    #     self.cur_format = "relst"
+    #     self.cur_dformat = "relst"
 
     def readbbox_arr(self, bbox, margin=0):
         return {
@@ -201,7 +201,7 @@ class VRDPrep(DataPreparer):
             vrd_data[img_path] = self._generate_relst(anns)
 
         self.vrd_data = vrd_data
-        self.cur_format = "relst"
+        self.cur_dformat = "relst"
 
         self.splits = {
             "train" : [osp.join(*x["img_path"].split("/")[-2:]) if x is not None else None for x in self.train_dsr],
@@ -429,7 +429,7 @@ class VGPrep(DataPreparer):
             vrd_data[img_path] = self._generate_relst(data, objects_label_to_id_mapping, predicates_label_to_id_mapping)
 
         self.vrd_data = vrd_data
-        self.cur_format = "relst"
+        self.cur_dformat = "relst"
 
         self.splits = {
             "train" : [line.split(" ")[0] for line in utils.load_txt_list(self.fullpath("../train.txt"))],
