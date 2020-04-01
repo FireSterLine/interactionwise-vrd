@@ -94,9 +94,9 @@ class dataset():
       print("Data not cached. Reading {}...".format(filename))
       with open(osp.join(self.metadata_dir, filename), 'r') as rfile:
         data = json.load(rfile)[:10] if self.justafew else json.load(rfile)
-        if stage == "train":
-          data = data[2200:] # TODO: I'm isolating a weird case, throwing the following output:
-          """Traceback (most recent call last):
+        #if stage == "train":
+        #  data = data[1800:] # TODO: I'm isolating a weird case, throwing the following output:
+        """Traceback (most recent call last):
             File "vrd_trainer.py", line 371, in <module>
               trainer.train()
             File "vrd_trainer.py", line 257, in train
@@ -108,7 +108,7 @@ class dataset():
             File "/opt/interactionwise/interactionwise-gio/lib/vrd_models/dsr_model.py", line 255, in forward
               emb_s_o = torch.cat((emb_subject, emb_object), dim=2)
           IndexError: Dimension out of range (expected to be in range of [-2, 1], but got 2)
-          """
+        """
         self._vrd_data_cache[(format, stage, granularity)] = data
     return self._vrd_data_cache[(format, stage, granularity)]
     # Annos:
