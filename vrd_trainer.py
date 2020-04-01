@@ -245,6 +245,7 @@ class vrd_trainer():
       #   print("*adjust_learning_rate*")
       #   utils.adjust_learning_rate(self.optimizer, self.training.lr_decay_gamma)
       # TODO do it with the scheduler, see if it's the same: https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
+      # exp_lr_scheduler = lr_scheduler.StepLR(self.optimizer, step_size=5, gamma=0.1)
 
       # TODO: after the third epoch, we divide learning rate by 3
       # the authors mention doing this in their paper, but we couldn't find it in the actual code
@@ -313,12 +314,12 @@ class vrd_trainer():
       _, rel_scores = self.model(*net_input)
 
       # Preprocessing the rel_soP_prior before factoring it into the loss
-      rel_soP_prior.to(utils.device)
-      rel_scores.to(utils.device)
-      target.to(utils.device)
-      rel_soP_prior = rel_soP_prior.to("cpu")
-      rel_scores = rel_scores.to("cpu")
-      target = target.to("cpu")
+      rel_soP_prior = rel_soP_prior.to(utils.device)
+      rel_scores = rel_scores.to(utils.device)
+      target = target.to(utils.device)
+      # rel_soP_prior = rel_soP_prior.to("cpu")
+      # rel_scores = rel_scores.to("cpu")
+      # target = target.to("cpu")
       rel_soP_prior = -0.5 * ( rel_soP_prior + (1.0 / self.datalayer.n_pred))
 
       # TODO: fix this weird-shaped target in datalayers and remove this view thingy

@@ -194,7 +194,7 @@ class DSRModel(nn.Module):
     # print("x_u.shape: ", x_u.shape)
 
     # Mmmm u_boxes.size()[1]
-    x_fused = torch.empty((n_batches, u_boxes.size()[0], 0)).to(utils.device)
+    x_fused = torch.empty((n_batches, u_boxes.size()[0], 0), device=utils.device)
 
     # print("u_boxes: ", u_boxes.shape)
 
