@@ -35,8 +35,8 @@ class VRDEvaluator():
       self.num_imgs = 8995
 
   def test_pre(self, vrd_model):
-    """ Test model on Predicate Prediction """
-    with torch.no_grad():
+      """ Test model on Predicate Prediction """
+      # TODO: restore with torch.no_grad():
       vrd_model.eval()
       time1 = time.time()
 
@@ -125,8 +125,8 @@ class VRDEvaluator():
 
   # Relationship Prediction
   def test_rel(self, vrd_model):
-    """ Test model on Relationship Prediction """
-    with torch.no_grad():
+      """ Test model on Relationship Prediction """
+      # TODO: restore with torch.no_grad():
       vrd_model.eval()
       time1 = time.time()
 
