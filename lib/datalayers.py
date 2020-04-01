@@ -190,8 +190,8 @@ class VRDDataLayer(data.Dataset):
     for i_rel, rel in enumerate(rels):
         rels[i_rel]["sub"]  = add_object(rel["subject"])
         rels[i_rel]["obj"]  = add_object(rel["object"])
-        del rel["subject"]
-        del rel["object"]
+        del rels[i_rel]["subject"]
+        del rels[i_rel]["object"]
 
     n_objs = len(objs)
 

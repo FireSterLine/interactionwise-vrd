@@ -31,12 +31,14 @@ Notes:
 """
 
 class DataPreparer:
-    def __init__(self):
+    def __init__(self, multi_label = True):
         self.objects_vocab_file    = "objects.json"
         self.predicates_vocab_file = "predicates.json"
 
         self.obj_vocab  = None
         self.pred_vocab = None
+
+        self.multi_label = multi_label
 
         self.dir = None
         self.vrd_data = None
@@ -171,8 +173,8 @@ class DataPreparer:
 
 
 class VRDPrep(DataPreparer):
-    def __init__(self):
-        super(VRDPrep, self).__init__()
+    def __init__(self, multi_label = True):
+        super(VRDPrep, self).__init__(multi_label = multi_label)
 
         self.dir = "vrd"
 
@@ -234,18 +236,22 @@ class VRDPrep(DataPreparer):
             rel_data['predicate']['name'] = [predicate_label]
             rel_data['predicate']['id']   = [predicate_id]
 
-            # Add to the relationships list (accounting for multi-label)
-            found = False
-            for i,rel in enumerate(relst):
-              if rel_data["subject"] == rel["subject"] and rel_data["object"] == rel["object"]:
-                relst[i]['predicate']['name'] += rel_data['predicate']['name']
-                relst[i]['predicate']['id']   += rel_data['predicate']['id']
-                found = True
-                break
-            if not found:
+            # Add to the relationships list
+            if not self.multi_label:
+              if rel_data not in relst:
                 relst.append(rel_data)
-            # else:
-            #     print("Found duplicate relationship in image: {}".format(img_path))
+                # else:
+                #     print("Found duplicate relationship in image: {}".format(img_path))
+            else:
+              found = False
+              for i,rel in enumerate(relst):
+                if rel_data["subject"] == rel["subject"] and rel_data["object"] == rel["object"]:
+                  relst[i]['predicate']['name'] += rel_data['predicate']['name']
+                  relst[i]['predicate']['id']   += rel_data['predicate']['id']
+                  found = True
+                  break
+              if not found:
+                  relst.append(rel_data)
 
         return relst
 
@@ -287,40 +293,39 @@ class VRDPrep(DataPreparer):
                         'xmax': int(bounding_boxes[objects[index]][2])
                     }
 
-                    # This won't allow multi-label
-                    # for pred in relations[index]:
-                    #     predicate_id = pred
-                    #     predicate_label = self.pred_vocab[predicate_id]
-                    #
-                    #     rel_data = defaultdict(lambda: dict())
-                    #     rel_data['subject']['id'] = int(subject_id)
-                    #     rel_data['subject']['name'] = subject_label
-                    #     rel_data['subject']['bbox'] = subject_bbox
-                    #
-                    #     rel_data['object']['id'] = int(object_id)
-                    #     rel_data['object']['name'] = object_label
-                    #     rel_data['object']['bbox'] = object_bbox
-                    #
-                    #     rel_data['predicate']['id'] = int(predicate_id)
-                    #     rel_data['predicate']['name'] = predicate_label
-                    #
-                    #     relationships.append(dict(rel_data))
+                    if not self.multi_label:
+                      for predicate_id in relations[index]:
+                        predicate_label = self.pred_vocab[predicate_id]
 
-                    pred_ids = relations[index]
-                    predicate_id    = [int(id)             for id in pred_ids]
-                    predicate_label = [self.pred_vocab[id] for id in pred_ids]
+                        rel_data = defaultdict(lambda: dict())
+                        rel_data['subject']['id'] = int(subject_id)
+                        rel_data['subject']['name'] = subject_label
+                        rel_data['subject']['bbox'] = subject_bbox
 
-                    rel_data = defaultdict(lambda: dict())
-                    rel_data['subject']['id']   = int(subject_id)
-                    rel_data['subject']['name'] = subject_label
-                    rel_data['subject']['bbox'] = subject_bbox
+                        rel_data['object']['id'] = int(object_id)
+                        rel_data['object']['name'] = object_label
+                        rel_data['object']['bbox'] = object_bbox
 
-                    rel_data['object']['id']   = int(object_id)
-                    rel_data['object']['name'] = object_label
-                    rel_data['object']['bbox'] = object_bbox
+                        rel_data['predicate']['id'] = int(predicate_id)
+                        rel_data['predicate']['name'] = predicate_label
 
-                    rel_data['predicate']['id']   = predicate_id
-                    rel_data['predicate']['name'] = predicate_label
+                        relationships.append(dict(rel_data))
+                    else:
+                      pred_ids = relations[index]
+                      predicate_id    = [int(id)             for id in pred_ids]
+                      predicate_label = [self.pred_vocab[id] for id in pred_ids]
+
+                      rel_data = defaultdict(lambda: dict())
+                      rel_data['subject']['id']   = int(subject_id)
+                      rel_data['subject']['name'] = subject_label
+                      rel_data['subject']['bbox'] = subject_bbox
+
+                      rel_data['object']['id']   = int(object_id)
+                      rel_data['object']['name'] = object_label
+                      rel_data['object']['bbox'] = object_bbox
+
+                      rel_data['predicate']['id']   = predicate_id
+                      rel_data['predicate']['name'] = predicate_label
 
                     relationships.append(dict(rel_data))
 
@@ -400,8 +405,10 @@ class VRDPrep(DataPreparer):
         prepareGT()
 
 class VGPrep(DataPreparer):
-    def __init__(self, num_objects, num_attributes, num_predicates):
-        super(VGPrep, self).__init__()
+    def __init__(self, subset, multi_label = True):
+        super(VGPrep, self).__init__(multi_label = multi_label)
+
+        num_objects, num_attributes, num_predicates = subset
 
         self.dir = osp.join("genome", "{}-{}-{}".format(num_objects, num_attributes, num_predicates))
 
@@ -464,7 +471,9 @@ class VGPrep(DataPreparer):
 
 if __name__ == '__main__':
 
-    data_preparer_vrd = VRDPrep()
+    multi_label = True
+
+    data_preparer_vrd = VRDPrep(multi_label=multi_label)
     data_preparer_vrd.prepareEvalFromLP()
     data_preparer_vrd.save_data("relst")
     # This is to generate the data in relst format using the original annotations in VRD
@@ -481,7 +490,7 @@ if __name__ == '__main__':
 
     """
     # TODO: test to see if VG preparation works
-    data_preparer_vg  = VGPrep(1600, 400, 20)
+    data_preparer_vg  = VGPrep((1600, 400, 20), multi_label=multi_label)
     data_preparer_vrd.save_data("annos")
     data_preparer_vrd.save_data("relst")
     data_preparer_vrd.save_data("relst", "rel")
