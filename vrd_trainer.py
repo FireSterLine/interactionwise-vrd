@@ -94,7 +94,7 @@ class vrd_trainer():
           "checkpoint_freq" : 5,
 
           # Number of lines printed with loss ...TODO explain smart freq
-          "prints_per_epoch" : 10,
+          "prints_per_epoch" : .1,
 
           # TODO
           "batch_size" : 1,
@@ -114,7 +114,7 @@ class vrd_trainer():
       args["training"]["use_shuffle"] = False
 
 
-    args["data"]["justafew"] = True
+    # args["data"]["justafew"] = True
     print("Arguments:")
     if checkpoint:
       print("Checkpoint: {}", checkpoint)
@@ -254,8 +254,7 @@ class vrd_trainer():
       #  for i in range(len(self.optimizer.param_groups)):
       #    self.optimizer.param_groups[i]['lr'] /= 10
 
-
-      # self.__train_epoch(self.state["epoch"])
+      self.__train_epoch()
 
       # Test results
       res_row = [self.state["epoch"]]
@@ -284,7 +283,7 @@ class vrd_trainer():
           "result"        : dict(zip(res_headers, res_row)),
         }, osp.join(save_dir, "checkpoint_epoch_{}.pth.tar".format(self.state["epoch"])))
 
-      self.__train_epoch()
+      # self.__train_epoch()
 
       self.state["epoch"] += 1
 
@@ -328,6 +327,7 @@ class vrd_trainer():
       # loss = self.criterion((rel_soP_prior + rel_scores).view(batch_size, -1), target)
       # loss = self.criterion((rel_scores).view(batch_size, -1), target)
 
+      loss.requires_grad = True
       loss.backward()
       self.optimizer.step()
 
@@ -366,8 +366,8 @@ class vrd_trainer():
 
 if __name__ == "__main__":
   # trainer = vrd_trainer()
-  trainer = vrd_trainer(checkpoint = False)
-  # trainer = vrd_trainer(checkpoint = "epoch_4_checkpoint.pth.tar")
+  # trainer = vrd_trainer(checkpoint = False)
+  trainer = vrd_trainer(checkpoint = "epoch_4_checkpoint.pth.tar")
   trainer.train()
   #trainer.test_pre()
   # trainer.test_rel()
