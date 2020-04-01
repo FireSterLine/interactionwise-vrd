@@ -72,21 +72,59 @@ def getDualMask(self, ih, iw, bb):
 """
 
 def getEmbedding(word, emb_model):
+  # This map defines the fall-back words of words that do not exist in the embedding model
+  non_existent_map = {
+    "traffic light"     : ["trafficlight", "stoplight"],
+    "trash can"         : ["trashcan", "papercan", "trash"],
+    "next to"           : ["next"],
+    "sleep next to"     : ["sleep next", ["sleep", "next"]],
+    "sit next to"       : ["sit next", ["sit", "next"]],
+    "stand next to"     : ["stand next", "next"],
+    "park next"         : [],
+    "walk next to"      : ["walk next", ["walk", "next"]],
+    "stand behind"      : [],
+    "sit behind"        : [],
+    "park behind"       : [],
+    "in the front of"   : ["in front of", "in front", "front of", "front"],
+    "stand under"       : [],
+    "sit under"         : [],
+    "walk to"           : [],
+    "walk past"         : [],
+    "walk beside"       : [],
+    "on the top of"     : ["on top of", "on top", "top of", "top"],
+    "on the left of"    : ["on left of", "on left", "left of", "left"],
+    "on the right of"   : ["on right of", "on right", "right of", "right"],
+    "sit on"            : [],
+    "stand on"          : [],
+    "attach to"         : [],
+    "adjacent to"       : [],
+    "drive on"          : [],
+    "taller than"       : ["taller"],
+    "park on"           : [],
+    "lying on"          : [],
+    "lean on"           : [],
+    "play with"         : ["play"],
+    "sleep on"          : [],
+    "outside of"        : [],
+    "rest on"           : [],
+    "skate on"          : []
+  }
   try:
     embedding = emb_model[word]
   except KeyError:
-    # warnings.warn("Warning! Couldn't find semantic vector for '{}'".format(word), UserWarning)
+
     print("Warning! Couldn't find semantic vector for '{}'".format(word))
-    if word == "trash can":
-      embedding = getEmbedding("trashcan", emb_model)
-    elif word == "trashcan":
-      embedding = np.mean(getEmbedding("trash", emb_model), getEmbedding("can", emb_model), axis=0)
-    elif word == "traffic light":
-      #   embedding = getEmbedding("trafficlight", emb_model)
-      # elif word == "trafficlight":
-      embedding = getEmbedding("stoplight", emb_model)
-    elif word == "stoplight":
-      embedding = np.mean(getEmbedding("traffic", emb_model), getEmbedding("light", emb_model), axis=0)
+    if word in non_existent_map:
+      non_existent_map[word].append(word.split(" "))
+      for fallback_word in non_existent_map[word]:
+        if isinstance(fallback_word, str) and fallback_word in emb_model:
+          embedding = emb_model[fallback_word]
+          print("\t'{}' mapped to '{}'".format(word, fallback_word))
+          break
+        elif isinstance(fallback_word, list):
+          embedding = np.mean([getEmbedding(fb_sw, emb_model) for fb_sw in fallback_word], axis=0)
+          print("\t'{}' mapped to the mean of '{}'".format(word, fallback_word))
+          break
     else:
       return np.zeros(300)
   return embedding / np.linalg.norm(embedding)
