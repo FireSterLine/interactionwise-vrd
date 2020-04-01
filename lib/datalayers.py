@@ -297,7 +297,7 @@ class VRDDataLayer(data.Dataset):
         o_cls = objs[rel["obj"]]["cls"]
         rel_soP_prior[i_rel] = self.soP_prior[s_cls][o_cls]
 
-        gt_pred_sem[i_rel] = np.mean([utils.getEmbedding(pred_id, self.emb["pred"]) for pred_id in rels[i_rel]["pred"]], axis=1)
+        gt_pred_sem[i_rel] = np.mean([utils.getEmbedding(pred_id, self.emb["pred"]) for pred_id in rels[i_rel]["pred"]], axis=0)
 
         for rel_label in rel["pred"]:
           target[pos_idx] = i_rel * self.dataset.n_pred + rel_label

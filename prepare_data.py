@@ -57,8 +57,8 @@ class DataPreparer:
       self.pred_vocab = self.readjson(self.predicates_vocab_file)
 
       if self.generate_emb is not None:
-        obj_emb  = [ list(utils.getEmbedding(obj_label,  self.generate_emb)) for  obj_label in self.obj_vocab]
-        pred_emb = [ list(utils.getEmbedding(pred_label, self.generate_emb)) for pred_label in self.pred_vocab]
+        obj_emb  = [ utils.getEmbedding(obj_label,  self.generate_emb).astype(float).tolist() for  obj_label in self.obj_vocab]
+        pred_emb = [ utils.getEmbedding(pred_label, self.generate_emb).astype(float).tolist() for pred_label in self.pred_vocab]
         self.writejson(obj_emb,  "objects-emb.json")
         self.writejson(pred_emb, "predicates-emb.json")
 

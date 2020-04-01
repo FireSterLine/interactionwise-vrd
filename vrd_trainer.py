@@ -114,6 +114,7 @@ class vrd_trainer():
       args["training"]["use_shuffle"] = False
 
 
+    args["data"]["justafew"] = True
     print("Arguments:")
     if checkpoint:
       print("Checkpoint: {}", checkpoint)
@@ -212,7 +213,6 @@ class vrd_trainer():
     print("Initializing training...")
     print("Training args: ", self.training)
     self.optimizer = self.model.OriginalAdamOptimizer(**self.training.opt)
-    # TODO: create loss_type argument... also, use reduction='sum' instead?
     self.criterion = nn.MultiLabelMarginLoss(reduction="sum").to(utils.device)
     if "optimizer_state_dict" in self.state:
       self.optimizer.load_state_dict(self.state["optimizer_state_dict"])
@@ -314,10 +314,17 @@ class vrd_trainer():
 
       # Preprocessing the rel_soP_prior before factoring it into the loss
       rel_soP_prior.to(utils.device)
+      rel_scores.to(utils.device)
+      target.to(utils.device)
+      rel_soP_prior.to("cpu")
+      rel_scores.to("cpu")
+      target.to("cpu")
       rel_soP_prior = -0.5 * ( rel_soP_prior + (1.0 / self.datalayer.n_pred))
 
       # TODO: fix this weird-shaped target in datalayers and remove this view thingy
-      loss = self.criterion((rel_soP_prior + rel_scores).view(batch_size, -1), target)
+      loss = self.criterion((rel_soP_prior).view(1, -1), target)
+      #loss = self.criterion((rel_soP_prior + rel_scores).view(1, -1), target)
+      # loss = self.criterion((rel_soP_prior + rel_scores).view(batch_size, -1), target)
       # loss = self.criterion((rel_scores).view(batch_size, -1), target)
 
       loss.backward()

@@ -153,9 +153,9 @@ class dataset():
     return sop_counts
 
   # json files
-  def readjson(self, filename):
-    with open(osp.join(globals.metadata_dir, filename), 'r') as rfile:
-    return json.load(rfile)
+  def readJSON(self, filename):
+    with open(osp.join(self.metadata_dir, filename), 'r') as rfile:
+      return json.load(rfile)
   # TODO
   # def readMetadata(self, data_name):
   #   """ Wrapper for read/cache metadata file. This prevents loading the same metadata file more than once """
