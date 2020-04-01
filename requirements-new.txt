@@ -12,7 +12,6 @@ cycler==0.10.0
 Cython==0.29.15
 docutils==0.15.2
 easydict==1.9
--e git+https://github.com/FireSterLine/interactionwise-vrd@2772bc8be9282f614ffbdf636af19922a73faf3f#egg=faster_rcnn&subdirectory=faster-rcnn/lib
 gensim==3.8.1
 google-api-core==1.16.0
 google-auth==1.11.3

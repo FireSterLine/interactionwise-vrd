@@ -2,8 +2,8 @@
 tmp*
 *.tmp
 __pycache__
-other/*
-iwenv*/
+other
+iwenv*
 models
 
 images
@@ -11,15 +11,15 @@ images_det
 
 #data/*
 #!data/genome/*
-data/demo/*
+data/demo
 data/vg
-data/scripts/*
+data/scripts
 data/coco
-data/pretrained_model/*
+data/pretrained_model
 data/cache/*
 data/genome/visual_genome_python_driver
 data/genome/coco_splits
-data/genome/xml/
+data/genome/xml
 data/genome/*/xml
 data/genome/*/json
 data/genome/*/*.json
@@ -34,4 +34,4 @@ data/**/*.mat
 !data/**/eval/**/*.mat
 data/*.npy
 
-data/word2vec_model/
+data/word2vec_model
