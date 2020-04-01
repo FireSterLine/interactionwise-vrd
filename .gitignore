@@ -30,8 +30,8 @@ data/vrd/sg_dataset*
 #data/vrd/4392556686_44d71ff5a0_o.jpg
 data/**/*.pkl
 data/**/*.mat
-!data/**/eval/*.pkl
-!data/**/eval/*.mat
+!data/**/eval/**/*.pkl
+!data/**/eval/**/*.mat
 data/*.npy
 
 data/word2vec_model/
