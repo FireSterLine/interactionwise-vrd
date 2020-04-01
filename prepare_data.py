@@ -66,22 +66,22 @@ class DataPreparer:
         vrd_data_test  = [(k, self.vrd_data[k]) if k is not None else (None, None) for k in self.splits["test"]]
 
         if granularity == "rel":
-            assert format == "relst", "Mh. Does it make sense to granulate 'rel' with format {}?".format(format)
-            def granulate(d):
-                new_vrd_data = []
-                for (img_path, relst) in d:
-                    if img_path is None:
-                        new_vrd_data.append((None, None))
-                        continue
-                    for img_rel in relst:
-                        new_vrd_data.append((img_path,img_rel))
-                return new_vrd_data
-            vrd_data_train = granulate(vrd_data_train)
-            vrd_data_test  = granulate(vrd_data_test)
+          assert format == "relst", "Mh. Does it make sense to granulate 'rel' with format {}?".format(format)
+          def granulate(d):
+            new_vrd_data = []
+            for (img_path, relst) in d:
+              if img_path is None:
+                new_vrd_data.append((None, None))
+                continue
+              for img_rel in relst:
+                new_vrd_data.append((img_path,img_rel))
+              return new_vrd_data
+          vrd_data_train = granulate(vrd_data_train)
+          vrd_data_test  = granulate(vrd_data_test)
         elif granularity == "img":
-            pass
+          pass
         else:
-            raise ValueError("Error. Unknown granularity: {}".format(granularity))
+          raise ValueError("Error. Unknown granularity: {}".format(granularity))
 
         self.writejson(vrd_data_train, output_file_format.format("train"))
         self.writejson(vrd_data_test,  output_file_format.format("test"))

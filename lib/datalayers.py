@@ -34,8 +34,7 @@ class VRDDataLayer(data.Dataset):
 
     self.soP_prior = self.dataset.getDistribution("soP")
 
-    # TODO: switch to annos
-    self.vrd_data = deepcopy(self.dataset.getData("relst", self.stage, self.granularity))
+    self.vrd_data = self.dataset.getData("annos", self.stage, self.granularity)
 
     # TODO: change this when you switch to annos?
     def numrels(vrd_sample):
@@ -103,7 +102,7 @@ class VRDDataLayer(data.Dataset):
 
   def __getitem__(self, index):
 
-    (img_path, _rels) = self.vrd_data[index]
+    (img_path, annos) = self.vrd_data[index]
 
     # Obtain object detections, if any
     det_res = None
@@ -123,13 +122,16 @@ class VRDDataLayer(data.Dataset):
         warnings.warn("Warning: I'm about to return None values during training. That's not good, probably batching will fail", UserWarning)
         return False, False, False
 
-    # TODO: The deepcopy won't be necessary anymore at some point
-    rels = deepcopy(_rels)
 
     # Granularity fallback: gran="rel" returns a single relationship
-    if self.granularity == "rel":
-      rels = [rels]
+    # TODO: when granularity is rel, then it might be better to receive the thing in form of a relst and to create objs manually
+    # if self.granularity == "rel":
+    #   rels = [rels]
 
+    objs = annos["objs"]
+    rels = annos["rels"]
+
+    n_objs = len(objs)
     n_rels = len(rels)
 
     # Wait a second, shouldn't we test anyway on an image with no relationships? I mean, if we identified some objects, why not? What does DSR do?
@@ -145,7 +147,6 @@ class VRDDataLayer(data.Dataset):
     iw = im.shape[1]
 
     # TODO: enable this to temporarily allow batching (write collate_fn then)
-
     # image_blob, im_scale = prep_im_for_blob(im, utils.vrd_pixel_means)
     # blob = np.zeros(self.max_shape)
     # blob[0: image_blob.shape[0], 0:image_blob.shape[1], :] = image_blob
@@ -155,45 +156,9 @@ class VRDDataLayer(data.Dataset):
 
     # TODO: check if this works (it removes the first (not moot) dimension)
     image_blob, im_scale = prep_im_for_blob(im, utils.vrd_pixel_means)
-    img_blob = np.zeros(self.max_shape, dtype=np.float32)
-    img_blob[: image_blob.shape[0], :image_blob.shape[1], :] = image_blob
-
-
-    # TODO: instead of computing obj_boxes_out here, put it in the preprocess
-    #  (and maybe transform relationships to contain object indices instead of whole objects)
-    # Note: from here on, rel["sub"] and rel["obj"] contain indices to objs
-
-    ####
-    # ATTENTION: this was maybe leading to troubles!!! "Duplicate" objects are added twice!
-    # Another possible reason of failing is: our bboxDictToList has a different order
-    ####
-    # TODO: switch to annos:
-    #  subject -> sub
-    #  object -> obj
-    #  obj"id" -> obj"cls"
-    #  "predicate"{id,name} -> "pred" (id)
-    #  no need for bboxDictToNumpy anymore, it's a list, maybe create a tensor directly?
-    objs = []
-    def add_object(obj):
-        for i_obj,any_obj in enumerate(objs):
-            # print()
-            # print(obj)
-            # print(any_obj)
-            # print(utils.bboxDictToList(obj["bbox"]))
-            # print(any_obj["bbox"])
-            if any_obj["id"]   == obj["id"] and \
-               any_obj["bbox"] == obj["bbox"]:
-               return i_obj
-        i_obj = len(objs)
-        objs.append(obj)
-        return i_obj
-    for i_rel, rel in enumerate(rels):
-        rels[i_rel]["sub"]  = add_object(rel["subject"])
-        rels[i_rel]["obj"]  = add_object(rel["object"])
-        del rels[i_rel]["subject"]
-        del rels[i_rel]["object"]
-
-    n_objs = len(objs)
+    img_blob = image_blob
+    # img_blob = np.zeros(self.max_shape, dtype=np.float32)
+    # img_blob[: image_blob.shape[0], :image_blob.shape[1], :] = image_blob
 
     # Object classes
 
@@ -211,8 +176,8 @@ class VRDDataLayer(data.Dataset):
       obj_classes = np.zeros((n_objs))
 
       for i_obj, obj in enumerate(objs):
-        obj_boxes_out[i_obj] = utils.bboxDictToNumpy(obj["bbox"])
-        obj_classes[i_obj] = obj["id"]
+        obj_boxes_out[i_obj] = utils.bboxListToNumpy(obj["bbox"])
+        obj_classes[i_obj]   = obj["cls"]
 
     # Object boxes
     obj_boxes = np.zeros((obj_boxes_out.shape[0], 5))  # , dtype=np.float32)
@@ -256,8 +221,8 @@ class VRDDataLayer(data.Dataset):
       gt_classes = np.zeros((n_objs))
 
       for i_obj, obj in enumerate(objs):
-        gt_bboxes[i_obj]  = utils.bboxDictToNumpy(obj["bbox"])
-        gt_classes[i_obj] = obj["id"]
+        gt_bboxes[i_obj]  = utils.bboxListToNumpy(obj["bbox"])
+        gt_classes[i_obj] = obj["cls"]
 
       for s_idx, sub_cls in enumerate(obj_classes):
         for o_idx, obj_cls in enumerate(obj_classes):
@@ -281,7 +246,7 @@ class VRDDataLayer(data.Dataset):
           spatial_features[i_rel] = utils.getRelativeLoc(sBBox, oBBox)
 
           # semantic features of obj and subj
-          # semantic_features[i_rel] = utils.getSemanticVector(objs[rel["subject"]]["name"], objs[rel["object"]]["name"], self.w2v_model)
+          # semantic_features[i_rel] = utils.getSemanticVector(objs[rel["sub"]]["name"], objs[rel["obj"]]["name"], self.w2v_model)
           semantic_features[i_rel] = np.zeros(600)
 
           # store the probability distribution of this subject-object pair from the soP_prior
@@ -292,16 +257,16 @@ class VRDDataLayer(data.Dataset):
       # for i_rel, rel in enumerate(rels):
       #
       #   # Subject and object local indices (useful when selecting ROI results)
-      #   idx_s.append(rel["subject"])
-      #   idx_o.append(rel["object"])
+      #   idx_s.append(rel["sub"])
+      #   idx_o.append(rel["obj"])
       #
       #   # Subject and object bounding boxes
-      #   sBBox = utils.bboxDictToNumpy(objs[rel["subject"]]["bbox"])
-      #   oBBox = utils.bboxDictToNumpy(objs[rel["object"]]["bbox"])
+      #   sBBox = utils.bboxListToNumpy(objs[rel["sub"]]["bbox"])
+      #   oBBox = utils.bboxListToNumpy(objs[rel["obj"]]["bbox"])
       #
       #   # get the union bounding box
       #   rBBox = utils.getUnionBBox(sBBox, oBBox, ih, iw)
-      #   rel["predicate"]["id"]
+      #   rel["pred"] (it's a list)
 
     else:
       for i_rel, rel in enumerate(rels):
@@ -311,8 +276,8 @@ class VRDDataLayer(data.Dataset):
         idx_o.append(rel["obj"])
 
         # Subject and object bounding boxes
-        sBBox = utils.bboxDictToNumpy(objs[rel["sub"]]["bbox"])
-        oBBox = utils.bboxDictToNumpy(objs[rel["obj"]]["bbox"])
+        sBBox = utils.bboxListToNumpy(objs[rel["sub"]]["bbox"])
+        oBBox = utils.bboxListToNumpy(objs[rel["obj"]]["bbox"])
 
         # get the union bounding box
         rBBox = utils.getUnionBBox(sBBox, oBBox, ih, iw)
@@ -328,11 +293,11 @@ class VRDDataLayer(data.Dataset):
         semantic_features[i_rel] = np.zeros(600)
 
         # store the probability distribution of this subject-object pair from the soP_prior
-        s_cls = objs[rel["sub"]]["id"]
-        o_cls = objs[rel["obj"]]["id"]
+        s_cls = objs[rel["sub"]]["cls"]
+        o_cls = objs[rel["obj"]]["cls"]
         rel_soP_prior[i_rel] = self.soP_prior[s_cls][o_cls]
 
-        for rel_label in rel["predicate"]["id"]:
+        for rel_label in rel["pred"]:
           target[pos_idx] = i_rel * self.dataset.n_pred + rel_label
           pos_idx += 1
 

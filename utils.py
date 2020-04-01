@@ -24,9 +24,12 @@ load_checkpoint      = lambda path : torch.load(path, map_location = device)
 adjust_learning_rate = frcnn_net_utils.adjust_learning_rate
 
 
+# Bbox as a list to numpy array
+bboxListToNumpy = np.array
+
 # Bbox as a dict to numpy array
 def bboxDictToNumpy(bbox_dict):
-  return np.array(bboxDictToList(bbox_dict))
+  return bboxListToNumpy(bboxDictToList(bbox_dict))
 
 # Bbox as a dict to list
 def bboxDictToList(bbox_dict):
@@ -34,6 +37,7 @@ def bboxDictToList(bbox_dict):
           bbox_dict["ymin"],
           bbox_dict["xmax"],
           bbox_dict["ymax"]]
+
 
 
 # Union box of two boxes

@@ -97,7 +97,7 @@ class vrd_trainer():
           "batch_size" : 1,
 
           "test_pre" : True,
-          "test_rel" : False,
+          "test_rel" : True,
         }
       }):
 
