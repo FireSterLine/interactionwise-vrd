@@ -301,11 +301,7 @@ class VRDDataLayer(data.Dataset):
         o_cls = objs[rel["object"]]["id"]
         rel_soP_prior[i_rel] = self.soP_prior[s_cls][o_cls]
 
-        # TODO: this target is not the one we want
-        # target[i_rel][rel["predicate"]["id"]] = 1.
-        # TODO: enable multi-class predicate (rel_classes: list of predicates for every pair)
-        rel_classes = [rel["predicate"]["id"]]
-        for rel_label in rel_classes:
+        for rel_label in rel["predicate"]["id"]:
           target[pos_idx] = i_rel * self.dataset.n_pred + rel_label
           pos_idx += 1
 
@@ -360,8 +356,8 @@ class VRDDataLayer(data.Dataset):
       else:
         return net_input,         \
                 obj_classes_out,  \
-                rel_soP_prior,    \
                 obj_boxes_out,    \
+                rel_soP_prior,    \
                 det_res
 
 """

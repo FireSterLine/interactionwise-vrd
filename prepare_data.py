@@ -114,10 +114,11 @@ class DataPreparer:
             for i_rel, rel in enumerate(relst):
                 new_rel = {}
 
-                new_rel["sub"] = add_object(rel["subject"])
+                new_rel["sub"]  = add_object(rel["subject"])
                 new_rel["obj"]  = add_object(rel["object"])
 
                 new_rel["pred"] = rel["predicate"]["id"]
+
                 rels.append(new_rel)
 
             new_vrd_data[img_path] = {
@@ -230,10 +231,18 @@ class VRDPrep(DataPreparer):
             rel_data['object']['name'] = object_label
             rel_data['object']['bbox'] = object_bbox
 
-            rel_data['predicate']['name'] = predicate_label
-            rel_data['predicate']['id'] = predicate_id
+            rel_data['predicate']['name'] = [predicate_label]
+            rel_data['predicate']['id']   = [predicate_id]
 
-            if rel_data not in relst:
+            # Add to the relationships list (accounting for multi-label)
+            found = False
+            for i,rel in enumerate(relst):
+              if rel_data["subject"] == rel["subject"] and rel_data["object"] == rel["object"]:
+                relst[i]['predicate']['name'] += rel_data['predicate']['name']
+                relst[i]['predicate']['id']   += rel_data['predicate']['id']
+                found = True
+                break
+            if not found:
                 relst.append(rel_data)
             # else:
             #     print("Found duplicate relationship in image: {}".format(img_path))
@@ -278,23 +287,42 @@ class VRDPrep(DataPreparer):
                         'xmax': int(bounding_boxes[objects[index]][2])
                     }
 
-                    for pred in relations[index]:
-                        predicate_id = pred
-                        predicate_label = self.pred_vocab[predicate_id]
+                    # This won't allow multi-label
+                    # for pred in relations[index]:
+                    #     predicate_id = pred
+                    #     predicate_label = self.pred_vocab[predicate_id]
+                    #
+                    #     rel_data = defaultdict(lambda: dict())
+                    #     rel_data['subject']['id'] = int(subject_id)
+                    #     rel_data['subject']['name'] = subject_label
+                    #     rel_data['subject']['bbox'] = subject_bbox
+                    #
+                    #     rel_data['object']['id'] = int(object_id)
+                    #     rel_data['object']['name'] = object_label
+                    #     rel_data['object']['bbox'] = object_bbox
+                    #
+                    #     rel_data['predicate']['id'] = int(predicate_id)
+                    #     rel_data['predicate']['name'] = predicate_label
+                    #
+                    #     relationships.append(dict(rel_data))
 
-                        rel_data = defaultdict(lambda: dict())
-                        rel_data['subject']['id'] = int(subject_id)
-                        rel_data['subject']['name'] = subject_label
-                        rel_data['subject']['bbox'] = subject_bbox
+                    pred_ids = relations[index]
+                    predicate_id    = [int(id)             for id in pred_ids]
+                    predicate_label = [self.pred_vocab[id] for id in pred_ids]
 
-                        rel_data['object']['id'] = int(object_id)
-                        rel_data['object']['name'] = object_label
-                        rel_data['object']['bbox'] = object_bbox
+                    rel_data = defaultdict(lambda: dict())
+                    rel_data['subject']['id']   = int(subject_id)
+                    rel_data['subject']['name'] = subject_label
+                    rel_data['subject']['bbox'] = subject_bbox
 
-                        rel_data['predicate']['id'] = int(predicate_id)
-                        rel_data['predicate']['name'] = predicate_label
+                    rel_data['object']['id']   = int(object_id)
+                    rel_data['object']['name'] = object_label
+                    rel_data['object']['bbox'] = object_bbox
 
-                        relationships.append(dict(rel_data))
+                    rel_data['predicate']['id']   = predicate_id
+                    rel_data['predicate']['name'] = predicate_label
+
+                    relationships.append(dict(rel_data))
 
                 if len(relationships) > 0:
                     vrd_data.append((img_path,relationships))
@@ -438,7 +466,6 @@ if __name__ == '__main__':
 
     data_preparer_vrd = VRDPrep()
     data_preparer_vrd.prepareEvalFromLP()
-    """
     data_preparer_vrd.save_data("relst")
     # This is to generate the data in relst format using the original annotations in VRD
     # If batching is set to True, each relationship within an image will be a separate instance, as
@@ -449,6 +476,7 @@ if __name__ == '__main__':
 
     # Generate the data in relst format using the {train,test}.pkl files provided by DSR
     data_preparer_vrd.loadsave_relst_dsr()
+    """
     """
 
     """

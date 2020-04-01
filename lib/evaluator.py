@@ -130,8 +130,6 @@ class VRDEvaluator():
       vrd_model.eval()
       time1 = time.time()
 
-      # test_data_layer = use the other layer and then use args: VRDDataLayer(self.data_args...?, "test")
-      # test_data_layer = VRDDataLayer(self.data_args.name, "test", proposals = True)
       test_data_args = deepcopy(self.data_args)
       test_data_args.with_bg_obj  = True
       test_data_args.with_bg_pred = False
@@ -166,7 +164,7 @@ class VRDEvaluator():
         print("{}/{}".format(step,n_iter))
         if step >= n_iter:
           break
-        net_input, obj_classes_out, rel_soP_prior, ori_bboxes, objdet_res = test_data
+        net_input, obj_classes_out, ori_bboxes, rel_soP_prior, objdet_res = test_data
 
         if(net_input is None):
           rlp_labels_cell.append(None)
@@ -177,6 +175,16 @@ class VRDEvaluator():
 
         gt_boxes = anno_img["boxes"].astype(np.float32)
         gt_cls = np.array(anno_img["classes"]).astype(np.float32)
+
+        # print("Boxes")
+        # print(gt_boxes)
+        # print(ori_bboxes)
+        # print()
+        # print("Classes")
+        # print(gt_cls)
+        # print(obj_classes_out)
+        # input()
+
 
         obj_score, rel_score = vrd_model(*net_input) # img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
 
@@ -274,8 +282,8 @@ class VRDEvaluator():
         "obj_bboxes_ours" : obj_bboxes_cell,
       }
 
-      if len(anno) != len(res["obj_bboxes_ours"]):
-        warnings.warn("Warning! Rel test results and anno gt do not have the same length: rel test performance might be off! {} != {}".format(len(anno), len(res["obj_bboxes_ours"])), UserWarning)
+      # if len(len(test_dataloader)) != len(res["obj_bboxes_ours"]):
+      #   warnings.warn("Warning! Rel test results and gt do not have the same length: rel test performance might be off! {} != {}".format(len(len(test_dataloader)), len(res["obj_bboxes_ours"])), UserWarning)
 
       rec_50     = eval_recall_at_N(self.gt,    50,  res, num_imgs = self.num_imgs)
       rec_50_zs  = eval_recall_at_N(self.gt_zs, 50,  res, num_imgs = self.num_imgs)

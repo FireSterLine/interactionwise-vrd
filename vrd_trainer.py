@@ -96,8 +96,8 @@ class vrd_trainer():
           # TODO
           "batch_size" : 1,
 
-          "test_pre" : True,
-          "test_rel" : False,
+          "test_pre" : False,
+          "test_rel" : True,
         }
       }):
 
