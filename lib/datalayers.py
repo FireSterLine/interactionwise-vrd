@@ -7,7 +7,6 @@ import pickle
 from lib.blob import prep_im_for_blob
 from lib.dataset import dataset
 import torch
-from gensim.models import KeyedVectors
 import warnings
 
 import utils, globals
@@ -82,8 +81,8 @@ class VRDDataLayer(data.Dataset):
     # self.max_shape = self._get_max_shape()
     print("Max shape is: {}".format(self.max_shape))
 
-    print("Loading Word2Vec model...")
-    self.w2v_model = KeyedVectors.load_word2vec_format(osp.join(globals.data_dir, globals.w2v_model_path), binary=True)
+    # TODO: allow to choose which model to use. We only have w2v for now
+    self.emb = {"obj" : self.dataset.readJSON("objects-emb.json"), "pred" : self.dataset.readJSON("predicates-emb.json")}
 
   def _get_max_shape(self):
     print("Identifying max shape...")
@@ -204,7 +203,7 @@ class VRDDataLayer(data.Dataset):
     rel_soP_prior = np.zeros((n_rels, self.dataset.n_pred))
     # print(n_rels)
 
-    gt_pred_sem = np.zeros((n_rel, 300))
+    gt_pred_sem = np.zeros((n_rels, 300))
 
     # Target output for the network
     target = -1 * np.ones((self.dataset.n_pred * n_rels))
@@ -247,7 +246,7 @@ class VRDDataLayer(data.Dataset):
           spatial_features[i_rel] = utils.getRelativeLoc(sBBox, oBBox)
 
           # semantic features of obj and subj
-          # semantic_features[i_rel] = utils.getSemanticVector(objs[rel["sub"]]["name"], objs[rel["obj"]]["name"], self.w2v_model)
+          # semantic_features[i_rel] = utils.getSemanticVector(objs[rel["sub"]]["name"], objs[rel["obj"]]["name"], self.emb["obj"])
           # semantic_features[i_rel] = np.zeros(600)
 
           # store the probability distribution of this subject-object pair from the soP_prior
@@ -290,7 +289,7 @@ class VRDDataLayer(data.Dataset):
         spatial_features[i_rel] = utils.getRelativeLoc(sBBox, oBBox)
 
         # semantic features of obj and subj
-        # semantic_features[i_rel] = utils.getSemanticVector(objs[rel["sub"]]["name"], objs[rel["obj"]]["name"], self.w2v_model)
+        # semantic_features[i_rel] = utils.getSemanticVector(objs[rel["sub"]]["name"], objs[rel["obj"]]["name"], self.emb["obj"])
         # semantic_features[i_rel] = np.zeros(600)
 
         # store the probability distribution of this subject-object pair from the soP_prior
@@ -298,7 +297,7 @@ class VRDDataLayer(data.Dataset):
         o_cls = objs[rel["obj"]]["cls"]
         rel_soP_prior[i_rel] = self.soP_prior[s_cls][o_cls]
 
-        gt_pred_sem[i_rel] = utils.getEmbedding(rels[i_rel]["pred"], self.w2v_model)
+        gt_pred_sem[i_rel] = np.mean([utils.getEmbedding(pred_id, self.emb["pred"]) for pred_id in rels[i_rel]["pred"]], axis=1)
 
         for rel_label in rel["pred"]:
           target[pos_idx] = i_rel * self.dataset.n_pred + rel_label

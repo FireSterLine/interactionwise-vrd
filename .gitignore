@@ -12,6 +12,7 @@ images_det
 #data/*
 #!data/genome/*
 data/demo
+data/embedding
 data/vg
 data/scripts
 data/coco

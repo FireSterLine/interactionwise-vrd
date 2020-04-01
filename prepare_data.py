@@ -7,6 +7,8 @@ from collections import defaultdict
 import numpy as np
 import scipy.io as sio
 
+from gensim.models import KeyedVectors
+
 import json
 import pickle
 import globals
@@ -31,7 +33,7 @@ Notes:
 """
 
 class DataPreparer:
-    def __init__(self, multi_label = True):
+    def __init__(self, multi_label = True, generate_emb = None):
         self.objects_vocab_file    = "objects.json"
         self.predicates_vocab_file = "predicates.json"
 
@@ -40,6 +42,8 @@ class DataPreparer:
 
         self.multi_label = multi_label
 
+        self.generate_emb = generate_emb
+
         self.dir = None
         self.vrd_data = None
         self.cur_dformat = None
@@ -47,10 +51,17 @@ class DataPreparer:
 
     # This function reads the dataset's vocab txt files and loads them
     def prepare_vocabs(self, obj_vocab_file, pred_vocab_file):
-        self.writejson(utils.load_txt_list(self.fullpath(obj_vocab_file)),  self.objects_vocab_file)
-        self.writejson(utils.load_txt_list(self.fullpath(pred_vocab_file)), self.predicates_vocab_file)
-        self.obj_vocab  = self.readjson(self.objects_vocab_file)
-        self.pred_vocab = self.readjson(self.predicates_vocab_file)
+      self.writejson(utils.load_txt_list(self.fullpath(obj_vocab_file)),  self.objects_vocab_file)
+      self.writejson(utils.load_txt_list(self.fullpath(pred_vocab_file)), self.predicates_vocab_file)
+      self.obj_vocab  = self.readjson(self.objects_vocab_file)
+      self.pred_vocab = self.readjson(self.predicates_vocab_file)
+
+      if self.generate_emb is not None:
+        obj_emb  = [ utils.getEmbedding(obj_label,  self.generate_emb) for  obj_label in self.obj_vocab]
+        pred_emb = [ utils.getEmbedding(pred_label, self.generate_emb) for pred_label in self.pred_vocab]
+        self.writejson(obj_emb,  self.fullpath("objects-emb.json"))
+        self.writejson(pred_emb, self.fullpath("predicates-emb.json"))
+
 
     # This function converts to relst
     def _generate_relst(self, anns): pass
@@ -157,7 +168,6 @@ class DataPreparer:
     def readjson(self, filename):
         with self.readfile(filename) as rfile:
             return json.load(rfile)
-        return open(self.fullpath(filename), 'w')
     def writejson(self, obj, filename):
         with self.writefile(filename) as f:
             json.dump(obj, f)
@@ -173,8 +183,8 @@ class DataPreparer:
 
 
 class VRDPrep(DataPreparer):
-    def __init__(self, multi_label = True):
-        super(VRDPrep, self).__init__(multi_label = multi_label)
+    def __init__(self, multi_label = True, generate_emb = None):
+        super(VRDPrep, self).__init__(multi_label = multi_label, generate_emb = generate_emb)
 
         self.dir = "vrd"
 
@@ -405,8 +415,8 @@ class VRDPrep(DataPreparer):
         prepareGT()
 
 class VGPrep(DataPreparer):
-    def __init__(self, subset, multi_label = True):
-        super(VGPrep, self).__init__(multi_label = multi_label)
+    def __init__(self, subset, multi_label = True, generate_emb = None):
+        super(VGPrep, self).__init__(multi_label = multi_label, generate_emb = generate_emb)
 
         num_objects, num_attributes, num_predicates = subset
 
@@ -436,7 +446,8 @@ class VGPrep(DataPreparer):
             "test"  : [line.split(" ")[0] for line in utils.load_txt_list(self.fullpath("../test.txt"))],
         }
 
-    def _generate_relst(self, data):
+    # TODO: account for multi-label!
+    def _generate_relst(self, data, objects_label_to_id_mapping, predicates_label_to_id_mapping):
         objects_info = {}
         for obj in data['objects']:
             obj_id = obj['object_id']
@@ -453,15 +464,15 @@ class VGPrep(DataPreparer):
 
             rel_data = defaultdict(lambda: dict())
             rel_data['subject']['name'] = subject_info['name']
-            rel_data['subject']['id'] = self.obj_vocab[subject_info['name']]
+            rel_data['subject']['id'] = self.objects_label_to_id_mapping[subject_info['name']]
             rel_data['subject']['bbox'] = subject_info['bbox']
 
             rel_data['object']['name'] = object_info['name']
-            rel_data['object']['id'] = self.obj_vocab[object_info['name']]
+            rel_data['object']['id'] = self.objects_label_to_id_mapping[object_info['name']]
             rel_data['object']['bbox'] = object_info['bbox']
 
             rel_data['predicate']['name'] = pred_label
-            rel_data['predicate']['id'] = self.pred_vocab[pred_label]
+            rel_data['predicate']['id'] = self.predicates_label_to_id_mapping[pred_label]
 
             rel_data = dict(rel_data)
             if rel_data not in relst:
@@ -472,8 +483,14 @@ class VGPrep(DataPreparer):
 if __name__ == '__main__':
 
     multi_label = True
+    generate_embeddings = True
 
-    data_preparer_vrd = VRDPrep(multi_label=multi_label)
+    w2v_model = None
+    if generate_embeddings:
+      print("Loading Word2Vec model...")
+      w2v_model = KeyedVectors.load_word2vec_format(osp.join(globals.data_dir, globals.w2v_model_path), binary=True)
+
+    data_preparer_vrd = VRDPrep(multi_label=multi_label, generate_emb = w2v_model)
     data_preparer_vrd.prepareEvalFromLP()
     data_preparer_vrd.save_data("relst")
     # This is to generate the data in relst format using the original annotations in VRD
@@ -490,7 +507,7 @@ if __name__ == '__main__':
 
     """
     # TODO: test to see if VG preparation works
-    data_preparer_vg  = VGPrep((1600, 400, 20), multi_label=multi_label)
+    data_preparer_vg  = VGPrep((1600, 400, 20), multi_label=multi_label, generate_emb = w2v_model)
     data_preparer_vrd.save_data("annos")
     data_preparer_vrd.save_data("relst")
     data_preparer_vrd.save_data("relst", "rel")

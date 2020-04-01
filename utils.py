@@ -5,6 +5,7 @@ import model.utils.net_utils as frcnn_net_utils
 import time
 from copy import deepcopy
 import torch
+import warnings
 
 # TODO: figure out what pixel means to use, how to compute them:
 #  do they come from the dataset used for training, perhaps?
@@ -15,7 +16,7 @@ vrd_pixel_means = np.array([[[102.9801, 115.9465, 122.7717]]])
 # Pytorch CUDA Fallback
 # TODO: check if this works and then use it everywhere instead of cuda()
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-torch.LongTensor([]).to(device) # Test
+torch.LongTensor([1]).to(device) # Test
 
 
 weights_normal_init  = frcnn_net_utils.weights_normal_init
@@ -74,9 +75,21 @@ def getEmbedding(word, emb_model):
   try:
     embedding = emb_model[word]
   except KeyError:
-    warnings.warn("Warning! Couldn't find semantic vector for '{}'".format(word), UserWarning)
-    embedding = np.zeros(300)
-  return embedding
+    # warnings.warn("Warning! Couldn't find semantic vector for '{}'".format(word), UserWarning)
+    print("Warning! Couldn't find semantic vector for '{}'".format(word))
+    if word == "trash can":
+      embedding = getEmbedding("trashcan", emb_model)
+    elif word == "trashcan":
+      embedding = np.mean(getEmbedding("trash", emb_model), getEmbedding("can", emb_model), axis=0)
+    elif word == "traffic light":
+      #   embedding = getEmbedding("trafficlight", emb_model)
+      # elif word == "trafficlight":
+      embedding = getEmbedding("stoplight", emb_model)
+    elif word == "stoplight":
+      embedding = np.mean(getEmbedding("traffic", emb_model), getEmbedding("light", emb_model), axis=0)
+    else:
+      return np.zeros(300)
+  return embedding / np.linalg.norm(embedding)
 
 # Get word embedding of subject and object label and concatenate them
 def getSemanticVector(subject_label, object_label, emb_model):
