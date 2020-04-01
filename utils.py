@@ -15,7 +15,7 @@ vrd_pixel_means = np.array([[[102.9801, 115.9465, 122.7717]]])
 # Pytorch CUDA Fallback
 # TODO: check if this works and then use it everywhere instead of cuda()
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-torch.LongTensor(device=device) # Test
+torch.LongTensor([]).to(device) # Test
 
 
 weights_normal_init  = frcnn_net_utils.weights_normal_init
@@ -70,20 +70,19 @@ def getDualMask(self, ih, iw, bb):
   return mask
 """
 
-# Get word embedding of subject and object label and concatenate them
-def getSemanticVector(subject_label, object_label, w2v_model):
-  # the key errors mean that the word was not found in the model's dictionary
+def getEmbedding(word, emb_model):
   try:
-    subject_vector = w2v_model[subject_label]
+    embedding = emb_model[word]
   except KeyError:
-    subject_vector = np.zeros(300)
+    warnings.warn("Warning! Couldn't find semantic vector for '{}'".format(word), UserWarning)
+    embedding = np.zeros(300)
+  return embedding
 
-  try:
-    object_vector = w2v_model[object_label]
-  except KeyError:
-    object_vector = np.zeros(300)
-  combined_vector = np.concatenate((subject_vector, object_vector), axis=0)
-  return combined_vector
+# Get word embedding of subject and object label and concatenate them
+def getSemanticVector(subject_label, object_label, emb_model):
+  subject_vector = getEmbedding(subject_label, emb_model)
+  object_vector  = getEmbedding(object_label, emb_model)
+  return np.concatenate((subject_vector, object_vector), axis=0)
 
 # data_info may be just the dataset name
 def data_info_to_ds_args(data_info):

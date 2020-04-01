@@ -7,7 +7,7 @@ import pickle
 from lib.blob import prep_im_for_blob
 from lib.dataset import dataset
 import torch
-# from gensim.models import KeyedVectors
+from gensim.models import KeyedVectors
 import warnings
 
 import utils, globals
@@ -82,9 +82,8 @@ class VRDDataLayer(data.Dataset):
     # self.max_shape = self._get_max_shape()
     print("Max shape is: {}".format(self.max_shape))
 
-    # TODO: restore this and make the used model a parameter
-    # print("Loading Word2Vec model...")
-    # self.w2v_model = KeyedVectors.load_word2vec_format(osp.join(globals.data_dir, globals.w2v_model_path), binary=True)
+    print("Loading Word2Vec model...")
+    self.w2v_model = KeyedVectors.load_word2vec_format(osp.join(globals.data_dir, globals.w2v_model_path), binary=True)
 
   def _get_max_shape(self):
     print("Identifying max shape...")
@@ -101,7 +100,7 @@ class VRDDataLayer(data.Dataset):
     return self.N
 
   def __getitem__(self, index):
-
+    print("index: ", index)
     (img_path, annos) = self.vrd_data[index]
 
     # Obtain object detections, if any
@@ -120,7 +119,7 @@ class VRDDataLayer(data.Dataset):
       elif self.stage == "train":
         # TODO: probably None values won't allow batching. But this is not a problem in training because None and len(rels)==0 are ignored
         warnings.warn("Warning: I'm about to return None values during training. That's not good, probably batching will fail", UserWarning)
-        return False, False, False
+        return False, False, False, False
 
 
     # Granularity fallback: gran="rel" returns a single relationship
@@ -183,7 +182,7 @@ class VRDDataLayer(data.Dataset):
     obj_boxes = np.zeros((obj_boxes_out.shape[0], 5))  # , dtype=np.float32)
     # Note: The ROI Pooling layer expects the index of the batch as first column
     # (https://pytorch.org/docs/stable/torchvision/ops.html#torchvision.ops.roi_pool)
-    # TODO check that the boxes are in the format x1, y1, x2, y2
+    # TODO This won't actually work for index>1 when shuffling... if you allow batching, then you must post-process the indices. Maybe in collate_fn!! That's the solution, yeah!
     obj_boxes[:, 0] = index
     obj_boxes[:, 1:5] = obj_boxes_out * im_scale
 
@@ -199,11 +198,13 @@ class VRDDataLayer(data.Dataset):
     #               self._getDualMask(ih, iw, oBBox)]
 
     # TODO: add tiny comment...
-    semantic_features = np.zeros((n_rels, 2 * 300))
+    # semantic_features = np.zeros((n_rels, 2 * 300))
 
     # this will contain the probability distribution of each subject-object pair ID over all 70 predicates
     rel_soP_prior = np.zeros((n_rels, self.dataset.n_pred))
     # print(n_rels)
+
+    gt_pred_sem = np.zeros((n_rel, 300))
 
     # Target output for the network
     target = -1 * np.ones((self.dataset.n_pred * n_rels))
@@ -247,7 +248,7 @@ class VRDDataLayer(data.Dataset):
 
           # semantic features of obj and subj
           # semantic_features[i_rel] = utils.getSemanticVector(objs[rel["sub"]]["name"], objs[rel["obj"]]["name"], self.w2v_model)
-          semantic_features[i_rel] = np.zeros(600)
+          # semantic_features[i_rel] = np.zeros(600)
 
           # store the probability distribution of this subject-object pair from the soP_prior
           rel_soP_prior[i_rel] = self.soP_prior[sub_cls][obj_cls]
@@ -290,12 +291,14 @@ class VRDDataLayer(data.Dataset):
 
         # semantic features of obj and subj
         # semantic_features[i_rel] = utils.getSemanticVector(objs[rel["sub"]]["name"], objs[rel["obj"]]["name"], self.w2v_model)
-        semantic_features[i_rel] = np.zeros(600)
+        # semantic_features[i_rel] = np.zeros(600)
 
         # store the probability distribution of this subject-object pair from the soP_prior
         s_cls = objs[rel["sub"]]["cls"]
         o_cls = objs[rel["obj"]]["cls"]
         rel_soP_prior[i_rel] = self.soP_prior[s_cls][o_cls]
+
+        gt_pred_sem[i_rel] = utils.getEmbedding(rels[i_rel]["pred"], self.w2v_model)
 
         for rel_label in rel["pred"]:
           target[pos_idx] = i_rel * self.dataset.n_pred + rel_label
@@ -315,20 +318,21 @@ class VRDDataLayer(data.Dataset):
     #   print(img_path)
     #   print(idx_s)
     #   input()
-    # img_blob          = torch.FloatTensor(img_blob,          device=utils.device).permute(0, 3, 1, 2)
-    img_blob          = torch.FloatTensor(img_blob,          device=utils.device).permute(2, 0, 1)
-    obj_boxes         = torch.FloatTensor(obj_boxes,         device=utils.device)
-    u_boxes           = torch.FloatTensor(u_boxes,           device=utils.device)
-    idx_s             = torch.LongTensor(idx_s,              device=utils.device)
-    idx_o             = torch.LongTensor(idx_o,              device=utils.device)
-    spatial_features  = torch.FloatTensor(spatial_features,  device=utils.device)
-    semantic_features = torch.FloatTensor(semantic_features, device=utils.device)
-    obj_classes       = torch.LongTensor(obj_classes,        device=utils.device)
+    # img_blob          = torch.FloatTensor(img_blob).to(utils.device).permute(0, 3, 1, 2)
+    img_blob          = torch.FloatTensor(img_blob).to(utils.device).permute(2, 0, 1)
+    obj_boxes         = torch.FloatTensor(obj_boxes).to(utils.device)
+    u_boxes           = torch.FloatTensor(u_boxes).to(utils.device)
+    idx_s             = torch.LongTensor(idx_s).to(utils.device)
+    idx_o             = torch.LongTensor(idx_o).to(utils.device)
+    spatial_features  = torch.FloatTensor(spatial_features).to(utils.device)
+    # semantic_features = torch.FloatTensor(semantic_features).to(utils.device)
+    obj_classes       = torch.LongTensor(obj_classes).to(utils.device)
 
     # print(idx_s)
 
-    # rel_soP_prior = torch.FloatTensor(rel_soP_prior, device=utils.device)
-    target        = torch.LongTensor(target,                 device=utils.device)
+    # rel_soP_prior = torch.FloatTensor(rel_soP_prior).to(utils.device)
+    gt_pred_sem       = torch.LongTensor(gt_pred_sem).to(utils.device)
+    target            = torch.LongTensor(target).to(utils.device)
 
     net_input = (img_blob,
                  obj_boxes,
@@ -343,6 +347,7 @@ class VRDDataLayer(data.Dataset):
     if self.stage == "train":
       return net_input,       \
               rel_soP_prior,  \
+              gt_pred_sem,    \
               target
     elif self.stage == "test":
       if self.objdet_res is None:

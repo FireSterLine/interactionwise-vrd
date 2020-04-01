@@ -39,6 +39,8 @@ class DSRModel(nn.Module):
     # - 2: dual mask
     self.args.use_spat      = self.args.get("use_spat",      1)
 
+    self.args.use_pred_sem  = self.args.get("use_pred_sem",  False)
+
     # Size of the representation for each modality when fusing features
     self.args.n_fus_neurons = self.args.get("n_fus_neurons", 256)
 
@@ -125,7 +127,11 @@ class DSRModel(nn.Module):
 
     # Final layers
     self.fc_fusion = FC(self.total_fus_neurons, 256)
-    self.fc_rel    = FC(256, self.args.n_pred, relu = False)
+
+    output_size = self.args.n_pred
+    if self.args.use_pred_sem:
+      output_size = 300
+    self.fc_rel    = FC(256, output_size, relu = False)
 
   def forward(self, img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes):
 
@@ -152,7 +158,7 @@ class DSRModel(nn.Module):
 
     # x_so = [self.roi_pool(x_img, obj_boxes[0]) for i in range(n_batches)]
     # x_so = [self.roi_pool(x_img, obj_boxes[0])]
-    # x_so = torch.tensor(x_so, device=utils.device)
+    # x_so = torch.tensor(x_so).to(utils.device)
 
     # turn our (batch_size×n×5) ROI into just (n×5)
     obj_boxes = obj_boxes.view(-1, obj_boxes.size()[2])
@@ -188,7 +194,7 @@ class DSRModel(nn.Module):
     # print("x_u.shape: ", x_u.shape)
 
     # Mmmm u_boxes.size()[1]
-    x_fused = torch.empty((n_batches, u_boxes.size()[0], 0), device=utils.device)
+    x_fused = torch.empty((n_batches, u_boxes.size()[0], 0))
 
     # print("u_boxes: ", u_boxes.shape)
 
@@ -260,9 +266,6 @@ class DSRModel(nn.Module):
 
     x_fused = self.fc_fusion(x_fused)
     rel_scores = self.fc_rel(x_fused)
-
-    # print("obj_scores.shape: ", obj_scores.shape)
-    # print("rel_scores.shape: ", rel_scores.shape)
 
     return obj_scores, rel_scores
 

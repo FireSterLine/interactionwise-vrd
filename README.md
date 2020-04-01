@@ -28,6 +28,9 @@ unzip sg_datset
 mv 4392556686_44d71ff5a0_o.jpg sg_dataset/sg_test_images/4392556686_44d71ff5a0_o.gif
 cd ../..`
 
+mkdir data/embedding
+wget -c "https://s3.amazonaws.com/dl4j-distribution/GoogleNews-vectors-negative300.bin.gz" data/embeddings
+
 <!--
 `cd data/`
 

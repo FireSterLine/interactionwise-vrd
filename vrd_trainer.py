@@ -62,6 +62,9 @@ class vrd_trainer():
           # - 2: dual mask
           "use_spat" : 0,
 
+          # Use or not predicate semantics
+          "use_pred_sem"  : False,
+
           # Size of the representation for each modality when fusing features
           "n_fus_neurons" : 256,
 
@@ -107,6 +110,8 @@ class vrd_trainer():
       args["training"]["num_epochs"] = 4
       args["data"]["justafew"] = True
       args["training"]["prints_per_epoch"] = 1
+      args["model"]["use_pred_sem"] = True
+      args["training"]["use_shuffle"] = False
 
 
     print("Arguments:")
@@ -185,7 +190,7 @@ class vrd_trainer():
     self.model_args.n_pred = self.datalayer.n_pred
     print("Initializing VRD Model...")
     print("Model args: ", self.model_args)
-    self.model = VRDModel(self.model_args).to(device=utils.device)
+    self.model = VRDModel(self.model_args).to(utils.device)
     if "model_state_dict" in self.state:
       # TODO: Make sure that this doesn't need the random initialization first
       self.model.load_state_dict(self.state["model_state_dict"])
@@ -293,7 +298,7 @@ class vrd_trainer():
     n_iter = len(self.dataloader)
 
     # for iter in range(n_iter):
-    for i_iter,(net_input, rel_soP_prior, target) in enumerate(self.dataloader):
+    for i_iter,(net_input, rel_soP_prior, gt_pred_sem, target) in enumerate(self.dataloader):
 
       print("{}/{}".format(i_iter, n_iter))
 
