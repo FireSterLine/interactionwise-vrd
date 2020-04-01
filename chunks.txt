@@ -26,8 +26,8 @@ for i in range(len(test)):
         break
     print(t)
     print(t_d)
-    print(test[i]["rel_classes"])
-    print(test[i])
+    #print(test[i]["rel_classes"])
+    #print(test[i])
     input()
 
 

@@ -58,7 +58,7 @@ class VRDEvaluator():
 
       for (tmp_i,(net_input, obj_classes_out, ori_bboxes)) in enumerate(test_dataloader):
 
-        if(net_input is None):
+        if(isinstance(net_input, torch.Tensor) and net_input.size() == (1,)): # Check this one TODO
           rlp_labels_cell.append(None)
           tuple_confs_cell.append(None)
           sub_bboxes_cell.append(None)
@@ -164,26 +164,51 @@ class VRDEvaluator():
         print("{}/{}".format(step,n_iter))
         if step >= n_iter:
           break
-        net_input, obj_classes_out, ori_bboxes, rel_soP_prior, objdet_res = test_data
+        net_input, obj_classes_out, ori_bboxes, rel_soP_prior, objdet_res, gt_bboxes, gt_classes  = test_data
 
-        if(net_input is None):
+        if(isinstance(net_input, torch.Tensor) and net_input.size() == (1,)): # Check this one TODO
           rlp_labels_cell.append(None)
           tuple_confs_cell.append(None)
           sub_bboxes_cell.append(None)
           obj_bboxes_cell.append(None)
           continue
 
+        # TODO: remove this to allow batching
+        gt_bboxes  = gt_bboxes[0].data.cpu().numpy().astype(np.float32)
+        gt_classes = gt_classes[0].data.cpu().numpy().astype(np.float32)
+
+        """
+        TODO: perform this check after you switch to anno and unify dsr data preparation with the other one
         gt_boxes = anno_img["boxes"].astype(np.float32)
         gt_cls = np.array(anno_img["classes"]).astype(np.float32)
 
-        # print("Boxes")
-        # print(gt_boxes)
-        # print(ori_bboxes)
-        # print()
-        # print("Classes")
-        # print(gt_cls)
-        # print(obj_classes_out)
-        # input()
+        inds_1 = gt_bboxes.sum(axis=1).argsort()
+        print(inds_1)
+        gt_bboxes = gt_bboxes[inds_1]
+        gt_classes = gt_classes[inds_1]
+        # gt_classes = np.take_along_axis(gt_classes, inds_1, axis=0)
+        inds_2 = gt_boxes.sum(axis=1).argsort()
+        print(inds_2)
+        gt_boxes = gt_boxes[inds_2]
+        gt_cls = gt_cls[inds_2]
+        # gt_cls = np.take_along_axis(gt_cls, inds_2, axis=0)
+        if not np.all(gt_cls == gt_classes) or not np.all(gt_boxes == gt_bboxes):
+          print("Boxes")
+          print("gt_boxes: \t", gt_boxes.shape) # 10
+          print("gt_boxes: \t", gt_bboxes.shape)
+          print("Classes")
+          print("gt_cls: \t", gt_cls.shape) # 10
+          print("gt_classes: \t", gt_classes.shape)
+          print()
+          print("Boxes")
+          print("gt_boxes: \n", gt_boxes) # 10
+          print("gt_bboxes: \n", gt_bboxes)
+          print("Classes")
+          print("gt_cls: \n", gt_cls) # 10
+          print("gt_classes: \n", gt_classes)
+          input()
+        continue
+        """
 
 
         obj_score, rel_score = vrd_model(*net_input) # img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
@@ -203,7 +228,7 @@ class VRDEvaluator():
 
         img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes = net_input
 
-        # print("gt_boxes.shape: \t", gt_boxes.shape)
+        # print("gt_bboxes.shape: \t", gt_bboxes.shape)
         # print("gt_cls.shape: \t", gt_cls.shape)
         # print("ori_bboxes.shape: \t", ori_bboxes.shape)
         # print("obj_pred.shape: \t", obj_pred.shape)
@@ -213,10 +238,10 @@ class VRDEvaluator():
         idx_o = deepcopy(idx_o[0])
         ori_bboxes = deepcopy(ori_bboxes[0])
 
-        pos_num_img, loc_num_img = eval_obj_img(gt_boxes, gt_cls, ori_bboxes, obj_pred.cpu().numpy(), gt_thr=0.5)
+        pos_num_img, loc_num_img = eval_obj_img(gt_bboxes, gt_classes, ori_bboxes, obj_pred.cpu().numpy(), gt_thr=0.5)
         pos_num += pos_num_img
         loc_num += loc_num_img
-        gt_num  += gt_boxes.shape[0]
+        gt_num  += gt_bboxes.shape[0]
 
         # TODO: remove this to allow batching
         objdet_res["confs"]   = deepcopy(objdet_res["confs"][0])

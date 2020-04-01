@@ -115,13 +115,13 @@ class VRDDataLayer(data.Dataset):
     if img_path is None:
       if self.stage == "test":
         if self.objdet_res is None:
-          return None, None, None
+          return False, False, False
         else:
-          return None, None, None, None, None
+          return False, False, False, False, False, False, False
       elif self.stage == "train":
         # TODO: probably None values won't allow batching. But this is not a problem in training because None and len(rels)==0 are ignored
         warnings.warn("Warning: I'm about to return None values during training. That's not good, probably batching will fail", UserWarning)
-        return None, None, None
+        return False, False, False
 
     # TODO: The deepcopy won't be necessary anymore at some point
     rels = deepcopy(_rels)
@@ -136,9 +136,9 @@ class VRDDataLayer(data.Dataset):
     if n_rels == 0:
       if self.stage == "test":
         if self.objdet_res is None:
-          return None, None, None
+          return False, False, False
         else:
-          return None, None, None, None, None
+          return False, False, False, False, False, False, False
 
     im = self.dataset.readImg(img_path)
     ih = im.shape[0]
@@ -161,7 +161,7 @@ class VRDDataLayer(data.Dataset):
 
     # TODO: instead of computing obj_boxes_out here, put it in the preprocess
     #  (and maybe transform relationships to contain object indices instead of whole objects)
-    # Note: from here on, rel["subject"] and rel["object"] contain indices to objs
+    # Note: from here on, rel["sub"] and rel["obj"] contain indices to objs
 
     ####
     # ATTENTION: this was maybe leading to troubles!!! "Duplicate" objects are added twice!
@@ -174,15 +174,24 @@ class VRDDataLayer(data.Dataset):
     #  "predicate"{id,name} -> "pred" (id)
     #  no need for bboxDictToNumpy anymore, it's a list, maybe create a tensor directly?
     objs = []
+    def add_object(obj):
+        for i_obj,any_obj in enumerate(objs):
+            # print()
+            # print(obj)
+            # print(any_obj)
+            # print(utils.bboxDictToList(obj["bbox"]))
+            # print(any_obj["bbox"])
+            if any_obj["id"]   == obj["id"] and \
+               any_obj["bbox"] == obj["bbox"]:
+               return i_obj
+        i_obj = len(objs)
+        objs.append(obj)
+        return i_obj
     for i_rel, rel in enumerate(rels):
-
-      i_obj = len(objs)
-      objs.append(rel["subject"])
-      rel["subject"] = i_obj
-
-      i_obj = len(objs)
-      objs.append(rel["object"])
-      rel["object"] = i_obj
+        rels[i_rel]["sub"]  = add_object(rel["subject"])
+        rels[i_rel]["obj"]  = add_object(rel["object"])
+        del rel["subject"]
+        del rel["object"]
 
     n_objs = len(objs)
 
@@ -196,7 +205,7 @@ class VRDDataLayer(data.Dataset):
       n_rels = len(obj_classes) * (len(obj_classes) - 1)
 
       if n_rels == 0:
-        return None, None, None, None, None
+        return False, False, False, False, False, False, False
     else:
       obj_boxes_out = np.zeros((n_objs, 4))
       obj_classes = np.zeros((n_objs))
@@ -243,6 +252,13 @@ class VRDDataLayer(data.Dataset):
 
     if self.objdet_res is not None:
       i_rel = 0
+      gt_bboxes  = np.zeros((n_objs, 4))
+      gt_classes = np.zeros((n_objs))
+
+      for i_obj, obj in enumerate(objs):
+        gt_bboxes[i_obj]  = utils.bboxDictToNumpy(obj["bbox"])
+        gt_classes[i_obj] = obj["id"]
+
       for s_idx, sub_cls in enumerate(obj_classes):
         for o_idx, obj_cls in enumerate(obj_classes):
           if (s_idx == o_idx):
@@ -272,16 +288,31 @@ class VRDDataLayer(data.Dataset):
           rel_soP_prior[i_rel] = self.soP_prior[sub_cls][obj_cls]
 
           i_rel += 1
+
+      # for i_rel, rel in enumerate(rels):
+      #
+      #   # Subject and object local indices (useful when selecting ROI results)
+      #   idx_s.append(rel["subject"])
+      #   idx_o.append(rel["object"])
+      #
+      #   # Subject and object bounding boxes
+      #   sBBox = utils.bboxDictToNumpy(objs[rel["subject"]]["bbox"])
+      #   oBBox = utils.bboxDictToNumpy(objs[rel["object"]]["bbox"])
+      #
+      #   # get the union bounding box
+      #   rBBox = utils.getUnionBBox(sBBox, oBBox, ih, iw)
+      #   rel["predicate"]["id"]
+
     else:
       for i_rel, rel in enumerate(rels):
 
         # Subject and object local indices (useful when selecting ROI results)
-        idx_s.append(rel["subject"])
-        idx_o.append(rel["object"])
+        idx_s.append(rel["sub"])
+        idx_o.append(rel["obj"])
 
         # Subject and object bounding boxes
-        sBBox = utils.bboxDictToNumpy(objs[rel["subject"]]["bbox"])
-        oBBox = utils.bboxDictToNumpy(objs[rel["object"]]["bbox"])
+        sBBox = utils.bboxDictToNumpy(objs[rel["sub"]]["bbox"])
+        oBBox = utils.bboxDictToNumpy(objs[rel["obj"]]["bbox"])
 
         # get the union bounding box
         rBBox = utils.getUnionBBox(sBBox, oBBox, ih, iw)
@@ -293,12 +324,12 @@ class VRDDataLayer(data.Dataset):
         spatial_features[i_rel] = utils.getRelativeLoc(sBBox, oBBox)
 
         # semantic features of obj and subj
-        # semantic_features[i_rel] = utils.getSemanticVector(objs[rel["subject"]]["name"], objs[rel["object"]]["name"], self.w2v_model)
+        # semantic_features[i_rel] = utils.getSemanticVector(objs[rel["sub"]]["name"], objs[rel["obj"]]["name"], self.w2v_model)
         semantic_features[i_rel] = np.zeros(600)
 
         # store the probability distribution of this subject-object pair from the soP_prior
-        s_cls = objs[rel["subject"]]["id"]
-        o_cls = objs[rel["object"]]["id"]
+        s_cls = objs[rel["sub"]]["id"]
+        o_cls = objs[rel["obj"]]["id"]
         rel_soP_prior[i_rel] = self.soP_prior[s_cls][o_cls]
 
         for rel_label in rel["predicate"]["id"]:
@@ -358,7 +389,9 @@ class VRDDataLayer(data.Dataset):
                 obj_classes_out,  \
                 obj_boxes_out,    \
                 rel_soP_prior,    \
-                det_res
+                det_res,          \
+                gt_bboxes,        \
+                gt_classes
 
 """
 # Batching example:

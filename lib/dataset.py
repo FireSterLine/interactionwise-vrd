@@ -89,8 +89,8 @@ class dataset():
     """ Load list of relationships """
     # print((format, stage, granularity))
     if not (format, stage, granularity) in self._vrd_data_cache:
+      # filename = "dsr_{}_{}.json".format(format, stage) # filename = "dsr_{}_{}_{}.json".format(format, granularity, stage)
       filename = "data_{}_{}_{}.json".format(format, granularity, stage)
-      # ...filename = "dsr_{}_{}_{}.json".format(format, granularity, stage))
       print("Data not cached. Reading {}...".format(filename))
       with open(osp.join(self.metadata_dir, filename), 'r') as rfile:
         data = json.load(rfile)[:10] if self.justafew else json.load(rfile)
