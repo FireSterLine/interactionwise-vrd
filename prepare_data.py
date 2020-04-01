@@ -59,8 +59,8 @@ class DataPreparer:
       if self.generate_emb is not None:
         obj_emb  = [ utils.getEmbedding(obj_label,  self.generate_emb) for  obj_label in self.obj_vocab]
         pred_emb = [ utils.getEmbedding(pred_label, self.generate_emb) for pred_label in self.pred_vocab]
-        self.writejson(obj_emb,  self.fullpath("objects-emb.json"))
-        self.writejson(pred_emb, self.fullpath("predicates-emb.json"))
+        self.writejson(obj_emb,  "objects-emb.json")
+        self.writejson(pred_emb, "predicates-emb.json")
 
 
     # This function converts to relst
