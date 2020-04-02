@@ -174,8 +174,7 @@ class vrd_trainer():
     #  train_dataset, val_dataset = random_split(dataset, [80, 20])
 
     # Data
-    print("Initializing data...")
-    print("Data args: ", self.data_args)
+    print("Initializing data: ", self.data_args)
     # TODO: VRDDataLayer has to know what to yield (DRS -> img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
     self.datalayer = VRDDataLayer(self.data_args, "train")
     self.dataloader = torch.utils.data.DataLoader(
@@ -189,8 +188,7 @@ class vrd_trainer():
     # Model
     self.model_args.n_obj  = self.datalayer.n_obj
     self.model_args.n_pred = self.datalayer.n_pred
-    print("Initializing VRD Model...")
-    print("Model args: ", self.model_args)
+    print("Initializing VRD Model: ", self.model_args)
     self.model = VRDModel(self.model_args).to(utils.device)
     if "model_state_dict" in self.state:
       # TODO: Make sure that this doesn't need the random initialization first
@@ -207,13 +205,11 @@ class vrd_trainer():
       except FileNotFoundError:
         warnings.warn("Initialization weights for emb.weight layer not found!", UserWarning)
     # Evaluation
-    print("Initializing evaluation...")
-    print("Evaluation args: ", self.eval_args)
+    print("Initializing evaluator: ", self.eval_args)
     self.eval = VRDEvaluator(self.data_args, self.eval_args)
 
     # Training
-    print("Initializing training...")
-    print("Training args: ", self.training)
+    print("Initializing training: ", self.training)
     self.optimizer = self.model.OriginalAdamOptimizer(**self.training.opt)
     self.criterion = nn.MultiLabelMarginLoss(reduction="sum").to(device=utils.device)
     if "optimizer_state_dict" in self.state:

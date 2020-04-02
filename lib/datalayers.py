@@ -77,9 +77,9 @@ class VRDDataLayer(data.Dataset):
     VRD dataset. It takes too long to run, so it's better if we run this once on
     any new dataset, and store and initialize those values as done here
     '''
-    self.max_shape = (1000, 1000, 3)
+    # self.max_shape = (1000, 1000, 3)
     # self.max_shape = self._get_max_shape()
-    print("Max shape is: {}".format(self.max_shape))
+    # print("Max shape is: {}".format(self.max_shape))
 
     # TODO: allow to choose which model to use. We only have w2v for now
     self.emb = {"obj" : self.dataset.readJSON("objects-emb.json"), "pred" : self.dataset.readJSON("predicates-emb.json")}
@@ -318,6 +318,7 @@ class VRDDataLayer(data.Dataset):
     #   print(img_path)
     #   print(idx_s)
     #   input()
+    # TODO: maybe there's no need to transform them into tensor, since the dataloader will do that anyway
     # img_blob          = torch.FloatTensor(img_blob).to(utils.device).permute(0, 3, 1, 2)
     img_blob          = torch.FloatTensor(img_blob).to(utils.device).permute(2, 0, 1)
     obj_boxes         = torch.FloatTensor(obj_boxes).to(utils.device)
