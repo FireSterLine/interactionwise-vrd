@@ -10,6 +10,17 @@ ZShot:	R@50:  4.901	R@100:  8.340
 CLS OBJ TEST POS:  43.000, LOC:  6225.000, GT:  6694.000, Precision:  0.007, Recall:  0.006
 
 
+QUESTION: why is a newly initialized model already good?
+CLS PRED TEST:
+All:	R@50:  19.023	R@100:  32.941
+ZShot:	R@50:  13.430	R@100:  21.129
+CLS REL TEST:
+All:	R@50:  16.719	R@100:  21.307
+ZShot:	R@50:  0.516	R@100:  1.548
+CLS OBJ TEST POS:  92.000, LOC:  6176.000, GT:  6694.000, Precision:  0.015, Recall:  0.014
+
+
+
 OUTPUT IN LOCAL with just a few (10) training/test samples (no shuffling):
 
 
