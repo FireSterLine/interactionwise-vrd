@@ -4,12 +4,8 @@ import torch.nn as nn
 import numpy as np
 
 # TODO: maybe switch to torchvision for good? First, update PyTorch
-if torch.cuda.is_available():
-  from model.roi_layers.roi_pool import ROIPool as FRCNN_ROIPool
-  ROIPool = FRCNN_ROIPool
-else:
-  import torchvision
-  ROIPool = torchvision.ops.RoIPool
+import torchvision
+ROIPool = torchvision.ops.RoIPool
 
 class FC(nn.Module):
   """ Wrapper for linear layers with relu """

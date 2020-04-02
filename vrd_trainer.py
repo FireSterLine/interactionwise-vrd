@@ -108,12 +108,12 @@ class vrd_trainer():
 
     if(DEBUGGING):
       args["training"]["num_epochs"] = 6
-      #args["data"]["justafew"] = True
+      args["data"]["justafew"] = True
       #args["data"]["name"] = "vrd/dsr"
       #args["data"]["name"] = "vrd"
       args["training"]["prints_per_epoch"] = 0.1
       # args["model"]["use_pred_sem"] = True
-      #args["training"]["use_shuffle"] = False
+      args["training"]["use_shuffle"] = False
 
     print("Arguments:")
     if checkpoint:
@@ -324,12 +324,9 @@ class vrd_trainer():
       rel_soP_prior = -0.5 * ( rel_soP_prior + (1.0 / self.datalayer.n_pred))
 
       # TODO: fix this weird-shaped target in datalayers and remove this view thingy
-      loss = self.criterion((rel_soP_prior).view(1, -1), target)
-      #loss = self.criterion((rel_soP_prior + rel_scores).view(1, -1), target)
-      # loss = self.criterion((rel_soP_prior + rel_scores).view(batch_size, -1), target)
+      loss = self.criterion((rel_soP_prior + rel_scores).view(batch_size, -1), target)
       # loss = self.criterion((rel_scores).view(batch_size, -1), target)
 
-      loss.requires_grad = True
       loss.backward()
       self.optimizer.step()
 
@@ -337,7 +334,7 @@ class vrd_trainer():
       losses.update(loss.item())
 
       if utils.smart_frequency_check(i_iter, n_iter, self.training.prints_per_epoch):
-          print("\t{:4d}/{:4d}: LOSS: {: 6.3f}".format(i_iter, n_iter, losses.avg(0)))
+          print("\t{:4d}/{:<4d}: LOSS: {: 6.3f}".format(i_iter, n_iter, losses.avg(0)))
           losses.reset(0)
 
     self.state["loss"] = losses.avg(1)
