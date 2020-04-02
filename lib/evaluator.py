@@ -8,6 +8,7 @@ import pickle
 import os.path as osp
 import torch.nn.functional as F
 import warnings
+import utils
 
 # from copy import deepcopy
 deepcopy = lambda x: x
@@ -22,10 +23,10 @@ class VRDEvaluator():
 
     try:
       # Load ground truths
-      gt_path = osp.join("data", "{}", "eval", "gt.pkl").format(self.data_args.name)
+      gt_path = osp.join("data", "vrd", "eval", "gt.pkl") # .format(self.data_args.name)
       with open(gt_path, 'rb') as fid:
         self.gt = pickle.load(fid)
-      gt_zs_path = osp.join("data", "{}", "eval", "gt_zs.pkl").format(self.data_args.name)
+      gt_zs_path = osp.join("data", "vrd", "eval", "gt_zs.pkl") # .format(self.datalayer.name)
       with open(gt_zs_path, 'rb') as fid:
         self.gt_zs = pickle.load(fid)
     except FileNotFoundError:
@@ -41,10 +42,10 @@ class VRDEvaluator():
       self.num_imgs = 8995
 
   def test_pre(self, vrd_model):
-      """ Test model on Predicate Prediction """
-      if self.gt is None:
-        return np.nan, np.nan, np.nan, np.nan, 0.1
-      # TODO: restore with torch.no_grad():
+    """ Test model on Predicate Prediction """
+    if self.gt is None:
+      return np.nan, np.nan, np.nan, np.nan, 0.1
+    with torch.no_grad():
       vrd_model.eval()
       time1 = time.time()
 
@@ -73,7 +74,8 @@ class VRDEvaluator():
           obj_bboxes_cell.append(None)
           continue
 
-        #print("{}/{}".format(tmp_i, test_data_layer.N))
+        if utils.smart_frequency_check(tmp_i, test_data_layer.N, 0.1):
+          print("{}/{}".format(tmp_i, test_data_layer.N))
 
         img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes = net_input
 
@@ -108,7 +110,7 @@ class VRDEvaluator():
 
         # TODO: check
         # Is this because of the background ... ? If so, use proper flags instead of the name...
-        if(self.data_args.name == "vrd"):
+        if("vrd" in self.data_args.name):
           rlp_labels_im += 1
 
         tuple_confs_cell.append(tuple_confs_im)
@@ -133,10 +135,10 @@ class VRDEvaluator():
 
   # Relationship Prediction
   def test_rel(self, vrd_model):
-      """ Test model on Relationship Prediction """
-      if self.gt is None:
-        return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 0.1
-      # TODO: restore with torch.no_grad():
+    """ Test model on Relationship Prediction """
+    if self.gt is None:
+      return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 0.1
+    with torch.no_grad():
       vrd_model.eval()
       time1 = time.time()
 
@@ -171,7 +173,8 @@ class VRDEvaluator():
       # print(len(test_dataloader))
       n_iter = min(len(anno), len(test_dataloader))
       for step,(anno_img, test_data) in enumerate(zip(anno, test_dataloader)):
-        print("{}/{}".format(step,n_iter))
+        if utils.smart_frequency_check(step, n_iter, 0.1):
+            print("{}/{}".format(step,n_iter))
         if step >= n_iter:
           break
         net_input, obj_classes_out, ori_bboxes, rel_soP_prior, objdet_res, gt_bboxes, gt_classes  = test_data
@@ -294,7 +297,7 @@ class VRDEvaluator():
 
         # TODO: check
         # Is this because of the background ... ?
-        if(self.data_args.name == "vrd"):
+        if("vrd" in self.data_args.name):
           rlp_labels_im += 1
 
         # Why is this needed? ...

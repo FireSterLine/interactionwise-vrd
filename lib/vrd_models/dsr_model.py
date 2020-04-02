@@ -246,7 +246,7 @@ class DSRModel(nn.Module):
       # print("obj_classes.shape: ", obj_classes.shape)
       emb = self.emb(obj_classes)
       # print("emb.shape: ", emb.shape)
-      emb = torch.squeeze(emb, 1)[0] # TODO: remove
+      emb = torch.squeeze(emb, 0) # TODO: remove
       # print("emb.shape: ", emb.shape)
       # print("idx_s.shape: ", idx_s.shape)
       emb_subject = torch.index_select(emb, 0, idx_s[0]).unsqueeze(0) # TODO: warning, use batched_index_select otherwise this won't work

@@ -107,13 +107,13 @@ class vrd_trainer():
       }):
 
     if(DEBUGGING):
-      args["training"]["num_epochs"] = 4
-      args["data"]["justafew"] = True
-      # args["data"]["name"] = "vrd/dsr"
-      args["data"]["name"] = "vrd"
-      args["training"]["prints_per_epoch"] = 1
-      args["model"]["use_pred_sem"] = True
-      args["training"]["use_shuffle"] = False
+      args["training"]["num_epochs"] = 6
+      #args["data"]["justafew"] = True
+      #args["data"]["name"] = "vrd/dsr"
+      #args["data"]["name"] = "vrd"
+      args["training"]["prints_per_epoch"] = 0.1
+      # args["model"]["use_pred_sem"] = True
+      #args["training"]["use_shuffle"] = False
 
     print("Arguments:")
     if checkpoint:
@@ -235,7 +235,7 @@ class vrd_trainer():
     end_epoch = self.state["epoch"] + self.training.num_epochs
     while self.state["epoch"] < end_epoch:
 
-      print("Epoch {}/{}".format((self.state["epoch"]+1), end_epoch))
+      # print("Epoch {}/{}".format((self.state["epoch"]+1), end_epoch))
 
 
       # TODO check if this works (Note that you'd have to make it work cross-sessions as well)
@@ -268,7 +268,7 @@ class vrd_trainer():
         f.write(tabulate(res, res_headers))
 
       # Save checkpoint
-      if utils.smart_fequency_check(self.state["epoch"], self.training.num_epochs, self.training.checkpoint_freq):
+      if utils.smart_frequency_check(self.state["epoch"], self.training.num_epochs, self.training.checkpoint_freq):
 
         # TODO: the loss should be a result: self.result.loss (which is ignored at loading,only used when saving checkpoint)...
         self.state["model_state_dict"]     = self.model.state_dict()
@@ -298,7 +298,7 @@ class vrd_trainer():
     # for iter in range(n_iter):
     for i_iter,(net_input, rel_soP_prior, gt_pred_sem, target) in enumerate(self.dataloader):
 
-      print("{}/{}".format(i_iter, n_iter))
+      # print("{}/{}".format(i_iter, n_iter))
 
       # print(type(net_input))
       # print(type(rel_soP_prior))
@@ -332,9 +332,9 @@ class vrd_trainer():
       # Track loss
       losses.update(loss.item())
 
-      if utils.smart_fequency_check(i_iter, n_iter, self.training.prints_per_epoch):
-        print("\t{:4d}: LOSS: {: 6.3f}".format(i_iter, losses.avg(0)))
-        losses.reset(0)
+      if utils.smart_frequency_check(i_iter, n_iter, self.training.prints_per_epoch):
+          print("\t{:4d}/{:4d}: LOSS: {: 6.3f}".format(i_iter, n_iter, losses.avg(0)))
+          losses.reset(0)
 
     self.state["loss"] = losses.avg(1)
     time2 = time.time()
@@ -364,8 +364,8 @@ class vrd_trainer():
 
 if __name__ == "__main__":
   # trainer = vrd_trainer()
-  # trainer = vrd_trainer(checkpoint = False)
-  trainer = vrd_trainer(checkpoint = "epoch_4_checkpoint.pth.tar")
+  trainer = vrd_trainer(checkpoint = False)
+  #trainer = vrd_trainer(checkpoint = "epoch_4_checkpoint.pth.tar")
   trainer.train()
   #trainer.test_pre()
   # trainer.test_rel()

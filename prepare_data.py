@@ -521,6 +521,8 @@ class VGPrep(DataPreparer):
 
 
 if __name__ == '__main__':
+    
+    # TODO: filter out relationships between the same object?
 
     multi_label = True
     generate_embeddings = False
