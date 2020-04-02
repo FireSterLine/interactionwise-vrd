@@ -29,8 +29,9 @@ import globals, utils
 from lib.vrd_models import VRDModel
 from lib.datalayers import VRDDataLayer
 from lib.evaluator import VRDEvaluator
-#, save_net, load_net, \
-#      adjust_learning_rate, , clip_gradient
+
+# DEBUGGING = (utils.device == torch.device("cpu"))
+DEBUGGING = True
 
 class vrd_trainer():
 
@@ -39,7 +40,7 @@ class vrd_trainer():
       args = {
         # Dataset in use
         "data" : {
-          "name"         : "vg",
+          "name"         : "vrd",
           "with_bg_obj"  : False,
           "with_bg_pred" : False,
         },
@@ -95,7 +96,7 @@ class vrd_trainer():
           "checkpoint_freq" : 5,
 
           # Number of lines printed with loss ...TODO explain smart freq
-          "prints_per_epoch" : .1,
+          "prints_per_epoch" : 10,
 
           # TODO
           "batch_size" : 1,
@@ -105,18 +106,15 @@ class vrd_trainer():
         }
       }):
 
-    # Local Patch:
-    # If we run on a CPU, we reduce the computational load for debugging purposes
-    if(utils.device == torch.device("cpu")):
+    if(DEBUGGING):
       args["training"]["num_epochs"] = 4
       args["data"]["justafew"] = True
+      # args["data"]["name"] = "vrd/dsr"
+      args["data"]["name"] = "vrd"
       args["training"]["prints_per_epoch"] = 1
       args["model"]["use_pred_sem"] = True
       args["training"]["use_shuffle"] = False
 
-
-    args["data"]["justafew"] = True
-    args["training"]["prints_per_epoch"] = 1
     print("Arguments:")
     if checkpoint:
       print("Checkpoint: {}", checkpoint)
@@ -370,8 +368,8 @@ class vrd_trainer():
 
 if __name__ == "__main__":
   # trainer = vrd_trainer()
-  trainer = vrd_trainer(checkpoint = False)
-  # trainer = vrd_trainer(checkpoint = "epoch_4_checkpoint.pth.tar")
+  # trainer = vrd_trainer(checkpoint = False)
+  trainer = vrd_trainer(checkpoint = "epoch_4_checkpoint.pth.tar")
   trainer.train()
   #trainer.test_pre()
   # trainer.test_rel()
