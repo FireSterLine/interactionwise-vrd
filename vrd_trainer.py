@@ -112,7 +112,7 @@ class vrd_trainer():
       # args["data"]["name"] = "vrd/dsr"
       args["data"]["name"] = "vrd"
       args["training"]["prints_per_epoch"] = 1
-      args["model"]["use_pred_sem"] = True
+      # args["model"]["use_pred_sem"] = True
       args["training"]["use_shuffle"] = False
 
     print("Arguments:")
