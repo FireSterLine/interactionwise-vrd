@@ -20,14 +20,18 @@ class VRDEvaluator():
     self.data_args = data_args
     self.args = args
 
-    # Load ground truths
-    gt_path = osp.join("data", "{}", "eval", "gt.pkl").format(self.data_args.name)
-    with open(gt_path, 'rb') as fid:
-      self.gt = pickle.load(fid)
-
-    gt_zs_path = osp.join("data", "{}", "eval", "gt_zs.pkl").format(self.data_args.name)
-    with open(gt_zs_path, 'rb') as fid:
-      self.gt_zs = pickle.load(fid)
+    try:
+      # Load ground truths
+      gt_path = osp.join("data", "{}", "eval", "gt.pkl").format(self.data_args.name)
+      with open(gt_path, 'rb') as fid:
+        self.gt = pickle.load(fid)
+      gt_zs_path = osp.join("data", "{}", "eval", "gt_zs.pkl").format(self.data_args.name)
+      with open(gt_zs_path, 'rb') as fid:
+        self.gt_zs = pickle.load(fid)
+    except FileNotFoundError:
+      warnings.warn("Warning! Couldn't find ground truths pickles. Evaluation will be skipped.")
+      self.gt    = None
+      self.gt_zs = None
 
     # If None, the num_imgs that will be used is the size of the ground-truths
     self.num_imgs = None
@@ -38,6 +42,8 @@ class VRDEvaluator():
 
   def test_pre(self, vrd_model):
       """ Test model on Predicate Prediction """
+      if self.gt is None:
+        return np.nan, np.nan, np.nan, np.nan, 0.1
       # TODO: restore with torch.no_grad():
       vrd_model.eval()
       time1 = time.time()
@@ -128,6 +134,8 @@ class VRDEvaluator():
   # Relationship Prediction
   def test_rel(self, vrd_model):
       """ Test model on Relationship Prediction """
+      if self.gt is None:
+        return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 0.1
       # TODO: restore with torch.no_grad():
       vrd_model.eval()
       time1 = time.time()

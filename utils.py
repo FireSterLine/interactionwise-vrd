@@ -85,7 +85,7 @@ def getEmbedding(word, emb_model, depth=0):
     "stand behind"      : [],
     "sit behind"        : [],
     "park behind"       : [],
-    "in the front of"   : ["in front of", "in front", "front of", "front"],
+    "in the front of"   : ["in_front_of", "in_front", "front_of", "front"],
     "stand under"       : [],
     "sit under"         : [],
     "walk to"           : [["walk","to"], "walk"],
@@ -194,6 +194,7 @@ def getEmbedding(word, emb_model, depth=0):
         fallback_words = non_existent_map[word]
       if " " in word:
         fallback_words = ["_".join(word.split(" "))] + fallback_words + [word.split(" ")]
+      
       for fallback_word in fallback_words:
         if isinstance(fallback_word, str):
           embedding = getEmbedding(fallback_word, emb_model, depth+1)
@@ -212,9 +213,9 @@ def getEmbedding(word, emb_model, depth=0):
             break
         else:
             raise ValueError("Error fallback word is of type {}: {}".format(fallback_word, type(fallback_word)))
-      if np.all(embedding == np.zeros(300)):
-        print("{}Warning! Couldn't find semantic vector for '{}'".format("  " * depth, word))
-        return embedding
+  if np.all(embedding == np.zeros(300)):
+    print("{}Warning! Couldn't find semantic vector for '{}'".format("  " * depth, word))
+    return embedding
   return embedding / np.linalg.norm(embedding)
 
 # Get word embedding of subject and object label and concatenate them
@@ -272,13 +273,13 @@ class LeveledAverageMeter(object):
 
 
 # Smart frequency = a frequency that can be a relative (a precentage) or absolute (integer)
-def smart_fequency_check(iter, num_iters, smart_frequency):
+def smart_fequency_check(i_iter, num_iters, smart_frequency):
   if float(smart_frequency) == 0.0: return False
   if isinstance(smart_frequency, int):
     abs_freq = smart_frequency
   else:
     abs_freq = int(num_iters*smart_frequency)
-  return (iter % abs_freq) == 0
+  return (i_iter % abs_freq) == 0
 
 def time_diff_str(time1, time2 = None):
   if time2 is None:

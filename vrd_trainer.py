@@ -5,6 +5,7 @@ import pickle
 from tabulate import tabulate
 import time
 import json
+import warnings
 
 import random
 # only for debugging (i.e TODO remove)
@@ -38,7 +39,7 @@ class vrd_trainer():
       args = {
         # Dataset in use
         "data" : {
-          "name"         : "vrd",
+          "name"         : "vg",
           "with_bg_obj"  : False,
           "with_bg_pred" : False,
         },
@@ -114,7 +115,8 @@ class vrd_trainer():
       args["training"]["use_shuffle"] = False
 
 
-    # args["data"]["justafew"] = True
+    args["data"]["justafew"] = True
+    args["training"]["prints_per_epoch"] = 1
     print("Arguments:")
     if checkpoint:
       print("Checkpoint: {}", checkpoint)
@@ -200,10 +202,12 @@ class vrd_trainer():
       utils.weights_normal_init(self.model, dev=0.01)
       # Load VGG layers
       self.model.load_pretrained_conv(osp.join(globals.data_dir, "VGG_imagenet.npy"), fix_layers=True)
-      # Load existing (word2vec?) embeddings
-      with open(osp.join(globals.data_dir, "vrd", "params_emb.pkl"), 'rb') as f:
-        self.model.state_dict()["emb.weight"].copy_(torch.from_numpy(pickle.load(f, encoding="latin1")))
-
+      # Load existing embeddings
+      try:
+        with open(osp.join(self.datalayer.dataset.metadata_dir, "params_emb.pkl"), 'rb') as f:
+          self.model.state_dict()["emb.weight"].copy_(torch.from_numpy(pickle.load(f, encoding="latin1")))
+      except FileNotFoundError:
+        warnings.warn("Initialization weights for emb.weight layer not found!", UserWarning)
     # Evaluation
     print("Initializing evaluation...")
     print("Evaluation args: ", self.eval_args)
@@ -366,8 +370,8 @@ class vrd_trainer():
 
 if __name__ == "__main__":
   # trainer = vrd_trainer()
-  # trainer = vrd_trainer(checkpoint = False)
-  trainer = vrd_trainer(checkpoint = "epoch_4_checkpoint.pth.tar")
+  trainer = vrd_trainer(checkpoint = False)
+  # trainer = vrd_trainer(checkpoint = "epoch_4_checkpoint.pth.tar")
   trainer.train()
   #trainer.test_pre()
   # trainer.test_rel()

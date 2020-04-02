@@ -454,7 +454,9 @@ class VGPrep(DataPreparer):
         # LOAD DATA
         self.objects_label_to_id_mapping    = utils.invert_dict(self.obj_vocab)
         self.predicates_label_to_id_mapping = utils.invert_dict(self.pred_vocab)
-        
+        #print(self.predicates_label_to_id_mapping)
+        #print(self.objects_label_to_id_mapping)
+
         vrd_data = {}
         for ix, filename in enumerate(glob(self.fullpath(self.json_selector))):
             
@@ -473,7 +475,6 @@ class VGPrep(DataPreparer):
             "test"  : [line.split(" ")[0] for line in utils.load_txt_list(self.fullpath("../test.txt"))],
         }
 
-    # TODO: account for multi-label!
     def _generate_relst(self, data):
         objects_info = {}
         for obj in data['objects']:
@@ -486,8 +487,8 @@ class VGPrep(DataPreparer):
         relst = []
         for pred in data['relations']:
             subject_info = objects_info[pred['subject_id']]
-            object_info = objects_info[pred['object_id']]
-            pred_label = pred['predicate']
+            object_info  = objects_info[pred['object_id']]
+            pred_label   = pred['predicate']
 
             rel_data = defaultdict(lambda: dict())
             rel_data['subject']['name'] = subject_info['name']
@@ -498,12 +499,23 @@ class VGPrep(DataPreparer):
             rel_data['object']['id'] = self.objects_label_to_id_mapping[object_info['name']]
             rel_data['object']['bbox'] = object_info['bbox']
 
-            rel_data['predicate']['name'] = pred_label
-            rel_data['predicate']['id'] = self.predicates_label_to_id_mapping[pred_label]
-
-            rel_data = dict(rel_data)
-            if rel_data not in relst:
+            rel_data['predicate']['name'] = [pred_label]
+            rel_data['predicate']['id']   = [self.predicates_label_to_id_mapping[pred_label]]
+            
+            # Add to the relationships list
+            if not self.multi_label:
+              if rel_data not in relst:
                 relst.append(rel_data)
+            else:
+              found = False
+              for i,rel in enumerate(relst):
+                if rel_data["subject"] == rel["subject"] and rel_data["object"] == rel["object"]:
+                  relst[i]['predicate']['name'] += rel_data['predicate']['name']
+                  relst[i]['predicate']['id']   += rel_data['predicate']['id']
+                  found = True
+                  break
+              if not found:
+                  relst.append(rel_data)
 
         return relst
 
@@ -511,8 +523,8 @@ class VGPrep(DataPreparer):
 if __name__ == '__main__':
 
     multi_label = True
-    #generate_embeddings = False
-    generate_embeddings = True
+    generate_embeddings = False
+    #generate_embeddings = True
 
     w2v_model = None
     if generate_embeddings:
