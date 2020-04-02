@@ -8,7 +8,9 @@ import pickle
 import os.path as osp
 import torch.nn.functional as F
 import warnings
-from copy import deepcopy
+
+# from copy import deepcopy
+deepcopy = lambda x: x
 
 # TODO: check, is all of this using the GPU, or can we improve the time?
 class VRDEvaluator():

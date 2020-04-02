@@ -254,7 +254,7 @@ class vrd_trainer():
       #  for i in range(len(self.optimizer.param_groups)):
       #    self.optimizer.param_groups[i]['lr'] /= 10
 
-      self.__train_epoch()
+      # self.__train_epoch()
 
       # Test results
       res_row = [self.state["epoch"]]
@@ -283,7 +283,7 @@ class vrd_trainer():
           "result"        : dict(zip(res_headers, res_row)),
         }, osp.join(save_dir, "checkpoint_epoch_{}.pth.tar".format(self.state["epoch"])))
 
-      # self.__train_epoch()
+      self.__train_epoch()
 
       self.state["epoch"] += 1
 
