@@ -30,8 +30,10 @@ from lib.vrd_models import VRDModel
 from lib.datalayers import VRDDataLayer
 from lib.evaluator import VRDEvaluator
 
-# DEBUGGING = (utils.device == torch.device("cpu"))
-DEBUGGING = True
+DEBUGGING = False
+
+if utils.device == torch.device("cpu"):
+  DEBUGGING = True
 
 class vrd_trainer():
 
