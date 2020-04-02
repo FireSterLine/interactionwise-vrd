@@ -182,7 +182,7 @@ class VRDDataLayer(data.Dataset):
     # Note: The ROI Pooling layer expects the index of the batch as first column
     # (https://pytorch.org/docs/stable/torchvision/ops.html#torchvision.ops.roi_pool)
     # TODO This won't actually work for index>1 when shuffling... if you allow batching, then you must post-process the indices. Maybe in collate_fn!! That's the solution, yeah!
-    obj_boxes[:, 0] = index
+    obj_boxes[:, 0]   = index
     obj_boxes[:, 1:5] = obj_boxes_out * im_scale
 
     # union bounding boxes
