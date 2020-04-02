@@ -88,7 +88,7 @@ def getEmbedding(word, emb_model):
     "in the front of"   : ["in front of", "in front", "front of", "front"],
     "stand under"       : [],
     "sit under"         : [],
-    "walk to"           : [],
+    "walk to"           : [["walk","to"], "walk"],
     "walk past"         : [],
     "walk beside"       : [],
     "on the top of"     : ["on top of", "on top", "top of", "top"],
@@ -96,8 +96,8 @@ def getEmbedding(word, emb_model):
     "on the right of"   : ["on right of", "on right", "right of", "right"],
     "sit on"            : [],
     "stand on"          : [],
-    "attach to"         : [],
-    "adjacent to"       : [],
+    "attach to"         : [["attach","to"], "attach"],
+    "adjacent to"       : [["adjacent","to"], "adjacent"],
     "drive on"          : [],
     "taller than"       : ["taller"],
     "park on"           : [],
@@ -105,7 +105,7 @@ def getEmbedding(word, emb_model):
     "lean on"           : [],
     "play with"         : ["play"],
     "sleep on"          : [],
-    "outside of"        : [],
+    "outside of"        : [["outside", "of"], "outside"],
     "rest on"           : [],
     "skate on"          : []
   }
