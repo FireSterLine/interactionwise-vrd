@@ -24,7 +24,7 @@ Notes:
 - An image "relst" is something like [rel1, rel2, ...]
 - When a database is loaded with load_data, it can be loaded in any convenient format and the flag
    self.cur_format will be set accordingly
-- Then, one can switch from one format to the other with databse-independent functions.
+- Then, one can switch from one format to the other with database-independent functions.
   This makes sure that the data is the same across different formats
 
 """
@@ -59,8 +59,21 @@ class DataPreparer:
 
         output_file_format = "data_{}_{}_{{}}.json".format(format, granularity)
 
-        vrd_data_train = [(k, self.vrd_data[k]) if k is not None else (None, None) for k in self.splits["train"]]
-        vrd_data_test  = [(k, self.vrd_data[k]) if k is not None else (None, None) for k in self.splits["test"]]
+        vrd_data_train = []
+        vrd_data_test = []
+        for k in self.splits['train']:
+            try:
+                vrd_data_train.append((k, self.vrd_data[k]))
+            except KeyError:
+                pass
+
+        for k in self.splits['test']:
+            try:
+                vrd_data_test.append((k, self.vrd_data[k]))
+            except KeyError:
+                pass
+        # vrd_data_train = [(k, self.vrd_data[k]) if k is not None else (None, None) for k in self.splits["train"]]
+        # vrd_data_test  = [(k, self.vrd_data[k]) if k is not None else (None, None) for k in self.splits["test"]]
 
         if granularity == "rel":
             assert format == "relst", "Mh. Does it make sense to granulate 'rel' with format {}?".format(format)
@@ -99,11 +112,12 @@ class DataPreparer:
         new_vrd_data = {}
         for img_path, relst in self.vrd_data.items():
 
-            objects  = []
-            rels     = []
+            objects = []
+            rels = []
+
             def add_object(obj):
                 for i_obj,any_obj in enumerate(objects):
-                    if any_obj["cls"]   == obj["id"] and \
+                    if any_obj["cls"] == obj["id"] and \
                        np.all(any_obj["bbox"] == utils.bboxDictToList(obj["bbox"])):
                        return i_obj
                 i_obj = len(objects)
@@ -112,9 +126,8 @@ class DataPreparer:
 
             for i_rel, rel in enumerate(relst):
                 new_rel = {}
-
                 new_rel["sub"] = add_object(rel["subject"])
-                new_rel["obj"]  = add_object(rel["object"])
+                new_rel["obj"] = add_object(rel["object"])
 
                 new_rel["pred"] = rel["predicate"]["id"]
                 rels.append(new_rel)
@@ -139,7 +152,6 @@ class DataPreparer:
             'xmax': (bbox[3]-margin)
         }
 
-
     # INPUT/OUTPUT Helpers
     def fullpath(self, filename):
         return osp.join(globals.data_dir, self.dir, filename)
@@ -147,23 +159,29 @@ class DataPreparer:
     # plain files
     def readfile(self, filename):
         return open(self.fullpath(filename), 'r')
+
     def writefile(self, filename):
         return open(self.fullpath(filename), 'w')
+
     # json files
     def readjson(self, filename):
         with self.readfile(filename) as rfile:
             return json.load(rfile)
         return open(self.fullpath(filename), 'w')
+
     def writejson(self, obj, filename):
         with self.writefile(filename) as f:
             json.dump(obj, f)
+
     # pickle files
     def readpickle(self, filename):
         with open(self.fullpath(filename), 'rb') as f:
             return pickle.load(f, encoding="latin1")
+
     def writepickle(self, obj, filename):
         with open(self.fullpath(filename), 'wb') as f:
             pickle.dump(obj, f)
+
     # matlab files
     def readmat(self, filename): return sio.loadmat(self.fullpath(filename))
 
@@ -187,9 +205,9 @@ class VRDPrep(DataPreparer):
 
         # Transform img file names to img subpaths
         annotations = {}
-        for img_file,anns in annotations_train.items():
+        for img_file, anns in annotations_train.items():
             annotations[osp.join("sg_train_images", img_file)] = anns
-        for img_file,anns in annotations_test.items():
+        for img_file, anns in annotations_test.items():
             annotations[osp.join("sg_test_images", img_file)] = anns
 
         vrd_data = {}
@@ -203,7 +221,6 @@ class VRDPrep(DataPreparer):
             "train" : [osp.join(*x["img_path"].split("/")[-2:]) if x is not None else None for x in self.train_dsr],
             "test"  : [osp.join(*x["img_path"].split("/")[-2:]) if x is not None else None for x in self.test_dsr],
         }
-
 
     def _generate_relst(self, anns):
         relst = []
@@ -245,7 +262,7 @@ class VRDPrep(DataPreparer):
             from the vrd-dsr repo, and converts it to the relst format.
         """
 
-        for (stage,src_data) in [("train",self.train_dsr),("test",self.test_dsr)]:
+        for (stage, src_data) in [("train", self.train_dsr),("test", self.test_dsr)]:
             vrd_data = []
             for elem in src_data:
                 if elem is None:
@@ -303,11 +320,12 @@ class VRDPrep(DataPreparer):
             # TODO: uniform this to the others so that we can use it normally (just save it with a different output name)
             self.writejson(vrd_data, "dsr_relst_{}.json".format(stage))
 
-
-    # This function creates the pickles used for the evaluation on the for VRD Dataset
-    # The ground "truths and object detections are provided by Visual Relationships with Language Priors (files available on GitHub)
-    #  as matlab .mat objects.
     def prepareEvalFromLP(self):
+        '''
+            This function creates the pickles used for the evaluation on the for VRD Dataset
+            The ground "truths and object detections are provided by Visual Relationships with Language Priors
+            (files available on GitHub) as matlab .mat objects.
+        '''
 
         # Input files
         det_result_path = osp.join("eval", "from-language-priors", "det_result.mat")
@@ -363,6 +381,7 @@ class VRDPrep(DataPreparer):
         prepareDetRes()
         prepareGT()
 
+
 class VGPrep(DataPreparer):
     def __init__(self, num_objects, num_attributes, num_predicates):
         super(VGPrep, self).__init__()
@@ -374,16 +393,18 @@ class VGPrep(DataPreparer):
         self.prepare_vocabs("objects_vocab.txt", "relations_vocab.txt")
 
         # LOAD DATA
-        objects_label_to_id_mapping    = utils.invert_dict(self.obj_vocab)
-        predicates_label_to_id_mapping = utils.invert_dict(self.pred_vocab)
+        self.objects_label_to_id_mapping    = utils.invert_dict(self.obj_vocab)
+        self.predicates_label_to_id_mapping = utils.invert_dict(self.pred_vocab)
 
         vrd_data = {}
         for ix, filename in enumerate(glob(self.fullpath(self.json_selector))):
-            data = self.readjson(filename)
+            # data = self.readjson(filename)
+            # this is because self.readjson reads full path by default (WHY), so we can't provide the full path here
+            data = self.readjson("/".join(filename.split("/")[-2:]))
 
             img_path = osp.join(data['folder'], data['filename'])
 
-            vrd_data[img_path] = self._generate_relst(data, objects_label_to_id_mapping, predicates_label_to_id_mapping)
+            vrd_data[img_path] = self._generate_relst(data)
 
         self.vrd_data = vrd_data
         self.cur_format = "relst"
@@ -410,15 +431,15 @@ class VGPrep(DataPreparer):
 
             rel_data = defaultdict(lambda: dict())
             rel_data['subject']['name'] = subject_info['name']
-            rel_data['subject']['id'] = self.obj_vocab[subject_info['name']]
+            rel_data['subject']['id'] = self.objects_label_to_id_mapping[subject_info['name']]
             rel_data['subject']['bbox'] = subject_info['bbox']
 
             rel_data['object']['name'] = object_info['name']
-            rel_data['object']['id'] = self.obj_vocab[object_info['name']]
+            rel_data['object']['id'] = self.objects_label_to_id_mapping[object_info['name']]
             rel_data['object']['bbox'] = object_info['bbox']
 
             rel_data['predicate']['name'] = pred_label
-            rel_data['predicate']['id'] = self.pred_vocab[pred_label]
+            rel_data['predicate']['id'] = self.predicates_label_to_id_mapping[pred_label]
 
             rel_data = dict(rel_data)
             if rel_data not in relst:
@@ -426,10 +447,12 @@ class VGPrep(DataPreparer):
 
         return relst
 
+
 if __name__ == '__main__':
 
-    data_preparer_vrd = VRDPrep()
-    data_preparer_vrd.prepareEvalFromLP()
+    # data_preparer_vrd = VRDPrep()
+    # data_preparer_vrd.prepareEvalFromLP()
+    # data_preparer_vrd.save_data("relst", "img")
     """
     data_preparer_vrd.save_data("relst")
     # This is to generate the data in relst format using the original annotations in VRD
@@ -443,10 +466,10 @@ if __name__ == '__main__':
     data_preparer_vrd.loadsave_relst_dsr()
     """
 
-    """
+    # """
     # TODO: test to see if VG preparation works
-    data_preparer_vg  = VGPrep(1600, 400, 20)
-    data_preparer_vrd.save_data("annos")
-    data_preparer_vrd.save_data("relst")
-    data_preparer_vrd.save_data("relst", "rel")
-    """
+    data_preparer_vg = VGPrep(1600, 400, 20)
+    data_preparer_vg.save_data("annos")
+    # data_preparer_vg.save_data("relst")
+    data_preparer_vg.save_data("relst", "rel")
+    # """
