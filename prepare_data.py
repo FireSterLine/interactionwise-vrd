@@ -454,14 +454,16 @@ class VGPrep(DataPreparer):
         # LOAD DATA
         self.objects_label_to_id_mapping    = utils.invert_dict(self.obj_vocab)
         self.predicates_label_to_id_mapping = utils.invert_dict(self.pred_vocab)
-        print(self.fullpath(self.json_selector))
+        
         vrd_data = {}
         for ix, filename in enumerate(glob(self.fullpath(self.json_selector))):
+            
+            # NOTE: glob outputs the whole path relative to the current directory
             data = self.readjson("/".join(filename.split("/")[-2:]))
 
             img_path = osp.join(data['folder'], data['filename'])
-            print(filename, img_path)
-            vrd_data[img_path] = self._generate_relst(data, objects_label_to_id_mapping, predicates_label_to_id_mapping)
+            # print(filename, img_path)
+            vrd_data[img_path] = self._generate_relst(data)
 
         self.vrd_data = vrd_data
         self.cur_dformat = "relst"
@@ -472,7 +474,7 @@ class VGPrep(DataPreparer):
         }
 
     # TODO: account for multi-label!
-    def _generate_relst(self, data, objects_label_to_id_mapping, predicates_label_to_id_mapping):
+    def _generate_relst(self, data):
         objects_info = {}
         for obj in data['objects']:
             obj_id = obj['object_id']
@@ -509,8 +511,8 @@ class VGPrep(DataPreparer):
 if __name__ == '__main__':
 
     multi_label = True
-    generate_embeddings = False
-    #generate_embeddings = True
+    #generate_embeddings = False
+    generate_embeddings = True
 
     w2v_model = None
     if generate_embeddings:
@@ -533,7 +535,9 @@ if __name__ == '__main__':
     """
     
     # TODO: test to see if VG preparation works
-    data_preparer_vg  = VGPrep((1600, 400, 20), multi_label=multi_label, generate_emb = w2v_model)
+    # TODO: allow multi-word vocabs, so that we can load 1600-400-20_bottomup
+    data_preparer_vg  = VGPrep((150, 50, 50), multi_label=multi_label, generate_emb = w2v_model)
+    #data_preparer_vg  = VGPrep((1600, 400, 20), multi_label=multi_label, generate_emb = w2v_model)
     data_preparer_vg.save_data("relst")
     data_preparer_vg.save_data("relst", "rel")
     data_preparer_vg.save_data("annos")

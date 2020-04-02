@@ -23,16 +23,18 @@ data/genome/coco_splits
 data/genome/xml
 data/genome/*/xml
 data/genome/*/json
-#data/genome/*/*.json
+#data/genome/1600-400-20/data_*.json
+data/**/*_relst_*.json
 data/genome/**.txt
 !data/vrd/*.json
-data/sg_dataset.zip
+data/sg_dataset.zip # TODO: remove, move sg_dataset.zip to vrd folder
 data/vrd/sg_dataset*
 #data/vrd/4392556686_44d71ff5a0_o.jpg
+
+# Non-evaluation Pickles, Matlab
 data/**/*.pkl
 data/**/*.mat
 !data/**/eval/**/*.pkl
 !data/**/eval/**/*.mat
-data/*.npy
+data/**/*.npy
 
-data/word2vec_model

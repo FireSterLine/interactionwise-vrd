@@ -4,6 +4,7 @@
 ''' Visual genome data analysis and preprocessing.'''
 
 import os
+import os.path as osp
 import json
 import operator
 from pprint import pprint
@@ -14,9 +15,9 @@ from xml.dom import minidom
 
 # Set maximum values for number of object / attribute / relation classes,
 # Changing the number of objects will require retraining the object detection model
-max_objects, max_attributes, max_relations = (2500, 1000, 500)
-# max_objects, max_attributes, max_relations = (1600, 400, 20)
-# max_objects, max_attributes, max_relations = (150, 50, 50)
+# max_objects, max_attributes, max_relations = (2500, 1000, 500)
+#max_objects, max_attributes, max_relations = (1600, 400, 20)
+max_objects, max_attributes, max_relations = (150, 50, 50)
 
 # TODO for Azfar: move your local vg directory to data/vg so there is no "local/server difference"
 dataDir = osp.join("data", "vg")
@@ -132,9 +133,9 @@ def build_vocabs_and_json():
     print("Most common predicates:")
     pprint(relations.most_common(10))
 
-    objects = set([k for k, v in objects.most_common(max_objects)])
-    attributes = set([k for k, v in attributes.most_common(max_attributes)])
-    relations = set([k for k, v in relations.most_common(max_relations)])
+    objects    = sorted(set([k for k, v in objects.most_common(max_objects)]))
+    attributes = sorted(set([k for k, v in attributes.most_common(max_attributes)]))
+    relations  = sorted(set([k for k, v in relations.most_common(max_relations)]))
 
     print("Writing condensed objects, attributes and predicates to files...")
     with open(os.path.join(outDir, "objects_vocab.txt"), "w") as text_file:
