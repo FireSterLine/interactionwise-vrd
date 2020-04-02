@@ -10,6 +10,7 @@ import scipy.io as sio
 from gensim.models import KeyedVectors
 
 import json
+import warnings
 import pickle
 import globals
 import utils
@@ -48,6 +49,7 @@ class DataPreparer:
         self.vrd_data = None
         self.cur_dformat = None
         self.splits = None
+        self.prefix = "data"
 
     # This function reads the dataset's vocab txt files and loads them
     def prepare_vocabs(self, obj_vocab_file, pred_vocab_file):
@@ -71,7 +73,7 @@ class DataPreparer:
     def save_data(self, dformat, granularity = "img"):
         self.to_dformat(dformat)
 
-        output_file_format = "data_{}_{}_{{}}.json".format(dformat, granularity)
+        output_file_format = "{}_{}_{}_{{}}.json".format(self.prefix, dformat, granularity)
 
         vrd_data_train = [(k, self.vrd_data[k]) if k is not None else (None, None) for k in self.splits["train"]]
         vrd_data_test  = [(k, self.vrd_data[k]) if k is not None else (None, None) for k in self.splits["test"]]
@@ -112,7 +114,9 @@ class DataPreparer:
     def relst2annos(self):
         new_vrd_data = {}
         for img_path, relst in self.vrd_data.items():
-
+            if img_path is None:
+                warnings.warn("Mh, I found a None key in self.vrd_data. This shouldn't happen, check the code.", UserWarning)
+                continue
             objects  = []
             rels     = []
             def add_object(obj):
@@ -194,29 +198,30 @@ class VRDPrep(DataPreparer):
         self.prepare_vocabs("obj.txt", "rel.txt")
 
         # TODO: Additionally handle files like {test,train}_image_metadata.json
+    
+    def load_vrd(self):
+            # LOAD DATA
+            annotations_train = self.readjson("annotations_train.json")
+            annotations_test  = self.readjson("annotations_test.json")
 
-        # LOAD DATA
-        annotations_train = self.readjson("annotations_train.json")
-        annotations_test  = self.readjson("annotations_test.json")
+            # Transform img file names to img subpaths
+            annotations = {}
+            for img_file,anns in annotations_train.items():
+                annotations[osp.join("sg_train_images", img_file)] = anns
+            for img_file,anns in annotations_test.items():
+                annotations[osp.join("sg_test_images", img_file)] = anns
 
-        # Transform img file names to img subpaths
-        annotations = {}
-        for img_file,anns in annotations_train.items():
-            annotations[osp.join("sg_train_images", img_file)] = anns
-        for img_file,anns in annotations_test.items():
-            annotations[osp.join("sg_test_images", img_file)] = anns
+            vrd_data = {}
+            for img_path, anns in annotations.items():
+                vrd_data[img_path] = self._generate_relst(anns)
 
-        vrd_data = {}
-        for img_path, anns in annotations.items():
-            vrd_data[img_path] = self._generate_relst(anns)
+            self.vrd_data = vrd_data
+            self.cur_dformat = "relst"
 
-        self.vrd_data = vrd_data
-        self.cur_dformat = "relst"
-
-        self.splits = {
-            "train" : [osp.join(*x["img_path"].split("/")[-2:]) if x is not None else None for x in self.train_dsr],
-            "test"  : [osp.join(*x["img_path"].split("/")[-2:]) if x is not None else None for x in self.test_dsr],
-        }
+            self.splits = {
+                "train" : [osp.join(*x["img_path"].split("/")[-2:]) if x is not None else None for x in self.train_dsr],
+                "test"  : [osp.join(*x["img_path"].split("/")[-2:]) if x is not None else None for x in self.test_dsr],
+            }
 
 
     def _generate_relst(self, anns):
@@ -265,17 +270,16 @@ class VRDPrep(DataPreparer):
 
         return relst
 
-    def loadsave_relst_dsr(self):
+    def load_dsr(self):
         """
             This function loads the {train,test}.pkl which contains the original format of the data
             from the vrd-dsr repo, and converts it to the relst format.
         """
 
+        vrd_data = {}
         for (stage,src_data) in [("train",self.train_dsr),("test",self.test_dsr)]:
-            vrd_data = []
             for elem in src_data:
                 if elem is None:
-                    vrd_data.append((None,None))
                     continue
                 img_path = osp.join(*elem['img_path'].split("/")[-2:])
                 bounding_boxes = elem['boxes']
@@ -339,13 +343,19 @@ class VRDPrep(DataPreparer):
 
                     relationships.append(dict(rel_data))
 
-                if len(relationships) > 0:
-                    vrd_data.append((img_path,relationships))
-                else:
-                    print(img_path)
+                vrd_data[img_path] = relationships
+                if len(relationships) == 0:
+                    print("Note: '{}' has no relationships. ".format(img_path))
 
-            # TODO: uniform this to the others so that we can use it normally (just save it with a different output name)
-            self.writejson(vrd_data, "dsr_relst_{}.json".format(stage))
+        self.vrd_data = vrd_data
+        self.cur_dformat = "relst"
+
+        self.splits = {
+          "train" : [osp.join(*x["img_path"].split("/")[-2:]) if x is not None else None for x in self.train_dsr],
+          "test"  : [osp.join(*x["img_path"].split("/")[-2:]) if x is not None else None for x in self.test_dsr],
+        }
+
+        self.prefix = "dsr"
 
 
     # This function creates the pickles used for the evaluation on the for VRD Dataset
@@ -483,7 +493,7 @@ class VGPrep(DataPreparer):
 if __name__ == '__main__':
 
     multi_label = True
-    generate_embeddings = True
+    generate_embeddings = False # True
 
     w2v_model = None
     if generate_embeddings:
@@ -492,6 +502,7 @@ if __name__ == '__main__':
 
     data_preparer_vrd = VRDPrep(multi_label=multi_label, generate_emb = w2v_model)
     data_preparer_vrd.prepareEvalFromLP()
+    data_preparer_vrd.load_vrd()
     data_preparer_vrd.save_data("relst")
     # This is to generate the data in relst format using the original annotations in VRD
     # If batching is set to True, each relationship within an image will be a separate instance, as
@@ -501,7 +512,10 @@ if __name__ == '__main__':
     data_preparer_vrd.save_data("annos")
 
     # Generate the data in relst format using the {train,test}.pkl files provided by DSR
-    data_preparer_vrd.loadsave_relst_dsr()
+    data_preparer_vrd.load_dsr()
+    data_preparer_vrd.save_data("relst")
+    data_preparer_vrd.save_data("relst", "rel")
+    data_preparer_vrd.save_data("annos")
     """
     """
 

@@ -71,7 +71,7 @@ def getDualMask(self, ih, iw, bb):
   return mask
 """
 
-def getEmbedding(word, emb_model):
+def getEmbedding(word, emb_model, depth=0):
   # This map defines the fall-back words of words that do not exist in the embedding model
   non_existent_map = {
     "traffic light"     : ["trafficlight", "stoplight"],
@@ -112,20 +112,25 @@ def getEmbedding(word, emb_model):
   try:
     embedding = emb_model[word]
   except KeyError:
-
-    print("Warning! Couldn't find semantic vector for '{}'".format(word))
     if word in non_existent_map:
-      non_existent_map[word].append(word.split(" "))
-      for fallback_word in non_existent_map[word]:
-        if isinstance(fallback_word, str) and fallback_word in emb_model:
-          embedding = emb_model[fallback_word]
-          print("\t'{}' mapped to '{}'".format(word, fallback_word))
-          break
+      fallback_words = ["_".join(word.split(" "))] + non_existent_map[word] + [word.split(" ")]
+      for fallback_word in fallback_words:
+        if isinstance(fallback_word, str):
+          embedding = getEmbedding(fallback_word, emb_model, depth+1)
+          if np.all(embedding != np.zeros(300)):
+            print("{}'{}' mapped to '{}'".format("  " * depth, word, fallback_word))
+            break
         elif isinstance(fallback_word, list):
-          embedding = np.mean([getEmbedding(fb_sw, emb_model) for fb_sw in fallback_word], axis=0)
-          print("\t'{}' mapped to the mean of '{}'".format(word, fallback_word))
-          break
+          fallback_vec = [getEmbedding(fb_sw, emb_model, depth+1) for fb_sw in fallback_word]
+          fallback_w,fallback_v = zip(*[(w,v) for w,v in zip(fallback_word,fallback_vec) if not np.all(v == np.zeros(300))])
+          embedding = np.mean(fallback_v, axis=0)
+          if np.all(embedding != np.zeros(300)):
+            print("{}'{}' mapped to the average of {}".format("  " * depth, word, fallback_w))
+            break
+        else:
+            raise ValueError("Error fallback word is of type {}: {}".format(fallback_word, type(fallback_word)))
     else:
+      print("{}Warning! Couldn't find semantic vector for '{}'".format("  " * depth, word))
       return np.zeros(300)
   return embedding / np.linalg.norm(embedding)
 
