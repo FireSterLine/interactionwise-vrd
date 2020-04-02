@@ -8,6 +8,7 @@ import pickle
 import os.path as osp
 import torch.nn.functional as F
 import warnings
+import utils
 
 # from copy import deepcopy
 deepcopy = lambda x: x
@@ -73,7 +74,8 @@ class VRDEvaluator():
           obj_bboxes_cell.append(None)
           continue
 
-        #print("{}/{}".format(tmp_i, test_data_layer.N))
+        if utils.smart_frequency_check(tmp_i, test_data_layer.N, 0.1):
+          print("{}/{}".format(tmp_i, test_data_layer.N))
 
         img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes = net_input
 
@@ -171,7 +173,8 @@ class VRDEvaluator():
       # print(len(test_dataloader))
       n_iter = min(len(anno), len(test_dataloader))
       for step,(anno_img, test_data) in enumerate(zip(anno, test_dataloader)):
-        print("{}/{}".format(step,n_iter))
+        if utils.smart_frequency_check(step, n_iter, 0.1):
+            print("{}/{}".format(step,n_iter))
         if step >= n_iter:
           break
         net_input, obj_classes_out, ori_bboxes, rel_soP_prior, objdet_res, gt_bboxes, gt_classes  = test_data

@@ -273,7 +273,7 @@ class LeveledAverageMeter(object):
 
 
 # Smart frequency = a frequency that can be a relative (a precentage) or absolute (integer)
-def smart_fequency_check(i_iter, num_iters, smart_frequency):
+def smart_frequency_check(i_iter, num_iters, smart_frequency):
   if float(smart_frequency) == 0.0: return False
   if isinstance(smart_frequency, int):
     abs_freq = smart_frequency
