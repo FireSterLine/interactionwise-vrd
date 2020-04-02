@@ -22,10 +22,10 @@ class VRDEvaluator():
 
     try:
       # Load ground truths
-      gt_path = osp.join("data", "{}", "eval", "gt.pkl").format(self.data_args.name)
+      gt_path = osp.join("data", "vrd", "eval", "gt.pkl") # .format(self.data_args.name)
       with open(gt_path, 'rb') as fid:
         self.gt = pickle.load(fid)
-      gt_zs_path = osp.join("data", "{}", "eval", "gt_zs.pkl").format(self.data_args.name)
+      gt_zs_path = osp.join("data", "vrd", "eval", "gt_zs.pkl") # .format(self.datalayer.name)
       with open(gt_zs_path, 'rb') as fid:
         self.gt_zs = pickle.load(fid)
     except FileNotFoundError:
@@ -41,10 +41,10 @@ class VRDEvaluator():
       self.num_imgs = 8995
 
   def test_pre(self, vrd_model):
-      """ Test model on Predicate Prediction """
-      if self.gt is None:
-        return np.nan, np.nan, np.nan, np.nan, 0.1
-      # TODO: restore with torch.no_grad():
+    """ Test model on Predicate Prediction """
+    if self.gt is None:
+      return np.nan, np.nan, np.nan, np.nan, 0.1
+    with torch.no_grad():
       vrd_model.eval()
       time1 = time.time()
 
@@ -108,7 +108,7 @@ class VRDEvaluator():
 
         # TODO: check
         # Is this because of the background ... ? If so, use proper flags instead of the name...
-        if(self.data_args.name == "vrd"):
+        if("vrd" in self.data_args.name):
           rlp_labels_im += 1
 
         tuple_confs_cell.append(tuple_confs_im)
@@ -133,10 +133,10 @@ class VRDEvaluator():
 
   # Relationship Prediction
   def test_rel(self, vrd_model):
-      """ Test model on Relationship Prediction """
-      if self.gt is None:
-        return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 0.1
-      # TODO: restore with torch.no_grad():
+    """ Test model on Relationship Prediction """
+    if self.gt is None:
+      return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 0.1
+    with torch.no_grad():
       vrd_model.eval()
       time1 = time.time()
 
@@ -294,7 +294,7 @@ class VRDEvaluator():
 
         # TODO: check
         # Is this because of the background ... ?
-        if(self.data_args.name == "vrd"):
+        if("vrd" in self.data_args.name):
           rlp_labels_im += 1
 
         # Why is this needed? ...

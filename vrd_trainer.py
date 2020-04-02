@@ -108,10 +108,10 @@ class vrd_trainer():
 
     if(DEBUGGING):
       args["training"]["num_epochs"] = 4
-      args["data"]["justafew"] = True
-      # args["data"]["name"] = "vrd/dsr"
-      args["data"]["name"] = "vrd"
-      args["training"]["prints_per_epoch"] = 1
+      #args["data"]["justafew"] = True
+      args["data"]["name"] = "vrd/dsr"
+      #args["data"]["name"] = "vrd"
+      args["training"]["prints_per_epoch"] = 0.1
       # args["model"]["use_pred_sem"] = True
       args["training"]["use_shuffle"] = False
 
@@ -239,7 +239,7 @@ class vrd_trainer():
     end_epoch = self.state["epoch"] + self.training.num_epochs
     while self.state["epoch"] < end_epoch:
 
-      print("Epoch {}/{}".format((self.state["epoch"]+1), end_epoch))
+      # print("Epoch {}/{}".format((self.state["epoch"]+1), end_epoch))
 
 
       # TODO check if this works (Note that you'd have to make it work cross-sessions as well)
@@ -302,7 +302,7 @@ class vrd_trainer():
     # for iter in range(n_iter):
     for i_iter,(net_input, rel_soP_prior, gt_pred_sem, target) in enumerate(self.dataloader):
 
-      print("{}/{}".format(i_iter, n_iter))
+      # print("{}/{}".format(i_iter, n_iter))
 
       # print(type(net_input))
       # print(type(rel_soP_prior))
@@ -337,8 +337,8 @@ class vrd_trainer():
       losses.update(loss.item())
 
       if utils.smart_fequency_check(i_iter, n_iter, self.training.prints_per_epoch):
-        print("\t{:4d}: LOSS: {: 6.3f}".format(i_iter, losses.avg(0)))
-        losses.reset(0)
+          print("\t{:4d}/{:4d}: LOSS: {: 6.3f}".format(i_iter, n_iter, losses.avg(0)))
+          losses.reset(0)
 
     self.state["loss"] = losses.avg(1)
     time2 = time.time()

@@ -99,7 +99,7 @@ class VRDDataLayer(data.Dataset):
     return self.N
 
   def __getitem__(self, index):
-    print("index: ", index)
+    # print("index: ", index)
     (img_path, annos) = self.vrd_data[index]
 
     # Obtain object detections, if any
