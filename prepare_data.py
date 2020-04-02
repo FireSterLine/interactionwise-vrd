@@ -23,7 +23,10 @@ and introduce a different class for handling each input format.
 
 Notes:
 - The granularity (either 'img' or 'rel') of an output format refers to whether
--  the relationships are grouped by image or not.
+   the relationships are grouped by image or not.
+  When granularity='rel', each relationship within an image will be a separate instance, as
+   opposed to a set of relationships within an image instance. This is so to facilitate proper
+   batching via the PyTorch Dataloader
 - An image "annos" is something like {"objects" : [obj1, obj2, ...], "relationships" : [rel1, rel2, ...]}
 - An image "relst" is something like [rel1, rel2, ...]
 - When a database is loaded with load_data, it can be loaded in any convenient format and the flag
@@ -75,8 +78,21 @@ class DataPreparer:
 
         output_file_format = "{}_{}_{}_{{}}.json".format(self.prefix, dformat, granularity)
 
-        vrd_data_train = [(k, self.vrd_data[k]) if k is not None else (None, None) for k in self.splits["train"]]
-        vrd_data_test  = [(k, self.vrd_data[k]) if k is not None else (None, None) for k in self.splits["test"]]
+        vrd_data_train = []
+        vrd_data_test = []
+        for k in self.splits['train']:
+            try:
+                vrd_data_train.append((k, self.vrd_data[k]))
+            except KeyError:
+                pass
+
+        for k in self.splits['test']:
+            try:
+                vrd_data_test.append((k, self.vrd_data[k]))
+            except KeyError:
+                pass
+        # vrd_data_train = [(k, self.vrd_data[k]) if k is not None else (None, None) for k in self.splits["train"]]
+        # vrd_data_test  = [(k, self.vrd_data[k]) if k is not None else (None, None) for k in self.splits["test"]]
 
         if granularity == "rel":
           assert dformat == "relst", "Mh. Does it make sense to granulate 'rel' with dformat {}?".format(dformat)
@@ -114,14 +130,11 @@ class DataPreparer:
     def relst2annos(self):
         new_vrd_data = {}
         for img_path, relst in self.vrd_data.items():
-            if img_path is None:
-                warnings.warn("Mh, I found a None key in self.vrd_data. This shouldn't happen, check the code.", UserWarning)
-                continue
             objects  = []
             rels     = []
             def add_object(obj):
                 for i_obj,any_obj in enumerate(objects):
-                    if any_obj["cls"]   == obj["id"] and \
+                    if any_obj["cls"] == obj["id"] and \
                        np.all(any_obj["bbox"] == utils.bboxDictToList(obj["bbox"])):
                        return i_obj
                 i_obj = len(objects)
@@ -130,12 +143,9 @@ class DataPreparer:
 
             for i_rel, rel in enumerate(relst):
                 new_rel = {}
-
-                new_rel["sub"]  = add_object(rel["subject"])
-                new_rel["obj"]  = add_object(rel["object"])
-
+                new_rel["sub"] = add_object(rel["subject"])
+                new_rel["obj"] = add_object(rel["object"])
                 new_rel["pred"] = rel["predicate"]["id"]
-
                 rels.append(new_rel)
 
             new_vrd_data[img_path] = {
@@ -158,7 +168,6 @@ class DataPreparer:
             'xmax': (bbox[3]-margin)
         }
 
-
     # INPUT/OUTPUT Helpers
     def fullpath(self, filename):
         return osp.join(globals.data_dir, self.dir, filename)
@@ -166,8 +175,10 @@ class DataPreparer:
     # plain files
     def readfile(self, filename):
         return open(self.fullpath(filename), 'r')
+
     def writefile(self, filename):
         return open(self.fullpath(filename), 'w')
+
     # json files
     def readjson(self, filename):
         with self.readfile(filename) as rfile:
@@ -175,13 +186,16 @@ class DataPreparer:
     def writejson(self, obj, filename):
         with self.writefile(filename) as f:
             json.dump(obj, f)
+
     # pickle files
     def readpickle(self, filename):
         with open(self.fullpath(filename), 'rb') as f:
             return pickle.load(f, encoding="latin1")
+
     def writepickle(self, obj, filename):
         with open(self.fullpath(filename), 'wb') as f:
             pickle.dump(obj, f)
+
     # matlab files
     def readmat(self, filename): return sio.loadmat(self.fullpath(filename))
 
@@ -222,7 +236,6 @@ class VRDPrep(DataPreparer):
                 "train" : [osp.join(*x["img_path"].split("/")[-2:]) if x is not None else None for x in self.train_dsr],
                 "test"  : [osp.join(*x["img_path"].split("/")[-2:]) if x is not None else None for x in self.test_dsr],
             }
-
 
     def _generate_relst(self, anns):
         relst = []
@@ -277,7 +290,7 @@ class VRDPrep(DataPreparer):
         """
 
         vrd_data = {}
-        for (stage,src_data) in [("train",self.train_dsr),("test",self.test_dsr)]:
+        for (stage, src_data) in [("train", self.train_dsr),("test", self.test_dsr)]:
             for elem in src_data:
                 if elem is None:
                     continue
@@ -357,11 +370,12 @@ class VRDPrep(DataPreparer):
 
         self.prefix = "dsr"
 
-
-    # This function creates the pickles used for the evaluation on the for VRD Dataset
-    # The ground "truths and object detections are provided by Visual Relationships with Language Priors (files available on GitHub)
-    #  as matlab .mat objects.
     def prepareEvalFromLP(self):
+        '''
+            This function creates the pickles used for the evaluation on the for VRD Dataset
+            The ground "truths and object detections are provided by Visual Relationships with Language Priors
+            (files available on GitHub) as matlab .mat objects.
+        '''
 
         # Input files
         det_result_path = osp.join("eval", "from-language-priors", "det_result.mat")
@@ -424,6 +438,7 @@ class VRDPrep(DataPreparer):
         prepareDetRes()
         prepareGT()
 
+
 class VGPrep(DataPreparer):
     def __init__(self, subset, multi_label = True, generate_emb = None):
         super(VGPrep, self).__init__(multi_label = multi_label, generate_emb = generate_emb)
@@ -437,15 +452,15 @@ class VGPrep(DataPreparer):
         self.prepare_vocabs("objects_vocab.txt", "relations_vocab.txt")
 
         # LOAD DATA
-        objects_label_to_id_mapping    = utils.invert_dict(self.obj_vocab)
-        predicates_label_to_id_mapping = utils.invert_dict(self.pred_vocab)
-
+        self.objects_label_to_id_mapping    = utils.invert_dict(self.obj_vocab)
+        self.predicates_label_to_id_mapping = utils.invert_dict(self.pred_vocab)
+        print(self.fullpath(self.json_selector))
         vrd_data = {}
         for ix, filename in enumerate(glob(self.fullpath(self.json_selector))):
-            data = self.readjson(filename)
+            data = self.readjson("/".join(filename.split("/")[-2:]))
 
             img_path = osp.join(data['folder'], data['filename'])
-
+            print(filename, img_path)
             vrd_data[img_path] = self._generate_relst(data, objects_label_to_id_mapping, predicates_label_to_id_mapping)
 
         self.vrd_data = vrd_data
@@ -490,24 +505,23 @@ class VGPrep(DataPreparer):
 
         return relst
 
+
 if __name__ == '__main__':
 
     multi_label = True
-    generate_embeddings = False # True
+    generate_embeddings = False
+    #generate_embeddings = True
 
     w2v_model = None
     if generate_embeddings:
       print("Loading Word2Vec model...")
       w2v_model = KeyedVectors.load_word2vec_format(osp.join(globals.data_dir, globals.w2v_model_path), binary=True)
-
+    
+    """
     data_preparer_vrd = VRDPrep(multi_label=multi_label, generate_emb = w2v_model)
     data_preparer_vrd.prepareEvalFromLP()
     data_preparer_vrd.load_vrd()
     data_preparer_vrd.save_data("relst")
-    # This is to generate the data in relst format using the original annotations in VRD
-    # If batching is set to True, each relationship within an image will be a separate instance, as
-    # opposed to a set of relationships within an image instance. This is so to facilitate proper
-    # batching via the PyTorch Dataloader
     data_preparer_vrd.save_data("relst", "rel")
     data_preparer_vrd.save_data("annos")
 
@@ -517,12 +531,10 @@ if __name__ == '__main__':
     data_preparer_vrd.save_data("relst", "rel")
     data_preparer_vrd.save_data("annos")
     """
-    """
-
-    """
+    
     # TODO: test to see if VG preparation works
     data_preparer_vg  = VGPrep((1600, 400, 20), multi_label=multi_label, generate_emb = w2v_model)
-    data_preparer_vrd.save_data("annos")
-    data_preparer_vrd.save_data("relst")
-    data_preparer_vrd.save_data("relst", "rel")
-    """
+    data_preparer_vg.save_data("relst")
+    data_preparer_vg.save_data("relst", "rel")
+    data_preparer_vg.save_data("annos")
+    # """

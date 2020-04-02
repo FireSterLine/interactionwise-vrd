@@ -107,13 +107,93 @@ def getEmbedding(word, emb_model, depth=0):
     "sleep on"          : [],
     "outside of"        : [["outside", "of"], "outside"],
     "rest on"           : [],
-    "skate on"          : []
+    "skate on"          : [],
+    
+    # From VG:
+
+"banana bunch"          : ["banana"],
+"mountain range"        : ["mountain"],
+"door frame"            : ["door"],
+"tail fin"              : [],
+"telephone pole"        : ["utility pole", "electricity pole", "pole"],
+"moustache"             : ["mustaches", "moustaches"], # , "beard" ?
+"train platform"        : ["railway platform", "railway"],
+"purple flower"         : ["flower"],
+"left ear"              : ["ear"],
+"tennis net"            : [], # "net"?
+"windshield wiper"      : ["windscreen wiper", "wiper"], # "wipers",
+"bus stop"              : ["bus-stop"],
+"lamp shade"            : [], # "shade"],
+"light switch"          : ["lightswitch", "light-switch", "switch"],
+"shower curtain"        : ["curtain"],
+"cardboard box"         : ["carton box"], # "cardboard", "box" ?
+"table cloth"           : [],
+"doughnut"              : ["donut"],
+"laptop computer"       : [], # "laptop", "computer"
+"parking lot"           : ["parking-lot", "parking"],
+"guard rail"            : ["guard-rail"],
+"tv stand"              : ["tv-stand"],
+"traffic signal"        : [],
+"tennis racket"         : ["tennis-racket", "racket"],
+"flower pot"            : [],
+"number 2"              : ["number"],
+"baseball uniform"      : ["uniform"],
+"fence post"            : [], # ?
+"left hand"             : ["hand"],
+"palm tree"             : ["palm", "tree"],
+"ceiling fan"           : ["fan"],
+"clock hand"            : ["clock"],
+"lamp post"             : ["light pole"],
+"light pole"            : ["lamppost", "street light", "streetlight"],
+"oven door"             : [],
+"traffic sign"          : [],
+"baseball cap"          : ["baseballcap"],
+"tree top"              : ["treetop"],
+"light bulb"            : ["lightbulb"],
+"computer monitor"      : ["monitor"],
+"door knob"             : ["doorknob", "door-knob", "knob"],
+"baseball field"        : ["baseball-field", "field"],
+"grass patch"           : ["grass"],
+"passenger car"         : [], # What does this mean?
+"tennis ball"           : ["tennisball", "tennis-ball"],
+"window sill"           : ["windowsill"], # , "sill"],
+"shower head"           : ["showerhead"],
+"name tag"              : ["nametag", "name-tag"],
+"front window"          : ["window"], # ?
+"computer mouse"        : ["computer-mouse"],
+"cutting board"         : ["cutting-board", "chopping-board", "cutboard", "chopboard"],
+"hind leg"              : [], # thigh? leg?
+"paper towel"           : ["papertowel", "paper tissue"],
+"computer screen"       : ["screen"],
+"tissue box"            : ["tissue-box", "tissuebox"],
+"american flag"         : [],
+"evergreen tree"        : ["tree"],
+"tree trunk"            : ["treetrunk"],
+"mouse pad"             : ["mouse-pad", "mousepad"],
+"baseball glove"        : ["baseball-glove"],
+"minute hand"           : ["hand"],
+"window pane"           : ["window"], # ?
+"coffee maker"          : ["coffeemaker", "coffee-maker"],
+"front wheel"           : ["wheel"],
+"road sign"             : ["streetsign", "roadsign"],
+"steering wheel"        : [],
+"tennis player"         : [],
+"manhole cover"         : ["manhole"], # ?
+"stop light"            : ["traffic light"],
+"street sign"           : ["road sign"],
+"train station"         : ["train-station", "train-station"],
+"brake light"           : ["brake-light"],
+"wine glass"            : [], # "wine"?
   }
   try:
-    embedding = emb_model[word]
+      embedding = emb_model[word]
   except KeyError:
-    if word in non_existent_map:
-      fallback_words = ["_".join(word.split(" "))] + non_existent_map[word] + [word.split(" ")]
+      embedding = np.zeros(300)
+      fallback_words = []
+      if word in non_existent_map:
+        fallback_words = non_existent_map[word]
+      if " " in word:
+        fallback_words = ["_".join(word.split(" "))] + fallback_words + [word.split(" ")]
       for fallback_word in fallback_words:
         if isinstance(fallback_word, str):
           embedding = getEmbedding(fallback_word, emb_model, depth+1)
@@ -122,16 +202,19 @@ def getEmbedding(word, emb_model, depth=0):
             break
         elif isinstance(fallback_word, list):
           fallback_vec = [getEmbedding(fb_sw, emb_model, depth+1) for fb_sw in fallback_word]
-          fallback_w,fallback_v = zip(*[(w,v) for w,v in zip(fallback_word,fallback_vec) if not np.all(v == np.zeros(300))])
-          embedding = np.mean(fallback_v, axis=0)
+          filtered_wv = [(w,v) for w,v in zip(fallback_word,fallback_vec) if not np.all(v == np.zeros(300))]
+          fallback_w,fallback_v = [],[]
+          if len(filtered_wv) > 0:
+            fallback_w,fallback_v = zip(*filtered_wv)
+            embedding = np.mean(fallback_v, axis=0)
           if np.all(embedding != np.zeros(300)):
             print("{}'{}' mapped to the average of {}".format("  " * depth, word, fallback_w))
             break
         else:
             raise ValueError("Error fallback word is of type {}: {}".format(fallback_word, type(fallback_word)))
-    else:
-      print("{}Warning! Couldn't find semantic vector for '{}'".format("  " * depth, word))
-      return np.zeros(300)
+      if np.all(embedding == np.zeros(300)):
+        print("{}Warning! Couldn't find semantic vector for '{}'".format("  " * depth, word))
+        return embedding
   return embedding / np.linalg.norm(embedding)
 
 # Get word embedding of subject and object label and concatenate them

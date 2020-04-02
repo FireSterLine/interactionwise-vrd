@@ -7,7 +7,6 @@ import os
 import json
 import operator
 from pprint import pprint
-from shutil import copyfile
 from collections import Counter
 from nltk.stem import WordNetLemmatizer
 import xml.etree.cElementTree as ET

@@ -23,8 +23,8 @@ data/genome/coco_splits
 data/genome/xml
 data/genome/*/xml
 data/genome/*/json
-data/genome/*/*.json
-data/genome/*.json
+#data/genome/*/*.json
+data/genome/**.txt
 !data/vrd/*.json
 data/sg_dataset.zip
 data/vrd/sg_dataset*
