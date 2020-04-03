@@ -77,6 +77,8 @@ class vrd_trainer():
         },
         # Evaluation Arguments
         "eval" : {
+          "test_pre"      : True,
+          "test_rel"      : True,
           "use_obj_prior" : True
         },
         # Training parameters
@@ -102,9 +104,6 @@ class vrd_trainer():
 
           # TODO
           "batch_size" : 1,
-
-          "test_pre" : True,
-          "test_rel" : True,
         }
       }):
 
@@ -116,7 +115,7 @@ class vrd_trainer():
       args["training"]["print_freq"] = 0.1
       # args["model"]["use_pred_sem"] = True
       args["training"]["use_shuffle"] = False
-    
+
     #args["model"]["n_fus_neurons"] = 128
     #args["training"]["opt"]["lr"] /= 2
     3args["training"]["opt"]["weight_decay"] /= 2
@@ -130,7 +129,7 @@ class vrd_trainer():
 
 
     self.session_name = "test-3-04-2"
-    
+
 
     self.checkpoint = checkpoint
     self.args       = args
@@ -235,9 +234,9 @@ class vrd_trainer():
 
     # Prepare result table
     res_headers = ["Epoch"]
-    if self.training.test_pre:
+    if self.eval.test_pre:
       res_headers += ["Pre R@50", "ZS", "R@100", "ZS"]
-    if self.training.test_rel:
+    if self.eval.test_rel:
       res_headers += ["Rel R@50", "ZS", "R@100", "ZS"]
     res = []
 
@@ -260,15 +259,15 @@ class vrd_trainer():
         print("Dividing the learning rate by 10 at epoch {}!".format(self.state["epoch"]))
         for i in range(len(self.optimizer.param_groups)):
           self.optimizer.param_groups[i]["lr"] /= 10
-    
+
       # self.__train_epoch()
 
       # Test results
       res_row = [self.state["epoch"]]
-      if self.training.test_pre:
+      if self.eval.test_pre:
         rec_50, rec_50_zs, rec_100, rec_100_zs, dtime = self.test_pre()
         res_row += [rec_50, rec_50_zs, rec_100, rec_100_zs]
-      if self.training.test_rel:
+      if self.eval.test_rel:
         rec_50, rec_50_zs, rec_100, rec_100_zs, dtime = self.test_rel()
         res_row += [rec_50, rec_50_zs, rec_100, rec_100_zs]
       res.append(res_row)

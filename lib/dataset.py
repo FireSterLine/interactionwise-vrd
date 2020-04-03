@@ -151,6 +151,11 @@ class dataset():
   def readJSON(self, filename):
     with open(osp.join(self.metadata_dir, filename), 'r') as rfile:
       return json.load(rfile)
+
+  # Read pickle datafile
+  def readPKL(self, filename):
+    with open(osp.join(self.metadata_dir, filename), 'rb') as rfile:
+      return pickle.load(rfile)
   # TODO
   # def readMetadata(self, data_name):
   #   """ Wrapper for read/cache metadata file. This prevents loading the same metadata file more than once """

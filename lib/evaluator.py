@@ -17,25 +17,57 @@ deepcopy = lambda x: x
 class VRDEvaluator():
   """ Evaluator for Predicate Prediction and Relationship Prediction """
 
-  def __init__(self, data_args, args = { "use_obj_prior" : True }):
+  def __init__(self, data_args, args):
     self.data_args = data_args
     self.args = args
 
-    try:
-      # TODO: solve these by using the same dataset as the training one
-      if "vg" in self.data_args.name:
+    # Default args
+    self.args.test_pre      = self.args.get("test_pre", True)
+    self.args.test_rel      = self.args.get("test_rel", True)
+    self.args.use_obj_prior = self.args.get("use_obj_prior", True)
+
+    # Setup PREDICATE PREDICTION Data Layer
+    if self.args.test_pre:
+      self.datalayer_pre  = VRDDataLayer(data_args, "test")
+      self.dataloader_pre = torch.utils.data.DataLoader(
+        dataset = self.datalayer_pre,
+        batch_size = 1, # 256,
+        shuffle = False,
+      )
+
+    # Setup RELATIONSHIP DETECTION Data Layer
+    if self.args.test_rel:
+      # TODO: check if this breaks validity
+      data_args_rel = deepcopy(data_args)
+      # data_args_rel.with_bg_obj  = True
+      # data_args_rel.with_bg_pred = False
+
+      self.datalayer_rel  = VRDDataLayer(data_args_rel, "test", proposals = True)
+      self.dataloader_rel = torch.utils.data.DataLoader(
+        dataset = self.datalayer_rel,
+        batch_size = 1, # 256,
+        shuffle = False,
+      )
+
+
+    self.gt    = None
+    self.gt_zs = None
+
+    if self.args.test_pre or self.args.test_rel:
+      self.any_datalayer = None
+      if self.args.test_pre:
+        self.any_datalayer = self.datalayer_pre
+      elif self.args.test_rel:
+        self.any_datalayer = self.datalayer_rel
+      try:
+        # TODO: solve these by using the same dataset as the training one
+        if self.any_datalayer.dataset.name == "vg":
           raise FileNotFoundError()
-      # Load ground truths
-      gt_path = osp.join("data", "vrd", "eval", "gt.pkl") # .format(self.data_args.name)
-      with open(gt_path, 'rb') as fid:
-        self.gt = pickle.load(fid)
-      gt_zs_path = osp.join("data", "vrd", "eval", "gt_zs.pkl") # .format(self.datalayer.name)
-      with open(gt_zs_path, 'rb') as fid:
-        self.gt_zs = pickle.load(fid)
-    except FileNotFoundError:
-      warnings.warn("Warning! Couldn't find ground truths pickles. Evaluation will be skipped.")
-      self.gt    = None
-      self.gt_zs = None
+        # Load ground truths
+        self.gt    = self.any_datalayer.dataset.readPKL(osp.join("eval", "gt.pkl"))
+        self.gt_zs = self.any_datalayer.dataset.readPKL(osp.join("eval", "gt_zs.pkl"))
+      except FileNotFoundError:
+        warnings.warn("Warning! Couldn't find ground truths pickles. Evaluation will be skipped.")
 
     # If None, the num_imgs that will be used is the size of the ground-truths
     self.num_imgs = None
@@ -53,15 +85,6 @@ class VRDEvaluator():
       vrd_model.eval()
       time1 = time.time()
 
-      # ...
-      # TODO: just one VRD test layer
-      test_data_layer = VRDDataLayer(self.data_args, "test")
-      test_dataloader = torch.utils.data.DataLoader(
-        dataset = test_data_layer,
-        batch_size = 1, # 256,
-        shuffle = False,
-      )
-
       rlp_labels_cell  = []
       tuple_confs_cell = []
       sub_bboxes_cell  = []
@@ -69,7 +92,7 @@ class VRDEvaluator():
 
       N = 100 # What's this? (num of rel_res) (with this you can compute R@i for any i<=N)
 
-      for (tmp_i,(net_input, obj_classes_out, ori_bboxes)) in enumerate(test_dataloader):
+      for (tmp_i,(net_input, obj_classes_out, ori_bboxes)) in enumerate(self.dataloader_pre):
 
         if(isinstance(net_input, torch.Tensor) and net_input.size() == (1,)): # Check this one TODO
           rlp_labels_cell.append(None)
@@ -78,8 +101,8 @@ class VRDEvaluator():
           obj_bboxes_cell.append(None)
           continue
 
-        if utils.smart_frequency_check(tmp_i, test_data_layer.N, 0.1):
-          print("{}/{}\r".format(tmp_i, test_data_layer.N), end="")
+        if utils.smart_frequency_check(tmp_i, len(self.dataloader_pre), 0.1):
+          print("{}/{}\r".format(tmp_i, len(self.dataloader_pre)), end="")
 
         img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes = net_input
 
@@ -114,7 +137,7 @@ class VRDEvaluator():
 
         # TODO: check
         # Is this because of the background ... ? If so, use proper flags instead of the name...
-        if("vrd" in self.data_args.name):
+        if(self.datalayer_pre.dataset.name == "vrd"):
           rlp_labels_im += 1
 
         tuple_confs_cell.append(tuple_confs_im)
@@ -146,18 +169,7 @@ class VRDEvaluator():
       vrd_model.eval()
       time1 = time.time()
 
-      test_data_args = deepcopy(self.data_args)
-      test_data_args.with_bg_obj  = True
-      test_data_args.with_bg_pred = False
-
-      test_data_layer = VRDDataLayer(test_data_args, "test", proposals = True)
-      test_dataloader = torch.utils.data.DataLoader(
-        dataset = test_data_layer,
-        batch_size = 1, # 256,
-        shuffle = False,
-      )
-
-      with open(osp.join(test_data_layer.dataset.metadata_dir, "test.pkl"), 'rb') as fid:
+      with open(osp.join(self.datalayer_rel.dataset.metadata_dir, "test.pkl"), 'rb') as fid:
         anno = pickle.load(fid, encoding="latin1")
 
       N = 100 # What's this? (num of rel_res) (with this you can compute R@i for any i<=N)
@@ -241,7 +253,7 @@ class VRDEvaluator():
 
         rel_prob = rel_score.data.cpu().numpy()
         rel_soP_prior = rel_soP_prior.data.cpu().numpy()
-        rel_prob += np.log(0.5*(rel_soP_prior+1.0 / test_data_layer.n_pred))
+        rel_prob += np.log(0.5*(rel_soP_prior+1.0 / self.datalayer_rel.n_pred))
 
         img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes = net_input
 
@@ -301,7 +313,7 @@ class VRDEvaluator():
 
         # TODO: check
         # Is this because of the background ... ?
-        if("vrd" in self.data_args.name):
+        if(self.datalayer_rel.dataset.name == "vrd"):
           rlp_labels_im += 1
 
         # Why is this needed? ...
