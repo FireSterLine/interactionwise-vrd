@@ -75,7 +75,7 @@ class VRDEvaluator():
     # VG is too slow, so we only test part of it
     if(self.data_args.name == "vg"):
       self.num_imgs = None
-      #self.num_imgs = 8995
+      # TODO: self.num_imgs = 8995
 
   def test_pre(self, vrd_model):
     """ Test model on Predicate Prediction """

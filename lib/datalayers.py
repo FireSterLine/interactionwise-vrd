@@ -16,7 +16,7 @@ from torch.utils import data
 class VRDDataLayer(data.Dataset):
   """ Iterate through the dataset and yield the input and target for the network """
 
-  def __init__(self, data_info, stage, proposals = False):
+  def __init__(self, data_info, stage, use_proposals = False):
     super(VRDDataLayer, self).__init__()
 
     self.ds_args = utils.data_info_to_ds_args(data_info)
@@ -46,7 +46,7 @@ class VRDDataLayer(data.Dataset):
         elif isinstance(vrd_sample, dict):
           return len(vrd_sample["rels"]) > 0
 
-    # TODO: check if this works
+    # TODO: check I should include images with no relationships
     # Ignore None elements during training
     if self.stage == "train":
       self.vrd_data = [(k,v) for k,v in self.vrd_data if k != None and numrels(v) > 0]
@@ -55,16 +55,14 @@ class VRDDataLayer(data.Dataset):
     self.N = len(self.vrd_data)
     self.wrap_around = ( self.stage == "train" )
 
-    # TODO: use this variable to read the det_res pickle
     self.objdet_res = None
-    if proposals == True:
+    if use_proposals != False:
       # TODO: proposals is not ordered, but a dictionary with im_path keys
       # TODO: expand so that we don't need the proposals pickle, and we generate it if it's not there, using Faster-RCNN?
       # TODO: move the proposals file path to a different one (maybe in Faster-RCNN)
       with open(osp.join(self.dataset.metadata_dir, "eval", "det_res.pkl"), 'rb') as fid:
         proposals = pickle.load(fid)
-
-      # TODO: zip these ?
+      # TODO fix data bottlenecks like this one
       self.objdet_res = [ {
           "boxes"   : proposals["boxes"][i],
           "classes" : proposals["cls"][i].reshape(-1),
@@ -103,26 +101,18 @@ class VRDDataLayer(data.Dataset):
     # print("index: ", index)
     (img_path, annos) = self.vrd_data[index]
 
-    # Obtain object detections, if any
-    det_res = None
-    if self.objdet_res is not None:
-      det_res = self.objdet_res[index]
-
-    # TODO: remove the nontypes, DataLoader doesn't support it.
-    #   maybe use False instead mmm? Or return the index instead (because the only reason is to keep the alignment with testing ground truths)?
+    # TODO: probably False values won't allow batching. But this is not a problem in training because None and len(rels)==0 are ignored
     if img_path is None:
       if self.stage == "test":
         if self.objdet_res is None:
           return False, False, False
         else:
           return False, False, False, False, False, False, False
-      elif self.stage == "train":
-        # TODO: probably None values won't allow batching. But this is not a problem in training because None and len(rels)==0 are ignored
-        warnings.warn("Warning: I'm about to return None values during training. That's not good, probably batching will fail", UserWarning)
-        return False, False, False, False
+      # elif self.stage == "train":
+      #   warnings.warn("Warning: I'm about to return None values during training. That's not good, probably batching will fail", UserWarning)
+      #   return False, False, False, False
 
 
-    # Granularity fallback: gran="rel" returns a single relationship
     # TODO: when granularity is rel, then it might be better to receive the thing in form of a relst and to create objs manually
     # if self.granularity == "rel":
     #   rels = [rels]
@@ -130,8 +120,7 @@ class VRDDataLayer(data.Dataset):
     objs = annos["objs"]
     rels = annos["rels"]
 
-    n_objs = len(objs)
-    n_rels = len(rels)
+    n_objs, n_rels = len(objs), len(rels)
 
     # Wait a second, shouldn't we test anyway on an image with no relationships? I mean, if we identified some objects, why not? What does DSR do?
     if n_rels == 0:
@@ -161,7 +150,9 @@ class VRDDataLayer(data.Dataset):
 
     # Object classes
 
+    # Obtain object detections, if any
     if self.objdet_res is not None:
+      det_res = self.objdet_res[index]
       obj_boxes_out  = det_res["boxes"]
       obj_classes    = det_res["classes"]
       pred_confs_img = det_res["confs"]  # Note: We don't actually care about the confidence scores here
