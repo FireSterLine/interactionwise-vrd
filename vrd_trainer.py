@@ -63,8 +63,8 @@ class vrd_trainer():
           # Three types of spatial features:
           # - 0: no spatial info
           # - 1: 8-way relative location vector
-          # - 2: dual mask
-          "use_spat" : 0,
+          # - 2: dual mask # TODO
+          "use_spat" : 1,
 
           # Use or not predicate semantics
           "use_pred_sem"  : False,
@@ -98,7 +98,7 @@ class vrd_trainer():
           "checkpoint_freq" : .5,
 
           # Number of lines printed with loss ...TODO explain smart freq
-          "prints_per_epoch" : 10,
+          "print_freq" : 10,
 
           # TODO
           "batch_size" : 1,
@@ -113,9 +113,13 @@ class vrd_trainer():
       args["data"]["justafew"] = True
       #args["data"]["name"] = "vrd/dsr"
       #args["data"]["name"] = "vrd"
-      args["training"]["prints_per_epoch"] = 0.1
+      args["training"]["print_freq"] = 0.1
       # args["model"]["use_pred_sem"] = True
       args["training"]["use_shuffle"] = False
+    
+    #args["model"]["n_fus_neurons"] = 128
+    #args["training"]["opt"]["lr"] /= 2
+    3args["training"]["opt"]["weight_decay"] /= 2
 
     print("Arguments:")
     if checkpoint:
@@ -125,7 +129,8 @@ class vrd_trainer():
     print("args:", json.dumps(args, indent=2, sort_keys=True))
 
 
-    self.session_name = "test-3-04"
+    self.session_name = "test-3-04-2"
+    
 
     self.checkpoint = checkpoint
     self.args       = args
@@ -194,8 +199,10 @@ class vrd_trainer():
     self.model = VRDModel(self.model_args).to(utils.device)
     if "model_state_dict" in self.state:
       # TODO: Make sure that this doesn't need the random initialization first
+      print("Loading state_dict")
       self.model.load_state_dict(self.state["model_state_dict"])
     else:
+      print("Random initialization")
       # Random initialization
       utils.weights_normal_init(self.model, dev=0.01)
       # Load VGG layers
@@ -331,7 +338,7 @@ class vrd_trainer():
       # Track loss
       losses.update(loss.item())
 
-      if utils.smart_frequency_check(i_iter, n_iter, self.training.prints_per_epoch):
+      if utils.smart_frequency_check(i_iter, n_iter, self.training.print_freq):
           print("\t{:4d}/{:<4d}: LOSS: {: 6.3f}\r".format(i_iter, n_iter, losses.avg(0)), end="")
           losses.reset(0)
 
