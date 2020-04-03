@@ -256,6 +256,7 @@ def invert_dict(d):
   elif isinstance(d, list): d_pairs = enumerate(d)
   else: raise ValueError("Can't invert to dict object of type {}".format(repr(type(d))))
   return {v: k for k, v in d_pairs}
+  # ? for list dict(zip(self.d, xrange(self.d)))
 
 """
 import importlib

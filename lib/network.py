@@ -2,9 +2,8 @@ import torch
 import torch.nn as nn
 # from torch.autograd import Variable
 import numpy as np
-
-# TODO: maybe switch to torchvision for good? First, update PyTorch
 import torchvision
+
 ROIPool = torchvision.ops.RoIPool
 
 class FC(nn.Module):
