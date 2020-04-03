@@ -37,7 +37,7 @@ class VRDEvaluator():
 
     # Setup RELATIONSHIP DETECTION Data Layer
     if self.args.test_rel:
-      self.datalayer_rel  = VRDDataLayer(data_args, "test", proposals = True)
+      self.datalayer_rel  = VRDDataLayer(data_args, "test", use_proposals = True)
       self.dataloader_rel = torch.utils.data.DataLoader(
         dataset = self.datalayer_rel,
         batch_size = 1, # 256,
