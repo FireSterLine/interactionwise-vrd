@@ -150,7 +150,7 @@ class VRDDataLayer(data.Dataset):
       #  if you allow batching, then you must post-process the indices. Maybe in collate_fn!! That's the solution, yeah!
       roi_boxes[:, 0]   = index
       roi_boxes[:, 1:5] = boxes * im_scale
-      return roi_bboxes
+      return roi_boxes
 
     im = self.dataset.readImg(img_path)
     ih, iw = im.shape[0], im.shape[1]
@@ -259,18 +259,18 @@ class VRDDataLayer(data.Dataset):
           if (sub_idx == obj_idx): continue
           addRel(i_rel,                   \
                   sub_idx, obj_idx,       \
-                  sub_cls, obj_cls        \
+                  sub_cls, obj_cls,       \
                   det_obj_boxes[sub_idx], \
                   det_obj_boxes[obj_idx])
           i_rel += 1
     else:
       for i_rel, rel in enumerate(rels):
-        add(rel["sub"], rel["obj"],
-            objs[rel["sub"]]["cls"],
-            objs[rel["obj"]]["cls"],
-            utils.bboxListToNumpy(objs[rel["sub"]]["bbox"]),
-            utils.bboxListToNumpy(objs[rel["obj"]]["bbox"]),
-            i_rel)
+        addRel(i_rel,
+             rel["sub"], rel["obj"],
+             objs[rel["sub"]]["cls"],
+             objs[rel["obj"]]["cls"],
+             utils.bboxListToNumpy(objs[rel["sub"]]["bbox"]),
+             utils.bboxListToNumpy(objs[rel["obj"]]["bbox"]))
 
         pred_clss = rel["pred"]
 
