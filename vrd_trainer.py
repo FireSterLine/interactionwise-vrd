@@ -118,6 +118,7 @@ class vrd_trainer():
     if TESTVALIDITY:
       args["data"]["name"] = "vrd/dsr"
       args["training"]["print_freq"] = 0.1
+      # args["training"]["preload"] = False
 
     #args["model"]["n_fus_neurons"] = 128
     #args["training"]["opt"]["lr"] /= 2
@@ -185,7 +186,7 @@ class vrd_trainer():
     # Data
     print("Initializing data: ", self.data_args)
     # TODO: VRDDataLayer has to know what to yield (DRS -> img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
-    self.datalayer = VRDDataLayer(self.data_args, "train")
+    self.datalayer = VRDDataLayer(self.data_args, "train", preload = self.training.preload)
     self.dataloader = torch.utils.data.DataLoader(
       dataset = self.datalayer,
       batch_size = 1, # self.training.batch_size,
