@@ -17,6 +17,7 @@ class VRDDataLayer(data.Dataset):
   """ Iterate through the dataset and yield the input and target for the network """
 
   def __init__(self, data_info, stage, proposals = False):
+    super(VRDDataLayer, self).__init__()
 
     self.ds_args = utils.data_info_to_ds_args(data_info)
     self.stage   = stage
