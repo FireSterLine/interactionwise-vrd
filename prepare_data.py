@@ -212,7 +212,7 @@ class VRDPrep(DataPreparer):
         self.prepare_vocabs("obj.txt", "rel.txt")
 
         # TODO: Additionally handle files like {test,train}_image_metadata.json
-    
+
     def load_vrd(self):
             # LOAD DATA
             annotations_train = self.readjson("annotations_train.json")
@@ -459,7 +459,7 @@ class VGPrep(DataPreparer):
 
         vrd_data = {}
         for ix, filename in enumerate(glob(self.fullpath(self.json_selector))):
-            
+
             # NOTE: glob outputs the whole path relative to the current directory
             data = self.readjson("/".join(filename.split("/")[-2:]))
 
@@ -501,7 +501,7 @@ class VGPrep(DataPreparer):
 
             rel_data['predicate']['name'] = [pred_label]
             rel_data['predicate']['id']   = [self.predicates_label_to_id_mapping[pred_label]]
-            
+
             # Add to the relationships list
             if not self.multi_label:
               if rel_data not in relst:
@@ -521,7 +521,7 @@ class VGPrep(DataPreparer):
 
 
 if __name__ == '__main__':
-    
+
     # TODO: filter out relationships between the same object?
 
     multi_label = True
@@ -532,7 +532,7 @@ if __name__ == '__main__':
     if generate_embeddings:
       print("Loading Word2Vec model...")
       w2v_model = KeyedVectors.load_word2vec_format(osp.join(globals.data_dir, globals.w2v_model_path), binary=True)
-    
+
     """
     data_preparer_vrd = VRDPrep(multi_label=multi_label, generate_emb = w2v_model)
     data_preparer_vrd.prepareEvalFromLP()
@@ -547,7 +547,7 @@ if __name__ == '__main__':
     data_preparer_vrd.save_data("relst", "rel")
     data_preparer_vrd.save_data("annos")
     """
-    
+
     # TODO: test to see if VG preparation works
     # TODO: allow multi-word vocabs, so that we can load 1600-400-20_bottomup
     data_preparer_vg  = VGPrep((150, 50, 50), multi_label=multi_label, generate_emb = w2v_model)
