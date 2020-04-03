@@ -30,10 +30,13 @@ from lib.vrd_models import VRDModel
 from lib.datalayers import VRDDataLayer
 from lib.evaluator import VRDEvaluator
 
+TESTVALIDITY = True
 DEBUGGING = False
 
 if utils.device == torch.device("cpu"):
   DEBUGGING = True
+
+if TESTVALIDITY: DEBUGGING = False
 
 class vrd_trainer():
 
@@ -64,7 +67,7 @@ class vrd_trainer():
           # - 0: no spatial info
           # - 1: 8-way relative location vector
           # - 2: dual mask # TODO
-          "use_spat" : 1,
+          "use_spat" : 0,
 
           # Use or not predicate semantics
           "use_pred_sem"  : False,
@@ -110,15 +113,15 @@ class vrd_trainer():
     if(DEBUGGING):
       # args["training"]["num_epochs"] = 6
       args["data"]["justafew"] = True
-      #args["data"]["name"] = "vrd/dsr"
-      #args["data"]["name"] = "vrd"
-      args["training"]["print_freq"] = 0.1
-      # args["model"]["use_pred_sem"] = True
       args["training"]["use_shuffle"] = False
+      # args["model"]["use_pred_sem"] = True
+    if TESTVALIDITY:
+      args["data"]["name"] = "vrd/dsr"
+      args["training"]["print_freq"] = 0.1
 
     #args["model"]["n_fus_neurons"] = 128
     #args["training"]["opt"]["lr"] /= 2
-    3args["training"]["opt"]["weight_decay"] /= 2
+    #args["training"]["opt"]["weight_decay"] /= 2
 
     print("Arguments:")
     if checkpoint:
@@ -369,8 +372,8 @@ class vrd_trainer():
 
 if __name__ == "__main__":
   # trainer = vrd_trainer()
-  trainer = vrd_trainer(checkpoint = False)
-  #trainer = vrd_trainer(checkpoint = "epoch_4_checkpoint.pth.tar")
+  #trainer = vrd_trainer(checkpoint = False)
+  trainer = vrd_trainer(checkpoint = "epoch_4_checkpoint.pth.tar")
   trainer.train()
   #trainer.test_pre()
   # trainer.test_rel()

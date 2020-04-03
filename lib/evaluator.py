@@ -37,12 +37,7 @@ class VRDEvaluator():
 
     # Setup RELATIONSHIP DETECTION Data Layer
     if self.args.test_rel:
-      # TODO: check if this breaks validity
-      data_args_rel = deepcopy(data_args)
-      # data_args_rel.with_bg_obj  = True
-      # data_args_rel.with_bg_pred = False
-
-      self.datalayer_rel  = VRDDataLayer(data_args_rel, "test", proposals = True)
+      self.datalayer_rel  = VRDDataLayer(data_args, "test", proposals = True)
       self.dataloader_rel = torch.utils.data.DataLoader(
         dataset = self.datalayer_rel,
         batch_size = 1, # 256,
@@ -186,9 +181,9 @@ class VRDEvaluator():
       # ... if len(anno) != len(proposals["cls"]):
       #   print("ERROR: something is wrong in prediction: {} != {}".format(len(anno), len(proposals["cls"])))
       # print(len(anno))
-      # print(len(test_dataloader))
-      n_iter = min(len(anno), len(test_dataloader))
-      for step,(anno_img, test_data) in enumerate(zip(anno, test_dataloader)):
+      # print(len(self.dataloader))
+      n_iter = min(len(anno), len(self.dataloader_rel))
+      for step,(anno_img, test_data) in enumerate(zip(anno, self.dataloader_rel)):
         if utils.smart_frequency_check(step, n_iter, 0.1):
             print("{}/{}\r".format(step,n_iter), end="")
         if step >= n_iter:
@@ -336,8 +331,8 @@ class VRDEvaluator():
         "obj_bboxes_ours" : obj_bboxes_cell,
       }
 
-      # if len(len(test_dataloader)) != len(res["obj_bboxes_ours"]):
-      #   warnings.warn("Warning! Rel test results and gt do not have the same length: rel test performance might be off! {} != {}".format(len(len(test_dataloader)), len(res["obj_bboxes_ours"])), UserWarning)
+      # if len(len(self.dataloader_rel)) != len(res["obj_bboxes_ours"]):
+      #   warnings.warn("Warning! Rel test results and gt do not have the same length: rel test performance might be off! {} != {}".format(len(len(self.dataloader_rel)), len(res["obj_bboxes_ours"])), UserWarning)
 
       rec_50     = eval_recall_at_N(self.gt,    50,  res, num_imgs = self.num_imgs)
       rec_50_zs  = eval_recall_at_N(self.gt_zs, 50,  res, num_imgs = self.num_imgs)
