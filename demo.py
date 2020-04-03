@@ -74,13 +74,13 @@ class vr_detector():
       self.net.load_state_dict(checkpoint["state_dict"])
 
   def test_vrd_model(self):
-    relst = self.dataset.getRelst()
+    relst = self.dataset.getData("relst")
 
     for im_id,rels in relst.items():
 
-      print("IMG: {}".format(osp.join(self.dataset.img_dir, im_id)))
+      print("IMG: {}".format(im_id))
 
-      im = utils.read_img(osp.join(self.dataset.img_dir, im_id))
+      im = self.dataset.readImg(self, im_id))
       ih = im.shape[0]
       iw = im.shape[1]
 
@@ -122,6 +122,7 @@ class vr_detector():
       print(spatial_features)
       print(semantic_features)
 
+      # TODO: switch to from_numpy().to() instead of FloatTensor/LongTensor(, device=)
       spatial_features  = torch.FloatTensor(spatial_features).cuda()
       semantic_features = torch.FloatTensor(semantic_features).cuda()
 

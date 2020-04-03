@@ -5,31 +5,26 @@ import scipy
 
 import pickle
 from lib.blob import prep_im_for_blob
-from lib.dataset import dataset # TODO: return VRDDataset
+from lib.dataset import dataset
 import torch
-import random
-# from gensim.models import KeyedVectors
 import warnings
 
 import utils, globals
 from copy import copy, deepcopy
-# TODO: expand so that it supports batch sizes > 1
 from torch.utils import data
 
-# TODO class VRDDataLayer(data.Dataset):
-class VRDDataLayer():
+class VRDDataLayer(data.Dataset):
   """ Iterate through the dataset and yield the input and target for the network """
 
-  def __init__(self, data_info, stage, shuffle = False):
+  def __init__(self, data_info, stage, proposals = False):
+    super(VRDDataLayer, self).__init__()
 
-    # There's never need to shuffle in testing
-    if shuffle and stage != "train":
-      warnings.warn("Shuffling during '{}' was prevented".format(stage), UserWarning)
-      shuffle = False
-
-    self.ds_args = utils.data_info_to_data_args(data_info)
+    self.ds_args = utils.data_info_to_ds_args(data_info)
     self.stage   = stage
-    self.shuffle = shuffle
+
+    # TODO: Receive this parameter as an argument, don't hardcode this
+    # self.granularity = "rel"
+    self.granularity = "img"
 
 
 
@@ -39,222 +34,200 @@ class VRDDataLayer():
 
     self.soP_prior = self.dataset.getDistribution("soP")
 
-    self.imgrels   = deepcopy(self.dataset.getRelst(self.stage))
+    self.vrd_data = self.dataset.getData("annos", self.stage, self.granularity)
+
+    # TODO: change this when you switch to annos?
+    def numrels(vrd_sample):
+      if self.granularity == "rel":
+        return 1
+      elif self.granularity == "img":
+        if isinstance(vrd_sample, list):
+          return len(vrd_sample)
+        elif isinstance(vrd_sample, dict):
+          return len(vrd_sample["rels"]) > 0
 
     # TODO: check if this works
     # Ignore None elements during training
     if self.stage == "train":
-      self.imgrels = [(k,v) for k,v in self.imgrels if k != None]
+      self.vrd_data = [(k,v) for k,v in self.vrd_data if k != None and numrels(v) > 0]
 
-    if self.shuffle:
-      random.shuffle(self.imgrels)
 
-    self.N = len(self.imgrels)
-    self._cur = 0
+    self.N = len(self.vrd_data)
     self.wrap_around = ( self.stage == "train" )
 
-    # self.objdet_res = False
+    # TODO: use this variable to read the det_res pickle
+    self.objdet_res = None
+    if proposals == True:
+      # TODO: proposals is not ordered, but a dictionary with im_path keys
+      # TODO: expand so that we don't need the proposals pickle, and we generate it if it's not there, using Faster-RCNN?
+      # TODO: move the proposals file path to a different one (maybe in Faster-RCNN)
+      with open(osp.join(self.dataset.metadata_dir, "eval", "det_res.pkl"), 'rb') as fid:
+        proposals = pickle.load(fid)
 
-    # TODO: restore this
-    # print("Loading Word2Vec model...")
-    # self.w2v_model = KeyedVectors.load_word2vec_format(osp.join(globals.data_dir, globals.w2v_model_path), binary=True)
+      # TODO: zip these ?
+      self.objdet_res = [ {
+          "boxes"   : proposals["boxes"][i],
+          "classes" : proposals["cls"][i].reshape(-1),
+          "confs"   : proposals["confs"][i].reshape(-1)
+        } for i in range(len(proposals["boxes"]))]
 
-  """
-  TODO
+    # NOTE: the max shape is across all the dataset, whereas we would like for it to be for a unique batch.
+    # TODO: write collate_fn using this code: https://pytorch.org/docs/stable/data.html#loading-batched-and-non-batched-data
+    '''
+    this is the max shape that was identified by running the function above on the
+    VRD dataset. It takes too long to run, so it's better if we run this once on
+    any new dataset, and store and initialize those values as done here
+    '''
+    # self.max_shape = (1000, 1000, 3)
+    # self.max_shape = self._get_max_shape()
+    # print("Max shape is: {}".format(self.max_shape))
+
+    # TODO: allow to choose which model to use. We only have w2v for now
+    self.emb = {"obj" : self.dataset.readJSON("objects-emb.json"), "pred" : self.dataset.readJSON("predicates-emb.json")}
+
+  def _get_max_shape(self):
+    print("Identifying max shape...")
+    im_shapes = []
+    for img_path, _ in self.vrd_data:
+      if img_path is not None:
+        im = self.dataset.readImg(img_path)
+        image_blob, _ = prep_im_for_blob(im, utils.vrd_pixel_means)
+        im_shapes.append(image_blob.shape)
+    max_shape = np.array(im_shapes).max(axis=0)
+    return max_shape
+
   def __len__(self):
     return self.N
 
   def __getitem__(self, index):
+    # print("index: ", index)
+    (img_path, annos) = self.vrd_data[index]
 
--  def next(self, objdet_res = False):
--
--    while True:
--      if self._cur >= self.n_imgrels:
--        if self.wrap_around:
--          self._cur = 0
--        else:
--          raise StopIteration
--          return
--
--      (im_id, _rels) = self.imgrels[self._cur]
--
--      self._cur += 1
--
--      if im_id is not None:
--
--        rels = deepcopy(_rels)
--
--        n_rel = len(rels)
--
--        if n_rel != 0:
--          break
--        elif self.stage == "test":
--          if objdet_res != False:
--            return None, None, None, None
--          else:
--            return None, None, None
-+​
-+  def __getitem__(self, index):
-+​
-+    objdet_res = False
-+    # while True:
-+    #   if self._cur >= self.n_imgrels:
-+    #     if self.wrap_around:
-+    #       self._cur = 0
-+    #     else:
-+    #       raise StopIteration
-+    #       return
-+​
-+    (im_id, _rels) = self.imgrels[index]
-+​
-+    if im_id is not None:
-+​
-+      rels = deepcopy(_rels)
-+​
-+      n_rel = len(rels)
-+​
-+      if n_rel != 0:
-+        pass
-       elif self.stage == "test":
-         if objdet_res != False:
-           return None, None, None, None
-         else:
-           return None, None, None
--
--
-+    elif self.stage == "test":
-+      if objdet_res != False:
-+        return None, None, None, None
-+      else:
-+        return None, None, None
-+​
-  """
+    # Obtain object detections, if any
+    det_res = None
+    if self.objdet_res is not None:
+      det_res = self.objdet_res[index]
 
-  def next(self, objdet_res = False):
-
-    while True:
-      if self._cur >= self.N:
-        if self.wrap_around:
-          self._cur = 0
+    # TODO: remove the nontypes, DataLoader doesn't support it.
+    #   maybe use False instead mmm? Or return the index instead (because the only reason is to keep the alignment with testing ground truths)?
+    if img_path is None:
+      if self.stage == "test":
+        if self.objdet_res is None:
+          return False, False, False
         else:
-          raise StopIteration
-          return
+          return False, False, False, False, False, False, False
+      elif self.stage == "train":
+        # TODO: probably None values won't allow batching. But this is not a problem in training because None and len(rels)==0 are ignored
+        warnings.warn("Warning: I'm about to return None values during training. That's not good, probably batching will fail", UserWarning)
+        return False, False, False, False
 
-      (im_id, _rels) = self.imgrels[self._cur]
 
-      self._cur += 1
+    # Granularity fallback: gran="rel" returns a single relationship
+    # TODO: when granularity is rel, then it might be better to receive the thing in form of a relst and to create objs manually
+    # if self.granularity == "rel":
+    #   rels = [rels]
 
-      if im_id is not None:
+    objs = annos["objs"]
+    rels = annos["rels"]
 
-        rels = deepcopy(_rels)
+    n_objs = len(objs)
+    n_rels = len(rels)
 
-        n_rel = len(rels)
-
-        if n_rel != 0:
-          break
-        elif self.stage == "test":
-          if objdet_res != False:
-            return None, None, None, None
-          else:
-            return None, None, None
-      elif self.stage == "test":
-        if objdet_res != False:
-          return None, None, None, None
+    # Wait a second, shouldn't we test anyway on an image with no relationships? I mean, if we identified some objects, why not? What does DSR do?
+    if n_rels == 0:
+      if self.stage == "test":
+        if self.objdet_res is None:
+          return False, False, False
         else:
-          return None, None, None
+          return False, False, False, False, False, False, False
 
-
-    im = utils.read_img(osp.join(self.dataset.img_dir, im_id))
+    im = self.dataset.readImg(img_path)
     ih = im.shape[0]
     iw = im.shape[1]
 
+    # TODO: enable this to temporarily allow batching (write collate_fn then)
+    # image_blob, im_scale = prep_im_for_blob(im, utils.vrd_pixel_means)
+    # blob = np.zeros(self.max_shape)
+    # blob[0: image_blob.shape[0], 0:image_blob.shape[1], :] = image_blob
+    # image_blob = blob
+    # img_blob = np.zeros((1,) + image_blob.shape, dtype=np.float32)
+    # img_blob[0] = image_blob
+
+    # TODO: check if this works (it removes the first (not moot) dimension)
     image_blob, im_scale = prep_im_for_blob(im, utils.vrd_pixel_means)
-    img_blob = np.zeros((1,) + image_blob.shape, dtype=np.float32)
-    img_blob[0] = image_blob
-
-
-    # TODO: instead of computing obj_boxes_out here, put it in the preprocess
-    #  (and maybe transform relationships to contain object indices instead of whole objects)
-    # Note: from here on, rel["subject"] and rel["object"] contain indices to objs
-
-    ####
-    # ATTENTION: this was maybe leading to troubles!!! "Duplicate" objects are added twice!
-    # Another possible reason of failing is: our bboxDictToList has a different order
-    ####
-    # TODO: switch to annos:
-    #  subject -> sub
-    #  object -> obj
-    #  obj"id" -> obj"cls"
-    #  "predicate"{id,name} -> "pred" (id)
-    #  no need for bboxDictToNumpy anymore, it's a list, maybe create a tensor directly?
-    objs = []
-    for i_rel, rel in enumerate(rels):
-
-      i_obj = len(objs)
-      objs.append(rel["subject"])
-      rel["subject"] = i_obj
-
-      i_obj = len(objs)
-      objs.append(rel["object"])
-      rel["object"] = i_obj
-
-    n_objs = len(objs)
+    img_blob = image_blob
+    # img_blob = np.zeros(self.max_shape, dtype=np.float32)
+    # img_blob[: image_blob.shape[0], :image_blob.shape[1], :] = image_blob
 
     # Object classes
 
-    if objdet_res != False:
-      obj_boxes_out  = objdet_res["boxes"]
-      obj_classes    = objdet_res["classes"]
-      pred_confs_img = objdet_res["confs"]  # Note: We don't actually care about the confidence scores here
+    if self.objdet_res is not None:
+      obj_boxes_out  = det_res["boxes"]
+      obj_classes    = det_res["classes"]
+      pred_confs_img = det_res["confs"]  # Note: We don't actually care about the confidence scores here
 
-      n_rel = len(obj_classes) * (len(obj_classes) - 1)
+      n_rels = len(obj_classes) * (len(obj_classes) - 1)
 
-      if n_rel == 0:
-        return None, None, None, None
+      if n_rels == 0:
+        return False, False, False, False, False, False, False
     else:
       obj_boxes_out = np.zeros((n_objs, 4))
       obj_classes = np.zeros((n_objs))
 
       for i_obj, obj in enumerate(objs):
-        obj_boxes_out[i_obj] = utils.bboxDictToNumpy(obj["bbox"])
-        obj_classes[i_obj] = obj["id"]
+        obj_boxes_out[i_obj] = utils.bboxListToNumpy(obj["bbox"])
+        obj_classes[i_obj]   = obj["cls"]
 
     # Object boxes
     obj_boxes = np.zeros((obj_boxes_out.shape[0], 5))  # , dtype=np.float32)
+    # Note: The ROI Pooling layer expects the index of the batch as first column
+    # (https://pytorch.org/docs/stable/torchvision/ops.html#torchvision.ops.roi_pool)
+    # TODO This won't actually work for index>1 when shuffling... if you allow batching, then you must post-process the indices. Maybe in collate_fn!! That's the solution, yeah!
+    obj_boxes[:, 0]   = index
     obj_boxes[:, 1:5] = obj_boxes_out * im_scale
 
     # union bounding boxes
-    u_boxes = np.zeros((n_rel, 5))
+    u_boxes = np.zeros((n_rels, 5))
+    u_boxes[:, 0] = index
 
     # the dimension 8 here is the size of the spatial feature vector, containing the relative location and log-distance
-    spatial_features = np.zeros((n_rel, 8))
+    spatial_features = np.zeros((n_rels, 8))
     # TODO: introduce the other spatial feature thingy
-    # spatial_features = np.zeros((n_rel, 2, 32, 32))
-    #     spatial_features[ii] = [self._getDualMask(ih, iw, sBBox), \
+    # spatial_features = np.zeros((n_rels, 2, 32, 32))
+    #     spatial_features[ii] = [self._getDualMask(ih, iw, sBBox),
     #               self._getDualMask(ih, iw, oBBox)]
 
     # TODO: add tiny comment...
-    semantic_features = np.zeros((n_rel, 2 * 300))
+    # semantic_features = np.zeros((n_rels, 2 * 300))
 
     # this will contain the probability distribution of each subject-object pair ID over all 70 predicates
-    rel_soP_prior = np.zeros((n_rel, self.dataset.n_pred))
-    # print(n_rel)
+    rel_soP_prior = np.zeros((n_rels, self.dataset.n_pred))
+    # print(n_rels)
+
+    gt_pred_sem = np.zeros((n_rels, 300))
 
     # Target output for the network
-    target = -1 * np.ones((1, self.dataset.n_pred * n_rel))
+    target = -1 * np.ones((self.dataset.n_pred * n_rels))
     pos_idx = 0
-    # target = np.zeros((n_rel, self.n_pred))
+    # target = np.zeros((n_rels, self.n_pred))
 
     # Indices for objects and subjects
     idx_s, idx_o = [], []
 
     # print(obj_classes)
 
-    if objdet_res != False:
+    if self.objdet_res is not None:
       i_rel = 0
+      gt_bboxes  = np.zeros((n_objs, 4))
+      gt_classes = np.zeros((n_objs))
+
+      for i_obj, obj in enumerate(objs):
+        gt_bboxes[i_obj]  = utils.bboxListToNumpy(obj["bbox"])
+        gt_classes[i_obj] = obj["cls"]
+
       for s_idx, sub_cls in enumerate(obj_classes):
         for o_idx, obj_cls in enumerate(obj_classes):
-          if(s_idx == o_idx):
+          if (s_idx == o_idx):
             continue
           # Subject and object local indices (useful when selecting ROI results)
           idx_s.append(s_idx)
@@ -274,23 +247,38 @@ class VRDDataLayer():
           spatial_features[i_rel] = utils.getRelativeLoc(sBBox, oBBox)
 
           # semantic features of obj and subj
-          # semantic_features[i_rel] = utils.getSemanticVector(objs[rel["subject"]]["name"], objs[rel["object"]]["name"], self.w2v_model)
-          semantic_features[i_rel] = np.zeros(600)
+          # semantic_features[i_rel] = utils.getSemanticVector(objs[rel["sub"]]["name"], objs[rel["obj"]]["name"], self.emb["obj"])
+          # semantic_features[i_rel] = np.zeros(600)
 
           # store the probability distribution of this subject-object pair from the soP_prior
           rel_soP_prior[i_rel] = self.soP_prior[sub_cls][obj_cls]
 
           i_rel += 1
+
+      # for i_rel, rel in enumerate(rels):
+      #
+      #   # Subject and object local indices (useful when selecting ROI results)
+      #   idx_s.append(rel["sub"])
+      #   idx_o.append(rel["obj"])
+      #
+      #   # Subject and object bounding boxes
+      #   sBBox = utils.bboxListToNumpy(objs[rel["sub"]]["bbox"])
+      #   oBBox = utils.bboxListToNumpy(objs[rel["obj"]]["bbox"])
+      #
+      #   # get the union bounding box
+      #   rBBox = utils.getUnionBBox(sBBox, oBBox, ih, iw)
+      #   rel["pred"] (it's a list)
+
     else:
       for i_rel, rel in enumerate(rels):
 
         # Subject and object local indices (useful when selecting ROI results)
-        idx_s.append(rel["subject"])
-        idx_o.append(rel["object"])
+        idx_s.append(rel["sub"])
+        idx_o.append(rel["obj"])
 
         # Subject and object bounding boxes
-        sBBox = utils.bboxDictToNumpy(objs[rel["subject"]]["bbox"])
-        oBBox = utils.bboxDictToNumpy(objs[rel["object"]]["bbox"])
+        sBBox = utils.bboxListToNumpy(objs[rel["sub"]]["bbox"])
+        oBBox = utils.bboxListToNumpy(objs[rel["obj"]]["bbox"])
 
         # get the union bounding box
         rBBox = utils.getUnionBBox(sBBox, oBBox, ih, iw)
@@ -302,20 +290,19 @@ class VRDDataLayer():
         spatial_features[i_rel] = utils.getRelativeLoc(sBBox, oBBox)
 
         # semantic features of obj and subj
-        # semantic_features[i_rel] = utils.getSemanticVector(objs[rel["subject"]]["name"], objs[rel["object"]]["name"], self.w2v_model)
-        semantic_features[i_rel] = np.zeros(600)
+        # semantic_features[i_rel] = utils.getSemanticVector(objs[rel["sub"]]["name"], objs[rel["obj"]]["name"], self.emb["obj"])
+        # semantic_features[i_rel] = np.zeros(600)
 
         # store the probability distribution of this subject-object pair from the soP_prior
-        s_cls = objs[rel["subject"]]["id"]
-        o_cls = objs[rel["object"]]["id"]
+        s_cls = objs[rel["sub"]]["cls"]
+        o_cls = objs[rel["obj"]]["cls"]
         rel_soP_prior[i_rel] = self.soP_prior[s_cls][o_cls]
 
-        # TODO: this target is not the one we want
-        # target[i_rel][rel["predicate"]["id"]] = 1.
-        # TODO: enable multi-class predicate (rel_classes: list of predicates for every pair)
-        rel_classes = [rel["predicate"]["id"]]
-        for rel_label in rel_classes:
-          target[0, pos_idx] = i_rel * self.dataset.n_pred + rel_label
+        # TODO: this is no good way of accounting for multi-label.
+        gt_pred_sem[i_rel] = np.mean([self.emb["pred"][pred_id] for pred_id in rels[i_rel]["pred"]], axis=0)
+
+        for rel_label in rel["pred"]:
+          target[pos_idx] = i_rel * self.dataset.n_pred + rel_label
           pos_idx += 1
 
 
@@ -323,49 +310,92 @@ class VRDDataLayer():
 
     # Note: the transpose should move the color channel to being the
     #  last dimension
-    img_blob          = torch.FloatTensor(img_blob,          device=utils.device).permute(0, 3, 1, 2)
-    obj_boxes         = torch.FloatTensor(obj_boxes,         device=utils.device)
-    u_boxes           = torch.FloatTensor(u_boxes,           device=utils.device)
-    idx_s             = torch.LongTensor(idx_s,              device=utils.device)
-    idx_o             = torch.LongTensor(idx_o,              device=utils.device)
-    spatial_features  = torch.FloatTensor(spatial_features,  device=utils.device)
-    semantic_features = torch.FloatTensor(semantic_features, device=utils.device)
-    obj_classes       = torch.LongTensor(obj_classes,        device=utils.device)
+    # TODO: switch to from_numpy().to() instead of FloatTensor/LongTensor(, device=)
+    #  or, actually, build the tensors on the GPU directly, instead of using numpy.
+    # print(idx_s)
+    # print(np.array(idx_s).shape)
+    # print(len(np.array(idx_s).shape))
+    # if len(np.array(idx_s).shape) == 2:
+    #   print(img_path)
+    #   print(idx_s)
+    #   input()
+    # TODO: maybe there's no need to transform them into tensor, since the dataloader will do that anyway
+    # img_blob          = torch.FloatTensor(img_blob).to(utils.device).permute(0, 3, 1, 2)
+    img_blob          = torch.FloatTensor(img_blob).to(utils.device).permute(2, 0, 1)
+    obj_boxes         = torch.FloatTensor(obj_boxes).to(utils.device)
+    u_boxes           = torch.FloatTensor(u_boxes).to(utils.device)
+    idx_s             = torch.LongTensor(idx_s).to(utils.device)
+    idx_o             = torch.LongTensor(idx_o).to(utils.device)
+    spatial_features  = torch.FloatTensor(spatial_features).to(utils.device)
+    # semantic_features = torch.FloatTensor(semantic_features).to(utils.device)
+    obj_classes       = torch.LongTensor(obj_classes).to(utils.device)
 
-    # rel_soP_prior = torch.FloatTensor(rel_soP_prior, device=utils.device)
-    target        = torch.LongTensor(target,                 device=utils.device)
+    # print(idx_s)
 
-    net_input = (img_blob           \
-               , obj_boxes          \
-               , u_boxes            \
-               , idx_s              \
-               , idx_o              \
-               , spatial_features   \
-               , obj_classes        \
-              #, semantic_features  \
+    # rel_soP_prior = torch.FloatTensor(rel_soP_prior).to(utils.device)
+    gt_pred_sem       = torch.LongTensor(gt_pred_sem).to(utils.device)
+    target            = torch.LongTensor(target).to(utils.device)
+
+    net_input = (img_blob,
+                 obj_boxes,
+                 u_boxes,
+                 idx_s,
+                 idx_o,
+                 spatial_features,
+                 obj_classes,
+              #  semantic_features,
       )
 
     if self.stage == "train":
-      return net_input      \
-            , rel_soP_prior \
-            , target
+      return net_input,       \
+              rel_soP_prior,  \
+              gt_pred_sem,    \
+              target
     elif self.stage == "test":
-      if objdet_res == False:
-        return net_input          \
-              , obj_classes_out   \
-              , obj_boxes_out
+      if self.objdet_res is None:
+        return net_input,         \
+                obj_classes_out,  \
+                obj_boxes_out
       else:
-        return net_input          \
-              , obj_classes_out   \
-              , rel_soP_prior     \
-              , obj_boxes_out
+        return net_input,         \
+                obj_classes_out,  \
+                obj_boxes_out,    \
+                rel_soP_prior,    \
+                det_res,          \
+                gt_bboxes,        \
+                gt_classes
 
 """
-ds_info = {"ds_name": "vrd", "with_bg_obj": False, "with_bg_pred": False}
-datalayer = VRDDataLayer(ds_info, "train", shuffle=False)
+# Batching example:
+data_info = {"name": "vrd", "with_bg_obj" : False, "with_bg_pred" : False}
+datalayer = VRDDataLayer(data_info, "train")
+train_generator = data.DataLoader(
+  dataset = datalayer,
+  batch_size = 2, # 256,
+  shuffle = True
+)
+
+for i,a in enumerate(datalayer):
+  if i > 1: break
+  print(i, len(a))
+  print([x.shape for x in a[0]], a[1].shape, a[2].shape)
+  print()
+  input()
+
+for i, a in enumerate(train_generator):
+  print(i, len(a))
+  print([x.shape for x in a[0]], a[1].shape, a[2].shape)
+  print()
+  input()
+  if i > 0: break
+"""
+
+
+"""
+data_info = {"name": "vrd", "with_bg_obj": False, "with_bg_pred": False}
+datalayer = VRDDataLayer(data_info, "train")
 a = datalayer[0]
 ​
-# this only works with batch size 1!
 train_generator = data.DataLoader(
     dataset=datalayer,
     drop_last=True,
@@ -375,9 +405,9 @@ train_generator = data.DataLoader(
 """
 
 """
-...data.IterableDataset
+TODO: make this an data.IterableDataset and allow parallelization?
 
-  def __init__(self, data_info, stage, shuffle = False):
+  def __init__(self, data_info, stage):
     super(VRDDataLayer).__init__()
     ...
   ...

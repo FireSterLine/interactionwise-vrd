@@ -5,6 +5,7 @@ import model.utils.net_utils as frcnn_net_utils
 import time
 from copy import deepcopy
 import torch
+import warnings
 
 # TODO: figure out what pixel means to use, how to compute them:
 #  do they come from the dataset used for training, perhaps?
@@ -15,7 +16,7 @@ vrd_pixel_means = np.array([[[102.9801, 115.9465, 122.7717]]])
 # Pytorch CUDA Fallback
 # TODO: check if this works and then use it everywhere instead of cuda()
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-torch.LongTensor(device=device)
+torch.LongTensor([1]).to(device) # Test
 
 
 weights_normal_init  = frcnn_net_utils.weights_normal_init
@@ -24,9 +25,12 @@ load_checkpoint      = lambda path : torch.load(path, map_location = device)
 adjust_learning_rate = frcnn_net_utils.adjust_learning_rate
 
 
+# Bbox as a list to numpy array
+bboxListToNumpy = np.array
+
 # Bbox as a dict to numpy array
 def bboxDictToNumpy(bbox_dict):
-  return np.array(bboxDictToList(bbox_dict))
+  return bboxListToNumpy(bboxDictToList(bbox_dict))
 
 # Bbox as a dict to list
 def bboxDictToList(bbox_dict):
@@ -36,10 +40,11 @@ def bboxDictToList(bbox_dict):
           bbox_dict["ymax"]]
 
 
+
 # Union box of two boxes
 def getUnionBBox(aBB, bBB, ih, iw, margin=10):
-  return [max(0, min(aBB[0], bBB[0]) - margin),
-          max(0, min(aBB[1], bBB[1]) - margin),
+  return [max(0,  min(aBB[0], bBB[0]) - margin),
+          max(0,  min(aBB[1], bBB[1]) - margin),
           min(iw, max(aBB[2], bBB[2]) + margin),
           min(ih, max(aBB[3], bBB[3]) + margin)]
 
@@ -66,23 +71,161 @@ def getDualMask(self, ih, iw, bb):
   return mask
 """
 
-# Get word embedding of subject and object label and concatenate them
-def getSemanticVector(subject_label, object_label, w2v_model):
-  # the key errors mean that the word was not found in the model's dictionary
-  try:
-    subject_vector = w2v_model[subject_label]
-  except KeyError:
-    subject_vector = np.zeros(300)
+def getEmbedding(word, emb_model, depth=0):
+  # This map defines the fall-back words of words that do not exist in the embedding model
+  non_existent_map = {
+    "traffic light"     : ["trafficlight", "stoplight"],
+    "trash can"         : ["trashcan", "papercan", "trash"],
+    "next to"           : ["next"],
+    "sleep next to"     : ["sleep next", ["sleep", "next"]],
+    "sit next to"       : ["sit next", ["sit", "next"]],
+    "stand next to"     : ["stand next", "next"],
+    "park next"         : [],
+    "walk next to"      : ["walk next", ["walk", "next"]],
+    "stand behind"      : [],
+    "sit behind"        : [],
+    "park behind"       : [],
+    "in the front of"   : ["in_front_of", "in_front", "front_of", "front"],
+    "stand under"       : [],
+    "sit under"         : [],
+    "walk to"           : [["walk","to"], "walk"],
+    "walk past"         : [],
+    "walk beside"       : [],
+    "on the top of"     : ["on top of", "on top", "top of", "top"],
+    "on the left of"    : ["on left of", "on left", "left of", "left"],
+    "on the right of"   : ["on right of", "on right", "right of", "right"],
+    "sit on"            : [],
+    "stand on"          : [],
+    "attach to"         : [["attach","to"], "attach"],
+    "adjacent to"       : [["adjacent","to"], "adjacent"],
+    "drive on"          : [],
+    "taller than"       : ["taller"],
+    "park on"           : [],
+    "lying on"          : [],
+    "lean on"           : [],
+    "play with"         : ["play"],
+    "sleep on"          : [],
+    "outside of"        : [["outside", "of"], "outside"],
+    "rest on"           : [],
+    "skate on"          : [],
+    
+    # From VG:
 
+"banana bunch"          : ["banana"],
+"mountain range"        : ["mountain"],
+"door frame"            : ["door"],
+"tail fin"              : [],
+"telephone pole"        : ["utility pole", "electricity pole", "pole"],
+"moustache"             : ["mustaches", "moustaches"], # , "beard" ?
+"train platform"        : ["railway platform", "railway"],
+"purple flower"         : ["flower"],
+"left ear"              : ["ear"],
+"tennis net"            : [], # "net"?
+"windshield wiper"      : ["windscreen wiper", "wiper"], # "wipers",
+"bus stop"              : ["bus-stop"],
+"lamp shade"            : [], # "shade"],
+"light switch"          : ["lightswitch", "light-switch", "switch"],
+"shower curtain"        : ["curtain"],
+"cardboard box"         : ["carton box"], # "cardboard", "box" ?
+"table cloth"           : [],
+"doughnut"              : ["donut"],
+"laptop computer"       : [], # "laptop", "computer"
+"parking lot"           : ["parking-lot", "parking"],
+"guard rail"            : ["guard-rail"],
+"tv stand"              : ["tv-stand"],
+"traffic signal"        : [],
+"tennis racket"         : ["tennis-racket", "racket"],
+"flower pot"            : [],
+"number 2"              : ["number"],
+"baseball uniform"      : ["uniform"],
+"fence post"            : [], # ?
+"left hand"             : ["hand"],
+"palm tree"             : ["palm", "tree"],
+"ceiling fan"           : ["fan"],
+"clock hand"            : ["clock"],
+"lamp post"             : ["light pole"],
+"light pole"            : ["lamppost", "street light", "streetlight"],
+"oven door"             : [],
+"traffic sign"          : [],
+"baseball cap"          : ["baseballcap"],
+"tree top"              : ["treetop"],
+"light bulb"            : ["lightbulb"],
+"computer monitor"      : ["monitor"],
+"door knob"             : ["doorknob", "door-knob", "knob"],
+"baseball field"        : ["baseball-field", "field"],
+"grass patch"           : ["grass"],
+"passenger car"         : [], # What does this mean?
+"tennis ball"           : ["tennisball", "tennis-ball"],
+"window sill"           : ["windowsill"], # , "sill"],
+"shower head"           : ["showerhead"],
+"name tag"              : ["nametag", "name-tag"],
+"front window"          : ["window"], # ?
+"computer mouse"        : ["computer-mouse"],
+"cutting board"         : ["cutting-board", "chopping-board", "cutboard", "chopboard"],
+"hind leg"              : [], # thigh? leg?
+"paper towel"           : ["papertowel", "paper tissue"],
+"computer screen"       : ["screen"],
+"tissue box"            : ["tissue-box", "tissuebox"],
+"american flag"         : [],
+"evergreen tree"        : ["tree"],
+"tree trunk"            : ["treetrunk"],
+"mouse pad"             : ["mouse-pad", "mousepad"],
+"baseball glove"        : ["baseball-glove"],
+"minute hand"           : ["hand"],
+"window pane"           : ["window"], # ?
+"coffee maker"          : ["coffeemaker", "coffee-maker"],
+"front wheel"           : ["wheel"],
+"road sign"             : ["streetsign", "roadsign"],
+"steering wheel"        : [],
+"tennis player"         : [],
+"manhole cover"         : ["manhole"], # ?
+"stop light"            : ["traffic light"],
+"street sign"           : ["road sign"],
+"train station"         : ["train-station", "train-station"],
+"brake light"           : ["brake-light"],
+"wine glass"            : [], # "wine"?
+  }
   try:
-    object_vector = w2v_model[object_label]
+      embedding = emb_model[word]
   except KeyError:
-    object_vector = np.zeros(300)
-  combined_vector = np.concatenate((subject_vector, object_vector), axis=0)
-  return combined_vector
+      embedding = np.zeros(300)
+      fallback_words = []
+      if word in non_existent_map:
+        fallback_words = non_existent_map[word]
+      if " " in word:
+        fallback_words = ["_".join(word.split(" "))] + fallback_words + [word.split(" ")]
+      
+      for fallback_word in fallback_words:
+        if isinstance(fallback_word, str):
+          embedding = getEmbedding(fallback_word, emb_model, depth+1)
+          if np.all(embedding != np.zeros(300)):
+            print("{}'{}' mapped to '{}'".format("  " * depth, word, fallback_word))
+            break
+        elif isinstance(fallback_word, list):
+          fallback_vec = [getEmbedding(fb_sw, emb_model, depth+1) for fb_sw in fallback_word]
+          filtered_wv = [(w,v) for w,v in zip(fallback_word,fallback_vec) if not np.all(v == np.zeros(300))]
+          fallback_w,fallback_v = [],[]
+          if len(filtered_wv) > 0:
+            fallback_w,fallback_v = zip(*filtered_wv)
+            embedding = np.mean(fallback_v, axis=0)
+          if np.all(embedding != np.zeros(300)):
+            print("{}'{}' mapped to the average of {}".format("  " * depth, word, fallback_w))
+            break
+        else:
+            raise ValueError("Error fallback word is of type {}: {}".format(fallback_word, type(fallback_word)))
+  if np.all(embedding == np.zeros(300)):
+    print("{}Warning! Couldn't find semantic vector for '{}'".format("  " * depth, word))
+    return embedding
+  return embedding / np.linalg.norm(embedding)
+
+# Get word embedding of subject and object label and concatenate them
+def getSemanticVector(subject_label, object_label, emb_model):
+  subject_vector = getEmbedding(subject_label, emb_model)
+  object_vector  = getEmbedding(object_label, emb_model)
+  return np.concatenate((subject_vector, object_vector), axis=0)
 
 # data_info may be just the dataset name
-def data_info_to_data_args(data_info):
+def data_info_to_ds_args(data_info):
   if isinstance(data_info, str):
     data_info = {"name" : data_info}
   return data_info
@@ -97,6 +240,7 @@ def read_img(im_file):
 
 # LeveledAverageMeter, inspired from AverageMeter:
 #  https://github.com/pytorch/examples/blob/490243127c02a5ea3348fa4981ecd7e9bcf6144c/imagenet/main.py#L359
+# TODO: check that this works properly
 class LeveledAverageMeter(object):
   """ Computes and stores the average and current value """
   def __init__(self, n_levels = 1):
@@ -125,16 +269,17 @@ class LeveledAverageMeter(object):
   def cnt(self, level = 0): return self._cnt[level]
   def val(self, level = 0): return self._val[level]
   def sum(self, level = 0): return self._sum[level]
-  def avg(self, level = 0): return self.sum(level) / self.count(level)
+  def avg(self, level = 0): return self.sum(level) / self.cnt(level)
 
 
 # Smart frequency = a frequency that can be a relative (a precentage) or absolute (integer)
-def smart_fequency_check(iter, num_iters, smart_frequency):
+def smart_frequency_check(i_iter, num_iters, smart_frequency):
+  if float(smart_frequency) == 0.0: return False
   if isinstance(smart_frequency, int):
     abs_freq = smart_frequency
   else:
     abs_freq = int(num_iters*smart_frequency)
-  return (iter % abs_freq) == 0
+  return (i_iter % abs_freq) == 0
 
 def time_diff_str(time1, time2 = None):
   if time2 is None:

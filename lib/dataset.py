@@ -9,7 +9,8 @@ import sys
 import math
 import os.path as osp
 from collections import defaultdict
-import globals
+import utils, globals
+import warnings
 
 # TODO: rename to VRDDataset
 # TODO: add flag that forbids/allows caching with pickles
@@ -17,15 +18,25 @@ import globals
 
 class dataset():
 
-  def __init__(self, name, subset=None, with_bg_obj=True, with_bg_pred=False):
-
+  def __init__(self, name, subset=None, with_bg_obj=True, with_bg_pred=False, justafew=False):
+    
+    # This allows to use names like "vrd/dsr", "vg/150-50-50"
+    if "/" in name and subset == None:
+        name,subset = name.split("/")
+    
     self.name         = name
     self.subset       = subset
     self.with_bg_obj  = with_bg_obj
     self.with_bg_pred = with_bg_pred
+    self.justafew     = justafew
 
-    self.img_dir = None
+    if self.justafew:
+      warnings.warn("Warning: Using less data (because of 'justafew' debugging)", UserWarning)
+
+    self.img_dir      = None
     self.metadata_dir = None
+
+    self._vrd_data_cache = {}
 
     if self.name == "vrd":
       self.img_dir = osp.join(globals.data_dir, "vrd", "sg_dataset")
@@ -34,9 +45,9 @@ class dataset():
     elif self.name == "vg":
 
       if self.subset == None:
-        self.subset = "1600-400-20"
-      # self.subset = "2500-1000-500"
-      # self.subset = "150-50-50"
+        # self.subset = "1600-400-20"
+        # self.subset = "2500-1000-500"
+        self.subset = "150-50-50"
 
       self.img_dir = osp.join(globals.data_dir, "vg")
       self.metadata_dir = osp.join(globals.data_dir, "genome", self.subset)
@@ -67,24 +78,45 @@ class dataset():
 
     self.pred_classes = np.append(pred_classes, pred_additional).tolist()
     self.n_pred = len(self.pred_classes)
-
+    
     # Need these? Or use utils.invert_dict, fra
     # self.class_to_ind     = dict(zip(self._classes, xrange(self._num_classes)))
     # self.relations_to_ind = dict(zip(self._relations, xrange(self._num_relations)))
 
+  def readImg(self, img_path):
+    return utils.read_img(osp.join(self.img_dir, img_path))
 
-  # TODO: select which split ("train", "test", default="traintest")
-  def getRelst(self, stage, granularity = "img"):
+  # Need alias forgetRelst? Here we go: def getRelst(self, stage, granularity = "img"): return self.getData("relst", stage, granularity)
+
+  def getData(self, format, stage, granularity = "img"):
+    # TODO: figure out if we need annos for granularity = "rel"
     """ Load list of relationships """
-    # with open(osp.join(self.metadata_dir, "dsr_relst_{}.json".format(stage)), 'r') as rfile:
-    with open(osp.join(self.metadata_dir, "data_relst_{}_{}.json".format(granularity, stage)), 'r') as rfile:
-      return json.load(rfile) # Maybe pickle this?
-
-  def getAnnos(self):
-    """ Load annos """
-    with open(osp.join(self.metadata_dir, "data_annos_{}_{}.json".format(granularity, stage)), 'r') as rfile:
-      return json.load(rfile) # Maybe pickle this?
-    pass
+    # print((format, stage, granularity))
+    if not (format, stage, granularity) in self._vrd_data_cache:
+      filename = "data_{}_{}_{}.json".format(format, granularity, stage)
+      if self.subset == "dsr":
+          filename = "dsr_{}_{}_{}.json".format(format, granularity, stage)
+      print("Data not cached. Reading {}...".format(filename))
+      with open(osp.join(self.metadata_dir, filename), 'r') as rfile:
+        data = json.load(rfile)[:10] if self.justafew else json.load(rfile)
+        #if stage == "train":
+        #  data = data[1800:] # TODO: I'm isolating a weird case, throwing the following output:
+        """Traceback (most recent call last):
+            File "vrd_trainer.py", line 371, in <module>
+              trainer.train()
+            File "vrd_trainer.py", line 257, in train
+              self.__train_epoch()
+            File "vrd_trainer.py", line 313, in __train_epoch
+              _, rel_scores = self.model(*net_input)
+            File "/opt/interactionwise/iwenv3/lib/python3.6/site-packages/torch/nn/modules/module.py", line 532, in __call__
+              result = self.forward(*input, **kwargs)
+            File "/opt/interactionwise/interactionwise-gio/lib/vrd_models/dsr_model.py", line 255, in forward
+              emb_s_o = torch.cat((emb_subject, emb_object), dim=2)
+          IndexError: Dimension out of range (expected to be in range of [-2, 1], but got 2)
+        """
+        self._vrd_data_cache[(format, stage, granularity)] = data
+    return self._vrd_data_cache[(format, stage, granularity)]
+    # Annos:
     # with open(osp.join(globals.metadata_dir, "annos.pkl", 'rb') as fid:
     #   annos = pickle.load(fid)
     #   self._annos = [x for x in annos if x is not None and len(x['classes'])>1]
@@ -100,16 +132,17 @@ class dataset():
 
     if type == "soP":
       assert stage == "train", "Wait a second, why do you want the soP for the train split?"
+      if self.subset == "dsr":
+          distribution_pkl_path = osp.join(self.metadata_dir, "so_prior.pkl")
       try:
-        # TODO: use our soP prior: raise FileNotFoundError
-        # with open(distribution_pkl_path, 'rb') as fid:
-        with open(osp.join(self.metadata_dir, "so_prior.pkl"), 'rb') as fid:
+        with open(distribution_pkl_path, 'rb') as fid:
           print("Distribution {} found!".format(type))
           distribution = pickle.load(fid, encoding='latin1')
       except FileNotFoundError:
         print("Distribution {} not found: {}. Generating...".format(type, distribution_pkl_path))
-        distribution = self._generate_soP_distr(self.getRelst(stage))
-        pickle.dump(distribution, open(distribution_pkl_path, 'wb'))
+        distribution = self._generate_soP_distr(self.getData("relst", stage))
+        if self.subset != "dsr":
+          pickle.dump(distribution, open(distribution_pkl_path, 'wb'))
     else:
       raise Exception("Unknown distribution requested: {}".format(type))
 
@@ -121,14 +154,16 @@ class dataset():
 
     # Count sop occurrences
     for img_path,rels in relst:
-      if rels == None:
+      if img_path == None:
         continue
       for elem in rels:
-        subject_label   = elem["subject"]["id"]
-        object_label    = elem["object"]["id"]
-        predicate_label = elem["predicate"]["id"]
+        subject_label    = elem["subject"]["id"]
+        object_label     = elem["object"]["id"]
+        predicate_labels = elem["predicate"]["id"]
+        #print(sop_counts.shape)
+        #print(predicate_labels)
 
-        sop_counts[subject_label][object_label][predicate_label] += 1
+        sop_counts[subject_label][object_label][predicate_labels] += 1
 
     # Divide each line by # of counts
     for sub_idx in range(self.n_obj):
@@ -140,6 +175,10 @@ class dataset():
 
     return sop_counts
 
+  # json files
+  def readJSON(self, filename):
+    with open(osp.join(self.metadata_dir, filename), 'r') as rfile:
+      return json.load(rfile)
   # TODO
   # def readMetadata(self, data_name):
   #   """ Wrapper for read/cache metadata file. This prevents loading the same metadata file more than once """

@@ -4,12 +4,8 @@ import torch.nn as nn
 import numpy as np
 
 # TODO: maybe switch to torchvision for good? First, update PyTorch
-if torch.cuda.is_available():
-  from model.roi_layers.roi_pool import ROIPool as FRCNN_ROIPool
-  ROIPool = FRCNN_ROIPool
-else:
-  import torchvision
-  ROIPool = torchvision.ops.RoIPool
+import torchvision
+ROIPool = torchvision.ops.RoIPool
 
 class FC(nn.Module):
   """ Wrapper for linear layers with relu """
@@ -43,6 +39,42 @@ class Conv2d(nn.Module):
     if self.relu is not None:
       x = self.relu(x)
     return x
+
+# This function is the batched version of torch.index_select
+# Source: https://discuss.pytorch.org/t/batch-index-select/62621/4
+# def batched_index_select(A, indices):
+#   dummy = indices.unsqueeze(2).expand(indices.size(0), indices.size(1), A.size(2))
+#   return torch.gather(A, 1, dummy) ...
+# def batched_index_select(input, dim, index):
+# 	views = [input.shape[0]] + \
+# 		[1 if i != dim else -1 for i in range(1, len(input.shape))]
+# 	expanse = list(input.shape)
+# 	expanse[0] = -1
+# 	expanse[dim] = -1
+# 	index = index.view(views).expand(expanse)
+# 	return torch.gather(input, dim, index)
+
+def batched_index_select(A, indices): # dim, indices):
+  ...
+  #assert dim==0, "Warning! batched_index_select with dim = {} != 0 is untested!! I don't know if it works".format(dim)
+  print()
+  print("A.shape", A[0].shape)
+  print("indices.shape", indices.shape)
+  print("indices", indices)
+  for a,index in zip(A,indices):
+    print(torch.index_select(a, 0, index).shape)
+    input()
+  return torch.cat([ torch.index_select(a, dim, i).unsqueeze(0) for a, i in zip(A, ind) ])
+
+# def batched_index_select(input, dim, index):
+#     for ii in range(1, len(input.shape)):
+#         if ii != dim:
+#             index = index.unsqueeze(ii)
+#     expanse = list(input.shape)
+#     expanse[0] = -1
+#     expanse[dim] = -1
+#     index = index.expand(expanse)
+#     return torch.gather(input, dim, index)
 
 
 def set_trainability(model_or_params, requires_grad):

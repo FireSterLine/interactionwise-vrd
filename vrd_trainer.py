@@ -5,8 +5,21 @@ import pickle
 from tabulate import tabulate
 import time
 import json
+import warnings
+
+import random
+# only for debugging (i.e TODO remove)
+random.seed(0)
+import numpy as np
+# only for debugging (i.e TODO remove)
+np.random.seed(0)
 
 import torch
+# only for debugging (i.e TODO remove)
+torch.manual_seed(0)
+torch.backends.cudnn.deterministic = True
+torch.backends.cudnn.benchmark = False
+
 import torch.nn as nn
 import torch.nn.init
 import torch.nn.functional as F
@@ -16,11 +29,11 @@ import globals, utils
 from lib.vrd_models import VRDModel
 from lib.datalayers import VRDDataLayer
 from lib.evaluator import VRDEvaluator
-#, save_net, load_net, \
-#      adjust_learning_rate, , clip_gradient
 
-# from lib.model import train_net, test_pre_net, test_rel_net
+DEBUGGING = False
 
+if utils.device == torch.device("cpu"):
+  DEBUGGING = True
 
 class vrd_trainer():
 
@@ -29,7 +42,7 @@ class vrd_trainer():
       args = {
         # Dataset in use
         "data" : {
-          "name"      : "vrd",
+          "name"         : "vrd",
           "with_bg_obj"  : False,
           "with_bg_pred" : False,
         },
@@ -52,6 +65,9 @@ class vrd_trainer():
           # - 1: 8-way relative location vector
           # - 2: dual mask
           "use_spat" : 0,
+
+          # Use or not predicate semantics
+          "use_pred_sem"  : False,
 
           # Size of the representation for each modality when fusing features
           "n_fus_neurons" : 256,
@@ -81,23 +97,25 @@ class vrd_trainer():
           "num_epochs" : 20,
           "checkpoint_freq" : 5,
 
-          # TODO make this such that -1 means "one full dataset round" (and maybe -2 is two full.., -3 is three but whatevs)
-          "iters_per_epoch"  : -1,
           # Number of lines printed with loss ...TODO explain smart freq
-          "prints_freq" : 10,
+          "prints_per_epoch" : 10,
 
           # TODO
           "batch_size" : 1,
 
           "test_pre" : True,
-          "test_rel" : False,
+          "test_rel" : True,
         }
       }):
 
-    # Local Patch:
-    # If we run on a CPU, we only train for an epoch
-    if(utils.device == torch.device("cpu")):
-      args["training"]["num_epochs"] = 0
+    if(DEBUGGING):
+      args["training"]["num_epochs"] = 6
+      args["data"]["justafew"] = True
+      #args["data"]["name"] = "vrd/dsr"
+      #args["data"]["name"] = "vrd"
+      args["training"]["prints_per_epoch"] = 0.1
+      # args["model"]["use_pred_sem"] = True
+      args["training"]["use_shuffle"] = False
 
     print("Arguments:")
     if checkpoint:
@@ -143,7 +161,7 @@ class vrd_trainer():
       utils.patch_key(checkpoint, "state_dict", ["state", "model_state_dict"]) # (patching)
       utils.patch_key(checkpoint["state"]["model_state_dict"], "fc_so_emb.fc.weight", "fc_semantic.fc.weight") # (patching)
       utils.patch_key(checkpoint["state"]["model_state_dict"], "fc_so_emb.fc.bias",   "fc_semantic.fc.bias") # (patching)
-      # TODO: is this different than the weights used for initialization...? del checkpoint["model_state_dict"]["emb.weight"]
+      # TODO: is checkpoint["model_state_dict"]["emb.weight"] different from the weights used for initialization...?
       # Optimizer state dictionary
       utils.patch_key(checkpoint, "optimizer", ["state", "optimizer_state_dict"]) # (patching)
       self.state = checkpoint["state"]
@@ -154,26 +172,26 @@ class vrd_trainer():
     self.eval_args    = munchify(self.args["eval"])
     self.training     = munchify(self.args["training"])
 
-    # Data
-    print("Initializing data...")
-    print("Data args: ", self.data_args)
-    # TODO: VRDDataLayer has to know what to yield (DRS -> img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
-    self.datalayer = VRDDataLayer(self.data_args, "train", self.training.use_shuffle)
-    # TODO: Pytorch DataLoader instead:
-    # self.num_workers = 0
-    # self.dataset = VRDDataset()
-    # self.datalayer = torch.utils.data.DataLoader(self.dataset,
-    #                  batch_size=self.training.batch_size,
-    #                  # sampler= Random ...,
-    #                  num_workers=self.num_workers)
+    # TODO: change split to avoid overfitting on this split! (https://towardsdatascience.com/understanding-pytorch-with-an-example-a-step-by-step-tutorial-81fc5f8c4e8e)
+    #  train_dataset, val_dataset = random_split(dataset, [80, 20])
 
+    # Data
+    print("Initializing data: ", self.data_args)
+    # TODO: VRDDataLayer has to know what to yield (DRS -> img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
+    self.datalayer = VRDDataLayer(self.data_args, "train")
+    self.dataloader = torch.utils.data.DataLoader(
+      dataset = self.datalayer,
+      batch_size = 1, # self.training.batch_size,
+      # sampler= Random ...,
+      # num_workers=self.num_workers
+      shuffle = self.training.use_shuffle,
+    )
 
     # Model
     self.model_args.n_obj  = self.datalayer.n_obj
     self.model_args.n_pred = self.datalayer.n_pred
-    print("Initializing VRD Model...")
-    print("Model args: ", self.model_args)
-    self.model = VRDModel(self.model_args).to(device=utils.device)
+    print("Initializing VRD Model: ", self.model_args)
+    self.model = VRDModel(self.model_args).to(utils.device)
     if "model_state_dict" in self.state:
       # TODO: Make sure that this doesn't need the random initialization first
       self.model.load_state_dict(self.state["model_state_dict"])
@@ -182,21 +200,20 @@ class vrd_trainer():
       utils.weights_normal_init(self.model, dev=0.01)
       # Load VGG layers
       self.model.load_pretrained_conv(osp.join(globals.data_dir, "VGG_imagenet.npy"), fix_layers=True)
-      # Load existing (word2vec?) embeddings
-      with open(osp.join(globals.data_dir, "vrd", "params_emb.pkl"), 'rb') as f:
-        self.model.state_dict()["emb.weight"].copy_(torch.from_numpy(pickle.load(f, encoding="latin1")))
-
+      # Load existing embeddings
+      try:
+        with open(osp.join(self.datalayer.dataset.metadata_dir, "params_emb.pkl"), 'rb') as f:
+          self.model.state_dict()["emb.weight"].copy_(torch.from_numpy(pickle.load(f, encoding="latin1")))
+      except FileNotFoundError:
+        warnings.warn("Initialization weights for emb.weight layer not found!", UserWarning)
     # Evaluation
-    print("Initializing evaluation...")
-    print("Evaluation args: ", self.eval_args)
+    print("Initializing evaluator: ", self.eval_args)
     self.eval = VRDEvaluator(self.data_args, self.eval_args)
 
     # Training
-    print("Initializing training...")
-    print("Training args: ", self.training)
+    print("Initializing training: ", self.training)
     self.optimizer = self.model.OriginalAdamOptimizer(**self.training.opt)
-    # TODO: create loss_type argument...
-    self.criterion = nn.MultiLabelMarginLoss().to(utils.device)
+    self.criterion = nn.MultiLabelMarginLoss(reduction="sum").to(device=utils.device)
     if "optimizer_state_dict" in self.state:
       self.optimizer.load_state_dict(self.state["optimizer_state_dict"])
 
@@ -220,7 +237,7 @@ class vrd_trainer():
     end_epoch = self.state["epoch"] + self.training.num_epochs
     while self.state["epoch"] < end_epoch:
 
-      print("Epoch {}".format(self.state["epoch"]))
+      # print("Epoch {}/{}".format((self.state["epoch"]+1), end_epoch))
 
 
       # TODO check if this works (Note that you'd have to make it work cross-sessions as well)
@@ -228,6 +245,7 @@ class vrd_trainer():
       #   print("*adjust_learning_rate*")
       #   utils.adjust_learning_rate(self.optimizer, self.training.lr_decay_gamma)
       # TODO do it with the scheduler, see if it's the same: https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
+      # exp_lr_scheduler = lr_scheduler.StepLR(self.optimizer, step_size=5, gamma=0.1)
 
       # TODO: after the third epoch, we divide learning rate by 3
       # the authors mention doing this in their paper, but we couldn't find it in the actual code
@@ -236,11 +254,10 @@ class vrd_trainer():
       #  for i in range(len(self.optimizer.param_groups)):
       #    self.optimizer.param_groups[i]['lr'] /= 10
 
-
-      # self.__train_epoch(self.state["epoch"])
+      # self.__train_epoch()
 
       # Test results
-      res_row = (self.state["epoch"],)
+      res_row = [self.state["epoch"]]
       if self.training.test_pre:
         rec_50, rec_50_zs, rec_100, rec_100_zs, dtime = self.test_pre()
         res_row += [rec_50, rec_50_zs, rec_100, rec_100_zs]
@@ -253,7 +270,7 @@ class vrd_trainer():
         f.write(tabulate(res, res_headers))
 
       # Save checkpoint
-      if utils.smart_fequency_check(self.state["epoch"], self.training.num_epochs, self.training.checkpoint_freq):
+      if utils.smart_frequency_check(self.state["epoch"], self.training.num_epochs, self.training.checkpoint_freq):
 
         # TODO: the loss should be a result: self.result.loss (which is ignored at loading,only used when saving checkpoint)...
         self.state["model_state_dict"]     = self.model.state_dict()
@@ -278,40 +295,45 @@ class vrd_trainer():
     losses = utils.LeveledAverageMeter(2)
 
     # Iterate over the dataset
-    n_iter = self.training.iters_per_epoch
-    if n_iter < 0:
-      # TODO: check that vrd during training ignores None images
-      n_iter = self.datalayer.N * (-n_iter)
+    n_iter = len(self.dataloader)
 
-    for iter in range(n_iter):
+    # for iter in range(n_iter):
+    for i_iter,(net_input, rel_soP_prior, gt_pred_sem, target) in enumerate(self.dataloader):
 
-      # Obtain next annotation input and target
-      net_input, rel_sop_prior, target = self.datalayer.next()
+      # print("{}/{}".format(i_iter, n_iter))
 
-      # TODO: is this necessary? If it's what I think, the datalayer should already ignore these
-      if target.size()[1] == 0:
-        continue
+      # print(type(net_input))
+      # print(type(rel_soP_prior))
+      # print(type(target))
+
+      batch_size = target.size()[0]
 
       # Forward pass & Backpropagation step
       self.optimizer.zero_grad()
-      obj_scores, rel_scores = self.model(*net_input)
+      _, rel_scores = self.model(*net_input)
 
-      # Preprocessing the rel_sop_prior before factoring it into the loss
-      rel_sop_prior = torch.FloatTensor(rel_sop_prior, device=utils.device)
-      rel_sop_prior = -0.5 * ( rel_sop_prior + 1.0 / self.datalayer.n_pred)
-      loss = self.criterion((rel_sop_prior + rel_scores).view(1, -1), target)
-      # loss = self.criterion((rel_scores).view(1, -1), target)
+      # Preprocessing the rel_soP_prior before factoring it into the loss
+      rel_soP_prior = rel_soP_prior.to(utils.device)
+      rel_scores = rel_scores.to(utils.device)
+      target = target.to(utils.device)
+      # rel_soP_prior = rel_soP_prior.to("cpu")
+      # rel_scores = rel_scores.to("cpu")
+      # target = target.to("cpu")
+      rel_soP_prior = -0.5 * ( rel_soP_prior + (1.0 / self.datalayer.n_pred))
 
-      losses.update(loss.item())
+      # TODO: fix this weird-shaped target in datalayers and remove this view thingy
+      loss = self.criterion((rel_soP_prior + rel_scores).view(batch_size, -1), target)
+      # loss = self.criterion((rel_scores).view(batch_size, -1), target)
+
       loss.backward()
       self.optimizer.step()
 
-      # TODO: I'd like to move that thing here, but maybe I can't call item() after backward?
-      # losses.update(loss.item())
+      # Track loss
+      losses.update(loss.item())
 
-      if utils.smart_fequency_check(step, n_iter, self.training.prints_per_epoch):
-        print("\t{:4d}: LOSS: {: 6.3f}".format(step, losses.avg(0)))
-        losses.reset(0)
+      if utils.smart_frequency_check(i_iter, n_iter, self.training.prints_per_epoch):
+          print("\t{:4d}/{:<4d}: LOSS: {: 6.3f}".format(i_iter, n_iter, losses.avg(0)))
+          losses.reset(0)
 
     self.state["loss"] = losses.avg(1)
     time2 = time.time()
@@ -320,11 +342,12 @@ class vrd_trainer():
     print("TRAIN Time: {}".format(utils.time_diff_str(time1, time2)))
 
     """
-      # the rel_sop_prior here is a subset of the 100*70*70 dimensional so_prior array, which contains the predicate prob distribution for all object pairs
-      # the rel_sop_prior here contains the predicate probability distribution of only the object pairs in this annotation
+      # the rel_soP_prior here is a subset of the 100*70*70 dimensional so_prior array, which contains the predicate prob distribution for all object pairs
+      # the rel_soP_prior here contains the predicate probability distribution of only the object pairs in this annotation
       # Also, it might be helpful to keep in mind that this data layer currently works for a single annotation at a time - no batching is implemented!
-      image_blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, rel_labels, rel_sop_prior = self.datalayer...
+      image_blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, rel_labels, rel_soP_prior = self.datalayer...
     """
+
   def test_pre(self):
     rec_50, rec_50_zs, rec_100, rec_100_zs, dtime = self.eval.test_pre(self.model)
     print("CLS PRED TEST:\nAll:\tR@50: {: 6.3f}\tR@100: {: 6.3f}\nZShot:\tR@50: {: 6.3f}\tR@100: {: 6.3f}".format(rec_50, rec_100, rec_50_zs, rec_100_zs))
@@ -340,8 +363,9 @@ class vrd_trainer():
 
 if __name__ == "__main__":
   # trainer = vrd_trainer()
-  # trainer = vrd_trainer(checkpoint = False, self.data_args.name = "vrd")
-  trainer = vrd_trainer(checkpoint = "epoch_4_checkpoint.pth.tar")
-  trainer.test_pre()
-  trainer.test_rel()
+  trainer = vrd_trainer(checkpoint = False)
+  #trainer = vrd_trainer(checkpoint = "epoch_4_checkpoint.pth.tar")
+  trainer.train()
+  #trainer.test_pre()
+  # trainer.test_rel()
   #trainer.train()

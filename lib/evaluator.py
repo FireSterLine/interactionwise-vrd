@@ -4,9 +4,14 @@ import torch
 from lib.datalayers import VRDDataLayer
 from lib.evaluation_dsr import eval_recall_at_N, eval_obj_img # TODO remove this module
 import time
+import pickle
+import os.path as osp
+import torch.nn.functional as F
+import warnings
+import utils
 
-# TODO: remove this and use dataset.dir instead
-import globals
+# from copy import deepcopy
+deepcopy = lambda x: x
 
 # TODO: check, is all of this using the GPU, or can we improve the time?
 class VRDEvaluator():
@@ -16,15 +21,42 @@ class VRDEvaluator():
     self.data_args = data_args
     self.args = args
 
+    try:
+      # Load ground truths
+      gt_path = osp.join("data", "vrd", "eval", "gt.pkl") # .format(self.data_args.name)
+      with open(gt_path, 'rb') as fid:
+        self.gt = pickle.load(fid)
+      gt_zs_path = osp.join("data", "vrd", "eval", "gt_zs.pkl") # .format(self.datalayer.name)
+      with open(gt_zs_path, 'rb') as fid:
+        self.gt_zs = pickle.load(fid)
+    except FileNotFoundError:
+      warnings.warn("Warning! Couldn't find ground truths pickles. Evaluation will be skipped.")
+      self.gt    = None
+      self.gt_zs = None
+
+    # If None, the num_imgs that will be used is the size of the ground-truths
+    self.num_imgs = None
+
+    # VG is too slow, so we only test part of it
+    if(self.data_args.name == "vg"):
+      self.num_imgs = 8995
+
   def test_pre(self, vrd_model):
     """ Test model on Predicate Prediction """
+    if self.gt is None:
+      return np.nan, np.nan, np.nan, np.nan, 0.1
     with torch.no_grad():
       vrd_model.eval()
       time1 = time.time()
 
-      ...
+      # ...
       # TODO: just one VRD test layer
       test_data_layer = VRDDataLayer(self.data_args, "test")
+      test_dataloader = torch.utils.data.DataLoader(
+        dataset = test_data_layer,
+        batch_size = 1, # 256,
+        shuffle = False,
+      )
 
       rlp_labels_cell  = []
       tuple_confs_cell = []
@@ -33,20 +65,17 @@ class VRDEvaluator():
 
       N = 100 # What's this? (num of rel_res) (with this you can compute R@i for any i<=N)
 
-      while True:
+      for (tmp_i,(net_input, obj_classes_out, ori_bboxes)) in enumerate(test_dataloader):
 
-        try:
-          net_input, obj_classes_out, ori_bboxes = test_data_layer.next()
-        except StopIteration:
-          print("StopIteration")
-          break
-
-        if(net_input is None):
+        if(isinstance(net_input, torch.Tensor) and net_input.size() == (1,)): # Check this one TODO
           rlp_labels_cell.append(None)
           tuple_confs_cell.append(None)
           sub_bboxes_cell.append(None)
           obj_bboxes_cell.append(None)
           continue
+
+        if utils.smart_frequency_check(tmp_i, test_data_layer.N, 0.1):
+          print("{}/{}".format(tmp_i, test_data_layer.N))
 
         img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes = net_input
 
@@ -55,8 +84,16 @@ class VRDEvaluator():
         sub_bboxes_im  = np.zeros((N, 4), dtype = np.float) # Subj bboxes
         obj_bboxes_im  = np.zeros((N, 4), dtype = np.float) # Obj bboxes
 
-        obj_scores, rel_scores = vrd_model(*net_input)
-        rel_prob = rel_scores.data.cpu().numpy()
+        _, rel_scores = vrd_model(*net_input)
+
+        # TODO: fix when batch_size>1
+        idx_s           = deepcopy(idx_s[0])
+        idx_o           = deepcopy(idx_o[0])
+        obj_classes_out = deepcopy(obj_classes_out[0])
+        ori_bboxes      = deepcopy(ori_bboxes[0])
+        rel_scores      = deepcopy(rel_scores[0])
+
+        rel_prob = rel_scores.data.cpu().numpy() # Is this the correct way?
         rel_res = np.dstack(np.unravel_index(np.argsort(-rel_prob.ravel()), rel_prob.shape))[0][:N]
 
         for ii in range(rel_res.shape[0]):
@@ -73,7 +110,7 @@ class VRDEvaluator():
 
         # TODO: check
         # Is this because of the background ... ? If so, use proper flags instead of the name...
-        if(self.data_args.name == "vrd"):
+        if("vrd" in self.data_args.name):
           rlp_labels_im += 1
 
         tuple_confs_cell.append(tuple_confs_im)
@@ -88,10 +125,10 @@ class VRDEvaluator():
         "obj_bboxes_ours" : obj_bboxes_cell,
       }
 
-      rec_50     = eval_recall_at_N(self.data_args.name, 50,  res, use_zero_shot = False)
-      rec_50_zs  = eval_recall_at_N(self.data_args.name, 50,  res, use_zero_shot = True)
-      rec_100    = eval_recall_at_N(self.data_args.name, 100, res, use_zero_shot = False)
-      rec_100_zs = eval_recall_at_N(self.data_args.name, 100, res, use_zero_shot = True)
+      rec_50     = eval_recall_at_N(self.gt,    50,  res, num_imgs = self.num_imgs)
+      rec_50_zs  = eval_recall_at_N(self.gt_zs, 50,  res, num_imgs = self.num_imgs)
+      rec_100    = eval_recall_at_N(self.gt,    100, res, num_imgs = self.num_imgs)
+      rec_100_zs = eval_recall_at_N(self.gt_zs, 100, res, num_imgs = self.num_imgs)
       time2 = time.time()
 
       return rec_50, rec_50_zs, rec_100, rec_100_zs, (time2-time1)
@@ -99,24 +136,25 @@ class VRDEvaluator():
   # Relationship Prediction
   def test_rel(self, vrd_model):
     """ Test model on Relationship Prediction """
+    if self.gt is None:
+      return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 0.1
     with torch.no_grad():
       vrd_model.eval()
       time1 = time.time()
 
-      test_data_layer = VRDDataLayer(self.data_args.name, "test")
+      test_data_args = deepcopy(self.data_args)
+      test_data_args.with_bg_obj  = True
+      test_data_args.with_bg_pred = False
 
-      with open(osp.join(globals.data_dir, self.data_args.name, "test.pkl"), 'rb') as fid:
+      test_data_layer = VRDDataLayer(test_data_args, "test", proposals = True)
+      test_dataloader = torch.utils.data.DataLoader(
+        dataset = test_data_layer,
+        batch_size = 1, # 256,
+        shuffle = False,
+      )
+
+      with open(osp.join(test_data_layer.dataset.metadata_dir, "test.pkl"), 'rb') as fid:
         anno = pickle.load(fid, encoding="latin1")
-
-      # TODO: proposals is not ordered, but a dictionary with im_path keys
-      # TODO: expand so that we don't need the proposals pickle, and we generate it if it's not there, using Faster-RCNN?
-      # TODO: move the proposals file path to a different one (maybe in Faster-RCNN)
-      with open(osp.join(globals.data_dir, self.data_args.name, "eval", "det_res.pkl"), 'rb') as fid:
-        proposals = pickle.load(fid)
-        # TODO: zip these
-        pred_boxes   = proposals["boxes"]
-        pred_classes = proposals["cls"]
-        pred_confs   = proposals["confs"]
 
       N = 100 # What's this? (num of rel_res) (with this you can compute R@i for any i<=N)
 
@@ -128,49 +166,102 @@ class VRDEvaluator():
       tuple_confs_cell = []
       sub_bboxes_cell  = []
       obj_bboxes_cell  = []
-      predict = []
 
-      if len(anno) != len(proposals["cls"]):
-        print("ERROR: something is wrong in prediction: {} != {}".format(len(anno), len(proposals["cls"])))
-
-      for step,anno_img in enumerate(anno):
-
-        objdet_res = {
-          "boxes"   : pred_boxes[step],
-          "classes" : pred_classes[step].reshape(-1),
-          "confs"   : pred_confs[step].reshape(-1)
-        }
-
-        try:
-          net_input, obj_classes_out, rel_sop_prior, ori_bboxes = test_data_layer.next(objdet_res)
-        except StopIteration:
-          print("StopIteration")
+      # ... if len(anno) != len(proposals["cls"]):
+      #   print("ERROR: something is wrong in prediction: {} != {}".format(len(anno), len(proposals["cls"])))
+      # print(len(anno))
+      # print(len(test_dataloader))
+      n_iter = min(len(anno), len(test_dataloader))
+      for step,(anno_img, test_data) in enumerate(zip(anno, test_dataloader)):
+        if utils.smart_frequency_check(step, n_iter, 0.1):
+            print("{}/{}".format(step,n_iter))
+        if step >= n_iter:
           break
+        net_input, obj_classes_out, ori_bboxes, rel_soP_prior, objdet_res, gt_bboxes, gt_classes  = test_data
 
-        if(net_input is None):
+        if(isinstance(net_input, torch.Tensor) and net_input.size() == (1,)): # Check this one TODO
           rlp_labels_cell.append(None)
           tuple_confs_cell.append(None)
           sub_bboxes_cell.append(None)
           obj_bboxes_cell.append(None)
           continue
 
+        # TODO: remove this to allow batching
+        gt_bboxes  = gt_bboxes[0].data.cpu().numpy().astype(np.float32)
+        gt_classes = gt_classes[0].data.cpu().numpy().astype(np.float32)
+
+        """
+        TODO: perform this check after you switch to anno and unify dsr data preparation with the other one
         gt_boxes = anno_img["boxes"].astype(np.float32)
         gt_cls = np.array(anno_img["classes"]).astype(np.float32)
 
+        inds_1 = gt_bboxes.sum(axis=1).argsort()
+        print(inds_1)
+        gt_bboxes = gt_bboxes[inds_1]
+        gt_classes = gt_classes[inds_1]
+        # gt_classes = np.take_along_axis(gt_classes, inds_1, axis=0)
+        inds_2 = gt_boxes.sum(axis=1).argsort()
+        print(inds_2)
+        gt_boxes = gt_boxes[inds_2]
+        gt_cls = gt_cls[inds_2]
+        # gt_cls = np.take_along_axis(gt_cls, inds_2, axis=0)
+        if not np.all(gt_cls == gt_classes) or not np.all(gt_boxes == gt_bboxes):
+          print("Boxes")
+          print("gt_boxes: \t", gt_boxes.shape) # 10
+          print("gt_boxes: \t", gt_bboxes.shape)
+          print("Classes")
+          print("gt_cls: \t", gt_cls.shape) # 10
+          print("gt_classes: \t", gt_classes.shape)
+          print()
+          print("Boxes")
+          print("gt_boxes: \n", gt_boxes) # 10
+          print("gt_bboxes: \n", gt_bboxes)
+          print("Classes")
+          print("gt_cls: \n", gt_cls) # 10
+          print("gt_classes: \n", gt_classes)
+          input()
+        continue
+        """
+
+
         obj_score, rel_score = vrd_model(*net_input) # img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
 
+        # TODO: remove and fix everyhing else to allow batching
+        # obj_score = obj_score[0]
+        #rel_score = rel_score[0]
+
         _, obj_pred = obj_score[:, 1::].data.topk(1, 1, True, True)
+
+        # TODO: use this (what for? Just print, maybe) (it's dim=2 maybe?)
         obj_score = F.softmax(obj_score, dim=1)[:, 1::].data.cpu().numpy()
 
         rel_prob = rel_score.data.cpu().numpy()
-        rel_prob += np.log(0.5*(rel_sop_prior+1.0 / test_data_layer.n_pred))
+        rel_soP_prior = rel_soP_prior.data.cpu().numpy()
+        rel_prob += np.log(0.5*(rel_soP_prior+1.0 / test_data_layer.n_pred))
 
         img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes = net_input
 
-        pos_num_img, loc_num_img = eval_obj_img(gt_boxes, gt_cls, ori_bboxes, obj_pred.cpu().numpy(), gt_thr=0.5)
+        # print("gt_bboxes.shape: \t", gt_bboxes.shape)
+        # print("gt_cls.shape: \t", gt_cls.shape)
+        # print("ori_bboxes.shape: \t", ori_bboxes.shape)
+        # print("obj_pred.shape: \t", obj_pred.shape)
+        # print()
+        # TODO: remove this to allow batching
+        idx_s = deepcopy(idx_s[0])
+        idx_o = deepcopy(idx_o[0])
+        ori_bboxes = deepcopy(ori_bboxes[0])
+
+        pos_num_img, loc_num_img = eval_obj_img(gt_bboxes, gt_classes, ori_bboxes, obj_pred.cpu().numpy(), gt_thr=0.5)
         pos_num += pos_num_img
         loc_num += loc_num_img
-        gt_num  += gt_boxes.shape[0]
+        gt_num  += gt_bboxes.shape[0]
+
+        # TODO: remove this to allow batching
+        objdet_res["confs"]   = deepcopy(objdet_res["confs"][0])
+        objdet_res["classes"] = deepcopy(objdet_res["classes"][0])
+        objdet_res["boxes"]   = deepcopy(objdet_res["boxes"][0])
+        rel_prob = deepcopy(rel_prob[0])
+        obj_classes_out = deepcopy(obj_classes_out[0])
 
         tuple_confs_im = []
         rlp_labels_im  = np.zeros((rel_prob.shape[0]*rel_prob.shape[1], 3), dtype = np.float)
@@ -178,10 +269,21 @@ class VRDEvaluator():
         obj_bboxes_im  = np.zeros((rel_prob.shape[0]*rel_prob.shape[1], 4), dtype = np.float)
         n_idx = 0
 
+        # print("objdet_res['confs'].shape: ", objdet_res["confs"].shape)
+        # print("rel_prob.shape: ", rel_prob.shape)
+
         for tuple_idx in range(rel_prob.shape[0]):
           for rel in range(rel_prob.shape[1]):
+            # print((tuple_idx, rel))
+            # print("np.log(objdet_res['confs']).shape: ", np.log(objdet_res["confs"]).shape)
+            # print("np.log(objdet_res['confs'][idx_s[tuple_idx]]).shape: ", np.log(objdet_res["confs"][idx_s[tuple_idx]]).shape)
+            # print("objdet_res['confs'].shape: ", objdet_res["confs"].shape)
+            # print("objdet_res['confs'][idx_s[tuple_idx]].shape: ", objdet_res["confs"][idx_s[tuple_idx]].shape)
+            # print("rel_prob[tuple_idx].shape: ", rel_prob[tuple_idx].shape)
+            # print("rel_prob[tuple_idx, rel].shape: ", rel_prob[tuple_idx, rel].shape)
             if(self.args.use_obj_prior):
               if(objdet_res["confs"].ndim == 1):
+                # Maybe we never reach this point? Or maybe it accounts for batching?
                 conf = np.log(objdet_res["confs"][idx_s[tuple_idx]]) + np.log(objdet_res["confs"][idx_o[tuple_idx]]) + rel_prob[tuple_idx, rel]
               else:
                 conf = np.log(objdet_res["confs"][idx_s[tuple_idx], 0]) + np.log(objdet_res["confs"][idx_o[tuple_idx], 0]) + rel_prob[tuple_idx, rel]
@@ -195,7 +297,7 @@ class VRDEvaluator():
 
         # TODO: check
         # Is this because of the background ... ?
-        if(self.data_args.name == "vrd"):
+        if("vrd" in self.data_args.name):
           rlp_labels_im += 1
 
         # Why is this needed? ...
@@ -211,8 +313,6 @@ class VRDEvaluator():
         sub_bboxes_cell.append(sub_bboxes_im)
         obj_bboxes_cell.append(obj_bboxes_im)
 
-        step += 1
-
       res = {
         "rlp_confs_ours"  : tuple_confs_cell,
         "rlp_labels_ours" : rlp_labels_cell,
@@ -220,13 +320,13 @@ class VRDEvaluator():
         "obj_bboxes_ours" : obj_bboxes_cell,
       }
 
-      if len(anno) != len(res["obj_bboxes_ours"]):
-        print("ERROR: something is wrong in prediction: {} != {}".format(len(anno), len(res["obj_bboxes_ours"])))
+      # if len(len(test_dataloader)) != len(res["obj_bboxes_ours"]):
+      #   warnings.warn("Warning! Rel test results and gt do not have the same length: rel test performance might be off! {} != {}".format(len(len(test_dataloader)), len(res["obj_bboxes_ours"])), UserWarning)
 
-      rec_50     = eval_recall_at_N(self.data_args.name, 50,  res, use_zero_shot = False)
-      rec_50_zs  = eval_recall_at_N(self.data_args.name, 50,  res, use_zero_shot = True)
-      rec_100    = eval_recall_at_N(self.data_args.name, 100, res, use_zero_shot = False)
-      rec_100_zs = eval_recall_at_N(self.data_args.name, 100, res, use_zero_shot = True)
+      rec_50     = eval_recall_at_N(self.gt,    50,  res, num_imgs = self.num_imgs)
+      rec_50_zs  = eval_recall_at_N(self.gt_zs, 50,  res, num_imgs = self.num_imgs)
+      rec_100    = eval_recall_at_N(self.gt,    100, res, num_imgs = self.num_imgs)
+      rec_100_zs = eval_recall_at_N(self.gt_zs, 100, res, num_imgs = self.num_imgs)
       time2 = time.time()
 
       return rec_50, rec_50_zs, rec_100, rec_100_zs, pos_num, loc_num, gt_num, (time2 - time1)

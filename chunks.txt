@@ -1,12 +1,34 @@
 import pickle
+import json
+import os.path as osp
+
 with open("data/vrd/train.pkl", 'rb') as f:
   train = pickle.load(f, encoding="latin1")
 
 with open("data/vrd/test.pkl", 'rb') as f:
   test = pickle.load(f, encoding="latin1")
 
+with open("data/vrd/dsr_relst_test.json", 'r') as f:
+  test_pkl = json.load(f)
+
+with open("data/vrd/data_relst_img_test.json", 'r') as f:
+  test_data_pkl = json.load(f)
+
 len(train)
 len(test)
+
+for i in range(len(test)):
+  if test[i] is not None:
+    print(test[i]["img_path"])
+    print(osp.join(*test[i]["img_path"].split("/")[-2:]))
+    for j,(t,t_d) in enumerate(zip(test_pkl,test_data_pkl)):
+      if t[0] == osp.join(*test[i]["img_path"].split("/")[-2:]):
+        break
+    print(t)
+    print(t_d)
+    #print(test[i]["rel_classes"])
+    #print(test[i])
+    input()
 
 
 test[0].keys() # dict_keys(['img_path', 'boxes', 'classes', 'ix2', 'ix1', 'rel_classes'])
@@ -19,15 +41,16 @@ len(test[0]["rel_classes"]) # 12
 len(test[0]["rel_classes"][0])
 
 
+
 from lib.dataset import dataset
 
 dataset_args = {"ds_name" : "vrd", "with_bg_obj" : False, "with_bg_pred" : False}
 
 dataset = dataset("vrd", dataset_args)
 
-test_imgrels = dataset.getRelst("test")
+test_imgrels = dataset.getData("relst", "test")
 
-test_imgrels_list = [(k,v) for k,v in dataset.getRelst("test").items()]
+test_imgrels_list = [(k,v) for k,v in dataset.getData("relst", "test").items()]
 
 if len(test_imgrels) != len(test):
   print("ERR!")
