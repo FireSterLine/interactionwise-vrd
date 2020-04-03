@@ -22,6 +22,9 @@ class VRDEvaluator():
     self.args = args
 
     try:
+      # TODO: solve these by using the same dataset as the training one
+      if "vg" in self.data_args.name:
+          raise FileNotFoundError()
       # Load ground truths
       gt_path = osp.join("data", "vrd", "eval", "gt.pkl") # .format(self.data_args.name)
       with open(gt_path, 'rb') as fid:
@@ -39,7 +42,8 @@ class VRDEvaluator():
 
     # VG is too slow, so we only test part of it
     if(self.data_args.name == "vg"):
-      self.num_imgs = 8995
+      self.num_imgs = None
+      #self.num_imgs = 8995
 
   def test_pre(self, vrd_model):
     """ Test model on Predicate Prediction """
@@ -75,7 +79,7 @@ class VRDEvaluator():
           continue
 
         if utils.smart_frequency_check(tmp_i, test_data_layer.N, 0.1):
-          print("{}/{}".format(tmp_i, test_data_layer.N))
+          print("{}/{}\r".format(tmp_i, test_data_layer.N), end="")
 
         img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes = net_input
 
@@ -174,7 +178,7 @@ class VRDEvaluator():
       n_iter = min(len(anno), len(test_dataloader))
       for step,(anno_img, test_data) in enumerate(zip(anno, test_dataloader)):
         if utils.smart_frequency_check(step, n_iter, 0.1):
-            print("{}/{}".format(step,n_iter))
+            print("{}/{}\r".format(step,n_iter), end="")
         if step >= n_iter:
           break
         net_input, obj_classes_out, ori_bboxes, rel_soP_prior, objdet_res, gt_bboxes, gt_classes  = test_data

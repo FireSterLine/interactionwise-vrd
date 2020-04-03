@@ -94,8 +94,8 @@ class vrd_trainer():
 
           "use_shuffle"    : True, # TODO: check if shuffle works
 
-          "num_epochs" : 20,
-          "checkpoint_freq" : 5,
+          "num_epochs" : 6,
+          "checkpoint_freq" : .5,
 
           # Number of lines printed with loss ...TODO explain smart freq
           "prints_per_epoch" : 10,
@@ -109,7 +109,7 @@ class vrd_trainer():
       }):
 
     if(DEBUGGING):
-      args["training"]["num_epochs"] = 6
+      # args["training"]["num_epochs"] = 6
       args["data"]["justafew"] = True
       #args["data"]["name"] = "vrd/dsr"
       #args["data"]["name"] = "vrd"
@@ -125,7 +125,7 @@ class vrd_trainer():
     print("args:", json.dumps(args, indent=2, sort_keys=True))
 
 
-    self.session_name = "test-new-training"
+    self.session_name = "test-3-04"
 
     self.checkpoint = checkpoint
     self.args       = args
@@ -247,13 +247,13 @@ class vrd_trainer():
       # TODO do it with the scheduler, see if it's the same: https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
       # exp_lr_scheduler = lr_scheduler.StepLR(self.optimizer, step_size=5, gamma=0.1)
 
-      # TODO: after the third epoch, we divide learning rate by 3
+      # TODO: after the third epoch, we divide learning rate by 10
       # the authors mention doing this in their paper, but we couldn't find it in the actual code
-      #if epoch == 2:
-      #  print("Dividing the learning rate by 10 at epoch {}!".format(epoch))
-      #  for i in range(len(self.optimizer.param_groups)):
-      #    self.optimizer.param_groups[i]['lr'] /= 10
-
+      if (self.state["epoch"] % 3) == 0:
+        print("Dividing the learning rate by 10 at epoch {}!".format(self.state["epoch"]))
+        for i in range(len(self.optimizer.param_groups)):
+          self.optimizer.param_groups[i]["lr"] /= 10
+    
       # self.__train_epoch()
 
       # Test results
@@ -332,7 +332,7 @@ class vrd_trainer():
       losses.update(loss.item())
 
       if utils.smart_frequency_check(i_iter, n_iter, self.training.prints_per_epoch):
-          print("\t{:4d}/{:<4d}: LOSS: {: 6.3f}".format(i_iter, n_iter, losses.avg(0)))
+          print("\t{:4d}/{:<4d}: LOSS: {: 6.3f}\r".format(i_iter, n_iter, losses.avg(0)), end="")
           losses.reset(0)
 
     self.state["loss"] = losses.avg(1)
