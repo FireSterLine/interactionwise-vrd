@@ -122,7 +122,8 @@ class VRDDataLayer(data.Dataset):
 
     n_objs, n_rels = len(objs), len(rels)
 
-    # Wait a second, shouldn't we test anyway on an image with no relationships? I mean, if we identified some objects, why not? What does DSR do?
+    # TODO: Wait a second, shouldn't we test anyway on an image with no
+    #  relationships? I mean, if we identified some objects, why not? What does DSR do?
     if n_rels == 0:
       if self.stage == "test":
         if self.objdet_res is None:
@@ -130,9 +131,22 @@ class VRDDataLayer(data.Dataset):
         else:
           return False, False, False, False, False, False, False
 
+    ###########################################################################
+    ###########################################################################
+
+    # Encode the boxes in a format that ROI Pooling layers accept
+    #  See https://pytorch.org/docs/stable/torchvision/ops.html#torchvision.ops.roi_pool
+    def bboxesToROIBoxes(boxes):
+      roi_boxes = np.zeros((boxes.shape[0], 5))
+      # Note: The ROI Pooling layer expects the index of the batch as first column
+      # TODO Right now, this won't actually work for index>1 when shuffling...
+      #  if you allow batching, then you must post-process the indices. Maybe in collate_fn!! That's the solution, yeah!
+      roi_boxes[:, 0]   = index
+      roi_boxes[:, 1:5] = boxes * im_scale
+      return roi_bboxes
+
     im = self.dataset.readImg(img_path)
-    ih = im.shape[0]
-    iw = im.shape[1]
+    ih, iw = im.shape[0], im.shape[1]
 
     # TODO: enable this to temporarily allow batching (write collate_fn then)
     # image_blob, im_scale = prep_im_for_blob(im, utils.vrd_pixel_means)
@@ -148,213 +162,180 @@ class VRDDataLayer(data.Dataset):
     # img_blob = np.zeros(self.max_shape, dtype=np.float32)
     # img_blob[: image_blob.shape[0], :image_blob.shape[1], :] = image_blob
 
-    # Object classes
+    # OBJECTS
 
-    # Obtain object detections, if any
+    # Ground-truths objects
+    gt_obj_bboxes  = np.zeros((n_objs, 4))
+    gt_obj_classes = np.zeros((n_objs))
+
+    for i_obj, obj in enumerate(objs):
+      gt_obj_bboxes[i_obj]  = utils.bboxListToNumpy(obj["bbox"])
+      gt_obj_classes[i_obj] = obj["cls"]
+
+    # object detections (if any)
     if self.objdet_res is not None:
       det_res = self.objdet_res[index]
-      obj_boxes_out  = det_res["boxes"]
-      obj_classes    = det_res["classes"]
-      pred_confs_img = det_res["confs"]  # Note: We don't actually care about the confidence scores here
 
-      n_rels = len(obj_classes) * (len(obj_classes) - 1)
+      det_obj_boxes    = det_res["boxes"]
+      det_obj_classes  = det_res["classes"]
+      # pred_confs_img = det_res["confs"]  # Note: We don't actually care about the confidence scores here
+
+      n_rels = len(det_obj_classes) * (len(det_obj_classes) - 1)
 
       if n_rels == 0:
         return False, False, False, False, False, False, False
-    else:
-      obj_boxes_out = np.zeros((n_objs, 4))
-      obj_classes = np.zeros((n_objs))
 
-      for i_obj, obj in enumerate(objs):
-        obj_boxes_out[i_obj] = utils.bboxListToNumpy(obj["bbox"])
-        obj_classes[i_obj]   = obj["cls"]
 
-    # Object boxes
-    obj_boxes = np.zeros((obj_boxes_out.shape[0], 5))  # , dtype=np.float32)
-    # Note: The ROI Pooling layer expects the index of the batch as first column
-    # (https://pytorch.org/docs/stable/torchvision/ops.html#torchvision.ops.roi_pool)
-    # TODO This won't actually work for index>1 when shuffling... if you allow batching, then you must post-process the indices. Maybe in collate_fn!! That's the solution, yeah!
-    obj_boxes[:, 0]   = index
-    obj_boxes[:, 1:5] = obj_boxes_out * im_scale
 
-    # union bounding boxes
-    u_boxes = np.zeros((n_rels, 5))
-    u_boxes[:, 0] = index
+    # Union bounding boxes
+    u_boxes = np.zeros((n_rels, 4))
 
-    # the dimension 8 here is the size of the spatial feature vector, containing the relative location and log-distance
-    spatial_features = np.zeros((n_rels, 8))
-    # TODO: introduce the other spatial feature thingy
-    # spatial_features = np.zeros((n_rels, 2, 32, 32))
-    #     spatial_features[ii] = [self._getDualMask(ih, iw, sBBox),
-    #               self._getDualMask(ih, iw, oBBox)]
+    # Spatial vector containing the relative location and log-distance
+    dsr_spat_vec = np.zeros((n_rels, 8))
 
-    # TODO: add tiny comment...
-    # semantic_features = np.zeros((n_rels, 2 * 300))
+    # TODO: Introduce the other spatial feature thingy
+    # dsr_spat_mat = np.zeros((n_rels, 2, 32, 32))
 
-    # this will contain the probability distribution of each subject-object pair ID over all 70 predicates
-    rel_soP_prior = np.zeros((n_rels, self.dataset.n_pred))
-    # print(n_rels)
+    # TODO: Semantic vector consisting of the concatenation of emb(sub) and emb(obj)
+    # sem_cat_vec = np.zeros((n_rels, 2 * 300))
 
+    # Prior distribution of the object pairs across all predicates
+    gt_soP_prior = np.zeros((n_rels, self.dataset.n_pred))
+
+    # Semantic vector for the predicate
     gt_pred_sem = np.zeros((n_rels, 300))
 
+
     # Target output for the network
-    target = -1 * np.ones((self.dataset.n_pred * n_rels))
+    # TODO: reshape like mmlab_target = np.zeros((n_rels, self.n_pred))
+    mmlab_target = -1 * np.ones((self.dataset.n_pred * n_rels))
     pos_idx = 0
-    # target = np.zeros((n_rels, self.n_pred))
 
     # Indices for objects and subjects
     idx_s, idx_o = [], []
 
-    # print(obj_classes)
+    def addRel(i_rel,               \
+                sub_idx,  obj_idx,    \
+                sub_cls,  obj_cls,  \
+                sub_bbox, obj_bbx):
+      # Subject and object local indices (useful when selecting ROI results)
+      idx_s.append(sub_idx)
+      idx_o.append(obj_idx)
+
+      # Subject and object bounding boxes
+      sBBox = sub_bbox
+      oBBox = obj_bbx
+
+      # get the union bounding box
+      rBBox = utils.getUnionBBox(sBBox, oBBox, ih, iw)
+
+      # store the union box (= relation box) of the union bounding box here, with the id i_rel_inst
+      u_boxes[i_rel] = np.array(rBBox) * im_scale
+
+      # store the scaled dimensions of the union bounding box here, with the id i_rel
+      dsr_spat_vec[i_rel] = utils.getRelativeLoc(sBBox, oBBox)
+
+      # semantic features of obj and subj
+      # sem_cat_vec[i_rel] = utils.getSemanticVector(objs[rel["sub"]]["name"], objs[rel["obj"]]["name"], self.emb["obj"])
+      # sem_cat_vec[i_rel] = np.zeros(600)
+
+      #     TODO: dsr_spat_mat[ii] = [self._getDualMask(ih, iw, sBBox),
+      #               self._getDualMask(ih, iw, oBBox)]
+
+      # store the probability distribution of this subject-object pair from the soP_prior
+      gt_soP_prior[i_rel] = self.soP_prior[sub_cls][obj_cls]
 
     if self.objdet_res is not None:
       i_rel = 0
-      gt_bboxes  = np.zeros((n_objs, 4))
-      gt_classes = np.zeros((n_objs))
-
-      for i_obj, obj in enumerate(objs):
-        gt_bboxes[i_obj]  = utils.bboxListToNumpy(obj["bbox"])
-        gt_classes[i_obj] = obj["cls"]
-
-      for s_idx, sub_cls in enumerate(obj_classes):
-        for o_idx, obj_cls in enumerate(obj_classes):
-          if (s_idx == o_idx):
-            continue
-          # Subject and object local indices (useful when selecting ROI results)
-          idx_s.append(s_idx)
-          idx_o.append(o_idx)
-
-          # Subject and object bounding boxes
-          sBBox = obj_boxes_out[s_idx]
-          oBBox = obj_boxes_out[o_idx]
-
-          # get the union bounding box
-          rBBox = utils.getUnionBBox(sBBox, oBBox, ih, iw)
-
-          # store the union box (= relation box) of the union bounding box here, with the id i_rel_inst
-          u_boxes[i_rel, 1:5] = np.array(rBBox) * im_scale
-
-          # store the scaled dimensions of the union bounding box here, with the id i_rel
-          spatial_features[i_rel] = utils.getRelativeLoc(sBBox, oBBox)
-
-          # semantic features of obj and subj
-          # semantic_features[i_rel] = utils.getSemanticVector(objs[rel["sub"]]["name"], objs[rel["obj"]]["name"], self.emb["obj"])
-          # semantic_features[i_rel] = np.zeros(600)
-
-          # store the probability distribution of this subject-object pair from the soP_prior
-          rel_soP_prior[i_rel] = self.soP_prior[sub_cls][obj_cls]
-
+      for sub_idx, sub_cls in enumerate(det_obj_classes):
+        for obj_idx, obj_cls in enumerate(det_obj_classes):
+          if (sub_idx == obj_idx): continue
+          addRel(i_rel,                   \
+                  sub_idx, obj_idx,       \
+                  sub_cls, obj_cls        \
+                  det_obj_boxes[sub_idx], \
+                  det_obj_boxes[obj_idx])
           i_rel += 1
-
-      # for i_rel, rel in enumerate(rels):
-      #
-      #   # Subject and object local indices (useful when selecting ROI results)
-      #   idx_s.append(rel["sub"])
-      #   idx_o.append(rel["obj"])
-      #
-      #   # Subject and object bounding boxes
-      #   sBBox = utils.bboxListToNumpy(objs[rel["sub"]]["bbox"])
-      #   oBBox = utils.bboxListToNumpy(objs[rel["obj"]]["bbox"])
-      #
-      #   # get the union bounding box
-      #   rBBox = utils.getUnionBBox(sBBox, oBBox, ih, iw)
-      #   rel["pred"] (it's a list)
-
     else:
       for i_rel, rel in enumerate(rels):
+        add(rel["sub"], rel["obj"],
+            objs[rel["sub"]]["cls"],
+            objs[rel["obj"]]["cls"],
+            utils.bboxListToNumpy(objs[rel["sub"]]["bbox"]),
+            utils.bboxListToNumpy(objs[rel["obj"]]["bbox"]),
+            i_rel)
 
-        # Subject and object local indices (useful when selecting ROI results)
-        idx_s.append(rel["sub"])
-        idx_o.append(rel["obj"])
+        pred_clss = rel["pred"]
 
-        # Subject and object bounding boxes
-        sBBox = utils.bboxListToNumpy(objs[rel["sub"]]["bbox"])
-        oBBox = utils.bboxListToNumpy(objs[rel["obj"]]["bbox"])
-
-        # get the union bounding box
-        rBBox = utils.getUnionBBox(sBBox, oBBox, ih, iw)
-
-        # store the union box (= relation box) of the union bounding box here, with the id i_rel_inst
-        u_boxes[i_rel, 1:5] = np.array(rBBox) * im_scale
-
-        # store the scaled dimensions of the union bounding box here, with the id i_rel
-        spatial_features[i_rel] = utils.getRelativeLoc(sBBox, oBBox)
-
-        # semantic features of obj and subj
-        # semantic_features[i_rel] = utils.getSemanticVector(objs[rel["sub"]]["name"], objs[rel["obj"]]["name"], self.emb["obj"])
-        # semantic_features[i_rel] = np.zeros(600)
-
-        # store the probability distribution of this subject-object pair from the soP_prior
-        s_cls = objs[rel["sub"]]["cls"]
-        o_cls = objs[rel["obj"]]["cls"]
-        rel_soP_prior[i_rel] = self.soP_prior[s_cls][o_cls]
+        # GROUND-TRUTHS
 
         # TODO: this is no good way of accounting for multi-label.
-        gt_pred_sem[i_rel] = np.mean([self.emb["pred"][pred_id] for pred_id in rels[i_rel]["pred"]], axis=0)
+        gt_pred_sem[i_rel] = np.mean([self.emb["pred"][pred_cls] for pred_cls in pred_clss], axis=0)
 
-        for rel_label in rel["pred"]:
-          target[pos_idx] = i_rel * self.dataset.n_pred + rel_label
+        for pred_cls in pred_clss:
+          mmlab_target[pos_idx] = i_rel * self.dataset.n_pred + pred_cls
           pos_idx += 1
 
+    if self.objdet_res is not None:
+      obj_boxes    = det_obj_boxes
+      obj_classes  = det_obj_classes
+    else:
+      obj_boxes    = gt_obj_bboxes
+      obj_classes  = gt_obj_classes
 
-    obj_classes_out = obj_classes
+    roi_obj_boxes = bboxesToROIBoxes(obj_boxes)
+    roi_u_boxes   = bboxesToROIBoxes(u_boxes)
 
-    # Note: the transpose should move the color channel to being the
-    #  last dimension
+
+    # Note: Transpose/Permute blob to move the color channel to the first dimension (C, H, W)
+    # TODO: maybe there's no need to transform them into tensor, since the dataloader will do that anyway
     # TODO: switch to from_numpy().to() instead of FloatTensor/LongTensor(, device=)
     #  or, actually, build the tensors on the GPU directly, instead of using numpy.
-    # print(idx_s)
-    # print(np.array(idx_s).shape)
-    # print(len(np.array(idx_s).shape))
-    # if len(np.array(idx_s).shape) == 2:
-    #   print(img_path)
-    #   print(idx_s)
-    #   input()
-    # TODO: maybe there's no need to transform them into tensor, since the dataloader will do that anyway
-    # img_blob          = torch.FloatTensor(img_blob).to(utils.device).permute(0, 3, 1, 2)
+
     img_blob          = torch.FloatTensor(img_blob).to(utils.device).permute(2, 0, 1)
-    obj_boxes         = torch.FloatTensor(obj_boxes).to(utils.device)
-    u_boxes           = torch.FloatTensor(u_boxes).to(utils.device)
+    roi_obj_boxes     = torch.FloatTensor(roi_obj_boxes).to(utils.device)
+    roi_u_boxes       = torch.FloatTensor(roi_u_boxes).to(utils.device)
     idx_s             = torch.LongTensor(idx_s).to(utils.device)
     idx_o             = torch.LongTensor(idx_o).to(utils.device)
-    spatial_features  = torch.FloatTensor(spatial_features).to(utils.device)
-    # semantic_features = torch.FloatTensor(semantic_features).to(utils.device)
+    dsr_spat_vec      = torch.FloatTensor(dsr_spat_vec).to(utils.device)
+    # sem_cat_vec       = torch.FloatTensor(sem_cat_vec).to(utils.device)
+    # dsr_spat_mat      = torch.FloatTensor(dsr_spat_mat).to(utils.device)
     obj_classes       = torch.LongTensor(obj_classes).to(utils.device)
 
-    # print(idx_s)
-
-    # rel_soP_prior = torch.FloatTensor(rel_soP_prior).to(utils.device)
+    # gt_soP_prior      = torch.FloatTensor(gt_soP_prior).to(utils.device)
     gt_pred_sem       = torch.LongTensor(gt_pred_sem).to(utils.device)
-    target            = torch.LongTensor(target).to(utils.device)
+    mmlab_target      = torch.LongTensor(mmlab_target).to(utils.device)
 
+    # TODO: reorder
     net_input = (img_blob,
-                 obj_boxes,
-                 u_boxes,
+                 roi_obj_boxes,
+                 roi_u_boxes,
                  idx_s,
                  idx_o,
-                 spatial_features,
+                 dsr_spat_vec,
+                 # dsr_spat_mat,
                  obj_classes,
-              #  semantic_features,
+                #  sem_cat_vec,
       )
 
     if self.stage == "train":
       return net_input,       \
-              rel_soP_prior,  \
+              gt_soP_prior,   \
               gt_pred_sem,    \
-              target
+              mmlab_target
     elif self.stage == "test":
       if self.objdet_res is None:
         return net_input,         \
-                obj_classes_out,  \
-                obj_boxes_out
+                gt_obj_classes,   \
+                gt_obj_bboxes
       else:
         return net_input,         \
-                obj_classes_out,  \
-                obj_boxes_out,    \
-                rel_soP_prior,    \
+                det_obj_classes,  \
+                det_obj_boxes,    \
+                gt_soP_prior,     \
                 det_res,          \
-                gt_bboxes,        \
-                gt_classes
+                gt_obj_bboxes,    \
+                gt_obj_classes
 
 """
 # Batching example:
