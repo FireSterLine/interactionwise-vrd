@@ -100,7 +100,7 @@ class dataset():
       raise ValueError("Can't compute distribution on \"{}\" split".format(stage))
 
     if not (type, stage) in self._distr_cache:
-      distribut ion_pkl_path = osp.join(self.metadata_dir, "{}.pkl".format(type))
+      distribution_pkl_path = osp.join(self.metadata_dir, "{}.pkl".format(type))
       distribution = None
 
       if type == "soP":

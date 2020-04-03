@@ -73,7 +73,7 @@ def getDualMask(self, ih, iw, bb):
 """
 
 def getEmbedding(word, emb_model, depth=0):
-  if not hasattr(getEmbedding, "fallback_emb_map")
+  if not hasattr(getEmbedding, "fallback_emb_map"):
     # This map defines the fall-back words of words that do not exist in the embedding model
     with open(osp.join(globals.data_dir, "embeddings", "fallback-v1.json"), 'r') as rfile:
       getEmbedding.fallback_emb_map = json.load(rfile)
