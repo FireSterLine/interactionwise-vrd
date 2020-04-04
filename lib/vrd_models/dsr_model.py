@@ -133,7 +133,7 @@ class DSRModel(nn.Module):
       output_size = 300
     self.fc_rel    = FC(256, output_size, relu = False)
 
-  def forward(self, img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes):
+  def forward(self, img_blob, obj_classes, obj_boxes, u_boxes, idx_s, idx_o, spatial_features):
 
 
 

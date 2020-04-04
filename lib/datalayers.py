@@ -16,7 +16,7 @@ from torch.utils import data
 class VRDDataLayer(data.Dataset):
   """ Iterate through the dataset and yield the input and target for the network """
 
-  def __init__(self, data_info, stage, use_proposals = False, preload = False):
+  def __init__(self, data_info, stage, use_proposals = False, use_preload = False):
     super(VRDDataLayer, self).__init__()
 
     self.ds_args = utils.data_info_to_ds_args(data_info)
@@ -73,7 +73,7 @@ class VRDDataLayer(data.Dataset):
         } for i in range(len(proposals["boxes"]))]
 
     self.preloaded = None
-    if preload:
+    if use_preload:
       print("Preloading...")
       self.preloaded = [self.__computeitem__(index) for index in range(self.__len__())]
 
@@ -107,24 +107,28 @@ class VRDDataLayer(data.Dataset):
     # print("index: ", index)
 
     # Get items and move them to the GPU
+
+    # Read/compute output
     if self.preloaded is None:
       output = self.__computeitem__(index)
     else:
       output = self.preloaded[index]
-
+    
+    # Unpack
     if self.stage == "test":
       if self.objdet_res is None:
-        net_input, gt_obj, False, False = output
+        net_input, gt_obj, _, _ = output
       else:
         net_input, gt_obj, det_obj, gt_soP_prior = output
-        (det_obj_classes, det_obj_boxes, det_res) = det_obj
-      (gt_obj_classes,  gt_obj_boxes) = gt_obj
+        #(det_obj_classes, det_obj_boxes, det_res) = det_obj
+      # (gt_obj_classes,  gt_obj_boxes) = gt_obj
     elif self.stage == "train":
       net_input,       \
               gt_soP_prior,   \
               gt_pred_sem,    \
               mmlab_target = output
-
+    
+    # Move to GPU
     if net_input is not False: # not (isinstance(net_input, torch.Tensor) and net_input.size() == (1,)):
       (img_blob,
                obj_classes,
@@ -159,13 +163,14 @@ class VRDDataLayer(data.Dataset):
               #  sem_cat_vec,
       )
 
+    # Re-pack and return
     if self.stage == "test":
-      gt_obj  = (gt_obj_classes,  gt_obj_boxes)
-        if self.objdet_res is None:
-          return net_input, gt_obj, False, False
-        else:
-          det_obj = (det_obj_classes, det_obj_boxes, det_res)
-          return net_input, gt_obj, det_obj, gt_soP_prior
+      #gt_obj  = (gt_obj_classes,  gt_obj_boxes)
+      if self.objdet_res is None:
+        return net_input, gt_obj, False, False
+      else:
+        #det_obj = (det_obj_classes, det_obj_boxes, det_res)
+        return net_input, gt_obj, det_obj, gt_soP_prior
     elif self.stage == "train":
       if gt_pred_sem is not False:
         # gt_soP_prior      = torch.as_tensor(gt_soP_prior,    dtype=torch.float,    device = utils.device)
@@ -397,12 +402,12 @@ class VRDDataLayer(data.Dataset):
       )
 
     gt_obj  = (gt_obj_classes,  gt_obj_boxes)
-    det_obj = (det_obj_classes, det_obj_boxes, det_res)
 
     if self.stage == "test":
       if self.objdet_res is None:
         return net_input, gt_obj, False, False
       else:
+        det_obj = (det_obj_classes, det_obj_boxes, det_res)
         return net_input, gt_obj, det_obj, gt_soP_prior
 
     elif self.stage == "train":
