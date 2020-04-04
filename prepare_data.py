@@ -79,20 +79,20 @@ class DataPreparer:
         output_file_format = "{}_{}_{}_{{}}.json".format(self.prefix, dformat, granularity)
 
         vrd_data_train = []
-        vrd_data_test = []
+        vrd_data_test  = []
         for k in self.splits['train']:
             try:
                 vrd_data_train.append((k, self.vrd_data[k]))
             except KeyError:
-                pass
+                warnings.warn("Image '{}' not found in train vrd_data ({})".format(k, self.vrd_data_train.keys), UserWarning)
+                vrd_data_train.append((None, None))
 
         for k in self.splits['test']:
             try:
                 vrd_data_test.append((k, self.vrd_data[k]))
             except KeyError:
-                pass
-        # vrd_data_train = [(k, self.vrd_data[k]) if k is not None else (None, None) for k in self.splits["train"]]
-        # vrd_data_test  = [(k, self.vrd_data[k]) if k is not None else (None, None) for k in self.splits["test"]]
+                warnings.warn("Image '{}' not found in test vrd_data ({})".format(k, self.vrd_data_test.keys), UserWarning)
+                vrd_data_test.append((None, None))
 
         if granularity == "rel":
           assert dformat == "relst", "Mh. Does it make sense to granulate 'rel' with dformat {}?".format(dformat)

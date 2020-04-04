@@ -36,7 +36,7 @@ class VRDDataLayer(data.Dataset):
 
     # TODO: allow to choose which model to use. We only have w2v for now
     self.emb = {"obj" : self.dataset.readJSON("objects-emb.json"), "pred" : self.dataset.readJSON("predicates-emb.json")}
-    
+
     self.vrd_data = self.dataset.getData("annos", self.stage, self.granularity)
 
     # TODO: change this when you switch to annos?
@@ -85,7 +85,7 @@ class VRDDataLayer(data.Dataset):
     # self.max_shape = (1000, 1000, 3)
     # self.max_shape = self._get_max_shape()
     # print("Max shape is: {}".format(self.max_shape))
-    
+
 
   def _get_max_shape(self):
     print("Identifying max shape...")
@@ -103,113 +103,113 @@ class VRDDataLayer(data.Dataset):
 
   def __getitem__(self, index):
     # print("index: ", index)
-    
-    if self.preloaded is not None:
-      if self.stage == "train":
-        net_input,       \
-        gt_soP_prior,   \
-        gt_pred_sem,    \
-        mlab_target = self.preloaded[index]
-      elif self.stage == "test":
-        if self.objdet_res is None:
-          (net_input,         \
-          gt_obj_classes,   \
-          gt_obj_bboxes) = self.preloaded[index]
-        else:
-          (net_input,         \
-          det_obj_classes,  \
-          det_obj_boxes,    \
-          gt_soP_prior,     \
-          det_res,          \
-          gt_obj_bboxes,    \
-          gt_obj_classes) = self.preloaded[index]
-      
-      (img_blob,
-                 roi_obj_boxes,
-                 roi_u_boxes,
-                 idx_s,
-                 idx_o,
-                 dsr_spat_vec,
-                 # dsr_spat_mat,
-                 obj_classes,
-                #  sem_cat_vec,
-      ) = net_input
 
-      img_blob          = torch.as_tensor(img_blob,        dtype=torch.float,    device = utils.device).permute(2, 0, 1)
-      roi_obj_boxes     = torch.as_tensor(roi_obj_boxes,   dtype=torch.float,    device = utils.device)
-      roi_u_boxes       = torch.as_tensor(roi_u_boxes,     dtype=torch.float,    device = utils.device)
-      idx_s             = torch.as_tensor(idx_s,           dtype=torch.long,     device = utils.device)
-      idx_o             = torch.as_tensor(idx_o,           dtype=torch.long,     device = utils.device)
-      dsr_spat_vec      = torch.as_tensor(dsr_spat_vec,    dtype=torch.float,    device = utils.device)
-      # sem_cat_vec       = torch.as_tensor(sem_cat_vec,     dtype=torch.float,    device = utils.device)
-      # dsr_spat_mat      = torch.as_tensor(dsr_spat_mat,    dtype=torch.float,    device = utils.device)
-      obj_classes       = torch.as_tensor(obj_classes,     dtype=torch.long,     device = utils.device)
+    # if self.preloaded is not None:
+    #   if self.stage == "train":
+    #     net_input,       \
+    #     gt_soP_prior,   \
+    #     gt_pred_sem,    \
+    #     mlab_target = self.preloaded[index]
+    #   elif self.stage == "test":
+    #     if self.objdet_res is None:
+    #       (net_input,         \
+    #       gt_obj_classes,   \
+    #       gt_obj_boxes) = self.preloaded[index]
+    #     else:
+    #       (net_input,         \
+    #       det_obj_classes,  \
+    #       det_obj_boxes,    \
+    #       gt_soP_prior,     \
+    #       det_res,          \
+    #       gt_obj_boxes,    \
+    #       gt_obj_classes) = self.preloaded[index]
+    #
+    #   (img_blob,
+    #              roi_obj_boxes,
+    #              roi_u_boxes,
+    #              idx_s,
+    #              idx_o,
+    #              dsr_spat_vec,
+    #              # dsr_spat_mat,
+    #              obj_classes,
+    #             #  sem_cat_vec,
+    #   ) = net_input
+    #
+    #   img_blob          = torch.as_tensor(img_blob,        dtype=torch.float,    device = utils.device).permute(2, 0, 1)
+    #   roi_obj_boxes     = torch.as_tensor(roi_obj_boxes,   dtype=torch.float,    device = utils.device)
+    #   roi_u_boxes       = torch.as_tensor(roi_u_boxes,     dtype=torch.float,    device = utils.device)
+    #   idx_s             = torch.as_tensor(idx_s,           dtype=torch.long,     device = utils.device)
+    #   idx_o             = torch.as_tensor(idx_o,           dtype=torch.long,     device = utils.device)
+    #   dsr_spat_vec      = torch.as_tensor(dsr_spat_vec,    dtype=torch.float,    device = utils.device)
+    #   # sem_cat_vec       = torch.as_tensor(sem_cat_vec,     dtype=torch.float,    device = utils.device)
+    #   # dsr_spat_mat      = torch.as_tensor(dsr_spat_mat,    dtype=torch.float,    device = utils.device)
+    #   obj_classes       = torch.as_tensor(obj_classes,     dtype=torch.long,     device = utils.device)
+    #
+    #   # gt_soP_prior      = torch.as_tensor(gt_soP_prior,    dtype=torch.float,    device = utils.device)
+    #   gt_pred_sem       = torch.as_tensor(gt_pred_sem,     dtype=torch.long,     device = utils.device)
+    #   mmlab_target      = torch.as_tensor(mmlab_target,    dtype=torch.long,     device = utils.device)
+    #   # TODO: reorder
+    #   net_input = (img_blob,
+    #              roi_obj_boxes,
+    #              roi_u_boxes,
+    #              idx_s,
+    #              idx_o,
+    #              dsr_spat_vec,
+    #              # dsr_spat_mat,
+    #              obj_classes,
+    #             #  sem_cat_vec,
+    #   )
+    #
+    #   if self.stage == "train":
+    #     return net_input,       \
+    #             gt_soP_prior,   \
+    #             gt_pred_sem,    \
+    #             mmlab_target
+    #   elif self.stage == "test":
+    #     if self.objdet_res is None:
+    #       return net_input,         \
+    #               gt_obj_classes,   \
+    #               gt_obj_boxes
+    #     else:
+    #       return net_input,         \
+    #               gt_obj_classes,   \
+    #               gt_obj_boxes,     \
+    #               det_obj_classes,  \
+    #               det_obj_boxes,    \
+    #               gt_soP_prior,     \
+    #               det_res
 
-      # gt_soP_prior      = torch.as_tensor(gt_soP_prior,    dtype=torch.float,    device = utils.device)
-      gt_pred_sem       = torch.as_tensor(gt_pred_sem,     dtype=torch.long,     device = utils.device)
-      mmlab_target      = torch.as_tensor(mmlab_target,    dtype=torch.long,     device = utils.device)
-      # TODO: reorder
-      net_input = (img_blob,
-                 roi_obj_boxes,
-                 roi_u_boxes,
-                 idx_s,
-                 idx_o,
-                 dsr_spat_vec,
-                 # dsr_spat_mat,
-                 obj_classes,
-                #  sem_cat_vec,
-      )
-
-      if self.stage == "train":
-        return net_input,       \
-              gt_soP_prior,   \
-              gt_pred_sem,    \
-              mmlab_target
-      elif self.stage == "test":
-        if self.objdet_res is None:
-          return net_input,         \
-                gt_obj_classes,   \
-                gt_obj_bboxes
-        else:
-          return net_input,         \
-                det_obj_classes,  \
-                det_obj_boxes,    \
-                gt_soP_prior,     \
-                det_res,          \
-                gt_obj_bboxes,    \
-                gt_obj_classes
-
-    (img_path, annos) = self.vrd_data[index]
-
-    # TODO: probably False values won't allow batching. But this is not a problem in training because None and len(rels)==0 are ignored
-    if img_path is None:
+    # Helper for returning none
+    def _None():
       if self.stage == "test":
         if self.objdet_res is None:
           return False, False, False
         else:
           return False, False, False, False, False, False, False
-      # elif self.stage == "train":
-      #   warnings.warn("Warning: I'm about to return None values during training. That's not good, probably batching will fail", UserWarning)
-      #   return False, False, False, False
+      elif self.stage == "train":
+        warnings.warn("Warning: I'm about to return None values during training. That's not good, probably batching will fail", UserWarning)
+        return False, False, False, False
+
+    (img_path, annos) = self.vrd_data[index]
+
+    # TODO: probably False values won't allow batching. But this is not a problem in training because None and len(rels)==0 are ignored
+    if img_path is None:
+      return _None()
 
 
     # TODO: when granularity is rel, then it might be better to receive the thing in form of a relst and to create objs manually
     # if self.granularity == "rel":
     #   rels = [rels]
 
-    objs = annos["objs"]
-    rels = annos["rels"]
+    objs     = annos["objs"]
+    rels     = annos["rels"]
 
     n_objs, n_rels = len(objs), len(rels)
 
     # TODO: Wait a second, shouldn't we test anyway on an image with no
     #  relationships? I mean, if we identified some objects, why not? What does DSR do?
     if n_rels == 0:
-      if self.stage == "test":
-        if self.objdet_res is None:
-          return False, False, False
-        else:
-          return False, False, False, False, False, False, False
+      return _None()
 
     ###########################################################################
     ###########################################################################
@@ -245,26 +245,25 @@ class VRDDataLayer(data.Dataset):
     # OBJECTS
 
     # Ground-truths objects
-    gt_obj_bboxes  = np.zeros((n_objs, 4))
     gt_obj_classes = np.zeros((n_objs))
+    gt_obj_boxes   = np.zeros((n_objs, 4))
 
     for i_obj, obj in enumerate(objs):
-      gt_obj_bboxes[i_obj]  = utils.bboxListToNumpy(obj["bbox"])
       gt_obj_classes[i_obj] = obj["cls"]
+      gt_obj_boxes[i_obj]  = utils.bboxListToNumpy(obj["bbox"])
 
     # object detections (if any)
     if self.objdet_res is not None:
       det_res = self.objdet_res[index]
 
-      det_obj_boxes    = det_res["boxes"]
       det_obj_classes  = det_res["classes"]
+      det_obj_boxes    = det_res["boxes"]
       # pred_confs_img = det_res["confs"]  # Note: We don't actually care about the confidence scores here
 
       n_rels = len(det_obj_classes) * (len(det_obj_classes) - 1)
 
       if n_rels == 0:
-        return False, False, False, False, False, False, False
-
+        return _None()
 
 
     # Union bounding boxes
@@ -357,11 +356,11 @@ class VRDDataLayer(data.Dataset):
           pos_idx += 1
 
     if self.objdet_res is not None:
-      obj_boxes    = det_obj_boxes
       obj_classes  = det_obj_classes
+      obj_boxes    = det_obj_boxes
     else:
-      obj_boxes    = gt_obj_bboxes
       obj_classes  = gt_obj_classes
+      obj_boxes    = gt_obj_boxes
 
     roi_obj_boxes = bboxesToROIBoxes(obj_boxes)
     roi_u_boxes   = bboxesToROIBoxes(u_boxes)
@@ -407,15 +406,15 @@ class VRDDataLayer(data.Dataset):
       if self.objdet_res is None:
         return net_input,         \
                 gt_obj_classes,   \
-                gt_obj_bboxes
+                gt_obj_boxes
       else:
         return net_input,         \
+                gt_obj_classes,   \
+                gt_obj_boxes,     \
                 det_obj_classes,  \
                 det_obj_boxes,    \
                 gt_soP_prior,     \
-                det_res,          \
-                gt_obj_bboxes,    \
-                gt_obj_classes
+                det_res
 
 """
 # Batching example:

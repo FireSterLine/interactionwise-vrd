@@ -87,7 +87,7 @@ class VRDEvaluator():
 
       N = 100 # What's this? (num of rel_res) (with this you can compute R@i for any i<=N)
 
-      for (tmp_i,(net_input, obj_classes_out, ori_bboxes)) in enumerate(self.dataloader_pre):
+      for (tmp_i,(net_input, gt_obj_classes, det_obj_ori_boxes)) in enumerate(self.dataloader_pre):
 
         if(isinstance(net_input, torch.Tensor) and net_input.size() == (1,)): # Check this one TODO
           rlp_labels_cell.append(None)
@@ -111,8 +111,8 @@ class VRDEvaluator():
         # TODO: fix when batch_size>1
         idx_s           = deepcopy(idx_s[0])
         idx_o           = deepcopy(idx_o[0])
-        obj_classes_out = deepcopy(obj_classes_out[0])
-        ori_bboxes      = deepcopy(ori_bboxes[0])
+        gt_obj_classes = deepcopy(gt_obj_classes[0])
+        det_obj_ori_boxes      = deepcopy(det_obj_ori_boxes[0])
         rel_scores      = deepcopy(rel_scores[0])
 
         rel_prob = rel_scores.data.cpu().numpy() # Is this the correct way?
@@ -125,10 +125,10 @@ class VRDEvaluator():
           conf = rel_prob[tuple_idx, rel]
           tuple_confs_im[ii] = conf
 
-          rlp_labels_im[ii] = [obj_classes_out[idx_s[tuple_idx]], rel, obj_classes_out[idx_o[tuple_idx]]]
+          rlp_labels_im[ii] = [gt_obj_classes[idx_s[tuple_idx]], rel, gt_obj_classes[idx_o[tuple_idx]]]
 
-          sub_bboxes_im[ii] = ori_bboxes[idx_s[tuple_idx]]
-          obj_bboxes_im[ii] = ori_bboxes[idx_o[tuple_idx]]
+          sub_bboxes_im[ii] = det_obj_ori_boxes[idx_s[tuple_idx]]
+          obj_bboxes_im[ii] = det_obj_ori_boxes[idx_o[tuple_idx]]
 
         # TODO: check
         # Is this because of the background ... ? If so, use proper flags instead of the name...
@@ -188,7 +188,7 @@ class VRDEvaluator():
             print("{}/{}\r".format(step,n_iter), end="")
         if step >= n_iter:
           break
-        net_input, obj_classes_out, ori_bboxes, rel_soP_prior, objdet_res, gt_bboxes, gt_classes  = test_data
+        net_input, gt_obj_classes, gt_obj_bboxes, det_obj_classes, det_obj_ori_boxes, rel_soP_prior, det_res  = test_data
 
         if(isinstance(net_input, torch.Tensor) and net_input.size() == (1,)): # Check this one TODO
           rlp_labels_cell.append(None)
@@ -198,38 +198,38 @@ class VRDEvaluator():
           continue
 
         # TODO: remove this to allow batching
-        gt_bboxes  = gt_bboxes[0].data.cpu().numpy().astype(np.float32)
-        gt_classes = gt_classes[0].data.cpu().numpy().astype(np.float32)
+        gt_obj_bboxes  = gt_obj_bboxes[0].data.cpu().numpy().astype(np.float32)
+        gt_obj_classes = gt_obj_classes[0].data.cpu().numpy().astype(np.float32)
 
         """
         TODO: perform this check after you switch to anno and unify dsr data preparation with the other one
         gt_boxes = anno_img["boxes"].astype(np.float32)
         gt_cls = np.array(anno_img["classes"]).astype(np.float32)
 
-        inds_1 = gt_bboxes.sum(axis=1).argsort()
+        inds_1 = gt_obj_bboxes.sum(axis=1).argsort()
         print(inds_1)
-        gt_bboxes = gt_bboxes[inds_1]
-        gt_classes = gt_classes[inds_1]
-        # gt_classes = np.take_along_axis(gt_classes, inds_1, axis=0)
+        gt_obj_bboxes = gt_obj_bboxes[inds_1]
+        gt_obj_classes = gt_obj_classes[inds_1]
+        # gt_obj_classes = np.take_along_axis(gt_obj_classes, inds_1, axis=0)
         inds_2 = gt_boxes.sum(axis=1).argsort()
         print(inds_2)
         gt_boxes = gt_boxes[inds_2]
         gt_cls = gt_cls[inds_2]
         # gt_cls = np.take_along_axis(gt_cls, inds_2, axis=0)
-        if not np.all(gt_cls == gt_classes) or not np.all(gt_boxes == gt_bboxes):
+        if not np.all(gt_cls == gt_obj_classes) or not np.all(gt_boxes == gt_obj_bboxes):
           print("Boxes")
           print("gt_boxes: \t", gt_boxes.shape) # 10
-          print("gt_boxes: \t", gt_bboxes.shape)
+          print("gt_boxes: \t", gt_obj_bboxes.shape)
           print("Classes")
           print("gt_cls: \t", gt_cls.shape) # 10
-          print("gt_classes: \t", gt_classes.shape)
+          print("gt_obj_classes: \t", gt_obj_classes.shape)
           print()
           print("Boxes")
           print("gt_boxes: \n", gt_boxes) # 10
-          print("gt_bboxes: \n", gt_bboxes)
+          print("gt_obj_bboxes: \n", gt_obj_bboxes)
           print("Classes")
           print("gt_cls: \n", gt_cls) # 10
-          print("gt_classes: \n", gt_classes)
+          print("gt_obj_classes: \n", gt_obj_classes)
           input()
         continue
         """
@@ -252,27 +252,27 @@ class VRDEvaluator():
 
         img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes = net_input
 
-        # print("gt_bboxes.shape: \t", gt_bboxes.shape)
+        # print("gt_obj_bboxes.shape: \t", gt_obj_bboxes.shape)
         # print("gt_cls.shape: \t", gt_cls.shape)
-        # print("ori_bboxes.shape: \t", ori_bboxes.shape)
+        # print("det_obj_ori_boxes.shape: \t", det_obj_ori_boxes.shape)
         # print("obj_pred.shape: \t", obj_pred.shape)
         # print()
         # TODO: remove this to allow batching
         idx_s = deepcopy(idx_s[0])
         idx_o = deepcopy(idx_o[0])
-        ori_bboxes = deepcopy(ori_bboxes[0])
+        det_obj_ori_boxes = deepcopy(det_obj_ori_boxes[0])
 
-        pos_num_img, loc_num_img = eval_obj_img(gt_bboxes, gt_classes, ori_bboxes, obj_pred.cpu().numpy(), gt_thr=0.5)
+        pos_num_img, loc_num_img = eval_obj_img(gt_obj_bboxes, gt_obj_classes, det_obj_ori_boxes, obj_pred.cpu().numpy(), gt_thr=0.5)
         pos_num += pos_num_img
         loc_num += loc_num_img
-        gt_num  += gt_bboxes.shape[0]
+        gt_num  += gt_obj_bboxes.shape[0]
 
         # TODO: remove this to allow batching
-        objdet_res["confs"]   = deepcopy(objdet_res["confs"][0])
-        objdet_res["classes"] = deepcopy(objdet_res["classes"][0])
-        objdet_res["boxes"]   = deepcopy(objdet_res["boxes"][0])
+        det_res["confs"]   = deepcopy(det_res["confs"][0])
+        det_res["classes"] = deepcopy(det_res["classes"][0])
+        det_res["boxes"]   = deepcopy(det_res["boxes"][0])
         rel_prob = deepcopy(rel_prob[0])
-        obj_classes_out = deepcopy(obj_classes_out[0])
+        det_obj_classes = deepcopy(det_obj_classes[0])
 
         tuple_confs_im = []
         rlp_labels_im  = np.zeros((rel_prob.shape[0]*rel_prob.shape[1], 3), dtype = np.float)
@@ -280,30 +280,30 @@ class VRDEvaluator():
         obj_bboxes_im  = np.zeros((rel_prob.shape[0]*rel_prob.shape[1], 4), dtype = np.float)
         n_idx = 0
 
-        # print("objdet_res['confs'].shape: ", objdet_res["confs"].shape)
+        # print("det_res['confs'].shape: ", det_res["confs"].shape)
         # print("rel_prob.shape: ", rel_prob.shape)
 
         for tuple_idx in range(rel_prob.shape[0]):
           for rel in range(rel_prob.shape[1]):
             # print((tuple_idx, rel))
-            # print("np.log(objdet_res['confs']).shape: ", np.log(objdet_res["confs"]).shape)
-            # print("np.log(objdet_res['confs'][idx_s[tuple_idx]]).shape: ", np.log(objdet_res["confs"][idx_s[tuple_idx]]).shape)
-            # print("objdet_res['confs'].shape: ", objdet_res["confs"].shape)
-            # print("objdet_res['confs'][idx_s[tuple_idx]].shape: ", objdet_res["confs"][idx_s[tuple_idx]].shape)
+            # print("np.log(det_res['confs']).shape: ", np.log(det_res["confs"]).shape)
+            # print("np.log(det_res['confs'][idx_s[tuple_idx]]).shape: ", np.log(det_res["confs"][idx_s[tuple_idx]]).shape)
+            # print("det_res['confs'].shape: ", det_res["confs"].shape)
+            # print("det_res['confs'][idx_s[tuple_idx]].shape: ", det_res["confs"][idx_s[tuple_idx]].shape)
             # print("rel_prob[tuple_idx].shape: ", rel_prob[tuple_idx].shape)
             # print("rel_prob[tuple_idx, rel].shape: ", rel_prob[tuple_idx, rel].shape)
             if(self.args.use_obj_prior):
-              if(objdet_res["confs"].ndim == 1):
+              if(det_res["confs"].ndim == 1):
                 # Maybe we never reach this point? Or maybe it accounts for batching?
-                conf = np.log(objdet_res["confs"][idx_s[tuple_idx]]) + np.log(objdet_res["confs"][idx_o[tuple_idx]]) + rel_prob[tuple_idx, rel]
+                conf = np.log(det_res["confs"][idx_s[tuple_idx]]) + np.log(det_res["confs"][idx_o[tuple_idx]]) + rel_prob[tuple_idx, rel]
               else:
-                conf = np.log(objdet_res["confs"][idx_s[tuple_idx], 0]) + np.log(objdet_res["confs"][idx_o[tuple_idx], 0]) + rel_prob[tuple_idx, rel]
+                conf = np.log(det_res["confs"][idx_s[tuple_idx], 0]) + np.log(det_res["confs"][idx_o[tuple_idx], 0]) + rel_prob[tuple_idx, rel]
             else:
               conf = rel_prob[tuple_idx, rel]
             tuple_confs_im.append(conf)
-            sub_bboxes_im[n_idx] = ori_bboxes[idx_s[tuple_idx]]
-            obj_bboxes_im[n_idx] = ori_bboxes[idx_o[tuple_idx]]
-            rlp_labels_im[n_idx] = [obj_classes_out[idx_s[tuple_idx]], rel, obj_classes_out[idx_o[tuple_idx]]]
+            sub_bboxes_im[n_idx] = det_obj_ori_boxes[idx_s[tuple_idx]]
+            obj_bboxes_im[n_idx] = det_obj_ori_boxes[idx_o[tuple_idx]]
+            rlp_labels_im[n_idx] = [det_obj_classes[idx_s[tuple_idx]], rel, det_obj_classes[idx_o[tuple_idx]]]
             n_idx += 1
 
         # TODO: check
