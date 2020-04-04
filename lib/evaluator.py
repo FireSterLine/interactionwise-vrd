@@ -26,24 +26,30 @@ class VRDEvaluator():
     self.args.test_rel      = self.args.get("test_rel", True)
     self.args.use_obj_prior = self.args.get("use_obj_prior", True)
 
-    # Setup PREDICATE PREDICTION Data Layer
-    if self.args.test_pre:
-      self.datalayer_pre  = VRDDataLayer(data_args, "test")
-      self.dataloader_pre = torch.utils.data.DataLoader(
-        dataset = self.datalayer_pre,
-        batch_size = 1, # 256,
-        shuffle = False,
-      )
+    # # Setup PREDICATE PREDICTION Data Layer
+    # if self.args.test_pre:
+    #   self.datalayer_pre  = VRDDataLayer(data_args, "test", preload = self.training.preload)
+    #   self.dataloader_pre = torch.utils.data.DataLoader(
+    #     dataset = self.datalayer_pre,
+    #     batch_size = 1, # 256,
+    #     shuffle = False,
+    #   )
+    #
+    # # Setup RELATIONSHIP DETECTION Data Layer
+    # if self.args.test_rel:
+    #   self.datalayer_rel  = VRDDataLayer(data_args, "test", preload = self.training.preload, use_proposals = True)
+    #   self.dataloader_rel = torch.utils.data.DataLoader(
+    #     dataset = self.datalayer_rel,
+    #     batch_size = 1, # 256,
+    #     shuffle = False,
+    #   )
 
-    # Setup RELATIONSHIP DETECTION Data Layer
-    if self.args.test_rel:
-      self.datalayer_rel  = VRDDataLayer(data_args, "test", use_proposals = True)
-      self.dataloader_rel = torch.utils.data.DataLoader(
-        dataset = self.datalayer_rel,
-        batch_size = 1, # 256,
-        shuffle = False,
-      )
-
+    self.datalayer  = VRDDataLayer(data_args, "test", preload = self.training.preload, use_proposals = self.args.test_rel)
+    self.dataloader = torch.utils.data.DataLoader(
+      dataset = self.datalayer,
+      batch_size = 1, # 256,
+      shuffle = False,
+    )
 
     self.gt    = None
     self.gt_zs = None
@@ -87,7 +93,7 @@ class VRDEvaluator():
 
       N = 100 # What's this? (num of rel_res) (with this you can compute R@i for any i<=N)
 
-      for (tmp_i,(net_input, gt_obj_classes, det_obj_ori_boxes)) in enumerate(self.dataloader_pre):
+      for (tmp_i,(net_input, (gt_obj_classes, gt_obj_boxes), _, _)) in enumerate(self.dataloader):
 
         if(isinstance(net_input, torch.Tensor) and net_input.size() == (1,)): # Check this one TODO
           rlp_labels_cell.append(None)
@@ -96,10 +102,10 @@ class VRDEvaluator():
           obj_bboxes_cell.append(None)
           continue
 
-        if utils.smart_frequency_check(tmp_i, len(self.dataloader_pre), 0.1):
-          print("{}/{}\r".format(tmp_i, len(self.dataloader_pre)), end="")
+        if utils.smart_frequency_check(tmp_i, len(self.dataloader), 0.1):
+          print("{}/{}\r".format(tmp_i, len(self.dataloader)), end="")
 
-        img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes = net_input
+        img_blob, obj_classes, obj_boxes, u_boxes, idx_s, idx_o, spatial_features = net_input
 
         tuple_confs_im = np.zeros((N,),   dtype = np.float) # Confidence...
         rlp_labels_im  = np.zeros((N, 3), dtype = np.float) # Rel triples
@@ -112,7 +118,7 @@ class VRDEvaluator():
         idx_s           = deepcopy(idx_s[0])
         idx_o           = deepcopy(idx_o[0])
         gt_obj_classes = deepcopy(gt_obj_classes[0])
-        det_obj_ori_boxes      = deepcopy(det_obj_ori_boxes[0])
+        gt_obj_boxes      = deepcopy(gt_obj_boxes[0])
         rel_scores      = deepcopy(rel_scores[0])
 
         rel_prob = rel_scores.data.cpu().numpy() # Is this the correct way?
@@ -127,8 +133,8 @@ class VRDEvaluator():
 
           rlp_labels_im[ii] = [gt_obj_classes[idx_s[tuple_idx]], rel, gt_obj_classes[idx_o[tuple_idx]]]
 
-          sub_bboxes_im[ii] = det_obj_ori_boxes[idx_s[tuple_idx]]
-          obj_bboxes_im[ii] = det_obj_ori_boxes[idx_o[tuple_idx]]
+          sub_bboxes_im[ii] = gt_obj_boxes[idx_s[tuple_idx]]
+          obj_bboxes_im[ii] = gt_obj_boxes[idx_o[tuple_idx]]
 
         tuple_confs_cell.append(tuple_confs_im)
         rlp_labels_cell.append(rlp_labels_im)
@@ -177,13 +183,13 @@ class VRDEvaluator():
       #   print("ERROR: something is wrong in prediction: {} != {}".format(len(anno), len(proposals["cls"])))
       # print(len(anno))
       # print(len(self.dataloader))
-      n_iter = min(len(anno), len(self.dataloader_rel))
-      for step,(anno_img, test_data) in enumerate(zip(anno, self.dataloader_rel)):
+      n_iter = min(len(anno), len(self.dataloader))
+      for step,(anno_img, test_data) in enumerate(zip(anno, self.dataloader)):
         if utils.smart_frequency_check(step, n_iter, 0.1):
             print("{}/{}\r".format(step,n_iter), end="")
         if step >= n_iter:
           break
-        net_input, gt_obj_classes, gt_obj_bboxes, det_obj_classes, det_obj_ori_boxes, rel_soP_prior, det_res  = test_data
+        net_input, (gt_obj_classes, gt_obj_boxes), (det_obj_classes, det_obj_boxes, det_res), gt_soP_prior  = test_data
 
         if(isinstance(net_input, torch.Tensor) and net_input.size() == (1,)): # Check this one TODO
           rlp_labels_cell.append(None)
@@ -193,7 +199,7 @@ class VRDEvaluator():
           continue
 
         # TODO: remove this to allow batching
-        gt_obj_bboxes  = gt_obj_bboxes[0].data.cpu().numpy().astype(np.float32)
+        gt_obj_boxes  = gt_obj_boxes[0].data.cpu().numpy().astype(np.float32)
         gt_obj_classes = gt_obj_classes[0].data.cpu().numpy().astype(np.float32)
 
         """
@@ -201,9 +207,9 @@ class VRDEvaluator():
         gt_boxes = anno_img["boxes"].astype(np.float32)
         gt_cls = np.array(anno_img["classes"]).astype(np.float32)
 
-        inds_1 = gt_obj_bboxes.sum(axis=1).argsort()
+        inds_1 = gt_obj_boxes.sum(axis=1).argsort()
         print(inds_1)
-        gt_obj_bboxes = gt_obj_bboxes[inds_1]
+        gt_obj_boxes = gt_obj_boxes[inds_1]
         gt_obj_classes = gt_obj_classes[inds_1]
         # gt_obj_classes = np.take_along_axis(gt_obj_classes, inds_1, axis=0)
         inds_2 = gt_boxes.sum(axis=1).argsort()
@@ -211,17 +217,17 @@ class VRDEvaluator():
         gt_boxes = gt_boxes[inds_2]
         gt_cls = gt_cls[inds_2]
         # gt_cls = np.take_along_axis(gt_cls, inds_2, axis=0)
-        if not np.all(gt_cls == gt_obj_classes) or not np.all(gt_boxes == gt_obj_bboxes):
+        if not np.all(gt_cls == gt_obj_classes) or not np.all(gt_boxes == gt_obj_boxes):
           print("Boxes")
           print("gt_boxes: \t", gt_boxes.shape) # 10
-          print("gt_boxes: \t", gt_obj_bboxes.shape)
+          print("gt_boxes: \t", gt_obj_boxes.shape)
           print("Classes")
           print("gt_cls: \t", gt_cls.shape) # 10
           print("gt_obj_classes: \t", gt_obj_classes.shape)
           print()
           print("Boxes")
           print("gt_boxes: \n", gt_boxes) # 10
-          print("gt_obj_bboxes: \n", gt_obj_bboxes)
+          print("gt_obj_boxes: \n", gt_obj_boxes)
           print("Classes")
           print("gt_cls: \n", gt_cls) # 10
           print("gt_obj_classes: \n", gt_obj_classes)
@@ -241,25 +247,25 @@ class VRDEvaluator():
         obj_score = F.softmax(obj_score, dim=1)[:, 1::].data.cpu().numpy()
 
         rel_prob = rel_score.data.cpu().numpy()
-        rel_soP_prior = rel_soP_prior.data.cpu().numpy()
-        rel_prob += np.log(0.5*(rel_soP_prior+1.0 / self.datalayer_rel.n_pred))
+        gt_soP_prior = gt_soP_prior.data.cpu().numpy()
+        rel_prob += np.log(0.5*(gt_soP_prior+1.0 / self.datalayer_rel.n_pred))
 
-        img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes = net_input
+        img_blob, obj_classes, obj_boxes, u_boxes, idx_s, idx_o, spatial_features = net_input
 
-        # print("gt_obj_bboxes.shape: \t", gt_obj_bboxes.shape)
+        # print("gt_obj_boxes.shape: \t", gt_obj_boxes.shape)
         # print("gt_cls.shape: \t", gt_cls.shape)
-        # print("det_obj_ori_boxes.shape: \t", det_obj_ori_boxes.shape)
+        # print("det_obj_boxes.shape: \t", det_obj_boxes.shape)
         # print("obj_pred.shape: \t", obj_pred.shape)
         # print()
         # TODO: remove this to allow batching
         idx_s = deepcopy(idx_s[0])
         idx_o = deepcopy(idx_o[0])
-        det_obj_ori_boxes = deepcopy(det_obj_ori_boxes[0])
+        det_obj_boxes = deepcopy(det_obj_boxes[0])
 
-        pos_num_img, loc_num_img = eval_obj_img(gt_obj_bboxes, gt_obj_classes, det_obj_ori_boxes, obj_pred.cpu().numpy(), gt_thr=0.5)
+        pos_num_img, loc_num_img = eval_obj_img(gt_obj_boxes, gt_obj_classes, det_obj_boxes, obj_pred.cpu().numpy(), gt_thr=0.5)
         pos_num += pos_num_img
         loc_num += loc_num_img
-        gt_num  += gt_obj_bboxes.shape[0]
+        gt_num  += gt_obj_boxes.shape[0]
 
         # TODO: remove this to allow batching
         det_res["confs"]   = deepcopy(det_res["confs"][0])
@@ -295,8 +301,8 @@ class VRDEvaluator():
             else:
               conf = rel_prob[tuple_idx, rel]
             tuple_confs_im.append(conf)
-            sub_bboxes_im[n_idx] = det_obj_ori_boxes[idx_s[tuple_idx]]
-            obj_bboxes_im[n_idx] = det_obj_ori_boxes[idx_o[tuple_idx]]
+            sub_bboxes_im[n_idx] = det_obj_boxes[idx_s[tuple_idx]]
+            obj_bboxes_im[n_idx] = det_obj_boxes[idx_o[tuple_idx]]
             rlp_labels_im[n_idx] = [det_obj_classes[idx_s[tuple_idx]], rel, det_obj_classes[idx_o[tuple_idx]]]
             n_idx += 1
 
@@ -320,7 +326,7 @@ class VRDEvaluator():
         "obj_bboxes_ours" : obj_bboxes_cell,
       }
 
-      # if len(len(self.dataloader_rel)) != len(res["obj_bboxes_ours"]):
+      # if len(len(self.dataloader)) != len(res["obj_bboxes_ours"]):
       #   warnings.warn("Warning! Rel test results and gt do not have the same length: rel test performance might be off! {} != {}".format(len(len(self.dataloader_rel)), len(res["obj_bboxes_ours"])), UserWarning)
 
       rec_50     = eval_recall_at_N(self.gt,    50,  res, num_imgs = self.num_imgs)
