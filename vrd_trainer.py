@@ -30,8 +30,8 @@ from lib.vrd_models import VRDModel
 from lib.datalayers import VRDDataLayer
 from lib.evaluator import VRDEvaluator
 
-TESTVALIDITY = True
-DEBUGGING = True
+TESTVALIDITY = False # True # False # True
+DEBUGGING = False # True
 
 if utils.device == torch.device("cpu"):
   DEBUGGING = True
@@ -261,7 +261,7 @@ class vrd_trainer():
 
       # TODO: after the third epoch, we divide learning rate by 10
       # the authors mention doing this in their paper, but we couldn't find it in the actual code
-      if (self.state["epoch"] % 3) == 0:
+      if self.state["epoch"] != 0 and (self.state["epoch"] % 3) == 0:
         print("Dividing the learning rate by 10 at epoch {}!".format(self.state["epoch"]))
         for i in range(len(self.optimizer.param_groups)):
           self.optimizer.param_groups[i]["lr"] /= 10
@@ -375,8 +375,8 @@ class vrd_trainer():
 
 if __name__ == "__main__":
   # trainer = vrd_trainer()
-  #trainer = vrd_trainer(checkpoint = False)
-  trainer = vrd_trainer(checkpoint = "epoch_4_checkpoint.pth.tar")
+  trainer = vrd_trainer(checkpoint = False)
+  # trainer = vrd_trainer(checkpoint = "epoch_4_checkpoint.pth.tar")
   trainer.train()
   #trainer.test_pre()
   # trainer.test_rel()

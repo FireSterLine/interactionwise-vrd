@@ -202,7 +202,7 @@ class VRDEvaluator():
         gt_obj_classes = gt_obj_classes[0].data.cpu().numpy().astype(np.float32)
 
         """
-        TODO: perform this check after you switch to anno and unify dsr data preparation with the other one
+        #TODO: perform this check after you switch to anno and unify dsr data preparation with the other one
         gt_boxes = anno_img["boxes"].astype(np.float32)
         gt_cls = np.array(anno_img["classes"]).astype(np.float32)
 
@@ -233,7 +233,6 @@ class VRDEvaluator():
           input()
         continue
         """
-
 
         obj_score, rel_score = vrd_model(*net_input) # img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
 
