@@ -84,14 +84,16 @@ class DataPreparer:
             try:
                 vrd_data_train.append((k, self.vrd_data[k]))
             except KeyError:
-                warnings.warn("Image '{}' not found in train vrd_data ({})".format(k, self.vrd_data_train.keys), UserWarning)
+                if k is not None:
+                  warnings.warn("Image '{}' not found in train vrd_data ({})".format(k, self.vrd_data.keys()), UserWarning)
                 vrd_data_train.append((None, None))
 
         for k in self.splits['test']:
             try:
                 vrd_data_test.append((k, self.vrd_data[k]))
             except KeyError:
-                warnings.warn("Image '{}' not found in test vrd_data ({})".format(k, self.vrd_data_test.keys), UserWarning)
+                if k is not None:
+                  warnings.warn("Image '{}' not found in test vrd_data ({})".format(k, self.vrd_data.keys()), UserWarning)
                 vrd_data_test.append((None, None))
 
         if granularity == "rel":
@@ -402,7 +404,7 @@ class VRDPrep(DataPreparer):
             if(zs[ii].shape[0] == 0):
               continue
             idx = zs[ii] == 1
-            gt_zs_pkl["tuple_label"][ii] = gt_pkl["tuple_label"][ii][idx[0]]
+            gt_zs_pkl["tuple_label"][ii] = (np.array(gt_pkl["tuple_label"][ii][idx[0]])-1).tolist()
             gt_zs_pkl["obj_bboxes"][ii]  = gt_pkl["obj_bboxes"][ii][idx[0]]
             gt_zs_pkl["sub_bboxes"][ii]  = gt_pkl["sub_bboxes"][ii][idx[0]]
           self.writepickle(gt_zs_pkl, gt_zs_output_path)
@@ -533,7 +535,7 @@ if __name__ == '__main__':
       print("Loading Word2Vec model...")
       w2v_model = KeyedVectors.load_word2vec_format(osp.join(globals.data_dir, globals.w2v_model_path), binary=True)
 
-    """
+    #"""
     data_preparer_vrd = VRDPrep(multi_label=multi_label, generate_emb = w2v_model)
     data_preparer_vrd.prepareEvalFromLP()
     data_preparer_vrd.load_vrd()
@@ -546,13 +548,13 @@ if __name__ == '__main__':
     data_preparer_vrd.save_data("relst")
     data_preparer_vrd.save_data("relst", "rel")
     data_preparer_vrd.save_data("annos")
+    #"""
     """
-
-    # TODO: test to see if VG preparation works
+    # TODO: test to see if VG preparation is valid
     # TODO: allow multi-word vocabs, so that we can load 1600-400-20_bottomup
     data_preparer_vg  = VGPrep((150, 50, 50), multi_label=multi_label, generate_emb = w2v_model)
     #data_preparer_vg  = VGPrep((1600, 400, 20), multi_label=multi_label, generate_emb = w2v_model)
     data_preparer_vg.save_data("relst")
     data_preparer_vg.save_data("relst", "rel")
     data_preparer_vg.save_data("annos")
-    # """
+    """

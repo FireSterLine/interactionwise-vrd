@@ -130,11 +130,6 @@ class VRDEvaluator():
           sub_bboxes_im[ii] = det_obj_ori_boxes[idx_s[tuple_idx]]
           obj_bboxes_im[ii] = det_obj_ori_boxes[idx_o[tuple_idx]]
 
-        # TODO: check
-        # Is this because of the background ... ? If so, use proper flags instead of the name...
-        if(self.datalayer_pre.dataset.name == "vrd"):
-          rlp_labels_im += 1
-
         tuple_confs_cell.append(tuple_confs_im)
         rlp_labels_cell.append(rlp_labels_im)
         sub_bboxes_cell.append(sub_bboxes_im)
@@ -304,11 +299,6 @@ class VRDEvaluator():
             obj_bboxes_im[n_idx] = det_obj_ori_boxes[idx_o[tuple_idx]]
             rlp_labels_im[n_idx] = [det_obj_classes[idx_s[tuple_idx]], rel, det_obj_classes[idx_o[tuple_idx]]]
             n_idx += 1
-
-        # TODO: check
-        # Is this because of the background ... ?
-        if(self.datalayer_rel.dataset.name == "vrd"):
-          rlp_labels_im += 1
 
         # Why is this needed? ...
         tuple_confs_im = np.array(tuple_confs_im)
