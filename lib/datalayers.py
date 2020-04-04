@@ -110,82 +110,100 @@ class VRDDataLayer(data.Dataset):
   def __getitem__(self, index):
     # print("index: ", index)
 
+    # Get item and move it to the GPU
     if self.preloaded is None:
-      self.__computeitem__(index)
-    else:
-    #   if self.stage == "train":
-    #     net_input,       \
-    #     gt_soP_prior,   \
-    #     gt_pred_sem,    \
-    #     mlab_target = self.preloaded[index]
-    #   elif self.stage == "test":
-    #     if self.objdet_res is None:
-    #       (net_input,         \
-    #       gt_obj_classes,   \
-    #       gt_obj_boxes) = self.preloaded[index]
-    #     else:
-    #       (net_input,         \
-    #       det_obj_classes,  \
-    #       det_obj_boxes,    \
-    #       gt_soP_prior,     \
-    #       det_res,          \
-    #       gt_obj_boxes,    \
-    #       gt_obj_classes) = self.preloaded[index]
-    #
-    #   (img_blob,
-    #              roi_obj_boxes,
-    #              roi_u_boxes,
-    #              idx_s,
-    #              idx_o,
-    #              dsr_spat_vec,
-    #              # dsr_spat_mat,
-    #              obj_classes,
-    #             #  sem_cat_vec,
-    #   ) = net_input
-    #
-    #   img_blob          = torch.as_tensor(img_blob,        dtype=torch.float,    device = utils.device).permute(2, 0, 1)
-    #   roi_obj_boxes     = torch.as_tensor(roi_obj_boxes,   dtype=torch.float,    device = utils.device)
-    #   roi_u_boxes       = torch.as_tensor(roi_u_boxes,     dtype=torch.float,    device = utils.device)
-    #   idx_s             = torch.as_tensor(idx_s,           dtype=torch.long,     device = utils.device)
-    #   idx_o             = torch.as_tensor(idx_o,           dtype=torch.long,     device = utils.device)
-    #   dsr_spat_vec      = torch.as_tensor(dsr_spat_vec,    dtype=torch.float,    device = utils.device)
-    #   # sem_cat_vec       = torch.as_tensor(sem_cat_vec,     dtype=torch.float,    device = utils.device)
-    #   # dsr_spat_mat      = torch.as_tensor(dsr_spat_mat,    dtype=torch.float,    device = utils.device)
-    #   obj_classes       = torch.as_tensor(obj_classes,     dtype=torch.long,     device = utils.device)
-    #
-    #   # gt_soP_prior      = torch.as_tensor(gt_soP_prior,    dtype=torch.float,    device = utils.device)
-    #   gt_pred_sem       = torch.as_tensor(gt_pred_sem,     dtype=torch.long,     device = utils.device)
-    #   mmlab_target      = torch.as_tensor(mmlab_target,    dtype=torch.long,     device = utils.device)
-    #   # TODO: reorder
-    #   net_input = (img_blob,
-    #              roi_obj_boxes,
-    #              roi_u_boxes,
-    #              idx_s,
-    #              idx_o,
-    #              dsr_spat_vec,
-    #              # dsr_spat_mat,
-    #              obj_classes,
-    #             #  sem_cat_vec,
-    #   )
-    #
-    #   if self.stage == "train":
-    #     return net_input,       \
-    #             gt_soP_prior,   \
-    #             gt_pred_sem,    \
-    #             mmlab_target
-    #   elif self.stage == "test":
-    #     if self.objdet_res is None:
-    #       return net_input,         \
-    #               gt_obj_classes,   \
-    #               gt_obj_boxes
-    #     else:
-    #       return net_input,         \
-    #               gt_obj_classes,   \
-    #               gt_obj_boxes,     \
-    #               det_obj_classes,  \
-    #               det_obj_boxes,    \
-    #               gt_soP_prior,     \
-    #               det_res
+      if self.stage == "train":
+        net_input,       \
+                gt_soP_prior,   \
+                gt_pred_sem,    \
+                mmlab_target = self.__computeitem__(index)
+      elif self.stage == "test":
+        if self.objdet_res is None:
+          net_input,         \
+                  gt_obj_classes,   \
+                  gt_obj_boxes = self.__computeitem__(index)
+        else:
+          net_input,         \
+                  gt_obj_classes,   \
+                  gt_obj_boxes,     \
+                  det_obj_classes,  \
+                  det_obj_boxes,    \
+                  gt_soP_prior,     \
+                  det_res = self.__computeitem__(index)
+    else: # Just move to GPU
+      if self.stage == "train":
+        net_input,       \
+                gt_soP_prior,   \
+                gt_pred_sem,    \
+                mmlab_target = self.preloaded[index]
+      elif self.stage == "test":
+        if self.objdet_res is None:
+          net_input,         \
+                  gt_obj_classes,   \
+                  gt_obj_boxes = self.preloaded[index]
+        else:
+          net_input,         \
+                  gt_obj_classes,   \
+                  gt_obj_boxes,     \
+                  det_obj_classes,  \
+                  det_obj_boxes,    \
+                  gt_soP_prior,     \
+                  det_res = self.preloaded[index]
+
+    (img_blob,
+               roi_obj_boxes,
+               roi_u_boxes,
+               idx_s,
+               idx_o,
+               dsr_spat_vec,
+               # dsr_spat_mat,
+               obj_classes,
+              #  sem_cat_vec,
+    ) = net_input
+
+    img_blob          = torch.as_tensor(img_blob,        dtype=torch.float,    device = utils.device)
+    roi_obj_boxes     = torch.as_tensor(roi_obj_boxes,   dtype=torch.float,    device = utils.device)
+    roi_u_boxes       = torch.as_tensor(roi_u_boxes,     dtype=torch.float,    device = utils.device)
+    idx_s             = torch.as_tensor(idx_s,           dtype=torch.long,     device = utils.device)
+    idx_o             = torch.as_tensor(idx_o,           dtype=torch.long,     device = utils.device)
+    dsr_spat_vec      = torch.as_tensor(dsr_spat_vec,    dtype=torch.float,    device = utils.device)
+    # sem_cat_vec       = torch.as_tensor(sem_cat_vec,     dtype=torch.float,    device = utils.device)
+    # dsr_spat_mat      = torch.as_tensor(dsr_spat_mat,    dtype=torch.float,    device = utils.device)
+    obj_classes       = torch.as_tensor(obj_classes,     dtype=torch.long,     device = utils.device)
+
+    # gt_soP_prior      = torch.as_tensor(gt_soP_prior,    dtype=torch.float,    device = utils.device)
+    gt_pred_sem       = torch.as_tensor(gt_pred_sem,     dtype=torch.long,     device = utils.device)
+    mmlab_target      = torch.as_tensor(mmlab_target,    dtype=torch.long,     device = utils.device)
+    # TODO: reorder
+    net_input = (img_blob,
+               roi_obj_boxes,
+               roi_u_boxes,
+               idx_s,
+               idx_o,
+               dsr_spat_vec,
+               # dsr_spat_mat,
+               obj_classes,
+              #  sem_cat_vec,
+    )
+
+    if self.stage == "train":
+      return net_input,       \
+              gt_soP_prior,   \
+              gt_pred_sem,    \
+              mmlab_target
+    elif self.stage == "test":
+      if self.objdet_res is None:
+        return net_input,         \
+                gt_obj_classes,   \
+                gt_obj_boxes
+      else:
+        return net_input,         \
+                gt_obj_classes,   \
+                gt_obj_boxes,     \
+                det_obj_classes,  \
+                det_obj_boxes,    \
+                gt_soP_prior,     \
+                det_res
 
     # Helper for returning none
     def _None():
@@ -211,7 +229,7 @@ class VRDDataLayer(data.Dataset):
     # TODO: when granularity is rel, then it might be better to receive the thing in form of a relst and to create objs manually
     # if self.granularity == "rel":
     #   rels = [rels]
-    
+
     objs     = annos["objs"]
     rels     = annos["rels"]
 
