@@ -30,10 +30,13 @@ from lib.vrd_models import VRDModel
 from lib.datalayers import VRDDataLayer
 from lib.evaluator import VRDEvaluator
 
-DEBUGGING = False
+TESTVALIDITY = False # True # False # True
+DEBUGGING = False # True
 
 if utils.device == torch.device("cpu"):
   DEBUGGING = True
+
+if TESTVALIDITY: DEBUGGING = False
 
 class vrd_trainer():
 
@@ -63,7 +66,7 @@ class vrd_trainer():
           # Three types of spatial features:
           # - 0: no spatial info
           # - 1: 8-way relative location vector
-          # - 2: dual mask
+          # - 2: dual mask # TODO
           "use_spat" : 0,
 
           # Use or not predicate semantics
@@ -77,6 +80,8 @@ class vrd_trainer():
         },
         # Evaluation Arguments
         "eval" : {
+          "test_pre"      : True,
+          "test_rel"      : True,
           "use_obj_prior" : True
         },
         # Training parameters
@@ -94,28 +99,32 @@ class vrd_trainer():
 
           "use_shuffle"    : True, # TODO: check if shuffle works
 
-          "num_epochs" : 20,
-          "checkpoint_freq" : 5,
+          "num_epochs" : 6,
+          "checkpoint_freq" : .5,
 
           # Number of lines printed with loss ...TODO explain smart freq
-          "prints_per_epoch" : 10,
+          "print_freq" : 10,
 
           # TODO
           "batch_size" : 1,
 
-          "test_pre" : True,
-          "test_rel" : True,
+          "preload"    :True # False,
         }
       }):
 
     if(DEBUGGING):
-      args["training"]["num_epochs"] = 6
+      # args["training"]["num_epochs"] = 6
       args["data"]["justafew"] = True
-      #args["data"]["name"] = "vrd/dsr"
-      #args["data"]["name"] = "vrd"
-      args["training"]["prints_per_epoch"] = 0.1
-      # args["model"]["use_pred_sem"] = True
       args["training"]["use_shuffle"] = False
+      # args["model"]["use_pred_sem"] = True
+    if TESTVALIDITY:
+      args["data"]["name"] = "vrd/dsr"
+      args["training"]["print_freq"] = 0.1
+      # args["training"]["preload"] = False
+
+    #args["model"]["n_fus_neurons"] = 128
+    #args["training"]["opt"]["lr"] /= 2
+    #args["training"]["opt"]["weight_decay"] /= 2
 
     print("Arguments:")
     if checkpoint:
@@ -125,7 +134,8 @@ class vrd_trainer():
     print("args:", json.dumps(args, indent=2, sort_keys=True))
 
 
-    self.session_name = "test-new-training"
+    self.session_name = "test-3-04-2"
+
 
     self.checkpoint = checkpoint
     self.args       = args
@@ -178,7 +188,7 @@ class vrd_trainer():
     # Data
     print("Initializing data: ", self.data_args)
     # TODO: VRDDataLayer has to know what to yield (DRS -> img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
-    self.datalayer = VRDDataLayer(self.data_args, "train")
+    self.datalayer = VRDDataLayer(self.data_args, "train", preload = self.training.preload)
     self.dataloader = torch.utils.data.DataLoader(
       dataset = self.datalayer,
       batch_size = 1, # self.training.batch_size,
@@ -194,8 +204,10 @@ class vrd_trainer():
     self.model = VRDModel(self.model_args).to(utils.device)
     if "model_state_dict" in self.state:
       # TODO: Make sure that this doesn't need the random initialization first
+      print("Loading state_dict")
       self.model.load_state_dict(self.state["model_state_dict"])
     else:
+      print("Random initialization")
       # Random initialization
       utils.weights_normal_init(self.model, dev=0.01)
       # Load VGG layers
@@ -228,9 +240,9 @@ class vrd_trainer():
 
     # Prepare result table
     res_headers = ["Epoch"]
-    if self.training.test_pre:
+    if self.eval.test_pre:
       res_headers += ["Pre R@50", "ZS", "R@100", "ZS"]
-    if self.training.test_rel:
+    if self.eval.test_rel:
       res_headers += ["Rel R@50", "ZS", "R@100", "ZS"]
     res = []
 
@@ -247,21 +259,21 @@ class vrd_trainer():
       # TODO do it with the scheduler, see if it's the same: https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
       # exp_lr_scheduler = lr_scheduler.StepLR(self.optimizer, step_size=5, gamma=0.1)
 
-      # TODO: after the third epoch, we divide learning rate by 3
+      # TODO: after the third epoch, we divide learning rate by 10
       # the authors mention doing this in their paper, but we couldn't find it in the actual code
-      #if epoch == 2:
-      #  print("Dividing the learning rate by 10 at epoch {}!".format(epoch))
-      #  for i in range(len(self.optimizer.param_groups)):
-      #    self.optimizer.param_groups[i]['lr'] /= 10
+      if self.state["epoch"] != 0 and (self.state["epoch"] % 3) == 0:
+        print("Dividing the learning rate by 10 at epoch {}!".format(self.state["epoch"]))
+        for i in range(len(self.optimizer.param_groups)):
+          self.optimizer.param_groups[i]["lr"] /= 10
 
       # self.__train_epoch()
 
       # Test results
       res_row = [self.state["epoch"]]
-      if self.training.test_pre:
+      if self.eval.test_pre:
         rec_50, rec_50_zs, rec_100, rec_100_zs, dtime = self.test_pre()
         res_row += [rec_50, rec_50_zs, rec_100, rec_100_zs]
-      if self.training.test_rel:
+      if self.eval.test_rel:
         rec_50, rec_50_zs, rec_100, rec_100_zs, dtime = self.test_rel()
         res_row += [rec_50, rec_50_zs, rec_100, rec_100_zs]
       res.append(res_row)
@@ -331,8 +343,8 @@ class vrd_trainer():
       # Track loss
       losses.update(loss.item())
 
-      if utils.smart_frequency_check(i_iter, n_iter, self.training.prints_per_epoch):
-          print("\t{:4d}/{:<4d}: LOSS: {: 6.3f}".format(i_iter, n_iter, losses.avg(0)))
+      if utils.smart_frequency_check(i_iter, n_iter, self.training.print_freq):
+          print("\t{:4d}/{:<4d}: LOSS: {: 6.3f}\r".format(i_iter, n_iter, losses.avg(0)), end="")
           losses.reset(0)
 
     self.state["loss"] = losses.avg(1)
@@ -364,7 +376,7 @@ class vrd_trainer():
 if __name__ == "__main__":
   # trainer = vrd_trainer()
   trainer = vrd_trainer(checkpoint = False)
-  #trainer = vrd_trainer(checkpoint = "epoch_4_checkpoint.pth.tar")
+  # trainer = vrd_trainer(checkpoint = "epoch_4_checkpoint.pth.tar")
   trainer.train()
   #trainer.test_pre()
   # trainer.test_rel()

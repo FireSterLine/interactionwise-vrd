@@ -12,7 +12,8 @@ images_det
 #data/*
 #!data/genome/*
 data/demo
-data/embeddings
+data/embeddings/*
+!data/embeddings/fallback*.json
 data/vg
 data/scripts
 data/coco

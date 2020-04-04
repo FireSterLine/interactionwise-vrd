@@ -12,6 +12,7 @@ import json
 import pickle
 import globals
 import utils
+import warnings
 from copy import deepcopy
 
 from data.genome.clean_vg import VGCleaner
@@ -84,15 +85,15 @@ class DataPreparer:
             try:
                 vrd_data_train.append((k, self.vrd_data[k]))
             except KeyError:
-                pass
+                warnings.warn("Image '{}' not found in train vrd_data".format(k), UserWarning)
+                vrd_data_train.append((None, None))
 
         for k in self.splits['test']:
             try:
                 vrd_data_test.append((k, self.vrd_data[k]))
             except KeyError:
-                pass
-        # vrd_data_train = [(k, self.vrd_data[k]) if k is not None else (None, None) for k in self.splits["train"]]
-        # vrd_data_test  = [(k, self.vrd_data[k]) if k is not None else (None, None) for k in self.splits["test"]]
+                warnings.warn("Image '{}' not found in test vrd_data".format(k), UserWarning)
+                vrd_data_test.append((None, None))
 
         if granularity == "rel":
           assert dformat == "relst", "Mh. Does it make sense to granulate 'rel' with dformat {}?".format(dformat)
@@ -558,7 +559,7 @@ if __name__ == '__main__':
     # TODO: allow multi-word vocabs, so that we can load 1600-400-20_bottomup
     print("Preparing data...")
     data_preparer_vg = VGPrep((150, 50, 50), multi_label=multi_label, generate_emb=w2v_model)
-    #data_preparer_vg  = VGPrep((1600, 400, 20), multi_label=multi_label, generate_emb = w2v_model)
+    # data_preparer_vg  = VGPrep((1600, 400, 20), multi_label=multi_label, generate_emb = w2v_model)
     print("Generating relst data with granularity img...")
     data_preparer_vg.save_data("relst")
     print("Generating relst data with granularity rel...")

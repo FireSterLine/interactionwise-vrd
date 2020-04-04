@@ -1,11 +1,13 @@
 import os
 import cv2
+import json
 import numpy as np
 import model.utils.net_utils as frcnn_net_utils
 import time
 from copy import deepcopy
 import torch
 import warnings
+import globals
 
 # TODO: figure out what pixel means to use, how to compute them:
 #  do they come from the dataset used for training, perhaps?
@@ -183,6 +185,11 @@ def getEmbedding(word, emb_model, depth=0):
         "brake light"           : ["brake-light"],
         "wine glass"            : [], # "wine"?
     }
+    if not hasattr(getEmbedding, "fallback_emb_map"):
+        # This map defines the fall-back words of words that do not exist in the embedding model
+        with open(os.path.join(globals.data_dir, "embeddings", "fallback-v1.json"), 'r') as rfile:
+            getEmbedding.fallback_emb_map = json.load(rfile)
+
     try:
         embedding = emb_model[word]
     except KeyError:
@@ -212,8 +219,8 @@ def getEmbedding(word, emb_model, depth=0):
           else:
               raise ValueError("Error fallback word is of type {}: {}".format(fallback_word, type(fallback_word)))
     if np.all(embedding == np.zeros(300)):
-      print("{}Warning! Couldn't find semantic vector for '{}'".format("  " * depth, word))
-      return embedding
+        print("{}Warning! Couldn't find semantic vector for '{}'".format("  " * depth, word))
+        return embedding
     return embedding / np.linalg.norm(embedding)
 
 
@@ -222,6 +229,7 @@ def getSemanticVector(subject_label, object_label, emb_model):
     subject_vector = getEmbedding(subject_label, emb_model)
     object_vector  = getEmbedding(object_label, emb_model)
     return np.concatenate((subject_vector, object_vector), axis=0)
+
 
 # data_info may be just the dataset name
 def data_info_to_ds_args(data_info):
@@ -351,11 +359,11 @@ def patch_key(d, old_key, new_key):
 
 # Read a list from a file, line-by-line
 def load_txt_list(filename):
-    l = []
-    with  open(filename, 'r') as rfile:
-        for index, line in enumerate(rfile):
-            l.append(line.strip())
-    return l
+  l = []
+  with  open(filename, 'r') as rfile:
+    for index, line in enumerate(rfile):
+      l.append(line.strip())
+  return l
 
 # Invert a dictionary or a list
 def invert_dict(d):
@@ -363,6 +371,7 @@ def invert_dict(d):
   elif isinstance(d, list): d_pairs = enumerate(d)
   else: raise ValueError("Can't invert to dict object of type {}".format(repr(type(d))))
   return {v: k for k, v in d_pairs}
+  # ? for list dict(zip(self.d, xrange(self.d)))
 
 """
 import importlib

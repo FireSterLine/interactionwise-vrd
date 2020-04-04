@@ -10,7 +10,7 @@ ZShot:	R@50:  4.901	R@100:  8.340
 CLS OBJ TEST POS:  43.000, LOC:  6225.000, GT:  6694.000, Precision:  0.007, Recall:  0.006
 
 
-QUESTION: why is a newly initialized model already good?
+QUESTION: why is a newly initialized model already this good?
 CLS PRED TEST:
 All:	R@50:  19.023	R@100:  32.941
 ZShot:	R@50:  13.430	R@100:  21.129
@@ -19,6 +19,43 @@ All:	R@50:  16.719	R@100:  21.307
 ZShot:	R@50:  0.516	R@100:  1.548
 CLS OBJ TEST POS:  92.000, LOC:  6176.000, GT:  6694.000, Precision:  0.015, Recall:  0.014
 
+
+I tried training: after 1 epoch
+CLS PRED TEST:
+All:	R@50:  79.248	R@100:  90.573
+ZShot:	R@50:  57.399	R@100:  78.101
+CLS REL TEST:
+All:	R@50:  18.021	R@100:  22.700
+ZShot:	R@50:  3.439	R@100:  6.621
+CLS OBJ TEST POS:  92.000, LOC:  6176.000, GT:  6694.000, Precision:  0.015, Recall:  0.014
+
+2 epoch:
+
+CLS PRED TEST:
+All:	R@50:  83.765	R@100:  92.577
+ZShot:	R@50:  61.163	R@100:  81.523
+CLS REL TEST:
+All:	R@50:  18.730	R@100:  23.094
+ZShot:	R@50:  4.127	R@100:  7.911
+CLS OBJ TEST POS:  92.000, LOC:  6176.000, GT:  6694.000, Precision:  0.015, Recall:  0.014
+
+CLS PRED TEST:
+All:	R@50:  84.800	R@100:  93.074
+ZShot:	R@50:  63.216	R@100:  82.036
+TEST Time: 00:01:16
+CLS REL TEST:
+All:	R@50:  18.638	R@100:  23.278
+ZShot:	R@50:  4.385	R@100:  8.598
+CLS OBJ TEST POS:  92.000, LOC:  6176.000, GT:  6694.000, Precision:  0.015, Recall:  0.014
+
+CLS PRED TEST:
+All:	R@50:  86.332	R@100:  93.519
+ZShot:	R@50:  64.756	R@100:  83.062
+TEST Time: 00:01:16
+CLS REL TEST:
+All:	R@50:  18.612	R@100:  23.068
+ZShot:	R@50:  4.643	R@100:  7.739
+CLS OBJ TEST POS:  92.000, LOC:  6176.000, GT:  6694.000, Precision:  0.015, Recall:  0.014
 
 
 OUTPUT IN LOCAL with just a few (10) training/test samples (no shuffling):
