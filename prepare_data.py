@@ -392,7 +392,7 @@ class VRDPrep(DataPreparer):
         def prepareGT():
           gt = self.readmat(gt_path)
           gt_pkl = {}
-          gt_pkl["tuple_label"] = gt["gt_tuple_label"][0]
+          gt_pkl["tuple_label"] = gt["gt_tuple_label"][0]-1
           gt_pkl["obj_bboxes"]  = gt["gt_obj_bboxes"][0]
           gt_pkl["sub_bboxes"]  = gt["gt_sub_bboxes"][0]
           self.writepickle(gt_pkl, gt_output_path)
@@ -404,7 +404,7 @@ class VRDPrep(DataPreparer):
             if(zs[ii].shape[0] == 0):
               continue
             idx = zs[ii] == 1
-            gt_zs_pkl["tuple_label"][ii] = (np.array(gt_pkl["tuple_label"][ii][idx[0]])-1).tolist()
+            gt_zs_pkl["tuple_label"][ii] = gt_pkl["tuple_label"][ii][idx[0]]
             gt_zs_pkl["obj_bboxes"][ii]  = gt_pkl["obj_bboxes"][ii][idx[0]]
             gt_zs_pkl["sub_bboxes"][ii]  = gt_pkl["sub_bboxes"][ii][idx[0]]
           self.writepickle(gt_zs_pkl, gt_zs_output_path)
@@ -538,6 +538,7 @@ if __name__ == '__main__':
     #"""
     data_preparer_vrd = VRDPrep(multi_label=multi_label, generate_emb = w2v_model)
     data_preparer_vrd.prepareEvalFromLP()
+    """
     data_preparer_vrd.load_vrd()
     data_preparer_vrd.save_data("relst")
     data_preparer_vrd.save_data("relst", "rel")
@@ -548,7 +549,7 @@ if __name__ == '__main__':
     data_preparer_vrd.save_data("relst")
     data_preparer_vrd.save_data("relst", "rel")
     data_preparer_vrd.save_data("annos")
-    #"""
+    """
     """
     # TODO: test to see if VG preparation is valid
     # TODO: allow multi-word vocabs, so that we can load 1600-400-20_bottomup
