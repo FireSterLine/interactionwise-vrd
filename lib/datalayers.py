@@ -74,7 +74,13 @@ class VRDDataLayer(data.Dataset):
 
     self.preloaded = None
     if preload:
-      self.preloaded = [self.__getitem__(index) for index in range(self.__len__())]
+      print("Preloading...")
+      self.preloaded = []
+      for index in range(self.__len__()):
+        x = self.__getitem__(index)
+        print(index, x)
+        self.preloaded.append(x)
+
     # NOTE: the max shape is across all the dataset, whereas we would like for it to be for a unique batch.
     # TODO: write collate_fn using this code: https://pytorch.org/docs/stable/data.html#loading-batched-and-non-batched-data
     '''
@@ -370,19 +376,19 @@ class VRDDataLayer(data.Dataset):
     # TODO: maybe there's no need to transform them into tensor, since the dataloader will do that anyway
     # TODO: switch to from_numpy().to() instead of FloatTensor/LongTensor(, device=)
     #  or, actually, build the tensors on the GPU directly, instead of using numpy.
-    img_blob          = torch.as_tensor(img_blob,        dtype=torch.float,    device = utils.device).permute(2, 0, 1)
-    roi_obj_boxes     = torch.as_tensor(roi_obj_boxes,   dtype=torch.float,    device = utils.device)
-    roi_u_boxes       = torch.as_tensor(roi_u_boxes,     dtype=torch.float,    device = utils.device)
-    idx_s             = torch.as_tensor(idx_s,           dtype=torch.long,     device = utils.device)
-    idx_o             = torch.as_tensor(idx_o,           dtype=torch.long,     device = utils.device)
-    dsr_spat_vec      = torch.as_tensor(dsr_spat_vec,    dtype=torch.float,    device = utils.device)
-    # sem_cat_vec       = torch.as_tensor(sem_cat_vec,     dtype=torch.float,    device = utils.device)
-   # dsr_spat_mat      = torch.as_tensor(dsr_spat_mat,     dtype=torch.float,    device = utils.device)
-    obj_classes       = torch.as_tensor(obj_classes,     dtype=torch.long,     device = utils.device)
-
-    # gt_soP_prior      = torch.as_tensor(gt_soP_prior,    dtype=torch.float,    device = utils.device)
-    gt_pred_sem       = torch.as_tensor(gt_pred_sem,     dtype=torch.long,     device = utils.device)
-    mmlab_target      = torch.as_tensor(mmlab_target,    dtype=torch.long,     device = utils.device)
+    # img_blob          = torch.as_tensor(img_blob,        dtype=torch.float,    device = utils.device).permute(2, 0, 1)
+    # roi_obj_boxes     = torch.as_tensor(roi_obj_boxes,   dtype=torch.float,    device = utils.device)
+    # roi_u_boxes       = torch.as_tensor(roi_u_boxes,     dtype=torch.float,    device = utils.device)
+    # idx_s             = torch.as_tensor(idx_s,           dtype=torch.long,     device = utils.device)
+    # idx_o             = torch.as_tensor(idx_o,           dtype=torch.long,     device = utils.device)
+    # dsr_spat_vec      = torch.as_tensor(dsr_spat_vec,    dtype=torch.float,    device = utils.device)
+    # # sem_cat_vec       = torch.as_tensor(sem_cat_vec,     dtype=torch.float,    device = utils.device)
+    # # dsr_spat_mat      = torch.as_tensor(dsr_spat_mat,     dtype=torch.float,    device = utils.device)
+    # obj_classes       = torch.as_tensor(obj_classes,     dtype=torch.long,     device = utils.device)
+    #
+    # # gt_soP_prior      = torch.as_tensor(gt_soP_prior,    dtype=torch.float,    device = utils.device)
+    # gt_pred_sem       = torch.as_tensor(gt_pred_sem,     dtype=torch.long,     device = utils.device)
+    # mmlab_target      = torch.as_tensor(mmlab_target,    dtype=torch.long,     device = utils.device)
 
 
     # TODO: reorder
