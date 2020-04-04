@@ -30,8 +30,8 @@ from lib.vrd_models import VRDModel
 from lib.datalayers import VRDDataLayer
 from lib.evaluator import VRDEvaluator
 
-TESTVALIDITY = False # True # False # True
-DEBUGGING = False # True
+TESTVALIDITY = False #  True # False # True
+DEBUGGING = False
 
 if utils.device == torch.device("cpu"):
   DEBUGGING = True
@@ -82,7 +82,8 @@ class vrd_trainer():
         "eval" : {
           "test_pre"      : True,
           "test_rel"      : True,
-          "use_obj_prior" : True
+          "use_obj_prior" : True,
+          "use_preload"   : True,
         },
         # Training parameters
         "training" : {
@@ -108,7 +109,7 @@ class vrd_trainer():
           # TODO
           "batch_size" : 1,
 
-          "preload"    :True # False,
+          "use_preload"    :True # False,
         }
       }):
 
@@ -120,7 +121,7 @@ class vrd_trainer():
     if TESTVALIDITY:
       args["data"]["name"] = "vrd/dsr"
       args["training"]["print_freq"] = 0.1
-      # args["training"]["preload"] = False
+      # args["training"]["use_preload"] = False
 
     #args["model"]["n_fus_neurons"] = 128
     #args["training"]["opt"]["lr"] /= 2
@@ -188,7 +189,7 @@ class vrd_trainer():
     # Data
     print("Initializing data: ", self.data_args)
     # TODO: VRDDataLayer has to know what to yield (DRS -> img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
-    self.datalayer = VRDDataLayer(self.data_args, "train", preload = self.training.preload)
+    self.datalayer = VRDDataLayer(self.data_args, "train", use_preload = self.training.use_preload)
     self.dataloader = torch.utils.data.DataLoader(
       dataset = self.datalayer,
       batch_size = 1, # self.training.batch_size,

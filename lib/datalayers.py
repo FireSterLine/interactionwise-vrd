@@ -16,7 +16,7 @@ from torch.utils import data
 class VRDDataLayer(data.Dataset):
   """ Iterate through the dataset and yield the input and target for the network """
 
-  def __init__(self, data_info, stage, use_proposals = False, preload = False):
+  def __init__(self, data_info, stage, use_proposals = False, use_preload = False):
     super(VRDDataLayer, self).__init__()
 
     self.ds_args = utils.data_info_to_ds_args(data_info)
@@ -73,10 +73,10 @@ class VRDDataLayer(data.Dataset):
         } for i in range(len(proposals["boxes"]))]
 
     self.preloaded = None
-    if preload:
+    if use_preload:
       print("Preloading...")
       self.preloaded = [self.__computeitem__(index) for index in range(self.__len__())]
-    
+
     # NOTE: the max shape is across all the dataset, whereas we would like for it to be for a unique batch.
     # TODO: write collate_fn using this code: https://pytorch.org/docs/stable/data.html#loading-batched-and-non-batched-data
     '''
@@ -106,59 +106,43 @@ class VRDDataLayer(data.Dataset):
   def __getitem__(self, index):
     # print("index: ", index)
 
-    # Get item and move it to the GPU
+    # Get items and move them to the GPU
+
+    # Read/compute output
     if self.preloaded is None:
-      if self.stage == "train":
-        net_input,       \
-                gt_soP_prior,   \
-                gt_pred_sem,    \
-                mmlab_target = self.__computeitem__(index)
-      elif self.stage == "test":
-        if self.objdet_res is None:
-          net_input,         \
-                  gt_obj_classes,   \
-                  gt_obj_boxes = self.__computeitem__(index)
-        else:
-          net_input,         \
-                  gt_obj_classes,   \
-                  gt_obj_boxes,     \
-                  det_obj_classes,  \
-                  det_obj_boxes,    \
-                  gt_soP_prior,     \
-                  det_res = self.__computeitem__(index)
-    else: # Just move to GPU
-      if self.stage == "train":
-        net_input,       \
-                gt_soP_prior,   \
-                gt_pred_sem,    \
-                mmlab_target = self.preloaded[index]
-      elif self.stage == "test":
-        if self.objdet_res is None:
-          net_input,         \
-                  gt_obj_classes,   \
-                  gt_obj_boxes = self.preloaded[index]
-        else:
-          net_input,         \
-                  gt_obj_classes,   \
-                  gt_obj_boxes,     \
-                  det_obj_classes,  \
-                  det_obj_boxes,    \
-                  gt_soP_prior,     \
-                  det_res = self.preloaded[index]
+      output = self.__computeitem__(index)
+    else:
+      output = self.preloaded[index]
     
+    # Unpack
+    if self.stage == "test":
+      if self.objdet_res is None:
+        net_input, gt_obj, _, _ = output
+      else:
+        net_input, gt_obj, det_obj, gt_soP_prior = output
+        #(det_obj_classes, det_obj_boxes, det_res) = det_obj
+      # (gt_obj_classes,  gt_obj_boxes) = gt_obj
+    elif self.stage == "train":
+      net_input,       \
+              gt_soP_prior,   \
+              gt_pred_sem,    \
+              mmlab_target = output
+    
+    # Move to GPU
     if net_input is not False: # not (isinstance(net_input, torch.Tensor) and net_input.size() == (1,)):
       (img_blob,
+               obj_classes,
                roi_obj_boxes,
                roi_u_boxes,
                idx_s,
                idx_o,
                dsr_spat_vec,
                # dsr_spat_mat,
-               obj_classes,
               #  sem_cat_vec,
       ) = net_input
 
       img_blob          = torch.as_tensor(img_blob,        dtype=torch.float,    device = utils.device)
+      obj_classes       = torch.as_tensor(obj_classes,     dtype=torch.long,     device = utils.device)
       roi_obj_boxes     = torch.as_tensor(roi_obj_boxes,   dtype=torch.float,    device = utils.device)
       roi_u_boxes       = torch.as_tensor(roi_u_boxes,     dtype=torch.float,    device = utils.device)
       idx_s             = torch.as_tensor(idx_s,           dtype=torch.long,     device = utils.device)
@@ -166,21 +150,28 @@ class VRDDataLayer(data.Dataset):
       dsr_spat_vec      = torch.as_tensor(dsr_spat_vec,    dtype=torch.float,    device = utils.device)
       # sem_cat_vec       = torch.as_tensor(sem_cat_vec,     dtype=torch.float,    device = utils.device)
       # dsr_spat_mat      = torch.as_tensor(dsr_spat_mat,    dtype=torch.float,    device = utils.device)
-      obj_classes       = torch.as_tensor(obj_classes,     dtype=torch.long,     device = utils.device)
 
       # TODO: reorder
       net_input = (img_blob,
+               obj_classes,
                roi_obj_boxes,
                roi_u_boxes,
                idx_s,
                idx_o,
                dsr_spat_vec,
                # dsr_spat_mat,
-               obj_classes,
               #  sem_cat_vec,
       )
 
-    if self.stage == "train":
+    # Re-pack and return
+    if self.stage == "test":
+      #gt_obj  = (gt_obj_classes,  gt_obj_boxes)
+      if self.objdet_res is None:
+        return net_input, gt_obj, False, False
+      else:
+        #det_obj = (det_obj_classes, det_obj_boxes, det_res)
+        return net_input, gt_obj, det_obj, gt_soP_prior
+    elif self.stage == "train":
       if gt_pred_sem is not False:
         # gt_soP_prior      = torch.as_tensor(gt_soP_prior,    dtype=torch.float,    device = utils.device)
         gt_pred_sem       = torch.as_tensor(gt_pred_sem,     dtype=torch.long,     device = utils.device)
@@ -189,19 +180,6 @@ class VRDDataLayer(data.Dataset):
               gt_soP_prior,   \
               gt_pred_sem,    \
               mmlab_target
-    elif self.stage == "test":
-      if self.objdet_res is None:
-        return net_input,         \
-                gt_obj_classes,   \
-                gt_obj_boxes
-      else:
-        return net_input,         \
-                gt_obj_classes,   \
-                gt_obj_boxes,     \
-                det_obj_classes,  \
-                det_obj_boxes,    \
-                gt_soP_prior,     \
-                det_res
 
   def __computeitem__(self, index):
 
@@ -209,13 +187,13 @@ class VRDDataLayer(data.Dataset):
     def _None():
       if self.stage == "test":
         if self.objdet_res is None:
-          return False, False, False
+          return False, False, False, False
         else:
-          return False, False, False, False, False, False, False
+          return False, False, False, False
       elif self.stage == "train":
         warnings.warn("Warning: I'm about to return None values during training. That's not good, probably batching will fail", UserWarning)
         return False, False, False, False
-    
+
     (img_path, annos) = self.vrd_data[index]
 
     # TODO: probably False values won't allow batching. But this is not a problem in training because None and len(rels)==0 are ignored
@@ -412,36 +390,31 @@ class VRDDataLayer(data.Dataset):
     # mmlab_target      = torch.as_tensor(mmlab_target,    dtype=torch.long,     device = utils.device)
 
 
-    # TODO: reorder
     net_input = (img_blob,
+                 obj_classes,
                  roi_obj_boxes,
                  roi_u_boxes,
                  idx_s,
                  idx_o,
                  dsr_spat_vec,
                  # dsr_spat_mat,
-                 obj_classes,
                 #  sem_cat_vec,
       )
 
-    if self.stage == "train":
+    gt_obj  = (gt_obj_classes,  gt_obj_boxes)
+
+    if self.stage == "test":
+      if self.objdet_res is None:
+        return net_input, gt_obj, False, False
+      else:
+        det_obj = (det_obj_classes, det_obj_boxes, det_res)
+        return net_input, gt_obj, det_obj, gt_soP_prior
+
+    elif self.stage == "train":
       return net_input,       \
               gt_soP_prior,   \
               gt_pred_sem,    \
               mmlab_target
-    elif self.stage == "test":
-      if self.objdet_res is None:
-        return net_input,         \
-                gt_obj_classes,   \
-                gt_obj_boxes
-      else:
-        return net_input,         \
-                gt_obj_classes,   \
-                gt_obj_boxes,     \
-                det_obj_classes,  \
-                det_obj_boxes,    \
-                gt_soP_prior,     \
-                det_res
 
 """
 # Batching example:

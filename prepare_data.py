@@ -85,14 +85,16 @@ class DataPreparer:
             try:
                 vrd_data_train.append((k, self.vrd_data[k]))
             except KeyError:
-                warnings.warn("Image '{}' not found in train vrd_data".format(k), UserWarning)
+                if k is not None:
+                  warnings.warn("Image '{}' not found in train vrd_data ({})".format(k, self.vrd_data.keys()), UserWarning)
                 vrd_data_train.append((None, None))
 
         for k in self.splits['test']:
             try:
                 vrd_data_test.append((k, self.vrd_data[k]))
             except KeyError:
-                warnings.warn("Image '{}' not found in test vrd_data".format(k), UserWarning)
+                if k is not None:
+                  warnings.warn("Image '{}' not found in test vrd_data ({})".format(k, self.vrd_data.keys()), UserWarning)
                 vrd_data_test.append((None, None))
 
         if granularity == "rel":
@@ -392,7 +394,7 @@ class VRDPrep(DataPreparer):
         def prepareGT():
           gt = self.readmat(gt_path)
           gt_pkl = {}
-          gt_pkl["tuple_label"] = gt["gt_tuple_label"][0]
+          gt_pkl["tuple_label"] = gt["gt_tuple_label"][0]-1
           gt_pkl["obj_bboxes"]  = gt["gt_obj_bboxes"][0]
           gt_pkl["sub_bboxes"]  = gt["gt_sub_bboxes"][0]
           self.writepickle(gt_pkl, gt_output_path)
@@ -537,12 +539,11 @@ if __name__ == '__main__':
 
     w2v_model = None
     if generate_embeddings:
-        print("Loading Word2Vec model...")
-        w2v_model = KeyedVectors.load_word2vec_format(osp.join(globals.data_dir, globals.w2v_model_path), binary=True)
-        # w2v_model = KeyedVectors.load_word2vec_format(globals.w2v_model_path, binary=True)
-    """
+      w2v_model = KeyedVectors.load_word2vec_format(osp.join(globals.data_dir, globals.w2v_model_path), binary=True)
+
     data_preparer_vrd = VRDPrep(multi_label=multi_label, generate_emb = w2v_model)
     data_preparer_vrd.prepareEvalFromLP()
+    """
     data_preparer_vrd.load_vrd()
     data_preparer_vrd.save_data("relst")
     data_preparer_vrd.save_data("relst", "rel")
@@ -554,8 +555,8 @@ if __name__ == '__main__':
     data_preparer_vrd.save_data("relst", "rel")
     data_preparer_vrd.save_data("annos")
     """
-
-    # TODO: test to see if VG preparation works
+    """
+    # TODO: test to see if VG preparation is valid
     # TODO: allow multi-word vocabs, so that we can load 1600-400-20_bottomup
     print("Preparing data...")
     data_preparer_vg = VGPrep((150, 50, 50), multi_label=multi_label, generate_emb=w2v_model)
@@ -566,3 +567,4 @@ if __name__ == '__main__':
     data_preparer_vg.save_data("relst", "rel")
     print("Generating annos data...")
     data_preparer_vg.save_data("annos")
+    """
