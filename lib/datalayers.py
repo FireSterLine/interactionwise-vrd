@@ -75,12 +75,8 @@ class VRDDataLayer(data.Dataset):
     self.preloaded = None
     if preload:
       print("Preloading...")
-      self.preloaded = []
-      for index in range(self.__len__()):
-        x = self.__computeitem__(index)
-        print(index)
-        self.preloaded.append(x)
-
+      self.preloaded = [self.__computeitem__(index) for index in range(self.__len__())]
+    
     # NOTE: the max shape is across all the dataset, whereas we would like for it to be for a unique batch.
     # TODO: write collate_fn using this code: https://pytorch.org/docs/stable/data.html#loading-batched-and-non-batched-data
     '''
@@ -149,8 +145,9 @@ class VRDDataLayer(data.Dataset):
                   det_obj_boxes,    \
                   gt_soP_prior,     \
                   det_res = self.preloaded[index]
-
-    (img_blob,
+    
+    if net_input is not False: # not (isinstance(net_input, torch.Tensor) and net_input.size() == (1,)):
+      (img_blob,
                roi_obj_boxes,
                roi_u_boxes,
                idx_s,
@@ -159,23 +156,20 @@ class VRDDataLayer(data.Dataset):
                # dsr_spat_mat,
                obj_classes,
               #  sem_cat_vec,
-    ) = net_input
+      ) = net_input
 
-    img_blob          = torch.as_tensor(img_blob,        dtype=torch.float,    device = utils.device)
-    roi_obj_boxes     = torch.as_tensor(roi_obj_boxes,   dtype=torch.float,    device = utils.device)
-    roi_u_boxes       = torch.as_tensor(roi_u_boxes,     dtype=torch.float,    device = utils.device)
-    idx_s             = torch.as_tensor(idx_s,           dtype=torch.long,     device = utils.device)
-    idx_o             = torch.as_tensor(idx_o,           dtype=torch.long,     device = utils.device)
-    dsr_spat_vec      = torch.as_tensor(dsr_spat_vec,    dtype=torch.float,    device = utils.device)
-    # sem_cat_vec       = torch.as_tensor(sem_cat_vec,     dtype=torch.float,    device = utils.device)
-    # dsr_spat_mat      = torch.as_tensor(dsr_spat_mat,    dtype=torch.float,    device = utils.device)
-    obj_classes       = torch.as_tensor(obj_classes,     dtype=torch.long,     device = utils.device)
+      img_blob          = torch.as_tensor(img_blob,        dtype=torch.float,    device = utils.device)
+      roi_obj_boxes     = torch.as_tensor(roi_obj_boxes,   dtype=torch.float,    device = utils.device)
+      roi_u_boxes       = torch.as_tensor(roi_u_boxes,     dtype=torch.float,    device = utils.device)
+      idx_s             = torch.as_tensor(idx_s,           dtype=torch.long,     device = utils.device)
+      idx_o             = torch.as_tensor(idx_o,           dtype=torch.long,     device = utils.device)
+      dsr_spat_vec      = torch.as_tensor(dsr_spat_vec,    dtype=torch.float,    device = utils.device)
+      # sem_cat_vec       = torch.as_tensor(sem_cat_vec,     dtype=torch.float,    device = utils.device)
+      # dsr_spat_mat      = torch.as_tensor(dsr_spat_mat,    dtype=torch.float,    device = utils.device)
+      obj_classes       = torch.as_tensor(obj_classes,     dtype=torch.long,     device = utils.device)
 
-    # gt_soP_prior      = torch.as_tensor(gt_soP_prior,    dtype=torch.float,    device = utils.device)
-    gt_pred_sem       = torch.as_tensor(gt_pred_sem,     dtype=torch.long,     device = utils.device)
-    mmlab_target      = torch.as_tensor(mmlab_target,    dtype=torch.long,     device = utils.device)
-    # TODO: reorder
-    net_input = (img_blob,
+      # TODO: reorder
+      net_input = (img_blob,
                roi_obj_boxes,
                roi_u_boxes,
                idx_s,
@@ -184,9 +178,13 @@ class VRDDataLayer(data.Dataset):
                # dsr_spat_mat,
                obj_classes,
               #  sem_cat_vec,
-    )
+      )
 
     if self.stage == "train":
+      if gt_pred_sem is not False:
+        # gt_soP_prior      = torch.as_tensor(gt_soP_prior,    dtype=torch.float,    device = utils.device)
+        gt_pred_sem       = torch.as_tensor(gt_pred_sem,     dtype=torch.long,     device = utils.device)
+        mmlab_target      = torch.as_tensor(mmlab_target,    dtype=torch.long,     device = utils.device)
       return net_input,       \
               gt_soP_prior,   \
               gt_pred_sem,    \
@@ -205,6 +203,8 @@ class VRDDataLayer(data.Dataset):
                 gt_soP_prior,     \
                 det_res
 
+  def __computeitem__(self, index):
+
     # Helper for returning none
     def _None():
       if self.stage == "test":
@@ -215,10 +215,7 @@ class VRDDataLayer(data.Dataset):
       elif self.stage == "train":
         warnings.warn("Warning: I'm about to return None values during training. That's not good, probably batching will fail", UserWarning)
         return False, False, False, False
-
-
-  def __computeitem__(self, index):
-
+    
     (img_path, annos) = self.vrd_data[index]
 
     # TODO: probably False values won't allow batching. But this is not a problem in training because None and len(rels)==0 are ignored
@@ -310,15 +307,6 @@ class VRDDataLayer(data.Dataset):
     # Prior distribution of the object pairs across all predicates
     gt_soP_prior = np.zeros((n_rels, self.dataset.n_pred))
 
-    # Semantic vector for the predicate
-    gt_pred_sem = np.zeros((n_rels, 300))
-
-
-    # Target output for the network
-    # TODO: reshape like mmlab_target = np.zeros((n_rels, self.n_pred))
-    mmlab_target = -1 * np.ones((self.dataset.n_pred * n_rels))
-    pos_idx = 0
-
     # Indices for objects and subjects
     idx_s, idx_o = [], []
 
@@ -365,6 +353,15 @@ class VRDDataLayer(data.Dataset):
                   det_obj_boxes[obj_idx])
           i_rel += 1
     else:
+
+      # Semantic vector for the predicate
+      gt_pred_sem = np.zeros((n_rels, 300))
+
+      # Target output for the network
+      # TODO: reshape like mmlab_target = np.zeros((n_rels, self.n_pred))
+      mmlab_target = -1 * np.ones((self.dataset.n_pred * n_rels))
+      pos_idx = 0
+
       for i_rel, rel in enumerate(rels):
         addRel(i_rel,
              rel["sub"], rel["obj"],

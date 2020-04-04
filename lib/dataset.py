@@ -89,7 +89,7 @@ class dataset():
       print("Data not cached. Reading {}...".format(filename))
       data = self.readJSON(filename)
       if self.justafew:
-        data = json.load(rfile)[:10]
+        data = data[:100]
       self._vrd_data_cache[(format, stage, granularity)] = data
     return self._vrd_data_cache[(format, stage, granularity)]
 

@@ -31,7 +31,7 @@ from lib.datalayers import VRDDataLayer
 from lib.evaluator import VRDEvaluator
 
 TESTVALIDITY = True
-DEBUGGING = False
+DEBUGGING = True
 
 if utils.device == torch.device("cpu"):
   DEBUGGING = True
