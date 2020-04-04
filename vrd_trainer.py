@@ -107,6 +107,8 @@ class vrd_trainer():
 
           # TODO
           "batch_size" : 1,
+
+          "preload"    :False,
         }
       }):
 
