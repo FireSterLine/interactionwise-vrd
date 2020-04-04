@@ -77,8 +77,8 @@ class VRDDataLayer(data.Dataset):
       print("Preloading...")
       self.preloaded = []
       for index in range(self.__len__()):
-        x = self.__getitem__(index)
-        print(index, x)
+        x = self.__computeitem__(index)
+        print(index)
         self.preloaded.append(x)
 
     # NOTE: the max shape is across all the dataset, whereas we would like for it to be for a unique batch.
@@ -110,7 +110,9 @@ class VRDDataLayer(data.Dataset):
   def __getitem__(self, index):
     # print("index: ", index)
 
-    # if self.preloaded is not None:
+    if self.preloaded is None:
+      self.__computeitem__(index)
+    else:
     #   if self.stage == "train":
     #     net_input,       \
     #     gt_soP_prior,   \
@@ -196,6 +198,9 @@ class VRDDataLayer(data.Dataset):
         warnings.warn("Warning: I'm about to return None values during training. That's not good, probably batching will fail", UserWarning)
         return False, False, False, False
 
+
+  def __computeitem__(self, index):
+
     (img_path, annos) = self.vrd_data[index]
 
     # TODO: probably False values won't allow batching. But this is not a problem in training because None and len(rels)==0 are ignored
@@ -206,7 +211,7 @@ class VRDDataLayer(data.Dataset):
     # TODO: when granularity is rel, then it might be better to receive the thing in form of a relst and to create objs manually
     # if self.granularity == "rel":
     #   rels = [rels]
-
+    
     objs     = annos["objs"]
     rels     = annos["rels"]
 
@@ -377,6 +382,7 @@ class VRDDataLayer(data.Dataset):
     # TODO: switch to from_numpy().to() instead of FloatTensor/LongTensor(, device=)
     #  or, actually, build the tensors on the GPU directly, instead of using numpy.
     # img_blob          = torch.as_tensor(img_blob,        dtype=torch.float,    device = utils.device).permute(2, 0, 1)
+    img_blob   = np.transpose(img_blob,(2,0,1))
     # roi_obj_boxes     = torch.as_tensor(roi_obj_boxes,   dtype=torch.float,    device = utils.device)
     # roi_u_boxes       = torch.as_tensor(roi_u_boxes,     dtype=torch.float,    device = utils.device)
     # idx_s             = torch.as_tensor(idx_s,           dtype=torch.long,     device = utils.device)
