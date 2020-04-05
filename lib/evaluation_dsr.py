@@ -81,15 +81,21 @@ def eval_per_image(i, gt, pred, use_rel, gt_thr = 0.5, return_match = False):
 
 # Recall quantifies the number of positive class predictions
 #   made out of all positive examples in the dataset.
-def eval_recall_at_N(gt, N, res, use_rel = True, num_imgs = None):
+def eval_recall_at_N(res, gts, Ns = [100, 50], num_imgs = None, use_rel = True):
 
   # If not specified, num_imgs is the length of the ground truth
   if num_imgs is None:
-    num_imgs = len(gt["obj_bboxes"])
+    num_imgs = len(gts[0]["obj_bboxes"])
 
   if num_imgs != len(res["rlp_confs_ours"]):
-    # raise ValueError("Can't compare results against ground truths (test results are malformed). {} != {}".format(num_imgs, len(res["rlp_confs_ours"])))
     warnings.warn("Warning! Test results and ground truths do not have the same length: test performance might be off! {} != {}".format(num_imgs, len(res["rlp_confs_ours"])), UserWarning)
+
+  for i_gt in range(len(gts)-1):
+    if len(gt[i_gt]["obj_bboxes"]) != len(gt[i_gt+1]["obj_bboxes"]):
+      warnings.warn("Warning! Ground truths provided do not share the same length: test performance might be off! {} != {}".format(len(gt[i_gt]["obj_bboxes"]), len(gt[i_gt+1]["obj_bboxes"])), UserWarning)
+
+  Ns = sorted(Ns, reverse=True)
+  max_N = Ns[0]
 
   pred = {}
   pred["tuple_label"] = copy.deepcopy(res["rlp_labels_ours"])
@@ -97,39 +103,49 @@ def eval_recall_at_N(gt, N, res, use_rel = True, num_imgs = None):
   pred["sub_bboxes"]  = copy.deepcopy(res["sub_bboxes_ours"])
   pred["obj_bboxes"]  = copy.deepcopy(res["obj_bboxes_ours"])
 
-  #print("tuple_confs[0]: {}".format((pred["tuple_confs"][0]).shape))
-  #print(pred["tuple_confs"][0])
+  # TODO: stop at test_set_size
+  test_set_size = min(num_imgs, len(res["rlp_confs_ours"]))
 
-  if num_imgs != len(pred["tuple_confs"]):
-    warnings.warn("Warning! Prediction on test set yield wrong size: {} != {}".format(num_imgs, len(pred["tuple_confs"])))
-
-  test_set_size = min(num_imgs, len(pred["tuple_confs"]), len(res["rlp_confs_ours"]))
-
-  # Reorder by confidence
-  for ii in range(test_set_size):
-    if(pred["tuple_confs"][ii] is None):
+  # Sort by confidence
+  for tuple_labels, confs, sub_bboxes, obj_bboxes in zip(pred["tuple_label"], pred["tuple_confs"], pred["sub_bboxes"], pred["obj_bboxes"]):
+    if(tuple_confs is None):
       continue
-    pred["tuple_confs"][ii] = np.array(pred["tuple_confs"][ii])
-    if(pred["tuple_confs"][ii].shape[0] == 0):
+    tuple_confs = np.array(tuple_confs)
+    if(tuple_confs.shape[0] == 0):
       continue
-    idx_order = np.array(pred["tuple_confs"][ii]).argsort()[::-1][:N]
-    pred["tuple_label"][ii] = pred["tuple_label"][ii][idx_order,:]
-    pred["tuple_confs"][ii] = pred["tuple_confs"][ii][idx_order]
-    pred["sub_bboxes"][ii]  = pred["sub_bboxes"][ii][idx_order,:]
-    pred["obj_bboxes"][ii]  = pred["obj_bboxes"][ii][idx_order,:]
+    idx_order = np.array(tuple_confs).argsort()[::-1][:max_N]
+    tuple_labels = tuple_labels[idx_order,:]
+    tuple_confs  = tuple_confs[idx_order]
+    sub_bboxes   = sub_bboxes[idx_order,:]
+    obj_bboxes   = obj_bboxes[idx_order,:]
 
-    if idx_order.shape[0] != N:
-      raise ValueError("Can't compute R@{}: input is malformed (idx_order.shape: {}, pred[\"tuple_confs\"][{}].shape".format(N, idx_order.shape, pred["tuple_confs"][ii].shape))
+    if idx_order.shape[0] != max_N:
+      raise ValueError("Can't compute R@{}: input is malformed (idx_order.shape: {}, pred[\"tuple_confs\"][{}].shape".format(max_N, idx_order.shape, pred["tuple_confs"][ii].shape))
 
-  # Evaluate each image
-  tp_num = 0
-  num_pos_tuple = 0
-  for i in range(test_set_size):
-    img_tp, img_gt = eval_per_image(i, gt, pred, use_rel, gt_thr = 0.5)
-    tp_num += img_tp
-    num_pos_tuple += img_gt
-  recall = (tp_num/num_pos_tuple)
-  return recall*100
+  def get_recall(this_gt):
+    # Evaluate each image
+    tp_num = 0
+    num_pos_tuple = 0
+    for i in range(test_set_size):
+      img_tp, img_gt = eval_per_image(i, this_gt, pred, use_rel, gt_thr = 0.5)
+      tp_num += img_tp
+      num_pos_tuple += img_gt
+    return (tp_num/num_pos_tuple)*100
+
+  recalls = []
+  recalls.append(get_recall())
+
+  if len(Ns) > 0:
+    for N in Ns[1:]:
+      for tuple_labels, confs, sub_bboxes, obj_bboxes in zip(pred["tuple_label"], pred["tuple_confs"], pred["sub_bboxes"], pred["obj_bboxes"]):
+        tuple_labels = tuple_labels[N]
+        tuple_confs  = tuple_confs[N]
+        sub_bboxes   = sub_bboxes[N]
+        obj_bboxes   = obj_bboxes[N]
+      for gt in gts:
+        recalls.append(get_recall(gt))
+
+  return tuple(recalls)
 
 def eval_obj_img(gt_boxes, gt_cls, pred_boxes, pred_cls, gt_thr=0.5, return_flag = False):
   pos_num = 0;

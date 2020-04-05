@@ -113,21 +113,21 @@ class VRDDataLayer(data.Dataset):
       output = self.__computeitem__(index)
     else:
       output = self.preloaded[index]
-    
+
     # Unpack
     if self.stage == "test":
       if self.objdet_res is None:
         net_input, gt_obj, _, _ = output
       else:
         net_input, gt_obj, det_obj, gt_soP_prior = output
-        #(det_obj_classes, det_obj_boxes, det_res) = det_obj
+        #(det_obj_classes, det_obj_boxes, det_obj_confs) = det_obj
       # (gt_obj_classes,  gt_obj_boxes) = gt_obj
     elif self.stage == "train":
       net_input,       \
               gt_soP_prior,   \
               gt_pred_sem,    \
-              mmlab_target = output
-    
+              mlab_target = output
+
     # Move to GPU
     if net_input is not False: # not (isinstance(net_input, torch.Tensor) and net_input.size() == (1,)):
       (img_blob,
@@ -169,17 +169,17 @@ class VRDDataLayer(data.Dataset):
       if self.objdet_res is None:
         return net_input, gt_obj, False, False
       else:
-        #det_obj = (det_obj_classes, det_obj_boxes, det_res)
+        #det_obj = (det_obj_classes, det_obj_boxes, det_obj_confs)
         return net_input, gt_obj, det_obj, gt_soP_prior
     elif self.stage == "train":
       if gt_pred_sem is not False:
         # gt_soP_prior      = torch.as_tensor(gt_soP_prior,    dtype=torch.float,    device = utils.device)
         gt_pred_sem       = torch.as_tensor(gt_pred_sem,     dtype=torch.long,     device = utils.device)
-        mmlab_target      = torch.as_tensor(mmlab_target,    dtype=torch.long,     device = utils.device)
+        mlab_target      = torch.as_tensor(mlab_target,    dtype=torch.long,     device = utils.device)
       return net_input,       \
               gt_soP_prior,   \
               gt_pred_sem,    \
-              mmlab_target
+              mlab_target
 
   def __computeitem__(self, index):
 
@@ -262,7 +262,7 @@ class VRDDataLayer(data.Dataset):
 
       det_obj_classes  = det_res["classes"]
       det_obj_boxes    = det_res["boxes"]
-      # pred_confs_img = det_res["confs"]  # Note: We don't actually care about the confidence scores here
+      det_obj_confs    = det_res["confs"]
 
       n_rels = len(det_obj_classes) * (len(det_obj_classes) - 1)
 
@@ -336,8 +336,8 @@ class VRDDataLayer(data.Dataset):
       gt_pred_sem = np.zeros((n_rels, 300))
 
       # Target output for the network
-      # TODO: reshape like mmlab_target = np.zeros((n_rels, self.n_pred))
-      mmlab_target = -1 * np.ones((self.dataset.n_pred * n_rels))
+      # TODO: reshape like mlab_target = np.zeros((n_rels, self.n_pred))
+      mlab_target = -1 * np.ones((self.dataset.n_pred * n_rels))
       pos_idx = 0
 
       for i_rel, rel in enumerate(rels):
@@ -356,7 +356,7 @@ class VRDDataLayer(data.Dataset):
         gt_pred_sem[i_rel] = np.mean([self.emb["pred"][pred_cls] for pred_cls in pred_clss], axis=0)
 
         for pred_cls in pred_clss:
-          mmlab_target[pos_idx] = i_rel * self.dataset.n_pred + pred_cls
+          mlab_target[pos_idx] = i_rel * self.dataset.n_pred + pred_cls
           pos_idx += 1
 
     if self.objdet_res is not None:
@@ -387,7 +387,7 @@ class VRDDataLayer(data.Dataset):
     #
     # # gt_soP_prior      = torch.as_tensor(gt_soP_prior,    dtype=torch.float,    device = utils.device)
     # gt_pred_sem       = torch.as_tensor(gt_pred_sem,     dtype=torch.long,     device = utils.device)
-    # mmlab_target      = torch.as_tensor(mmlab_target,    dtype=torch.long,     device = utils.device)
+    # mlab_target      = torch.as_tensor(mlab_target,    dtype=torch.long,     device = utils.device)
 
 
     net_input = (img_blob,
@@ -407,14 +407,14 @@ class VRDDataLayer(data.Dataset):
       if self.objdet_res is None:
         return net_input, gt_obj, False, False
       else:
-        det_obj = (det_obj_classes, det_obj_boxes, det_res)
+        det_obj = (det_obj_classes, det_obj_boxes, det_obj_confs)
         return net_input, gt_obj, det_obj, gt_soP_prior
 
     elif self.stage == "train":
       return net_input,       \
               gt_soP_prior,   \
               gt_pred_sem,    \
-              mmlab_target
+              mlab_target
 
 """
 # Batching example:

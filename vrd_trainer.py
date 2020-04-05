@@ -70,7 +70,7 @@ class vrd_trainer():
           "use_spat" : 0,
 
           # Use or not predicate semantics
-          "use_pred_sem"  : False,
+          "use_pred_sem"  : True,
 
           # Size of the representation for each modality when fusing features
           "n_fus_neurons" : 256,
@@ -109,23 +109,21 @@ class vrd_trainer():
           # TODO
           "batch_size" : 1,
 
+          "loss" : "mse",
+
           "use_preload"    :True # False,
         }
       }):
 
-    if(DEBUGGING):
+    if DEBUGGING:
       # args["training"]["num_epochs"] = 6
       args["data"]["justafew"] = True
       args["training"]["use_shuffle"] = False
-      # args["model"]["use_pred_sem"] = True
     if TESTVALIDITY:
       args["data"]["name"] = "vrd/dsr"
       args["training"]["print_freq"] = 0.1
+      args["model"]["use_pred_false"] = True
       # args["training"]["use_preload"] = False
-
-    #args["model"]["n_fus_neurons"] = 128
-    #args["training"]["opt"]["lr"] /= 2
-    #args["training"]["opt"]["weight_decay"] /= 2
 
     print("Arguments:")
     if checkpoint:
@@ -135,7 +133,7 @@ class vrd_trainer():
     print("args:", json.dumps(args, indent=2, sort_keys=True))
 
 
-    self.session_name = "test-3-04-2"
+    self.session_name = "test-pred-sem"
 
 
     self.checkpoint = checkpoint
@@ -226,7 +224,16 @@ class vrd_trainer():
     # Training
     print("Initializing training: ", self.training)
     self.optimizer = self.model.OriginalAdamOptimizer(**self.training.opt)
-    self.criterion = nn.MultiLabelMarginLoss(reduction="sum").to(device=utils.device)
+
+    if self.training.loss == "mlab":
+      self.criterion = nn.MultiLabelMarginLoss(reduction="sum").to(device=utils.device)
+    elif self.training.loss == "cross-entropy":
+      self.criterion = nn.CrossEntropyLoss(reduction="sum").to(device=utils.device)
+    elif self.training.loss == "mse":
+      self.criterion = nn.MSELoss(reduction="sum").to(device=utils.device)
+    else:
+      raise ValueError("Unknown loss specified: '{}'".format(self.training.loss))
+
     if "optimizer_state_dict" in self.state:
       self.optimizer.load_state_dict(self.state["optimizer_state_dict"])
 
@@ -311,32 +318,36 @@ class vrd_trainer():
     n_iter = len(self.dataloader)
 
     # for iter in range(n_iter):
-    for i_iter,(net_input, rel_soP_prior, gt_pred_sem, target) in enumerate(self.dataloader):
+    for i_iter,(net_input, gt_soP_prior, gt_pred_sem, mlab_target) in enumerate(self.dataloader):
 
       # print("{}/{}".format(i_iter, n_iter))
 
       # print(type(net_input))
-      # print(type(rel_soP_prior))
-      # print(type(target))
+      # print(type(gt_soP_prior))
+      # print(type(mlab_target))
 
-      batch_size = target.size()[0]
+      batch_size = mlab_target.size()[0]
 
       # Forward pass & Backpropagation step
       self.optimizer.zero_grad()
-      _, rel_scores = self.model(*net_input)
+      model_output = self.model(*net_input)
 
-      # Preprocessing the rel_soP_prior before factoring it into the loss
-      rel_soP_prior = rel_soP_prior.to(utils.device)
-      rel_scores = rel_scores.to(utils.device)
-      target = target.to(utils.device)
-      # rel_soP_prior = rel_soP_prior.to("cpu")
-      # rel_scores = rel_scores.to("cpu")
-      # target = target.to("cpu")
-      rel_soP_prior = -0.5 * ( rel_soP_prior + (1.0 / self.datalayer.n_pred))
+      # Preprocessing the gt_soP_prior before factoring it into the loss
+      gt_soP_prior = gt_soP_prior.to(utils.device)
+      # Note that maybe introducing no_predicate may be better:
+      #  After all, there may not be a relationship between two objects...
+      #  And this would avoid dirtying up the predictions?
+      gt_soP_prior = -0.5 * ( gt_soP_prior + (1.0 / self.datalayer.n_pred))
 
-      # TODO: fix this weird-shaped target in datalayers and remove this view thingy
-      loss = self.criterion((rel_soP_prior + rel_scores).view(batch_size, -1), target)
-      # loss = self.criterion((rel_scores).view(batch_size, -1), target)
+      # DSR:
+      # TODO: fix this weird-shaped mlab_target in datalayers and remove this view thingy
+      # _, rel_scores = model_output
+      #loss = self.criterion((gt_soP_prior + rel_scores).view(batch_size, -1), mlab_target)
+      # loss = self.criterion((rel_scores).view(batch_size, -1), mlab_target)
+
+      _, pred_sem = model_output
+      # TODO use the weighted embeddings of gt_soP_prior ?
+      loss = self.criterion(pred_sem, gt_pred_sem)
 
       loss.backward()
       self.optimizer.step()
@@ -355,10 +366,10 @@ class vrd_trainer():
     print("TRAIN Time: {}".format(utils.time_diff_str(time1, time2)))
 
     """
-      # the rel_soP_prior here is a subset of the 100*70*70 dimensional so_prior array, which contains the predicate prob distribution for all object pairs
-      # the rel_soP_prior here contains the predicate probability distribution of only the object pairs in this annotation
+      # the gt_soP_prior here is a subset of the 100*70*70 dimensional so_prior array, which contains the predicate prob distribution for all object pairs
+      # the gt_soP_prior here contains the predicate probability distribution of only the object pairs in this annotation
       # Also, it might be helpful to keep in mind that this data layer currently works for a single annotation at a time - no batching is implemented!
-      image_blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, rel_labels, rel_soP_prior = self.datalayer...
+      image_blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, rel_labels, gt_soP_prior = self.datalayer...
     """
 
   def test_pre(self):
