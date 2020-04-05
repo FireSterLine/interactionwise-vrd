@@ -155,7 +155,7 @@ class VRDEvaluator():
         "obj_bboxes_ours" : obj_bboxes_cell,
       }
 
-      rec_100, rec_100_zs, rec_50, rec_50_zs = eval_recall_at_N(res, gts = [self.gt, self.gt_zs], N = [100, 50], num_imgs = self.num_imgs)
+      rec_100, rec_100_zs, rec_50, rec_50_zs = eval_recall_at_N(res, gts = [self.gt, self.gt_zs], Ns = [100, 50], num_imgs = self.num_imgs)
       time2 = time.time()
 
       return rec_50, rec_50_zs, rec_100, rec_100_zs, (time2-time1)
@@ -333,7 +333,7 @@ class VRDEvaluator():
       # if len(len(self.dataloader)) != len(res["obj_bboxes_ours"]):
       #   warnings.warn("Warning! Rel test results and gt do not have the same length: rel test performance might be off! {} != {}".format(len(len(self.dataloader)), len(res["obj_bboxes_ours"])), UserWarning)
 
-      rec_100, rec_100_zs, rec_50, rec_50_zs = eval_recall_at_N(res, gts = [self.gt, self.gt_zs], N = [100, 50], num_imgs = self.num_imgs)
+      rec_100, rec_100_zs, rec_50, rec_50_zs = eval_recall_at_N(res, gts = [self.gt, self.gt_zs], Ns = [100, 50], num_imgs = self.num_imgs)
       time2 = time.time()
 
       return rec_50, rec_50_zs, rec_100, rec_100_zs, pos_num, loc_num, gt_num, (time2 - time1)

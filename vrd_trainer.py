@@ -30,8 +30,8 @@ from lib.vrd_models import VRDModel
 from lib.datalayers import VRDDataLayer
 from lib.evaluator import VRDEvaluator
 
-TESTVALIDITY = False #  True # False # True
-DEBUGGING = False
+TESTVALIDITY = True # False # True
+DEBUGGING =True # False
 
 if utils.device == torch.device("cpu"):
   DEBUGGING = True
@@ -70,7 +70,7 @@ class vrd_trainer():
           "use_spat" : 0,
 
           # Use or not predicate semantics
-          "use_pred_sem"  : True,
+          "use_pred_sem"  : False, #True,
 
           # Size of the representation for each modality when fusing features
           "n_fus_neurons" : 256,
@@ -109,7 +109,7 @@ class vrd_trainer():
           # TODO
           "batch_size" : 1,
 
-          "loss" : "mse",
+          "loss" : "mlab", #"mse",
 
           "use_preload"    :True # False,
         }
@@ -341,13 +341,13 @@ class vrd_trainer():
 
       # DSR:
       # TODO: fix this weird-shaped mlab_target in datalayers and remove this view thingy
-      # _, rel_scores = model_output
-      #loss = self.criterion((gt_soP_prior + rel_scores).view(batch_size, -1), mlab_target)
-      # loss = self.criterion((rel_scores).view(batch_size, -1), mlab_target)
+      _, rel_scores = model_output
+      loss = self.criterion((gt_soP_prior + rel_scores).view(batch_size, -1), mlab_target)
+      #loss = self.criterion((rel_scores).view(batch_size, -1), mlab_target)
 
-      _, pred_sem = model_output
+      #_, pred_sem = model_output
       # TODO use the weighted embeddings of gt_soP_prior ?
-      loss = self.criterion(pred_sem, gt_pred_sem)
+      #loss = self.criterion(pred_sem, gt_pred_sem)
 
       loss.backward()
       self.optimizer.step()

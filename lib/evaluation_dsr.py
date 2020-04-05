@@ -91,8 +91,8 @@ def eval_recall_at_N(res, gts, Ns = [100, 50], num_imgs = None, use_rel = True):
     warnings.warn("Warning! Test results and ground truths do not have the same length: test performance might be off! {} != {}".format(num_imgs, len(res["rlp_confs_ours"])), UserWarning)
 
   for i_gt in range(len(gts)-1):
-    if len(gt[i_gt]["obj_bboxes"]) != len(gt[i_gt+1]["obj_bboxes"]):
-      warnings.warn("Warning! Ground truths provided do not share the same length: test performance might be off! {} != {}".format(len(gt[i_gt]["obj_bboxes"]), len(gt[i_gt+1]["obj_bboxes"])), UserWarning)
+    if len(gts[i_gt]["obj_bboxes"]) != len(gts[i_gt+1]["obj_bboxes"]):
+      warnings.warn("Warning! Ground truths provided do not share the same length: test performance might be off! {} != {}".format(len(gts[i_gt]["obj_bboxes"]), len(gts[i_gt+1]["obj_bboxes"])), UserWarning)
 
   Ns = sorted(Ns, reverse=True)
   max_N = Ns[0]
@@ -107,17 +107,17 @@ def eval_recall_at_N(res, gts, Ns = [100, 50], num_imgs = None, use_rel = True):
   test_set_size = min(num_imgs, len(res["rlp_confs_ours"]))
 
   # Sort by confidence
-  for tuple_labels, confs, sub_bboxes, obj_bboxes in zip(pred["tuple_label"], pred["tuple_confs"], pred["sub_bboxes"], pred["obj_bboxes"]):
+  for i,(tuple_labels, tuple_confs, sub_bboxes, obj_bboxes) in enumerate(zip(pred["tuple_label"], pred["tuple_confs"], pred["sub_bboxes"], pred["obj_bboxes"])):
     if(tuple_confs is None):
       continue
     tuple_confs = np.array(tuple_confs)
     if(tuple_confs.shape[0] == 0):
       continue
-    idx_order = np.array(tuple_confs).argsort()[::-1][:max_N]
-    tuple_labels = tuple_labels[idx_order,:]
-    tuple_confs  = tuple_confs[idx_order]
-    sub_bboxes   = sub_bboxes[idx_order,:]
-    obj_bboxes   = obj_bboxes[idx_order,:]
+    idx_order = tuple_confs.argsort()[::-1][:max_N]
+    pred["tuple_label"][i]  = tuple_labels[idx_order,:]
+    pred["tuple_confs"][i]  = tuple_confs[idx_order]
+    pred["sub_bboxes"][i]   = sub_bboxes[idx_order,:]
+    pred["obj_bboxes"][i]   = obj_bboxes[idx_order,:]
 
     if idx_order.shape[0] != max_N:
       raise ValueError("Can't compute R@{}: input is malformed (idx_order.shape: {}, pred[\"tuple_confs\"][{}].shape".format(max_N, idx_order.shape, pred["tuple_confs"][ii].shape))
@@ -133,15 +133,18 @@ def eval_recall_at_N(res, gts, Ns = [100, 50], num_imgs = None, use_rel = True):
     return (tp_num/num_pos_tuple)*100
 
   recalls = []
-  recalls.append(get_recall())
+  for gt in gts:
+    recalls.append(get_recall(gt))
 
   if len(Ns) > 0:
     for N in Ns[1:]:
-      for tuple_labels, confs, sub_bboxes, obj_bboxes in zip(pred["tuple_label"], pred["tuple_confs"], pred["sub_bboxes"], pred["obj_bboxes"]):
-        tuple_labels = tuple_labels[N]
-        tuple_confs  = tuple_confs[N]
-        sub_bboxes   = sub_bboxes[N]
-        obj_bboxes   = obj_bboxes[N]
+      for i,(tuple_labels, tuple_confs, sub_bboxes, obj_bboxes) in enumerate(zip(pred["tuple_label"], pred["tuple_confs"], pred["sub_bboxes"], pred["obj_bboxes"])):
+        if(tuple_confs is None):
+          continue
+        pred["tuple_label"][i]  = tuple_labels[:N]
+        pred["tuple_confs"][i]  = tuple_confs[:N]
+        pred["sub_bboxes"][i]   = sub_bboxes[:N]
+        pred["obj_bboxes"][i]   = obj_bboxes[:N]
       for gt in gts:
         recalls.append(get_recall(gt))
 
