@@ -275,35 +275,32 @@ def cfg_from_file(filename):
 
   return yaml_cfg
 
-def cfg_patch(a, b):
-  """ Patch a config dictionary b with a config dictionary a, clobbering the
-  options in b whenever they are also specified in a. """
-  b = deepcopy(b)
+def dict_patch(a, def_dict):
+  """ Patch a dictionary of default values def_dict with a dictionary a, clobbering the
+  options in def_dict whenever they are also specified in a. """
+  def_dict = deepcopy(def_dict)
 
   for k, v in a.items():
-    # a must specify keys that are in b
-    if k not in b:
+    # a must specify keys that are in def already (although this may not be desirable in some cases)
+    if k not in def_dict:
       raise KeyError("{} is not a valid config key".format(k))
 
-    # the types must match, too
-    old_type = type(b[k])
-    if old_type is not type(v):
-      if isinstance(b[k], np.ndarray):
-        v = np.array(v, dtype=b[k].dtype)
-      else:
-        raise ValueError(("Type mismatch ({} vs. {}) "
-                          "for config key: {}").format(type(b[k]),
-                                                       type(v), k))
+    # Type check
+    # if not isinstance(v, type(def_dict[k])):
+    #   if isinstance(def_dict[k], np.ndarray):
+    #     v = np.array(v, dtype=def_dict[k].dtype)
+    #   else:
+    #     raise ValueError(("Type mismatch ({} vs. {}) "
+    #                       "for config key: {}").format(type(def_dict[k]),
+    #                                                    type(v), k))
 
-    # recursively merge dicts
-    if isinstance(v,munch.Munch):
-      try:
-        cfg_patch(a[k], b[k])
-      except:
-        raise ValueError("Error under config key: {}".format(k))
+    # Recursively merge dicts
+    if isinstance(v,dict) or isinstance(v,munch.Munch):
+      try:    dict_patch(a[k], def_dict[k])
+      except: raise ValueError("Error under config key: {}".format(k))
     else:
-      b[k] = v
-  return b
+      def_dict[k] = v
+  return def_dict
 
 """
 import importlib

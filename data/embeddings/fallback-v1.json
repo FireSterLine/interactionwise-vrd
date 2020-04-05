@@ -33,26 +33,25 @@
    "outside of"        : [["outside", "of"], "outside"],
    "rest on"           : [],
    "skate on"          : [],
-   # From VG:
 "banana bunch"          : ["banana"],
 "mountain range"        : ["mountain"],
 "door frame"            : ["door"],
 "tail fin"              : [],
 "telephone pole"        : ["utility pole", "electricity pole", "pole"],
-"moustache"             : ["mustaches", "moustaches"], # , "beard" ?
+"moustache"             : ["mustaches", "moustaches"],
 "train platform"        : ["railway platform", "railway"],
 "purple flower"         : ["flower"],
 "left ear"              : ["ear"],
-"tennis net"            : [], # "net"?
-"windshield wiper"      : ["windscreen wiper", "wiper"], # "wipers",
+"tennis net"            : [],
+"windshield wiper"      : ["windscreen wiper", "wiper"],
 "bus stop"              : ["bus-stop"],
-"lamp shade"            : [], # "shade"],
+"lamp shade"            : [],
 "light switch"          : ["lightswitch", "light-switch", "switch"],
 "shower curtain"        : ["curtain"],
-"cardboard box"         : ["carton box"], # "cardboard", "box" ?
+"cardboard box"         : ["carton box"],
 "table cloth"           : [],
 "doughnut"              : ["donut"],
-"laptop computer"       : [], # "laptop", "computer"
+"laptop computer"       : [],
 "parking lot"           : ["parking-lot", "parking"],
 "guard rail"            : ["guard-rail"],
 "tv stand"              : ["tv-stand"],
@@ -61,7 +60,7 @@
 "flower pot"            : [],
 "number 2"              : ["number"],
 "baseball uniform"      : ["uniform"],
-"fence post"            : [], # ?
+"fence post"            : [],
 "left hand"             : ["hand"],
 "palm tree"             : ["palm", "tree"],
 "ceiling fan"           : ["fan"],
@@ -77,15 +76,15 @@
 "door knob"             : ["doorknob", "door-knob", "knob"],
 "baseball field"        : ["baseball-field", "field"],
 "grass patch"           : ["grass"],
-"passenger car"         : [], # What does this mean?
+"passenger car"         : [],
 "tennis ball"           : ["tennisball", "tennis-ball"],
-"window sill"           : ["windowsill"], # , "sill"],
+"window sill"           : ["windowsill"],
 "shower head"           : ["showerhead"],
 "name tag"              : ["nametag", "name-tag"],
-"front window"          : ["window"], # ?
+"front window"          : ["window"],
 "computer mouse"        : ["computer-mouse"],
 "cutting board"         : ["cutting-board", "chopping-board", "cutboard", "chopboard"],
-"hind leg"              : [], # thigh? leg?
+"hind leg"              : [],
 "paper towel"           : ["papertowel", "paper tissue"],
 "computer screen"       : ["screen"],
 "tissue box"            : ["tissue-box", "tissuebox"],
@@ -95,16 +94,16 @@
 "mouse pad"             : ["mouse-pad", "mousepad"],
 "baseball glove"        : ["baseball-glove"],
 "minute hand"           : ["hand"],
-"window pane"           : ["window"], # ?
+"window pane"           : ["window"],
 "coffee maker"          : ["coffeemaker", "coffee-maker"],
 "front wheel"           : ["wheel"],
 "road sign"             : ["streetsign", "roadsign"],
 "steering wheel"        : [],
 "tennis player"         : [],
-"manhole cover"         : ["manhole"], # ?
+"manhole cover"         : ["manhole"],
 "stop light"            : ["traffic light"],
 "street sign"           : ["road sign"],
 "train station"         : ["train-station", "train-station"],
 "brake light"           : ["brake-light"],
-"wine glass"            : [], # "wine"?
+"wine glass"            : [],
  }

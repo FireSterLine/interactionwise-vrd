@@ -45,7 +45,7 @@ class vrd_trainer():
   def __init__(self, args, checkpoint = False):
 
     # TODO: check if this works
-    args = utils.cfg_patch(args, def_args)
+    args = utils.dict_patch(args, def_args)
 
     if DEBUGGING:
       # args["training"]["num_epochs"] = 6
