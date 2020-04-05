@@ -113,21 +113,21 @@ class VRDDataLayer(data.Dataset):
       output = self.__computeitem__(index)
     else:
       output = self.preloaded[index]
-    
+
     # Unpack
     if self.stage == "test":
       if self.objdet_res is None:
         net_input, gt_obj, _, _ = output
       else:
         net_input, gt_obj, det_obj, gt_soP_prior = output
-        #(det_obj_classes, det_obj_boxes, det_res) = det_obj
+        #(det_obj_classes, det_obj_boxes, det_obj_confs) = det_obj
       # (gt_obj_classes,  gt_obj_boxes) = gt_obj
     elif self.stage == "train":
       net_input,       \
               gt_soP_prior,   \
               gt_pred_sem,    \
               mmlab_target = output
-    
+
     # Move to GPU
     if net_input is not False: # not (isinstance(net_input, torch.Tensor) and net_input.size() == (1,)):
       (img_blob,
@@ -169,7 +169,7 @@ class VRDDataLayer(data.Dataset):
       if self.objdet_res is None:
         return net_input, gt_obj, False, False
       else:
-        #det_obj = (det_obj_classes, det_obj_boxes, det_res)
+        #det_obj = (det_obj_classes, det_obj_boxes, det_obj_confs)
         return net_input, gt_obj, det_obj, gt_soP_prior
     elif self.stage == "train":
       if gt_pred_sem is not False:
@@ -262,7 +262,7 @@ class VRDDataLayer(data.Dataset):
 
       det_obj_classes  = det_res["classes"]
       det_obj_boxes    = det_res["boxes"]
-      # pred_confs_img = det_res["confs"]  # Note: We don't actually care about the confidence scores here
+      det_obj_confs    = det_res["confs"]
 
       n_rels = len(det_obj_classes) * (len(det_obj_classes) - 1)
 
@@ -407,7 +407,7 @@ class VRDDataLayer(data.Dataset):
       if self.objdet_res is None:
         return net_input, gt_obj, False, False
       else:
-        det_obj = (det_obj_classes, det_obj_boxes, det_res)
+        det_obj = (det_obj_classes, det_obj_boxes, det_obj_confs)
         return net_input, gt_obj, det_obj, gt_soP_prior
 
     elif self.stage == "train":

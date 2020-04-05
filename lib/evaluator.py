@@ -34,7 +34,7 @@ class VRDEvaluator():
         batch_size = 1, # 256,
         shuffle = False,
       )
-    
+
     # Setup RELATIONSHIP DETECTION Data Layer
     if self.args.test_rel:
       self.datalayer_rel  = VRDDataLayer(data_args, "test", use_preload = self.args.use_preload, use_proposals = True)
@@ -105,7 +105,7 @@ class VRDEvaluator():
 
         if utils.smart_frequency_check(tmp_i, len(self.dataloader_pre), 0.1):
           print("{}/{}\r".format(tmp_i, len(self.dataloader_pre)), end="")
-        
+
         (gt_obj_classes, gt_obj_boxes) = gt_obj
         img_blob, obj_classes, obj_boxes, u_boxes, idx_s, idx_o, spatial_features = net_input
 
@@ -155,10 +155,7 @@ class VRDEvaluator():
         "obj_bboxes_ours" : obj_bboxes_cell,
       }
 
-      rec_50     = eval_recall_at_N(self.gt,    50,  res, num_imgs = self.num_imgs)
-      rec_50_zs  = eval_recall_at_N(self.gt_zs, 50,  res, num_imgs = self.num_imgs)
-      rec_100    = eval_recall_at_N(self.gt,    100, res, num_imgs = self.num_imgs)
-      rec_100_zs = eval_recall_at_N(self.gt_zs, 100, res, num_imgs = self.num_imgs)
+      rec_100, rec_100_zs, rec_50, rec_50_zs = eval_recall_at_N(res, gts = [self.gt, self.gt_zs], N = [100, 50], num_imgs = self.num_imgs)
       time2 = time.time()
 
       return rec_50, rec_50_zs, rec_100, rec_100_zs, (time2-time1)
@@ -204,9 +201,9 @@ class VRDEvaluator():
           sub_bboxes_cell.append(None)
           obj_bboxes_cell.append(None)
           continue
-        
+
         (gt_obj_classes, gt_obj_boxes) = gt_obj
-        (det_obj_classes, det_obj_boxes, det_res) = det_obj
+        (det_obj_classes, det_obj_boxes, det_obj_confs) = det_obj
         # TODO: remove this to allow batching
         gt_obj_boxes  = gt_obj_boxes[0].data.cpu().numpy().astype(np.float32)
         gt_obj_classes = gt_obj_classes[0].data.cpu().numpy().astype(np.float32)
@@ -277,9 +274,7 @@ class VRDEvaluator():
         gt_num  += gt_obj_boxes.shape[0]
 
         # TODO: remove this to allow batching
-        det_res["confs"]   = deepcopy(det_res["confs"][0])
-        det_res["classes"] = deepcopy(det_res["classes"][0])
-        det_res["boxes"]   = deepcopy(det_res["boxes"][0])
+        det_obj_confs   = deepcopy(det_obj_confs[0])
         rel_prob = deepcopy(rel_prob[0])
         det_obj_classes = deepcopy(det_obj_classes[0])
 
@@ -289,24 +284,24 @@ class VRDEvaluator():
         obj_bboxes_im  = np.zeros((rel_prob.shape[0]*rel_prob.shape[1], 4), dtype = np.float)
         n_idx = 0
 
-        # print("det_res['confs'].shape: ", det_res["confs"].shape)
+        # print("det_res['confs'].shape: ", det_obj_confs.shape)
         # print("rel_prob.shape: ", rel_prob.shape)
 
         for tuple_idx in range(rel_prob.shape[0]):
           for rel in range(rel_prob.shape[1]):
             # print((tuple_idx, rel))
-            # print("np.log(det_res['confs']).shape: ", np.log(det_res["confs"]).shape)
-            # print("np.log(det_res['confs'][idx_s[tuple_idx]]).shape: ", np.log(det_res["confs"][idx_s[tuple_idx]]).shape)
-            # print("det_res['confs'].shape: ", det_res["confs"].shape)
-            # print("det_res['confs'][idx_s[tuple_idx]].shape: ", det_res["confs"][idx_s[tuple_idx]].shape)
+            # print("np.log(det_res['confs']).shape: ", np.log(det_obj_confs).shape)
+            # print("np.log(det_res['confs'][idx_s[tuple_idx]]).shape: ", np.log(det_obj_confs[idx_s[tuple_idx]]).shape)
+            # print("det_res['confs'].shape: ", det_obj_confs.shape)
+            # print("det_res['confs'][idx_s[tuple_idx]].shape: ", det_obj_confs[idx_s[tuple_idx]].shape)
             # print("rel_prob[tuple_idx].shape: ", rel_prob[tuple_idx].shape)
             # print("rel_prob[tuple_idx, rel].shape: ", rel_prob[tuple_idx, rel].shape)
             if(self.args.use_obj_prior):
-              if(det_res["confs"].ndim == 1):
+              if(det_obj_confs.ndim == 1):
                 # Maybe we never reach this point? Or maybe it accounts for batching?
-                conf = np.log(det_res["confs"][idx_s[tuple_idx]]) + np.log(det_res["confs"][idx_o[tuple_idx]]) + rel_prob[tuple_idx, rel]
+                conf = np.log(det_obj_confs[idx_s[tuple_idx]]) + np.log(det_obj_confs[idx_o[tuple_idx]]) + rel_prob[tuple_idx, rel]
               else:
-                conf = np.log(det_res["confs"][idx_s[tuple_idx], 0]) + np.log(det_res["confs"][idx_o[tuple_idx], 0]) + rel_prob[tuple_idx, rel]
+                conf = np.log(det_obj_confs[idx_s[tuple_idx], 0]) + np.log(det_obj_confs[idx_o[tuple_idx], 0]) + rel_prob[tuple_idx, rel]
             else:
               conf = rel_prob[tuple_idx, rel]
             tuple_confs_im.append(conf)
@@ -338,10 +333,7 @@ class VRDEvaluator():
       # if len(len(self.dataloader)) != len(res["obj_bboxes_ours"]):
       #   warnings.warn("Warning! Rel test results and gt do not have the same length: rel test performance might be off! {} != {}".format(len(len(self.dataloader)), len(res["obj_bboxes_ours"])), UserWarning)
 
-      rec_50     = eval_recall_at_N(self.gt,    50,  res, num_imgs = self.num_imgs)
-      rec_50_zs  = eval_recall_at_N(self.gt_zs, 50,  res, num_imgs = self.num_imgs)
-      rec_100    = eval_recall_at_N(self.gt,    100, res, num_imgs = self.num_imgs)
-      rec_100_zs = eval_recall_at_N(self.gt_zs, 100, res, num_imgs = self.num_imgs)
+      rec_100, rec_100_zs, rec_50, rec_50_zs = eval_recall_at_N(res, gts = [self.gt, self.gt_zs], N = [100, 50], num_imgs = self.num_imgs)
       time2 = time.time()
 
       return rec_50, rec_50_zs, rec_100, rec_100_zs, pos_num, loc_num, gt_num, (time2 - time1)
