@@ -8,6 +8,7 @@ from copy import deepcopy
 import torch
 import warnings
 import globals
+import munch
 
 # TODO: figure out what pixel means to use, how to compute them:
 #  do they come from the dataset used for training, perhaps?
@@ -277,6 +278,7 @@ def cfg_from_file(filename):
 def cfg_patch(a, b):
   """ Patch a config dictionary b with a config dictionary a, clobbering the
   options in b whenever they are also specified in a. """
+  b = deepcopy(b)
 
   for k, v in a.items():
     # a must specify keys that are in b
@@ -301,6 +303,7 @@ def cfg_patch(a, b):
         raise ValueError("Error under config key: {}".format(k))
     else:
       b[k] = v
+  return b
 
 """
 import importlib

@@ -30,7 +30,7 @@ from lib.vrd_models import VRDModel
 from lib.datalayers import VRDDataLayer
 from lib.evaluator import VRDEvaluator
 
-TESTVALIDITY = True # False # True
+TESTVALIDITY = False # True # False # True
 DEBUGGING =True # False
 
 if utils.device == torch.device("cpu"):
@@ -38,7 +38,7 @@ if utils.device == torch.device("cpu"):
 
 if TESTVALIDITY: DEBUGGING = False
 
-def_args = utils.cfg_from_file(filename)
+def_args = utils.cfg_from_file("cfgs/default.yml")
 
 class vrd_trainer():
 
@@ -323,8 +323,8 @@ class vrd_trainer():
 
 if __name__ == "__main__":
   # trainer = vrd_trainer()
-  trainer = vrd_trainer(checkpoint = False)
-  # trainer = vrd_trainer(checkpoint = "epoch_4_checkpoint.pth.tar")
+  trainer = vrd_trainer({"model" : {"use_pred_sem" : True}, "eval" : {"use_preload": False}, "training" : {"use_preload": False, "use_shuffle" : True},}, checkpoint = False)
+  # trainer = vrd_trainer({}, checkpoint = "epoch_4_checkpoint.pth.tar")
   trainer.train()
   #trainer.test_pre()
   # trainer.test_rel()
