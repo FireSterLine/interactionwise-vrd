@@ -31,21 +31,21 @@ from lib.datalayers import VRDDataLayer
 from lib.evaluator import VRDEvaluator
 
 TESTVALIDITY = False # True # False # True
-DEBUGGING =True # False
+DEBUGGING = False # True # False
 
 if utils.device == torch.device("cpu"):
   DEBUGGING = True
 
 if TESTVALIDITY: DEBUGGING = False
 
-def_args = utils.cfg_from_file("cfgs/default.yml")
-
 class vrd_trainer():
 
-  def __init__(self, args, checkpoint = False):
+  def __init__(self, session_name, args = {}, profile = None, checkpoint = False):
 
-    # TODO: check if this works
-    args = utils.cfg_patch(args, def_args)
+    def_args = utils.cfg_from_file("cfgs/default.yml")
+    if profile is not None:
+      def_args = utils.dict_patch(utils.cfg_from_file(profile), def_args)
+    args = utils.dict_patch(args, def_args)
 
     if DEBUGGING:
       # args["training"]["num_epochs"] = 6
@@ -66,8 +66,7 @@ class vrd_trainer():
     print("args:", json.dumps(args, indent=2, sort_keys=True))
 
 
-    self.session_name = "test-pred-sem"
-
+    self.session_name = session_name
 
     self.checkpoint = checkpoint
     self.args       = args
@@ -133,7 +132,7 @@ class vrd_trainer():
     self.model_args.n_obj  = self.datalayer.n_obj
     self.model_args.n_pred = self.datalayer.n_pred
     if self.model_args.use_pred_sem == True:
-      self.model_args.pred_emb = self.datalayer.dataset.readJSON("predicates-emb.json")
+      self.model_args.pred_emb = np.array(self.datalayer.dataset.readJSON("predicates-emb.json"))
     print("Initializing VRD Model: ", self.model_args)
     self.model = VRDModel(self.model_args).to(utils.device)
     if "model_state_dict" in self.state:
@@ -323,9 +322,14 @@ class vrd_trainer():
 
 if __name__ == "__main__":
   # trainer = vrd_trainer()
-  trainer = vrd_trainer({"model" : {"use_pred_sem" : True}, "eval" : {"use_preload": False}, "training" : {"use_preload": False, "use_shuffle" : True},}, checkpoint = False)
+  
+  for lr in [0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001]:
+    for weight_decay in [0.05, 0.0005]:
+      trainer = vrd_trainer("pred-sem-scan-{}-{}".format(lr, weight_decay), {"training" : {"opt": {"lr": lr, "weight_decay" : weight_decay},},}, profile = "cfgs/pred_sem.yml", checkpoint = False)
+      trainer.train()
+
   # trainer = vrd_trainer({}, checkpoint = "epoch_4_checkpoint.pth.tar")
-  trainer.train()
+  #trainer.train()
   #trainer.test_pre()
   # trainer.test_rel()
   #trainer.train()

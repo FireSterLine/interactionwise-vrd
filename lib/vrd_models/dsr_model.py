@@ -134,8 +134,8 @@ class DSRModel(nn.Module):
       assert self.args.pred_emb.shape[0] == self.args.n_pred
       self.fc_rel    = nn.Sequential(
         nn.Linear(256, 300),
-        nn.Sigmoid(),
-        SemSim(self.args.pred_emb)
+        # nn.Sigmoid(),
+        SemSim(self.args.pred_emb),
       )
 
   def forward(self, img_blob, obj_classes, obj_boxes, u_boxes, idx_s, idx_o, spatial_features):
