@@ -373,6 +373,49 @@ def invert_dict(d):
   return {v: k for k, v in d_pairs}
   # ? for list dict(zip(self.d, xrange(self.d)))
 
+# Config File
+
+def cfg_from_file(filename):
+  """Load a config file and merge it into the default options."""
+  import yaml
+  try:
+    from yaml import CLoader as Loader, CDumper as Dumper
+  except ImportError:
+    from yaml import Loader, Dumper
+
+  with open(filename, 'r') as f:
+    yaml_cfg = (yaml.load(f, Loader = Loader))
+
+  return yaml_cfg
+
+def cfg_patch(a, b):
+  """ Patch a config dictionary b with a config dictionary a, clobbering the
+  options in b whenever they are also specified in a. """
+
+  for k, v in a.items():
+    # a must specify keys that are in b
+    if k not in b:
+      raise KeyError("{} is not a valid config key".format(k))
+
+    # the types must match, too
+    old_type = type(b[k])
+    if old_type is not type(v):
+      if isinstance(b[k], np.ndarray):
+        v = np.array(v, dtype=b[k].dtype)
+      else:
+        raise ValueError(("Type mismatch ({} vs. {}) "
+                          "for config key: {}").format(type(b[k]),
+                                                       type(v), k))
+
+    # recursively merge dicts
+    if isinstance(v,munch.Munch):
+      try:
+        cfg_patch(a[k], b[k])
+      except:
+        raise ValueError("Error under config key: {}".format(k))
+    else:
+      b[k] = v
+
 """
 import importlib
 importlib.reload(utils)

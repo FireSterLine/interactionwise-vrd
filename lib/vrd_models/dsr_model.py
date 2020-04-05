@@ -7,7 +7,7 @@ import torch.nn as nn
 
 import sys
 import os.path as osp
-from lib.network import FC, Conv2d, ROIPool
+from lib.network import FC, Conv2d, ROIPool, SemSim
 from lib.network import batched_index_select, set_trainability
 from easydict import EasyDict
 import utils
@@ -128,10 +128,15 @@ class DSRModel(nn.Module):
     # Final layers
     self.fc_fusion = FC(self.total_fus_neurons, 256)
 
-    output_size = self.args.n_pred
-    if self.args.use_pred_sem:
-      output_size = 300
-    self.fc_rel    = FC(256, output_size, relu = False)
+    if not self.args.use_pred_sem:
+      self.fc_rel    = FC(256, self.args.n_pred, relu = False)
+    else:
+      assert self.args.pred_emb.shape[0] == self.args.n_pred
+      self.fc_rel    = nn.Sequential(
+        nn.Linear(256, 300),
+        nn.Sigmoid(),
+        SemSim(self.args.pred_emb)
+      )
 
   def forward(self, img_blob, obj_classes, obj_boxes, u_boxes, idx_s, idx_o, spatial_features):
 

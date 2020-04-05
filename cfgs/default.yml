@@ -1,0 +1,54 @@
+# Dataset in use
+data:
+  name: vrd
+  with_bg_obj: False
+  with_bg_pred: False
+
+# Architecture (or model) type
+model:
+  # Constructor
+  type: DSRModel
+  # In addition to the visual features of the union box
+  #  use those of subject and object individually?
+  use_so: True
+  # Use visual features
+  use_vis: True
+  # Use semantic features (TOD: this becomes the size of the semantic features)
+  use_sem: True
+  # Three types of spatial feature: # - : no spatial info
+  # - : 8-way relative location vector
+  # - : dual mask # TODO
+  use_spat: 0
+  # Use or not predicate semantics
+  use_pred_sem: False
+  # Size of the representation for each modality when fusing features
+  n_fus_neurons: 256
+  # Use batch normalization or not
+  use_bn: False
+
+# Evaluation Arguments
+eval:
+  test_pre: True
+  test_rel: True
+  use_obj_prior: True
+  use_preload: True
+
+# Training parameters
+training:
+  opt:
+    lr: 0.00001
+    # momentum: 0.9
+    weight_decay: 0.0005
+  # Adjust learning rate every lr_decay_step epochs
+  # TOD: check if this work: #lr_decay_step: 3
+  #lr_decay_gamma: .1
+  use_shuffle: True
+  num_epochs: 6
+  checkpoint_freq: .5
+  # Number of lines printed with loss ...TODO explain smart freq
+  print_freq: 10
+  # TODO
+  batch_size: 1
+  loss: mlab
+  # loss: mse
+  use_preload: True

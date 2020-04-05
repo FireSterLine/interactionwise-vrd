@@ -39,6 +39,17 @@ class Conv2d(nn.Module):
       x = self.relu(x)
     return x
 
+class SemSim(nn.Module):
+  """ This layer computes the the similarity of an input vector with the embeddings in an embedding space.
+        the similarity is given in terms of a probability distribution """
+
+  def __init__(self, emb):
+    super(SemSim, self).__init__()
+    self.emb = emb
+
+  def forward(self, x):
+    return F.cosine_similarity(x, self.emb, dim=-1)
+
 # This function is the batched version of torch.index_select
 # Source: https://discuss.pytorch.org/t/batch-index-select/62621/4
 # def batched_index_select(A, indices):

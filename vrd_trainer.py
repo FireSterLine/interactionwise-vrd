@@ -38,82 +38,14 @@ if utils.device == torch.device("cpu"):
 
 if TESTVALIDITY: DEBUGGING = False
 
+def_args = utils.cfg_from_file(filename)
+
 class vrd_trainer():
 
-  def __init__(self,
-      checkpoint = False,
-      args = {
-        # Dataset in use
-        "data" : {
-          "name"         : "vrd",
-          "with_bg_obj"  : False,
-          "with_bg_pred" : False,
-        },
-        # Architecture (or model) type
-        "model" : {
-          # Constructor
-          "type" : "DSRModel",
-          # In addition to the visual features of the union box,
-          #  use those of subject and object individually?
-          "use_so" : True,
+  def __init__(self, args, checkpoint = False):
 
-          # Use visual features
-          "use_vis" : True,
-
-          # Use semantic features (TODO: this becomes the size of the semantic features)
-          "use_sem" : True,
-
-          # Three types of spatial features:
-          # - 0: no spatial info
-          # - 1: 8-way relative location vector
-          # - 2: dual mask # TODO
-          "use_spat" : 0,
-
-          # Use or not predicate semantics
-          "use_pred_sem"  : False, #True,
-
-          # Size of the representation for each modality when fusing features
-          "n_fus_neurons" : 256,
-
-          # Use batch normalization or not
-          "use_bn" : False,
-        },
-        # Evaluation Arguments
-        "eval" : {
-          "test_pre"      : True,
-          "test_rel"      : True,
-          "use_obj_prior" : True,
-          "use_preload"   : True,
-        },
-        # Training parameters
-        "training" : {
-          "opt" : {
-            "lr"           : 0.00001,
-            # "momentum"   : 0.9,
-            "weight_decay" : 0.0005,
-          },
-
-          # Adjust learning rate every lr_decay_step epochs
-          # TODO: check if this works:
-          #"lr_decay_step"  : 3,
-          #"lr_decay_gamma" : .1,
-
-          "use_shuffle"    : True, # TODO: check if shuffle works
-
-          "num_epochs" : 6,
-          "checkpoint_freq" : .5,
-
-          # Number of lines printed with loss ...TODO explain smart freq
-          "print_freq" : 10,
-
-          # TODO
-          "batch_size" : 1,
-
-          "loss" : "mlab", #"mse",
-
-          "use_preload"    :True # False,
-        }
-      }):
+    # TODO: check if this works
+    args = utils.cfg_patch(args, def_args)
 
     if DEBUGGING:
       # args["training"]["num_epochs"] = 6
@@ -124,6 +56,7 @@ class vrd_trainer():
       args["training"]["print_freq"] = 0.1
       args["model"]["use_pred_false"] = True
       # args["training"]["use_preload"] = False
+
 
     print("Arguments:")
     if checkpoint:
@@ -199,6 +132,8 @@ class vrd_trainer():
     # Model
     self.model_args.n_obj  = self.datalayer.n_obj
     self.model_args.n_pred = self.datalayer.n_pred
+    if self.model_args.use_pred_sem == True:
+      self.model_args.pred_emb = self.datalayer.dataset.readJSON("predicates-emb.json")
     print("Initializing VRD Model: ", self.model_args)
     self.model = VRDModel(self.model_args).to(utils.device)
     if "model_state_dict" in self.state:
@@ -341,13 +276,14 @@ class vrd_trainer():
 
       # DSR:
       # TODO: fix this weird-shaped mlab_target in datalayers and remove this view thingy
-      _, rel_scores = model_output
-      loss = self.criterion((gt_soP_prior + rel_scores).view(batch_size, -1), mlab_target)
-      #loss = self.criterion((rel_scores).view(batch_size, -1), mlab_target)
-
-      #_, pred_sem = model_output
-      # TODO use the weighted embeddings of gt_soP_prior ?
-      #loss = self.criterion(pred_sem, gt_pred_sem)
+      if self.training.loss == "mlab":
+        _, rel_scores = model_output
+        loss = self.criterion((gt_soP_prior + rel_scores).view(batch_size, -1), mlab_target)
+        # loss = self.criterion((rel_scores).view(batch_size, -1), mlab_target)
+      elif self.training.loss == "mse":
+        _, pred_sem = model_output
+        # TODO use the weighted embeddings of gt_soP_prior ?
+        loss = self.criterion(pred_sem, gt_pred_sem)
 
       loss.backward()
       self.optimizer.step()
