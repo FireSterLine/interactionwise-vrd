@@ -72,131 +72,17 @@ def getDualMask(self, ih, iw, bb):
 """
 
 def getEmbedding(word, emb_model, depth=0):
-    # This map defines the fall-back words of words that do not exist in the embedding model
-    non_existent_map = {
-        "traffic light"     : ["trafficlight", "stoplight"],
-        "trash can"         : ["trashcan", "papercan", "trash"],
-        "next to"           : ["next"],
-        "sleep next to"     : ["sleep next", ["sleep", "next"]],
-        "sit next to"       : ["sit next", ["sit", "next"]],
-        "stand next to"     : ["stand next", "next"],
-        "park next"         : [],
-        "walk next to"      : ["walk next", ["walk", "next"]],
-        "stand behind"      : [],
-        "sit behind"        : [],
-        "park behind"       : [],
-        "in the front of"   : ["in_front_of", "in_front", "front_of", "front"],
-        "stand under"       : [],
-        "sit under"         : [],
-        "walk to"           : [["walk","to"], "walk"],
-        "walk past"         : [],
-        "walk beside"       : [],
-        "on the top of"     : ["on top of", "on top", "top of", "top"],
-        "on the left of"    : ["on left of", "on left", "left of", "left"],
-        "on the right of"   : ["on right of", "on right", "right of", "right"],
-        "sit on"            : [],
-        "stand on"          : [],
-        "attach to"         : [["attach","to"], "attach"],
-        "adjacent to"       : [["adjacent","to"], "adjacent"],
-        "drive on"          : [],
-        "taller than"       : ["taller"],
-        "park on"           : [],
-        "lying on"          : [],
-        "lean on"           : [],
-        "play with"         : ["play"],
-        "sleep on"          : [],
-        "outside of"        : [["outside", "of"], "outside"],
-        "rest on"           : [],
-        "skate on"          : [],
-
-        # From VG:
-
-        "banana bunch"          : ["banana"],
-        "mountain range"        : ["mountain"],
-        "door frame"            : ["door"],
-        "tail fin"              : [],
-        "telephone pole"        : ["utility pole", "electricity pole", "pole"],
-        "moustache"             : ["mustaches", "moustaches"], # , "beard" ?
-        "train platform"        : ["railway platform", "railway"],
-        "purple flower"         : ["flower"],
-        "left ear"              : ["ear"],
-        "tennis net"            : [], # "net"?
-        "windshield wiper"      : ["windscreen wiper", "wiper"], # "wipers",
-        "bus stop"              : ["bus-stop"],
-        "lamp shade"            : [], # "shade"],
-        "light switch"          : ["lightswitch", "light-switch", "switch"],
-        "shower curtain"        : ["curtain"],
-        "cardboard box"         : ["carton box"], # "cardboard", "box" ?
-        "table cloth"           : [],
-        "doughnut"              : ["donut"],
-        "laptop computer"       : [], # "laptop", "computer"
-        "parking lot"           : ["parking-lot", "parking"],
-        "guard rail"            : ["guard-rail"],
-        "tv stand"              : ["tv-stand"],
-        "traffic signal"        : [],
-        "tennis racket"         : ["tennis-racket", "racket"],
-        "flower pot"            : [],
-        "number 2"              : ["number"],
-        "baseball uniform"      : ["uniform"],
-        "fence post"            : [], # ?
-        "left hand"             : ["hand"],
-        "palm tree"             : ["palm", "tree"],
-        "ceiling fan"           : ["fan"],
-        "clock hand"            : ["clock"],
-        "lamp post"             : ["light pole"],
-        "light pole"            : ["lamppost", "street light", "streetlight"],
-        "oven door"             : [],
-        "traffic sign"          : [],
-        "baseball cap"          : ["baseballcap"],
-        "tree top"              : ["treetop"],
-        "light bulb"            : ["lightbulb"],
-        "computer monitor"      : ["monitor"],
-        "door knob"             : ["doorknob", "door-knob", "knob"],
-        "baseball field"        : ["baseball-field", "field"],
-        "grass patch"           : ["grass"],
-        "passenger car"         : [], # What does this mean?
-        "tennis ball"           : ["tennisball", "tennis-ball"],
-        "window sill"           : ["windowsill"], # , "sill"],
-        "shower head"           : ["showerhead"],
-        "name tag"              : ["nametag", "name-tag"],
-        "front window"          : ["window"], # ?
-        "computer mouse"        : ["computer-mouse"],
-        "cutting board"         : ["cutting-board", "chopping-board", "cutboard", "chopboard"],
-        "hind leg"              : [], # thigh? leg?
-        "paper towel"           : ["papertowel", "paper tissue"],
-        "computer screen"       : ["screen"],
-        "tissue box"            : ["tissue-box", "tissuebox"],
-        "american flag"         : [],
-        "evergreen tree"        : ["tree"],
-        "tree trunk"            : ["treetrunk"],
-        "mouse pad"             : ["mouse-pad", "mousepad"],
-        "baseball glove"        : ["baseball-glove"],
-        "minute hand"           : ["hand"],
-        "window pane"           : ["window"], # ?
-        "coffee maker"          : ["coffeemaker", "coffee-maker"],
-        "front wheel"           : ["wheel"],
-        "road sign"             : ["streetsign", "roadsign"],
-        "steering wheel"        : [],
-        "tennis player"         : [],
-        "manhole cover"         : ["manhole"], # ?
-        "stop light"            : ["traffic light"],
-        "street sign"           : ["road sign"],
-        "train station"         : ["train-station", "train-station"],
-        "brake light"           : ["brake-light"],
-        "wine glass"            : [], # "wine"?
-    }
     if not hasattr(getEmbedding, "fallback_emb_map"):
         # This map defines the fall-back words of words that do not exist in the embedding model
         with open(os.path.join(globals.data_dir, "embeddings", "fallback-v1.json"), 'r') as rfile:
             getEmbedding.fallback_emb_map = json.load(rfile)
-
     try:
         embedding = emb_model[word]
     except KeyError:
         embedding = np.zeros(300)
         fallback_words = []
-        if word in non_existent_map:
-          fallback_words = non_existent_map[word]
+        if word in getEmbedding.fallback_emb_map:
+          fallback_words = getEmbedding.fallback_emb_map[word]
         if " " in word:
           fallback_words = ["_".join(word.split(" "))] + fallback_words + [word.split(" ")]
 
@@ -219,15 +105,15 @@ def getEmbedding(word, emb_model, depth=0):
           else:
               raise ValueError("Error fallback word is of type {}: {}".format(fallback_word, type(fallback_word)))
     if np.all(embedding == np.zeros(300)):
-        print("{}Warning! Couldn't find semantic vector for '{}'".format("  " * depth, word))
-        return embedding
+      print("{}Warning! Couldn't find semantic vector for '{}'".format("  " * depth, word))
+      return embedding
     return embedding / np.linalg.norm(embedding)
 
 
 # Get word embedding of subject and object label and concatenate them
 def getSemanticVector(subject_label, object_label, emb_model):
-    subject_vector = getEmbedding(subject_label, emb_model)
-    object_vector  = getEmbedding(object_label, emb_model)
+    subject_vector = emb_model[subject_label]
+    object_vector  = emb_model[object_label]
     return np.concatenate((subject_vector, object_vector), axis=0)
 
 
