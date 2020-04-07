@@ -29,6 +29,7 @@ CLS OBJ TEST POS:  85.000, LOC:  6183.000, GT:  6694.000, Precision:  0.014, Rec
 
 
 
+https://sagivtech.com/2017/09/19/optimizing-pytorch-training-code/
 New idea:
  look for "Let’s build a proper (yet simple" here: https://towardsdatascience.com/understanding-pytorch-with-an-example-a-step-by-step-tutorial-81fc5f8c4e8e
  They have single paramters. Well, implement the linear projection for a predicate there. Beforee that, check if it's already there somewhere int he code.

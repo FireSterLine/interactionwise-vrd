@@ -16,6 +16,8 @@ model:
 # Evaluation Arguments
 eval:
   use_preload: False
+  eval_obj: False
+  test_rel: False
 
 # Training parameters
 training:

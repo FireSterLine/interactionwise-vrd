@@ -184,9 +184,10 @@ class VRDEvaluator():
 
       N = 100 # What's this? (num of rel_res) (with this you can compute R@i for any i<=N)
 
-      pos_num = 0.0
-      loc_num = 0.0
-      gt_num  = 0.0
+      if self.args.eval_obj:
+        pos_num = 0.0
+        loc_num = 0.0
+        gt_num  = 0.0
 
       rlp_labels_cell  = []
       tuple_confs_cell = []
@@ -280,10 +281,11 @@ class VRDEvaluator():
         idx_o = deepcopy(idx_o[0])
         det_obj_boxes = deepcopy(det_obj_boxes[0])
 
-        pos_num_img, loc_num_img = eval_obj_img(gt_obj_boxes, gt_obj_classes, det_obj_boxes, obj_pred.cpu().numpy(), gt_thr=0.5)
-        pos_num += pos_num_img
-        loc_num += loc_num_img
-        gt_num  += gt_obj_boxes.shape[0]
+        if self.args.eval_obj:
+          pos_num_img, loc_num_img = eval_obj_img(gt_obj_boxes, gt_obj_classes, det_obj_boxes, obj_pred.cpu().numpy(), gt_thr=0.5)
+          pos_num += pos_num_img
+          loc_num += loc_num_img
+          gt_num  += gt_obj_boxes.shape[0]
 
         # TODO: remove this to allow batching
         det_obj_confs   = deepcopy(det_obj_confs[0])
@@ -348,4 +350,7 @@ class VRDEvaluator():
       recalls = eval_recall_at_N(res, gts = [self.gt, self.gt_zs], Ns = Ns, num_imgs = self.num_imgs)
       time2 = time.time()
 
-      return recalls, pos_num, loc_num, gt_num, (time2 - time1)
+      if self.args.eval_obj:
+        return recalls, (pos_num, loc_num, gt_num), (time2 - time1)
+      else:
+        return recalls, (np.nan, np.nan, np.nan), (time2 - time1)
