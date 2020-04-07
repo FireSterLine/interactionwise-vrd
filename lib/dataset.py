@@ -30,7 +30,7 @@ class dataset():
     self.with_bg_pred = with_bg_pred
     self.justafew     = justafew
 
-    if self.justafew:
+    if self.justafew != False:
       warnings.warn("Warning: Using less data (because of 'justafew' debugging)", UserWarning)
 
     self.img_dir      = None
@@ -88,8 +88,10 @@ class dataset():
           filename = "dsr_{}_{}_{}.json".format(format, granularity, stage)
       print("Data not cached. Reading {}...".format(filename))
       data = self.readJSON(filename)
-      if self.justafew:
-        data = data[:100]
+      if self.justafew == True:
+          data = data[:100]
+      elif isinstance(self.justafew, int):
+          data = data[self.justafew:self.justafew+1] # [:100]
       self._vrd_data_cache[(format, stage, granularity)] = data
     return self._vrd_data_cache[(format, stage, granularity)]
 

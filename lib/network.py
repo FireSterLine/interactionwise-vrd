@@ -64,7 +64,8 @@ class SemSim(nn.Module):
     cos_sim = lambda x : F.cosine_similarity(x, self.emb, dim=-1)
     shift = lambda x : x-x.min()
     scale = lambda x : x/x.sum()
-    new_tens = ([scale(shift(cos_sim(x[r]))) for r in range(rel_size)])
+    new_tens = [cos_sim(x[r]) for r in range(rel_size)]
+    #new_tens = ([scale(shift(cos_sim(x[r]))) for r in range(rel_size)])
     a = torch.stack(new_tens)
     a = a.unsqueeze(0)
     #a.shape

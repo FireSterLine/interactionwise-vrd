@@ -7,9 +7,9 @@ import time
 import json
 import warnings
 
-import random
+#import random
 # only for debugging (i.e TODO remove)
-random.seed(0)
+#random.seed(0)
 import numpy as np
 # only for debugging (i.e TODO remove)
 np.random.seed(0)
@@ -17,8 +17,9 @@ np.random.seed(0)
 import torch
 # only for debugging (i.e TODO remove)
 torch.manual_seed(0)
-torch.backends.cudnn.deterministic = True
-torch.backends.cudnn.benchmark = False
+#torch.backends.cudnn.deterministic = True
+#torch.backends.cudnn.benchmark = False
+torch.backends.cudnn.benchmark = True
 
 import torch.nn as nn
 import torch.nn.init
@@ -30,12 +31,15 @@ from lib.vrd_models import VRDModel
 from lib.datalayers import VRDDataLayer
 from lib.evaluator import VRDEvaluator
 
+TESTOVERFIT = True
 TESTVALIDITY = False # True # False # True
-DEBUGGING = False # True # False
+DEBUGGING = True # False # True # False
 
 if utils.device == torch.device("cpu"):
   DEBUGGING = True
 
+if TESTOVERFIT: DEBUGGING = False
+if TESTOVERFIT: TESTVALIDITY = False
 if TESTVALIDITY: DEBUGGING = False
 
 class vrd_trainer():
@@ -51,6 +55,10 @@ class vrd_trainer():
       # args["training"]["num_epochs"] = 6
       args["data"]["justafew"] = True
       args["training"]["use_shuffle"] = False
+      torch.backends.cudnn.benchmark = False
+    if TESTOVERFIT:
+      args["data"]["justafew"] = 3
+      args["eval"]["justafew"] = 3
     if TESTVALIDITY:
       args["data"]["name"] = "vrd/dsr"
       args["training"]["print_freq"] = 0.1
@@ -182,10 +190,10 @@ class vrd_trainer():
 
     # Prepare result table
     res_headers = ["Epoch"]
-    if self.eval.test_pre:
-      res_headers += ["Pre R@50", "ZS", "R@100", "ZS"]
-    if self.eval.test_rel:
-      res_headers += ["Rel R@50", "ZS", "R@100", "ZS"]
+    if self.eval_args.test_pre:
+      res_headers += ["Pre R20", "ZS", "R@50", "ZS", "R@100", "ZS"]
+    if self.eval_args.test_rel:
+      res_headers += ["Rel R@20", "ZS", "R@50", "ZS", "R@100", "ZS"]
     res = []
 
     end_epoch = self.state["epoch"] + self.training.num_epochs
@@ -212,12 +220,12 @@ class vrd_trainer():
 
       # Test results
       res_row = [self.state["epoch"]]
-      if self.eval.test_pre:
-        rec_50, rec_50_zs, rec_100, rec_100_zs, dtime = self.test_pre()
-        res_row += [rec_50, rec_50_zs, rec_100, rec_100_zs]
-      if self.eval.test_rel:
-        rec_50, rec_50_zs, rec_100, rec_100_zs, dtime = self.test_rel()
-        res_row += [rec_50, rec_50_zs, rec_100, rec_100_zs]
+      if self.eval_args.test_pre:
+        rec_20, rec_20_zs, rec_50, rec_50_zs, rec_100, rec_100_zs, dtime = self.test_pre()
+        res_row += [rec_20, rec_20_zs, rec_50, rec_50_zs, rec_100, rec_100_zs]
+      if self.eval_args.test_rel:
+        rec_20, rec_20_zs, rec_50, rec_50_zs, rec_100, rec_100_zs, dtime = self.test_rel()
+        res_row += [rec_20, rec_20_zs, rec_50, rec_50_zs, rec_100, rec_100_zs]
       res.append(res_row)
 
       with open(save_file, 'w') as f:
@@ -308,25 +316,28 @@ class vrd_trainer():
     """
 
   def test_pre(self):
-    rec_50, rec_50_zs, rec_100, rec_100_zs, dtime = self.eval.test_pre(self.model)
-    print("CLS PRED TEST:\nAll:\tR@50: {: 6.3f}\tR@100: {: 6.3f}\nZShot:\tR@50: {: 6.3f}\tR@100: {: 6.3f}".format(rec_50, rec_100, rec_50_zs, rec_100_zs))
+    rec_20, rec_20_zs, rec_50, rec_50_zs, rec_100, rec_100_zs, dtime = self.eval.test_pre(self.model)
+    print("CLS PRED TEST:\nAll:\tR@20: {: 6.3f}\tR@50: {: 6.3f}\tR@100: {: 6.3f}\nZShot:\tR@20: {: 6.3f}\tR@50: {: 6.3f}\tR@100: {: 6.3f}".format(rec_20, rec_50, rec_100, rec_20_zs, rec_50_zs, rec_100_zs))
     print("TEST Time: {}".format(utils.time_diff_str(dtime)))
-    return rec_50, rec_50_zs, rec_100, rec_100_zs, dtime
+    return rec_20, rec_20_zs, rec_50, rec_50_zs, rec_100, rec_100_zs, dtime
 
   def test_rel(self):
-    rec_50, rec_50_zs, rec_100, rec_100_zs, pos_num, loc_num, gt_num, dtime = self.eval.test_rel(self.model)
-    print("CLS REL TEST:\nAll:\tR@50: {: 6.3f}\tR@100: {: 6.3f}\nZShot:\tR@50: {: 6.3f}\tR@100: {: 6.3f}".format(rec_50, rec_100, rec_50_zs, rec_100_zs))
-    print("CLS OBJ TEST POS: {: 6.3f}, LOC: {: 6.3f}, GT: {: 6.3f}, Precision: {: 6.3f}, Recall: {: 6.3f}".format(pos_num, loc_num, gt_num, pos_num/(pos_num+loc_num), pos_num/gt_num))
+    rec_20, rec_20_zs, rec_50, rec_50_zs, rec_100, rec_100_zs, pos_num, loc_num, gt_num, dtime = self.eval.test_rel(self.model)
+    print("CLS REL TEST:\nAll:\tR@20: {: 6.3f}\tR@50: {: 6.3f}\tR@100: {: 6.3f}\nZShot:\tR@20: {: 6.3f}\tR@50: {: 6.3f}\tR@100: {: 6.3f}".format(rec_20, rec_50, rec_100, rec_20_zs, rec_50_zs, rec_100_zs))
+    print("CLS OBJ TEST POS: {: 6.3f}, LOC: {: 6.3f}, GT: {: 6.3f}, Precision: {: 6.3f}, Recall: {: 6.3f}".format(pos_num, loc_num, gt_num, np.float64(pos_num)/(pos_num+loc_num), np.float64(pos_num)/gt_num))
     print("TEST Time: {}".format(utils.time_diff_str(dtime)))
-    return rec_50, rec_50_zs, rec_100, rec_100_zs, dtime
+    return rec_20, rec_20_zs, rec_50, rec_50_zs, rec_100, rec_100_zs, dtime
 
 if __name__ == "__main__":
-  # trainer = vrd_trainer()
-  
-  for lr in [0.1, 0.01, 0.001, 0.0001, 0.00001, 0.000001]:
-    for weight_decay in [0.05, 0.0005]:
-      trainer = vrd_trainer("pred-sem-scan-{}-{}".format(lr, weight_decay), {"training" : {"opt": {"lr": lr, "weight_decay" : weight_decay},},}, profile = "cfgs/pred_sem.yml", checkpoint = False)
-      trainer.train()
+  trainer = vrd_trainer("original", checkpoint="epoch_4_checkpoint.pth.tar")
+  #trainer = vrd_trainer("test", {"training" : {"num_epochs" : 1}, "eval" : {"test_pre" : True, "test_rel" : True}}, checkpoint = False)
+  trainer.train()
+  sys.exit(0)
+  for lr in [0.001, 0.00001]: # [0.001, 0.0001, 0.00001, 0.000001]:
+    for weight_decay in [0.0005]:
+        for lr_rel_fus_ratio in [1]: # , 10, 100]:
+          trainer = vrd_trainer("pred-sem-scan-2-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio), {"training" : {"opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio},"checkpoint_freq" : 0.1 },}, profile = "cfgs/pred_sem.yml", checkpoint = False)
+          trainer.train()
 
   # trainer = vrd_trainer({}, checkpoint = "epoch_4_checkpoint.pth.tar")
   #trainer.train()

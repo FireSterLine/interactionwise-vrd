@@ -172,7 +172,7 @@ def smart_frequency_check(i_iter, num_iters, smart_frequency):
   if isinstance(smart_frequency, int):
     abs_freq = smart_frequency
   else:
-    abs_freq = int(num_iters*smart_frequency)
+    abs_freq = max(int(num_iters*smart_frequency),1)
   return (i_iter % abs_freq) == 0
 
 def time_diff_str(time1, time2 = None):
@@ -284,7 +284,8 @@ def dict_patch(a, def_dict):
     #print(k,v)
     # a must specify keys that are in def already (although this may not be desirable in some cases)
     if k not in def_dict:
-      raise KeyError("{} is not a valid config key".format(k))
+      warnings.warn("dict_patch: key '{}' not int original dict.".format(k), UserWarning)
+      # raise KeyError("{} is not a valid config key".format(k))
 
     # Type check
     # if not isinstance(v, type(def_dict[k])):
@@ -301,12 +302,12 @@ def dict_patch(a, def_dict):
       try:    def_dict[k] = dict_patch(a[k], def_dict[k])
       except: raise ValueError("Error under config key: {}".format(k))
     else:
-      print(def_dict, k, v)
+      #print(def_dict, k, v)
       def_dict[k] = v
-      print(def_dict)
-      print()
-  print(def_dict)
-  print()
+      #print(def_dict)
+      #print()
+  #print(def_dict)
+  #print()
   return def_dict
 
 """
