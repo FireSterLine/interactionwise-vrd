@@ -428,6 +428,7 @@ class VRDDataLayer(data.Dataset):
     # mlab_target      = torch.as_tensor(mlab_target,    dtype=torch.long,     device = utils.device)
 
 
+    img_blob          = torch.as_tensor(img_blob,        dtype=torch.float)
     roi_obj_boxes     = torch.as_tensor(roi_obj_boxes,   dtype=torch.float)
     roi_u_boxes       = torch.as_tensor(roi_u_boxes,     dtype=torch.float)
     idx_s             = torch.as_tensor(idx_s,           dtype=torch.long)
