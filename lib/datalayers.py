@@ -103,6 +103,42 @@ class VRDDataLayer(data.Dataset):
   def __len__(self):
     return self.N
 
+  def net_input_to(self, net_input, device):
+    # Move to GPU
+    if net_input is not False: # not (isinstance(net_input, torch.Tensor) and net_input.size() == (1,)):
+      (img_blob,
+               obj_classes,
+               roi_obj_boxes,
+               roi_u_boxes,
+               idx_s,
+               idx_o,
+               dsr_spat_vec,
+               # dsr_spat_mat,
+              #  sem_cat_vec,
+      ) = net_input
+
+      img_blob          = torch.as_tensor(img_blob,        dtype=torch.float,    device = device)
+      obj_classes       = torch.as_tensor(obj_classes,     dtype=torch.long,     device = device)
+      roi_obj_boxes     = torch.as_tensor(roi_obj_boxes,   dtype=torch.float,    device = device)
+      roi_u_boxes       = torch.as_tensor(roi_u_boxes,     dtype=torch.float,    device = device)
+      idx_s             = torch.as_tensor(idx_s,           dtype=torch.long,     device = device)
+      idx_o             = torch.as_tensor(idx_o,           dtype=torch.long,     device = device)
+      dsr_spat_vec      = torch.as_tensor(dsr_spat_vec,    dtype=torch.float,    device = device)
+      # sem_cat_vec       = torch.as_tensor(sem_cat_vec,     dtype=torch.float,    device = device)
+      # dsr_spat_mat      = torch.as_tensor(dsr_spat_mat,    dtype=torch.float,    device = device)
+
+      net_input = (img_blob,
+               obj_classes,
+               roi_obj_boxes,
+               roi_u_boxes,
+               idx_s,
+               idx_o,
+               dsr_spat_vec,
+               # dsr_spat_mat,
+              #  sem_cat_vec,
+      )
+    return net_input
+
   def __getitem__(self, index):
     # print("index: ", index)
 
@@ -128,6 +164,7 @@ class VRDDataLayer(data.Dataset):
               gt_pred_sem,    \
               mlab_target = output
 
+  """
     # Move to GPU
     if net_input is not False: # not (isinstance(net_input, torch.Tensor) and net_input.size() == (1,)):
       (img_blob,
@@ -180,6 +217,7 @@ class VRDDataLayer(data.Dataset):
               gt_soP_prior,   \
               gt_pred_sem,    \
               mlab_target
+  """
 
   def __computeitem__(self, index):
 

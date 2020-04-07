@@ -87,7 +87,7 @@ class VRDEvaluator():
       self.num_imgs = None
       # TODO: self.num_imgs = 8995
 
-  def test_pre(self, vrd_model, Ns = [100, 50, 4.]):
+  def test_pre(self, vrd_model, Ns = [100, 50]):
     """ Test model on Predicate Prediction """
     if self.gt is None:
       return np.nan, np.nan, np.nan, np.nan, 0.1
@@ -115,6 +115,7 @@ class VRDEvaluator():
           print("{}/{}\r".format(tmp_i, len(self.dataloader_pre)), end="")
 
         (gt_obj_classes, gt_obj_boxes) = gt_obj
+        net_input = self.datalayer.net_input_to(net_input, utils.device)
         img_blob, obj_classes, obj_boxes, u_boxes, idx_s, idx_o, spatial_features = net_input
 
         tuple_confs_im = np.zeros((N,),   dtype = np.float) # Confidence...
@@ -127,8 +128,8 @@ class VRDEvaluator():
         # TODO: fix when batch_size>1
         idx_s           = deepcopy(idx_s[0])
         idx_o           = deepcopy(idx_o[0])
-        gt_obj_classes = deepcopy(gt_obj_classes[0])
-        gt_obj_boxes      = deepcopy(gt_obj_boxes[0])
+        gt_obj_classes  = deepcopy(gt_obj_classes[0])
+        gt_obj_boxes    = deepcopy(gt_obj_boxes[0])
         rel_scores      = deepcopy(rel_scores[0])
         #print(gt_obj_classes.shape)
         #print(gt_obj_boxes.shape)
@@ -169,7 +170,7 @@ class VRDEvaluator():
       return recalls, (time2-time1)
 
   # Relationship Prediction
-  def test_rel(self, vrd_model, Ns = [100, 50, 4.]):
+  def test_rel(self, vrd_model, Ns = [100, 50]):
     """ Test model on Relationship Prediction """
     if self.gt is None:
       return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 0.1
@@ -264,6 +265,7 @@ class VRDEvaluator():
         gt_soP_prior = gt_soP_prior.data.cpu().numpy()
         rel_prob += np.log(0.5*(gt_soP_prior+1.0 / self.any_datalayer.n_pred))
 
+        net_input = self.datalayer.net_input_to(net_input, utils.device)
         img_blob, obj_classes, obj_boxes, u_boxes, idx_s, idx_o, spatial_features = net_input
 
         # print("gt_obj_boxes.shape: \t", gt_obj_boxes.shape)

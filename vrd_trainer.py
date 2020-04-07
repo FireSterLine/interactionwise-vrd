@@ -132,7 +132,7 @@ class vrd_trainer():
       dataset = self.datalayer,
       batch_size = 1, # self.training.batch_size,
       # sampler= Random ...,
-      # num_workers=self.num_workers
+      num_workers = 2, # num_workers=self.num_workers
       shuffle = self.training.use_shuffle,
     )
 
@@ -269,6 +269,10 @@ class vrd_trainer():
       # print(type(net_input))
       # print(type(gt_soP_prior))
       # print(type(mlab_target))
+
+      net_input = self.datalayer.net_input_to(net_input, utils.device)
+      gt_pred_sem      = torch.as_tensor(gt_pred_sem,    dtype=torch.long,     device = utils.device)
+      mlab_target      = torch.as_tensor(mlab_target,    dtype=torch.long,     device = utils.device)
 
       batch_size = mlab_target.size()[0]
 
