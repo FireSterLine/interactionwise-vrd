@@ -29,11 +29,12 @@ from munch import munchify
 import globals, utils
 from lib.vrd_models import VRDModel
 from lib.datalayers import VRDDataLayer
+import lib.datalayers
 from lib.evaluator import VRDEvaluator
 
 TESTOVERFIT = False # True
 TESTVALIDITY = False # True # False # True
-DEBUGGING = True # False # True # False
+DEBUGGING = False # True # False
 
 if utils.device == torch.device("cpu"):
   DEBUGGING = True
@@ -132,7 +133,7 @@ class vrd_trainer():
       dataset = self.datalayer,
       batch_size = 1, # self.training.batch_size,
       # sampler= Random ...,
-      num_workers = 0, # num_workers=self.num_workers
+      num_workers = 2, # num_workers=self.num_workers
       shuffle = self.training.use_shuffle,
     )
 
@@ -337,8 +338,8 @@ class vrd_trainer():
     return recalls, dtime
 
 if __name__ == "__main__":
-  trainer = vrd_trainer("original-checkpoint", checkpoint="epoch_4_checkpoint.pth.tar")
-  #trainer = vrd_trainer("original")
+  trainer = vrd_trainer("original-checkpoint", {"training": {"num_epochs":1}}, checkpoint="epoch_4_checkpoint.pth.tar")
+  #trainer = vrd_trainer("original", {"training": {"num_epochs":20}})
   #trainer = vrd_trainer("test", {"training" : {"num_epochs" : 1}, "eval" : {"test_pre" : True, "test_rel" : True}}, checkpoint = False)
   trainer.train()
   sys.exit(0)

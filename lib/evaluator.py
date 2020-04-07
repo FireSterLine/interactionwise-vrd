@@ -2,6 +2,7 @@ import numpy as np
 import torch
 
 from lib.datalayers import VRDDataLayer
+import lib.datalayers
 from lib.evaluation_dsr import eval_recall_at_N, eval_obj_img # TODO remove this module
 import time
 import pickle
@@ -72,7 +73,7 @@ class VRDEvaluator():
         #print(type(self.gt))
         if self.args.justafew != False and isinstance(self.args.justafew, int):
           x =self.args.justafew
-          print(self.gt["tuple_label"][0].shape)
+          print(self.gt["tuple_label"][self.args.justafew].shape)
           self.gt    = {'tuple_label' : [self.gt['tuple_label'][x]],    'obj_bboxes' : [self.gt['obj_bboxes'][x]],    'sub_bboxes' : [self.gt['sub_bboxes'][x]]}
           print(self.gt["tuple_label"][0].shape)
           self.gt_zs = {'tuple_label' : [self.gt_zs['tuple_label'][x]], 'obj_bboxes' : [self.gt_zs['obj_bboxes'][x]], 'sub_bboxes' : [self.gt_zs['sub_bboxes'][x]]}
