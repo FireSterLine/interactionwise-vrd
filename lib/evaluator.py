@@ -115,7 +115,7 @@ class VRDEvaluator():
           print("{}/{}\r".format(tmp_i, len(self.dataloader_pre)), end="")
 
         (gt_obj_classes, gt_obj_boxes) = gt_obj
-        net_input = self.datalayer_pre.net_input_to(net_input, utils.device)
+        net_input = lib.datalayers.net_input_to(net_input, utils.device)
         img_blob, obj_classes, obj_boxes, u_boxes, idx_s, idx_o, spatial_features = net_input
 
         tuple_confs_im = np.zeros((N,),   dtype = np.float) # Confidence...
@@ -250,7 +250,7 @@ class VRDEvaluator():
         continue
         """
 
-        net_input = self.datalayer_rel.net_input_to(net_input, utils.device)
+        net_input = lib.datalayers.net_input_to(net_input, utils.device)
         obj_score, rel_score = vrd_model(*net_input) # img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
 
         # TODO: remove and fix everyhing else to allow batching

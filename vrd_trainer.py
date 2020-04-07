@@ -270,7 +270,7 @@ class vrd_trainer():
       # print(type(gt_soP_prior))
       # print(type(mlab_target))
 
-      net_input = self.datalayer.net_input_to(net_input, utils.device)
+      net_input = lib.datalayers.net_input_to(net_input, utils.device)
       gt_pred_sem      = torch.as_tensor(gt_pred_sem,    dtype=torch.long,     device = utils.device)
       mlab_target      = torch.as_tensor(mlab_target,    dtype=torch.long,     device = utils.device)
 
