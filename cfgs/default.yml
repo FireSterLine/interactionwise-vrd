@@ -33,6 +33,7 @@ eval:
   test_rel: True
   use_obj_prior: True
   use_preload: False
+  eval_obj: True
 
 # Training parameters
 training:

@@ -323,6 +323,23 @@ class vrd_trainer():
     """
 
   def test_pre(self):
+    recalls, dtime = self.eval.test_pre(self.model, [100, 50])
+    rec_100, rec_100_zs, rec_50, rec_50_zs = recalls
+    print("CLS PRED TEST:\nAll:\tR@50: {: 6.3f}\tR@100: {: 6.3f}\nZShot:\tR@50: {: 6.3f}\tR@100: {: 6.3f}".format(rec_50, rec_100, rec_50_zs, rec_100_zs))
+    print("TEST Time: {}".format(utils.time_diff_str(dtime)))
+    return recalls, dtime
+
+  def test_rel(self):
+    recalls, (pos_num, loc_num, gt_num), dtime = self.eval.test_rel(self.model, [100, 50])
+    rec_100, rec_100_zs, rec_50, rec_50_zs = recalls
+    print("CLS REL TEST:\nAll:\tR@50: {: 6.3f}\tR@100: {: 6.3f}\nZShot:\tR@50: {: 6.3f}\tR@100: {: 6.3f}".format(rec_50, rec_100, rec_50_zs, rec_100_zs))
+    print("CLS OBJ TEST POS: {: 6.3f}, LOC: {: 6.3f}, GT: {: 6.3f}, Precision: {: 6.3f}, Recall: {: 6.3f}".format(pos_num, loc_num, gt_num, np.float64(pos_num)/(pos_num+loc_num), np.float64(pos_num)/gt_num))
+    print("TEST Time: {}".format(utils.time_diff_str(dtime)))
+    return recalls, dtime
+
+  """
+  # 100, 50, 4x
+  def test_pre(self):
     recalls, dtime = self.eval.test_pre(self.model, [100, 50, 4.])
     rec_100, rec_100_zs, rec_50, rec_50_zs, rec_4x, rec_4x_zs = recalls
     print("CLS PRED TEST:\nAll:\tR@4x: {: 6.3f}\tR@50: {: 6.3f}\tR@100: {: 6.3f}\nZShot:\tR@4x: {: 6.3f}\tR@50: {: 6.3f}\tR@100: {: 6.3f}".format(rec_4x, rec_50, rec_100, rec_4x_zs, rec_50_zs, rec_100_zs))
@@ -336,6 +353,7 @@ class vrd_trainer():
     print("CLS OBJ TEST POS: {: 6.3f}, LOC: {: 6.3f}, GT: {: 6.3f}, Precision: {: 6.3f}, Recall: {: 6.3f}".format(pos_num, loc_num, gt_num, np.float64(pos_num)/(pos_num+loc_num), np.float64(pos_num)/gt_num))
     print("TEST Time: {}".format(utils.time_diff_str(dtime)))
     return recalls, dtime
+  """
 
 if __name__ == "__main__":
   trainer = vrd_trainer("original-checkpoint", {"training": {"num_epochs":1}}, checkpoint="epoch_4_checkpoint.pth.tar")

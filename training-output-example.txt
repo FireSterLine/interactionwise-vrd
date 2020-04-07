@@ -3,24 +3,14 @@ REFERENCE test performance for the pre-trained DSR Model:
 07/04/2020
 
 CLS PRED TEST:
-All:	R@4x:  84.263	R@50:  87.615	R@100:  93.676
-ZShot:	R@4x:  24.722	R@50:  65.184	R@100:  82.207
-TEST Time: 00:02:48
+All:	R@4x:  84.656	R@50:  88.020	R@100:  94.135
+ZShot:	R@4x:  24.808	R@50:  65.269	R@100:  82.464
+TEST Time: 00:03:09
 CLS REL TEST:
 All:	R@4x:  16.824	R@50:  18.231	R@100:  22.897
-ZShot:	R@4x:  1.204	R@50:  4.901	R@100:  8.340
-CLS OBJ TEST POS:  43.000, LOC:  6225.000, GT:  6652.000, Precision:  0.007, Recall:  0.006
-
-
-...
-
-CLS PRED TEST:
-All:	R@50:  88.020	R@100:  94.370
-ZShot:	R@50:  65.783	R@100:  83.405
-CLS REL TEST:
-All:	R@50:  18.349	R@100:  23.015
-ZShot:	R@50:  4.901	R@100:  8.340
+ZShot:	R@4x:  1.204	R@50:  4.815	R@100:  8.340
 CLS OBJ TEST POS:  43.000, LOC:  6225.000, GT:  6694.000, Precision:  0.007, Recall:  0.006
+
 
 
 QUESTION: why is a newly initialized model already this good?
