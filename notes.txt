@@ -5,58 +5,14 @@ New idea:
  They claim it is, in the paper.
 
 
-Before batching:
 
-CLS PRED TEST:
-All:	R@50:  90.698	R@100:  95.349
-ZShot:	R@50:  85.714	R@100:  100.000
-TEST Time: 00:00:26
-	   0: LOSS:  0.411
-	   1: LOSS:  0.038
-	   2: LOSS:  0.771
-	   3: LOSS:  0.162
-	   4: LOSS:  0.066
-TRAIN Loss:  0.290
-TRAIN Time: 00:02:28
+ # TODO: check if shuffle works
 
-After introducing the "fake" 1-batching:
-
-CLS PRED TEST:
-All:	R@50:  90.698	R@100:  95.349
-ZShot:	R@50:  85.714	R@100:  100.000
-0: LOSS:  0.044
-1: LOSS:  0.153
-2: LOSS:  0.428
-3: LOSS:  0.066
-4: LOSS:  0.681
-TRAIN Loss:  0.275
-
-CLS PRED TEST:
-All:	R@50:  90.698	R@100:  95.349
-ZShot:	R@50:  85.714	R@100:  100.000
-TEST Time: 00:00:31
-	   0: LOSS:  0.037
-	   1: LOSS:  0.639
-	   2: LOSS:  0.410
-	   3: LOSS:  0.175
-	   4: LOSS:  0.068
-TRAIN Loss:  0.266
+num_workers>1
+to(device outside datalayer)
+pin_memory=True in dataloader
+cache datalayer output to file and load like with torch.load('data/' + ID + '.pt')
 
 
-
-CLS PRED TEST:
-All:	R@50:  96.000	R@100:  100.000
-ZShot:	R@50:  83.333	R@100:  100.000
-TEST Time: 00:00:21
-	   0: LOSS:  0.058
-	   1: LOSS:  0.039
-	   2: LOSS:  0.154
-TRAIN Loss:  0.084
-CLS PRED TEST:
-All:	R@50:  96.000	R@100:  100.000
-ZShot:	R@50:  83.333	R@100:  100.000
-TEST Time: 00:00:57
-	   0: LOSS:  0.040
-	   1: LOSS:  0.074
-	   2: LOSS:  0.154
-TRAIN Loss:  0.089
+ criterion = nn.CrossEntropyLoss()
+ optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
