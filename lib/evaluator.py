@@ -68,6 +68,14 @@ class VRDEvaluator():
         # Load ground truths
         self.gt    = self.any_datalayer.dataset.readPKL(osp.join("eval", "gt.pkl"))
         self.gt_zs = self.any_datalayer.dataset.readPKL(osp.join("eval", "gt_zs.pkl"))
+        #print(self.gt.keys())
+        #print(type(self.gt))
+        if isinstance(self.args.justafew, int):
+          x =self.args.justafew
+          print(self.gt["tuple_label"][0].shape)
+          self.gt    = {'tuple_label' : [self.gt['tuple_label'][x]],    'obj_bboxes' : [self.gt['obj_bboxes'][x]],    'sub_bboxes' : [self.gt['sub_bboxes'][x]]}
+          print(self.gt["tuple_label"][0].shape)
+          self.gt_zs = {'tuple_label' : [self.gt_zs['tuple_label'][x]], 'obj_bboxes' : [self.gt_zs['obj_bboxes'][x]], 'sub_bboxes' : [self.gt_zs['sub_bboxes'][x]]}
       except FileNotFoundError:
         warnings.warn("Warning! Couldn't find ground truths pickles. Evaluation will be skipped.")
 
@@ -155,10 +163,10 @@ class VRDEvaluator():
         "obj_bboxes_ours" : obj_bboxes_cell,
       }
 
-      rec_100, rec_100_zs, rec_50, rec_50_zs = eval_recall_at_N(res, gts = [self.gt, self.gt_zs], Ns = [100, 50], num_imgs = self.num_imgs)
+      rec_100, rec_100_zs, rec_50, rec_50_zs, rel_20, rel_20_zs = eval_recall_at_N(res, gts = [self.gt, self.gt_zs], Ns = [100, 50, 20], num_imgs = self.num_imgs)
       time2 = time.time()
 
-      return rec_50, rec_50_zs, rec_100, rec_100_zs, (time2-time1)
+      return rel_20, rel_20_zs, rec_50, rec_50_zs, rec_100, rec_100_zs, (time2-time1)
 
   # Relationship Prediction
   def test_rel(self, vrd_model):
@@ -333,7 +341,7 @@ class VRDEvaluator():
       # if len(len(self.dataloader)) != len(res["obj_bboxes_ours"]):
       #   warnings.warn("Warning! Rel test results and gt do not have the same length: rel test performance might be off! {} != {}".format(len(len(self.dataloader)), len(res["obj_bboxes_ours"])), UserWarning)
 
-      rec_100, rec_100_zs, rec_50, rec_50_zs = eval_recall_at_N(res, gts = [self.gt, self.gt_zs], Ns = [100, 50], num_imgs = self.num_imgs)
+      rec_100, rec_100_zs, rec_50, rec_50_zs, rel_20, rel_20_zs = eval_recall_at_N(res, gts = [self.gt, self.gt_zs], Ns = [100, 50, 20], num_imgs = self.num_imgs)
       time2 = time.time()
 
-      return rec_50, rec_50_zs, rec_100, rec_100_zs, pos_num, loc_num, gt_num, (time2 - time1)
+      return rel_20, rel_20_zs, rec_50, rec_50_zs, rec_100, rec_100_zs, pos_num, loc_num, gt_num, (time2 - time1)

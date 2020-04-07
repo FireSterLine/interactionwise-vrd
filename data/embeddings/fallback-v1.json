@@ -33,6 +33,7 @@
    "outside of"        : [["outside", "of"], "outside"],
    "rest on"           : [],
    "skate on"          : [],
+
 "banana bunch"          : ["banana"],
 "mountain range"        : ["mountain"],
 "door frame"            : ["door"],
@@ -105,5 +106,5 @@
 "street sign"           : ["road sign"],
 "train station"         : ["train-station", "train-station"],
 "brake light"           : ["brake-light"],
-"wine glass"            : [],
+"wine glass"            : []
  }

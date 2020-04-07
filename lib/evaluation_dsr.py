@@ -17,7 +17,15 @@ this_dir = osp.dirname(osp.realpath(__file__))
 def eval_per_image(i, gt, pred, use_rel, gt_thr = 0.5, return_match = False):
   gt_tupLabel = gt["tuple_label"][i].astype(np.float32)
   num_gt_tuple = gt_tupLabel.shape[0]
+  #print("gt_tuples: ")
+  #for tup in gt_tupLabel:
+  #  print(tup)
+  #print("pred_tuples: ")
+  #for tup in pred["tuple_label"]:
+  #  print(tup)
+  #print(gt_tupLabel.shape)
   if num_gt_tuple == 0 or pred["tuple_confs"][i] is None:
+    #print(num_gt_tuple, len(pred["tuple_confs"][i]))
     return 0, 0
   if not use_rel:
     gt_tupLabel = gt_tupLabel[:, (0,2)]
@@ -130,7 +138,7 @@ def eval_recall_at_N(res, gts, Ns = [100, 50], num_imgs = None, use_rel = True):
       img_tp, img_gt = eval_per_image(i, this_gt, pred, use_rel, gt_thr = 0.5)
       tp_num += img_tp
       num_pos_tuple += img_gt
-    return (tp_num/num_pos_tuple)*100
+    return (np.float64(tp_num)/num_pos_tuple)*100
 
   recalls = []
   for gt in gts:

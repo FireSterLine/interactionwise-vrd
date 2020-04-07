@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 # from torch.autograd import Variable
 import numpy as np
 import torchvision
@@ -45,10 +46,30 @@ class SemSim(nn.Module):
 
   def __init__(self, emb):
     super(SemSim, self).__init__()
-    self.emb = emb
-
+    self.emb = torch.as_tensor(emb).to("cuda:0") # TODO fix
+    #self.prob = nn.Sigmoid(),
+    #print(emb.shape)
   def forward(self, x):
-    return F.cosine_similarity(x, self.emb, dim=-1)
+    #print(x.shape)
+    batch_size = x.shape[0]
+    rel_size   = x.shape[1]
+    #similarities = torch.as_tensor([[F.cosine_similarity(x[b][r], self.emb,
+    #    dim=-1) for r in rel_size] for b in batch_size])
+    # similarities = torch.as_tensor([[F.cosine_similarity(x[b][r], self.emb dim=-1) for r in rel_size] for b in batch_size])
+    # TODO: allow batching
+    #a = torch.stack([F.cosine_similarity(x[0][r], self.emb, dim=-1) for r in range(rel_size)]).to(device=utils.device)
+    x = x[0]
+    #print(x.device)
+    #print(self.emb.device)
+    cos_sim = lambda x : F.cosine_similarity(x, self.emb, dim=-1)
+    shift = lambda x : x-x.min()
+    scale = lambda x : x/x.sum()
+    new_tens = [cos_sim(x[r]) for r in range(rel_size)]
+    #new_tens = ([scale(shift(cos_sim(x[r]))) for r in range(rel_size)])
+    a = torch.stack(new_tens)
+    a = a.unsqueeze(0)
+    #a.shape
+    return a
 
 # This function is the batched version of torch.index_select
 # Source: https://discuss.pytorch.org/t/batch-index-select/62621/4

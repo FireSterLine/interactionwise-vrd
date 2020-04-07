@@ -1,0 +1,27 @@
+# Dataset in use
+data:
+  name: vrd
+
+# Architecture (or model) type
+model:
+  # Three types of spatial feature: # - : no spatial info
+  # - : 8-way relative location vector
+  # - : dual mask # TODO
+  use_spat: 1
+  # Use or not predicate semantics
+  use_pred_sem: True
+  # Size of the representation for each modality when fusing features
+  n_fus_neurons: 256
+
+# Evaluation Arguments
+eval:
+  use_preload: False
+
+# Training parameters
+training:
+  use_shuffle: True
+  num_epochs: 10
+  checkpoint_freq: 2
+  loss: mlab
+  # loss: mse
+  use_preload: False

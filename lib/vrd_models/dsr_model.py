@@ -125,17 +125,18 @@ class DSRModel(nn.Module):
       # set_trainability(self.emb, requires_grad=False)
       # self.fc_so_emb = FC(300*2, 256)
 
-    # Final layers
-    self.fc_fusion = FC(self.total_fus_neurons, 256)
 
     if not self.args.use_pred_sem:
+      # Final layers
+      self.fc_fusion = FC(self.total_fus_neurons, 256)
       self.fc_rel    = FC(256, self.args.n_pred, relu = False)
     else:
       assert self.args.pred_emb.shape[0] == self.args.n_pred
+      self.fc_fusion = FC(self.total_fus_neurons, 512)
       self.fc_rel    = nn.Sequential(
-        nn.Linear(256, 300),
-        nn.Sigmoid(),
-        SemSim(self.args.pred_emb)
+        FC(512, 300, relu = False),
+        # nn.Sigmoid(),
+        SemSim(self.args.pred_emb),
       )
 
   def forward(self, img_blob, obj_classes, obj_boxes, u_boxes, idx_s, idx_o, spatial_features):
@@ -335,13 +336,15 @@ class DSRModel(nn.Module):
       lr = 0.00001,
       # momentum = 0.9,
       weight_decay = 0.0005,
+      lr_fus_ratio = 10,
+      lr_rel_ratio = 10
       ):
 
     # opt_params = list(self.parameters())
     opt_params = [
       {'params': self.fc8.parameters(),       'lr': lr*10},
-      {'params': self.fc_fusion.parameters(), 'lr': lr*10},
-      {'params': self.fc_rel.parameters(),    'lr': lr*10},
+      {'params': self.fc_fusion.parameters(), 'lr': lr*lr_fus_ratio},
+      {'params': self.fc_rel.parameters(),    'lr': lr*lr_rel_ratio},
     ]
     if(self.args.use_so):
       opt_params.append({'params': self.fc_so.parameters(), 'lr': lr*10})
@@ -357,3 +360,5 @@ class DSRModel(nn.Module):
     return torch.optim.Adam(opt_params,
             lr = lr,
             weight_decay = weight_decay)
+
+
