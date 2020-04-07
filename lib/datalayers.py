@@ -164,7 +164,7 @@ class VRDDataLayer(data.Dataset):
               gt_pred_sem,    \
               mlab_target = output
 
-  """
+    """
     # Move to GPU
     if net_input is not False: # not (isinstance(net_input, torch.Tensor) and net_input.size() == (1,)):
       (img_blob,
@@ -200,6 +200,8 @@ class VRDDataLayer(data.Dataset):
               #  sem_cat_vec,
       )
 
+    """
+
     # Re-pack and return
     if self.stage == "test":
       #gt_obj  = (gt_obj_classes,  gt_obj_boxes)
@@ -217,7 +219,6 @@ class VRDDataLayer(data.Dataset):
               gt_soP_prior,   \
               gt_pred_sem,    \
               mlab_target
-  """
 
   def __computeitem__(self, index):
 
@@ -439,8 +440,9 @@ class VRDDataLayer(data.Dataset):
     obj_classes       = torch.as_tensor(obj_classes,     dtype=torch.long)
 
     # gt_soP_prior      = torch.as_tensor(gt_soP_prior,    dtype=torch.float)
-    gt_pred_sem       = torch.as_tensor(gt_pred_sem,     dtype=torch.long)
-    mlab_target      = torch.as_tensor(mlab_target,    dtype=torch.long)
+    if self.stage == "train":
+      gt_pred_sem      = torch.as_tensor(gt_pred_sem,     dtype=torch.long)
+      mlab_target      = torch.as_tensor(mlab_target,    dtype=torch.long)
 
 
     net_input = (img_blob,

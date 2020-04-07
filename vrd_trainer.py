@@ -132,7 +132,7 @@ class vrd_trainer():
       dataset = self.datalayer,
       batch_size = 1, # self.training.batch_size,
       # sampler= Random ...,
-      num_workers = 2, # num_workers=self.num_workers
+      num_workers = 0, # num_workers=self.num_workers
       shuffle = self.training.use_shuffle,
     )
 
