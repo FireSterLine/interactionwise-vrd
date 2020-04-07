@@ -221,10 +221,12 @@ class vrd_trainer():
       # Test results
       res_row = [self.state["epoch"]]
       if self.eval_args.test_pre:
-        rec_4x, rec_4x_zs, rec_50, rec_50_zs, rec_100, rec_100_zs, dtime = self.test_pre()
+        recalls, dtime = self.test_pre()
+        rec_100, rec_100_zs, rec_50, rec_50_zs, rec_4x, rec_4x_zs = recalls
         res_row += [rec_4x, rec_4x_zs, rec_50, rec_50_zs, rec_100, rec_100_zs]
       if self.eval_args.test_rel:
-        rec_4x, rec_4x_zs, rec_50, rec_50_zs, rec_100, rec_100_zs, dtime = self.test_rel()
+        recalls, dtime = self.test_rel()
+        rec_100, rec_100_zs, rec_50, rec_50_zs, rec_4x, rec_4x_zs = recalls
         res_row += [rec_4x, rec_4x_zs, rec_50, rec_50_zs, rec_100, rec_100_zs]
       res.append(res_row)
 
@@ -316,17 +318,19 @@ class vrd_trainer():
     """
 
   def test_pre(self):
-    (rec_100, rec_100_zs, rec_50, rec_50_zs, rec_4x, rec_4x_zs), dtime = self.eval.test_pre(self.model, [100, 50, 4.])
+    recalls, dtime = self.eval.test_pre(self.model, [100, 50, 4.])
+    rec_100, rec_100_zs, rec_50, rec_50_zs, rec_4x, rec_4x_zs = recalls
     print("CLS PRED TEST:\nAll:\tR@4x: {: 6.3f}\tR@50: {: 6.3f}\tR@100: {: 6.3f}\nZShot:\tR@4x: {: 6.3f}\tR@50: {: 6.3f}\tR@100: {: 6.3f}".format(rec_4x, rec_50, rec_100, rec_4x_zs, rec_50_zs, rec_100_zs))
     print("TEST Time: {}".format(utils.time_diff_str(dtime)))
-    return rec_4x, rec_4x_zs, rec_50, rec_50_zs, rec_100, rec_100_zs, dtime
+    return recalls, dtime
 
   def test_rel(self):
-    (rec_100, rec_100_zs, rec_50, rec_50_zs, rec_4x, rec_4x_zs), pos_num, loc_num, gt_num, dtime = self.eval.test_rel(self.model, [100, 50, 4.])
+    recalls, pos_num, loc_num, gt_num, dtime = self.eval.test_rel(self.model, [100, 50, 4.])
+    rec_100, rec_100_zs, rec_50, rec_50_zs, rec_4x, rec_4x_zs = recalls
     print("CLS REL TEST:\nAll:\tR@4x: {: 6.3f}\tR@50: {: 6.3f}\tR@100: {: 6.3f}\nZShot:\tR@4x: {: 6.3f}\tR@50: {: 6.3f}\tR@100: {: 6.3f}".format(rec_4x, rec_50, rec_100, rec_4x_zs, rec_50_zs, rec_100_zs))
     print("CLS OBJ TEST POS: {: 6.3f}, LOC: {: 6.3f}, GT: {: 6.3f}, Precision: {: 6.3f}, Recall: {: 6.3f}".format(pos_num, loc_num, gt_num, np.float64(pos_num)/(pos_num+loc_num), np.float64(pos_num)/gt_num))
     print("TEST Time: {}".format(utils.time_diff_str(dtime)))
-    return rec_4x, rec_4x_zs, rec_50, rec_50_zs, rec_100, rec_100_zs, dtime
+    return recalls, dtime
 
 if __name__ == "__main__":
   trainer = vrd_trainer("original-checkpoint", checkpoint="epoch_4_checkpoint.pth.tar")
