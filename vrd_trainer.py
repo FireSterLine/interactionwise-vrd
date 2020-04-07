@@ -191,9 +191,9 @@ class vrd_trainer():
     # Prepare result table
     res_headers = ["Epoch"]
     if self.eval_args.test_pre:
-      res_headers += ["Pre R20", "ZS", "R@50", "ZS", "R@100", "ZS"]
+      res_headers += ["Pre R4x", "ZS", "R@50", "ZS", "R@100", "ZS"]
     if self.eval_args.test_rel:
-      res_headers += ["Rel R@20", "ZS", "R@50", "ZS", "R@100", "ZS"]
+      res_headers += ["Rel R@4x", "ZS", "R@50", "ZS", "R@100", "ZS"]
     res = []
 
     end_epoch = self.state["epoch"] + self.training.num_epochs
@@ -221,11 +221,11 @@ class vrd_trainer():
       # Test results
       res_row = [self.state["epoch"]]
       if self.eval_args.test_pre:
-        rec_20, rec_20_zs, rec_50, rec_50_zs, rec_100, rec_100_zs, dtime = self.test_pre()
-        res_row += [rec_20, rec_20_zs, rec_50, rec_50_zs, rec_100, rec_100_zs]
+        rec_4x, rec_4x_zs, rec_50, rec_50_zs, rec_100, rec_100_zs, dtime = self.test_pre()
+        res_row += [rec_4x, rec_4x_zs, rec_50, rec_50_zs, rec_100, rec_100_zs]
       if self.eval_args.test_rel:
-        rec_20, rec_20_zs, rec_50, rec_50_zs, rec_100, rec_100_zs, dtime = self.test_rel()
-        res_row += [rec_20, rec_20_zs, rec_50, rec_50_zs, rec_100, rec_100_zs]
+        rec_4x, rec_4x_zs, rec_50, rec_50_zs, rec_100, rec_100_zs, dtime = self.test_rel()
+        res_row += [rec_4x, rec_4x_zs, rec_50, rec_50_zs, rec_100, rec_100_zs]
       res.append(res_row)
 
       with open(save_file, 'w') as f:
@@ -316,17 +316,17 @@ class vrd_trainer():
     """
 
   def test_pre(self):
-    rec_20, rec_20_zs, rec_50, rec_50_zs, rec_100, rec_100_zs, dtime = self.eval.test_pre(self.model)
-    print("CLS PRED TEST:\nAll:\tR@20: {: 6.3f}\tR@50: {: 6.3f}\tR@100: {: 6.3f}\nZShot:\tR@20: {: 6.3f}\tR@50: {: 6.3f}\tR@100: {: 6.3f}".format(rec_20, rec_50, rec_100, rec_20_zs, rec_50_zs, rec_100_zs))
+    rec_4x, rec_4x_zs, rec_50, rec_50_zs, rec_100, rec_100_zs, dtime = self.eval.test_pre(self.model)
+    print("CLS PRED TEST:\nAll:\tR@4x: {: 6.3f}\tR@50: {: 6.3f}\tR@100: {: 6.3f}\nZShot:\tR@4x: {: 6.3f}\tR@50: {: 6.3f}\tR@100: {: 6.3f}".format(rec_4x, rec_50, rec_100, rec_4x_zs, rec_50_zs, rec_100_zs))
     print("TEST Time: {}".format(utils.time_diff_str(dtime)))
-    return rec_20, rec_20_zs, rec_50, rec_50_zs, rec_100, rec_100_zs, dtime
+    return rec_4x, rec_4x_zs, rec_50, rec_50_zs, rec_100, rec_100_zs, dtime
 
   def test_rel(self):
-    rec_20, rec_20_zs, rec_50, rec_50_zs, rec_100, rec_100_zs, pos_num, loc_num, gt_num, dtime = self.eval.test_rel(self.model)
-    print("CLS REL TEST:\nAll:\tR@20: {: 6.3f}\tR@50: {: 6.3f}\tR@100: {: 6.3f}\nZShot:\tR@20: {: 6.3f}\tR@50: {: 6.3f}\tR@100: {: 6.3f}".format(rec_20, rec_50, rec_100, rec_20_zs, rec_50_zs, rec_100_zs))
+    rec_4x, rec_4x_zs, rec_50, rec_50_zs, rec_100, rec_100_zs, pos_num, loc_num, gt_num, dtime = self.eval.test_rel(self.model)
+    print("CLS REL TEST:\nAll:\tR@4x: {: 6.3f}\tR@50: {: 6.3f}\tR@100: {: 6.3f}\nZShot:\tR@4x: {: 6.3f}\tR@50: {: 6.3f}\tR@100: {: 6.3f}".format(rec_4x, rec_50, rec_100, rec_4x_zs, rec_50_zs, rec_100_zs))
     print("CLS OBJ TEST POS: {: 6.3f}, LOC: {: 6.3f}, GT: {: 6.3f}, Precision: {: 6.3f}, Recall: {: 6.3f}".format(pos_num, loc_num, gt_num, np.float64(pos_num)/(pos_num+loc_num), np.float64(pos_num)/gt_num))
     print("TEST Time: {}".format(utils.time_diff_str(dtime)))
-    return rec_20, rec_20_zs, rec_50, rec_50_zs, rec_100, rec_100_zs, dtime
+    return rec_4x, rec_4x_zs, rec_50, rec_50_zs, rec_100, rec_100_zs, dtime
 
 if __name__ == "__main__":
   trainer = vrd_trainer("original", checkpoint="epoch_4_checkpoint.pth.tar")

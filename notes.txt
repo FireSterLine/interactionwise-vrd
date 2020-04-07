@@ -1,3 +1,33 @@
+"lr": 0.001,
+"lr_fus_ratio": 1,
+"lr_rel_ratio": 1,
+"weight_decay": 0.0005
+...epoch 9/10
+CLS PRED TEST:
+All:    R@20:  35.192   R@50:  58.340   R@100:  74.548
+ZShot:  R@20:  20.616   R@50:  43.028   R@100:  60.308
+TEST Time: 00:01:12
+CLS REL TEST:
+All:    R@20:  11.527   R@50:  17.219   R@100:  21.714
+ZShot:  R@20:  0.602    R@50:  2.322    R@100:  4.127
+CLS OBJ TEST POS:  92.000, LOC:  6176.000, GT:  6694.000, Precision:  0.015, Recall:  0.014
+
+
+"lr": 0.0001,
+"lr_fus_ratio": 1,
+"lr_rel_ratio": 1,
+"weight_decay": 0.0005
+...epoch 3
+CLS PRED TEST:
+All:    R@20:  45.457   R@50:  60.775   R@100:  73.566
+ZShot:  R@20:  25.064   R@50:  40.804   R@100:  55.261
+TEST Time: 00:01:12
+CLS REL TEST:
+All:    R@20:  11.790   R@50:  17.324   R@100:  21.780
+ZShot:  R@20:  0.860    R@50:  2.236    R@100:  4.299
+CLS OBJ TEST POS:  85.000, LOC:  6183.000, GT:  6694.000, Precision:  0.014, Recall:  0.013
+
+
 
 New idea:
  look for "Let’s build a proper (yet simple" here: https://towardsdatascience.com/understanding-pytorch-with-an-example-a-step-by-step-tutorial-81fc5f8c4e8e
