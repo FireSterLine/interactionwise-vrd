@@ -34,7 +34,7 @@ from lib.evaluator import VRDEvaluator
 
 TESTOVERFIT = False # True
 TESTVALIDITY = False # True # False # True
-DEBUGGING = False # True # False
+DEBUGGING = False # True # True # False
 
 if utils.device == torch.device("cpu"):
   DEBUGGING = True
@@ -62,8 +62,8 @@ class vrd_trainer():
       args["eval"]["justafew"] = 3
     if TESTVALIDITY:
       args["data"]["name"] = "vrd/dsr"
-      args["training"]["print_freq"] = 0.1
-      args["model"]["use_pred_false"] = True
+      #args["training"]["print_freq"] = 0.1
+      # args["model"]["use_pred_sem"] = True
       # args["training"]["use_preload"] = False
 
 
@@ -140,7 +140,7 @@ class vrd_trainer():
     # Model
     self.model_args.n_obj  = self.datalayer.n_obj
     self.model_args.n_pred = self.datalayer.n_pred
-    if self.model_args.use_pred_sem == True:
+    if self.model_args.use_pred_sem != False:
       self.model_args.pred_emb = np.array(self.datalayer.dataset.readJSON("predicates-emb.json"))
     print("Initializing VRD Model: ", self.model_args)
     self.model = VRDModel(self.model_args).to(utils.device)
@@ -338,17 +338,20 @@ class vrd_trainer():
     return recalls, dtime
 
 if __name__ == "__main__":
-  trainer = vrd_trainer("original-checkpoint", {"training": {"num_epochs":1}}, checkpoint="epoch_4_checkpoint.pth.tar")
-  #trainer = vrd_trainer("original", {"training": {"num_epochs":20}})
+  #trainer = vrd_trainer("original-checkpoint", {"training": {"num_epochs":1}}, checkpoint="epoch_4_checkpoint.pth.tar")
+  #trainer = vrd_trainer("original", {"training": {"num_epochs":10}, "eval" : {"test_pre" : True, "test_rel" : True}})
   #trainer = vrd_trainer("test", {"training" : {"num_epochs" : 1}, "eval" : {"test_pre" : True, "test_rel" : True}}, checkpoint = False)
-  trainer.train()
-  sys.exit(0)
-  for lr in [0.001, 0.00001]: # [0.001, 0.0001, 0.00001, 0.000001]:
+  #trainer.train()
+  #sys.exit(0)
+  for lr in [0.001, 0.0001, 0.00001]: # [0.001, 0.0001, 0.00001, 0.000001]:
     for weight_decay in [0.0005]:
-        for lr_rel_fus_ratio in [1]: # , 10, 100]:
-          trainer = vrd_trainer("pred-sem-scan-2-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio), {"training" : {"opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio},"checkpoint_freq" : 0.1 },}, profile = "cfgs/pred_sem.yml", checkpoint = False)
-          trainer.train()
+      for lr_rel_fus_ratio in [1, 10]: # , 10, 100]:
+        for pred_sem_mode in [1, 2]: # , 10, 100]:
+            trainer = vrd_trainer("pred-sem-scan-2-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio), {"model" : {"use_pred_sem" : pred_sem_mode}, "eval" : {"eval_obj":False, "test_rel":False}, "training" : {"opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}}, profile = "cfgs/pred_sem.yml", checkpoint = False)
+            trainer.train()
 
+  trainer = vrd_trainer("original", {"training": {"num_epochs":10}, "eval" : {"test_pre" : True, "test_rel" : True}})
+  trainer.train()
   # trainer = vrd_trainer({}, checkpoint = "epoch_4_checkpoint.pth.tar")
   #trainer.train()
   #trainer.test_pre()

@@ -136,7 +136,7 @@ class DSRModel(nn.Module):
       self.fc_rel    = nn.Sequential(
         FC(512, 300, relu = False),
         # nn.Sigmoid(),
-        SemSim(self.args.pred_emb),
+        SemSim(self.args.pred_emb, mode=int(self.args.use_pred_sem)),
       )
 
   def forward(self, img_blob, obj_classes, obj_boxes, u_boxes, idx_s, idx_o, spatial_features):

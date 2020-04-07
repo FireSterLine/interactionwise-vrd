@@ -21,7 +21,7 @@ eval:
 training:
   use_shuffle: True
   num_epochs: 10
-  checkpoint_freq: 2
+  checkpoint_freq: 0
   loss: mlab
   # loss: mse
   use_preload: False

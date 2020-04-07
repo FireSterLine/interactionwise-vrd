@@ -44,10 +44,12 @@ class SemSim(nn.Module):
   """ This layer computes the the similarity of an input vector with the embeddings in an embedding space.
         the similarity is given in terms of a probability distribution """
 
-  def __init__(self, emb):
+  def __init__(self, emb, mode=1):
     super(SemSim, self).__init__()
     self.emb = torch.as_tensor(emb).to("cuda:0") # TODO fix
-    #self.prob = nn.Sigmoid(),
+    self.mode = mode
+    if mode == 2:
+      self.sig = nn.Sigmoid()
     #print(emb.shape)
   def forward(self, x):
     #print(x.shape)
@@ -61,6 +63,8 @@ class SemSim(nn.Module):
     x = x[0]
     #print(x.device)
     #print(self.emb.device)
+    if self.mode == 2:
+      x = (self.sig(x)*2)-1
     cos_sim = lambda x : F.cosine_similarity(x, self.emb, dim=-1)
     shift = lambda x : x-x.min()
     scale = lambda x : x/x.sum()
