@@ -34,7 +34,7 @@ from lib.evaluator import VRDEvaluator
 
 TESTOVERFIT = False # True
 TESTVALIDITY = False # True # False # True
-DEBUGGING = False # True # True # False
+DEBUGGING = False #  True #False # True # True # False
 
 if utils.device == torch.device("cpu"):
   DEBUGGING = True
@@ -192,9 +192,11 @@ class vrd_trainer():
     # Prepare result table
     res_headers = ["Epoch"]
     if self.eval_args.test_pre:
-      res_headers += ["Pre R4x", "ZS", "R@50", "ZS", "R@100", "ZS"]
+      #res_headers += ["Pre R4x", "ZS", "R@50", "ZS", "R@100", "ZS"]
+      res_headers += ["Pre R@50", "ZS", "R@100", "ZS"]
     if self.eval_args.test_rel:
-      res_headers += ["Rel R@4x", "ZS", "R@50", "ZS", "R@100", "ZS"]
+      #res_headers += ["Rel R@4x", "ZS", "R@50", "ZS", "R@100", "ZS"]
+      res_headers += ["Rel R@50", "ZS", "R@100", "ZS"]
     res = []
 
     end_epoch = self.state["epoch"] + self.training.num_epochs
@@ -223,12 +225,16 @@ class vrd_trainer():
       res_row = [self.state["epoch"]]
       if self.eval_args.test_pre:
         recalls, dtime = self.test_pre()
-        rec_100, rec_100_zs, rec_50, rec_50_zs, rec_4x, rec_4x_zs = recalls
-        res_row += [rec_4x, rec_4x_zs, rec_50, rec_50_zs, rec_100, rec_100_zs]
+        #rec_100, rec_100_zs, rec_50, rec_50_zs, rec_4x, rec_4x_zs = recalls
+        #res_row += [rec_4x, rec_4x_zs, rec_50, rec_50_zs, rec_100, rec_100_zs]
+        rec_100, rec_100_zs, rec_50, rec_50_zs = recalls
+        res_row += [rec_50, rec_50_zs, rec_100, rec_100_zs]
       if self.eval_args.test_rel:
         recalls, dtime = self.test_rel()
-        rec_100, rec_100_zs, rec_50, rec_50_zs, rec_4x, rec_4x_zs = recalls
-        res_row += [rec_4x, rec_4x_zs, rec_50, rec_50_zs, rec_100, rec_100_zs]
+        #rec_100, rec_100_zs, rec_50, rec_50_zs, rec_4x, rec_4x_zs = recalls
+        #res_row += [rec_4x, rec_4x_zs, rec_50, rec_50_zs, rec_100, rec_100_zs]
+        rec_100, rec_100_zs, rec_50, rec_50_zs = recalls
+        res_row += [rec_50, rec_50_zs, rec_100, rec_100_zs]
       res.append(res_row)
 
       with open(save_file, 'w') as f:
