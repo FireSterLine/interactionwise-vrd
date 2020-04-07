@@ -117,15 +117,15 @@ class VRDDataLayer(data.Dataset):
               #  sem_cat_vec,
       ) = net_input
 
-      img_blob          = torch.as_tensor(img_blob,        dtype=torch.float,    device = device)
-      obj_classes       = torch.as_tensor(obj_classes,     dtype=torch.long,     device = device)
-      roi_obj_boxes     = torch.as_tensor(roi_obj_boxes,   dtype=torch.float,    device = device)
-      roi_u_boxes       = torch.as_tensor(roi_u_boxes,     dtype=torch.float,    device = device)
-      idx_s             = torch.as_tensor(idx_s,           dtype=torch.long,     device = device)
-      idx_o             = torch.as_tensor(idx_o,           dtype=torch.long,     device = device)
-      dsr_spat_vec      = torch.as_tensor(dsr_spat_vec,    dtype=torch.float,    device = device)
-      # sem_cat_vec       = torch.as_tensor(sem_cat_vec,     dtype=torch.float,    device = device)
-      # dsr_spat_mat      = torch.as_tensor(dsr_spat_mat,    dtype=torch.float,    device = device)
+      img_blob          = img_blob.to(device) # torch.as_tensor(img_blob,        dtype=torch.float,    device = device)
+      obj_classes       = obj_classes.to(device) # torch.as_tensor(obj_classes,     dtype=torch.long,     device = device)
+      roi_obj_boxes     = roi_obj_boxes.to(device) # torch.as_tensor(roi_obj_boxes,   dtype=torch.float,    device = device)
+      roi_u_boxes       = roi_u_boxes.to(device) # torch.as_tensor(roi_u_boxes,     dtype=torch.float,    device = device)
+      idx_s             = idx_s.to(device) # torch.as_tensor(idx_s,           dtype=torch.long,     device = device)
+      idx_o             = idx_o.to(device) # torch.as_tensor(idx_o,           dtype=torch.long,     device = device)
+      dsr_spat_vec      = dsr_spat_vec.to(device) # torch.as_tensor(dsr_spat_vec,    dtype=torch.float,    device = device)
+      # sem_cat_vec       = sem_cat_vec.to(device) # torch.as_tensor(sem_cat_vec,     dtype=torch.float,    device = device)
+      # dsr_spat_mat      = dsr_spat_mat.to(device) # torch.as_tensor(dsr_spat_mat,    dtype=torch.float,    device = device)
 
       net_input = (img_blob,
                obj_classes,
@@ -426,6 +426,20 @@ class VRDDataLayer(data.Dataset):
     # # gt_soP_prior      = torch.as_tensor(gt_soP_prior,    dtype=torch.float,    device = utils.device)
     # gt_pred_sem       = torch.as_tensor(gt_pred_sem,     dtype=torch.long,     device = utils.device)
     # mlab_target      = torch.as_tensor(mlab_target,    dtype=torch.long,     device = utils.device)
+
+
+    roi_obj_boxes     = torch.as_tensor(roi_obj_boxes,   dtype=torch.float)
+    roi_u_boxes       = torch.as_tensor(roi_u_boxes,     dtype=torch.float)
+    idx_s             = torch.as_tensor(idx_s,           dtype=torch.long)
+    idx_o             = torch.as_tensor(idx_o,           dtype=torch.long)
+    dsr_spat_vec      = torch.as_tensor(dsr_spat_vec,    dtype=torch.float)
+    # sem_cat_vec       = torch.as_tensor(sem_cat_vec,     dtype=torch.float)
+    # dsr_spat_mat      = torch.as_tensor(dsr_spat_mat,     dtype=torch.float)
+    obj_classes       = torch.as_tensor(obj_classes,     dtype=torch.long)
+
+    # gt_soP_prior      = torch.as_tensor(gt_soP_prior,    dtype=torch.float)
+    gt_pred_sem       = torch.as_tensor(gt_pred_sem,     dtype=torch.long)
+    mlab_target      = torch.as_tensor(mlab_target,    dtype=torch.long)
 
 
     net_input = (img_blob,
