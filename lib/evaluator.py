@@ -70,7 +70,7 @@ class VRDEvaluator():
         self.gt_zs = self.any_datalayer.dataset.readPKL(osp.join("eval", "gt_zs.pkl"))
         #print(self.gt.keys())
         #print(type(self.gt))
-        if isinstance(self.args.justafew, int):
+        if self.args.justafew != False and isinstance(self.args.justafew, int):
           x =self.args.justafew
           print(self.gt["tuple_label"][0].shape)
           self.gt    = {'tuple_label' : [self.gt['tuple_label'][x]],    'obj_bboxes' : [self.gt['obj_bboxes'][x]],    'sub_bboxes' : [self.gt['sub_bboxes'][x]]}

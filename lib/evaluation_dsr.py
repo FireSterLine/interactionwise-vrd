@@ -157,7 +157,7 @@ def eval_recall_at_N(res, gts, Ns = [100, 50, 4.], num_imgs = None, use_rel = Tr
         pred["tuple_confs"][i]  = pred["tuple_confs"][i][:x]
         pred["sub_bboxes"][i]   = pred["sub_bboxes"][i][:x]
         pred["obj_bboxes"][i]   = pred["obj_bboxes"][i][:x]
-        if not isinstance(N, float) and pred["tuple_label"][i] != N:
+        if not isinstance(N, float) and len(pred["tuple_label"][i]) != N:
           raise ValueError("Can't compute R@{}: input is malformed (idx_order.shape: {}, pred[\"tuple_confs\"][{}].shape".format(max_N, idx_order.shape, pred["tuple_confs"][ii].shape))
       recalls.append(get_recall(pred, gt))
 

@@ -28,6 +28,7 @@ model:
 
 # Evaluation Arguments
 eval:
+  justafew: False
   test_pre: True
   test_rel: True
   use_obj_prior: True

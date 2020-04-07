@@ -90,7 +90,7 @@ class dataset():
       data = self.readJSON(filename)
       if self.justafew == True:
           data = data[:100]
-      elif isinstance(self.justafew, int):
+      elif self.justafew != False and isinstance(self.justafew, int):
           data = data[self.justafew:self.justafew+1] # [:100]
       self._vrd_data_cache[(format, stage, granularity)] = data
     return self._vrd_data_cache[(format, stage, granularity)]

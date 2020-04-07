@@ -31,8 +31,8 @@ from lib.vrd_models import VRDModel
 from lib.datalayers import VRDDataLayer
 from lib.evaluator import VRDEvaluator
 
-TESTOVERFIT = True
-TESTVALIDITY = False # True # False # True
+TESTOVERFIT = False # True
+TESTVALIDITY = True # True # False # True
 DEBUGGING = True # False # True # False
 
 if utils.device == torch.device("cpu"):
@@ -329,7 +329,8 @@ class vrd_trainer():
     return rec_4x, rec_4x_zs, rec_50, rec_50_zs, rec_100, rec_100_zs, dtime
 
 if __name__ == "__main__":
-  trainer = vrd_trainer("original", checkpoint="epoch_4_checkpoint.pth.tar")
+  trainer = vrd_trainer("original-checkpoint", checkpoint="epoch_4_checkpoint.pth.tar")
+  #trainer = vrd_trainer("original")
   #trainer = vrd_trainer("test", {"training" : {"num_epochs" : 1}, "eval" : {"test_pre" : True, "test_rel" : True}}, checkpoint = False)
   trainer.train()
   sys.exit(0)
