@@ -32,7 +32,7 @@ from lib.datalayers import VRDDataLayer
 from lib.evaluator import VRDEvaluator
 
 TESTOVERFIT = False # True
-TESTVALIDITY = True # True # False # True
+TESTVALIDITY = False # True # False # True
 DEBUGGING = True # False # True # False
 
 if utils.device == torch.device("cpu"):
@@ -316,13 +316,13 @@ class vrd_trainer():
     """
 
   def test_pre(self):
-    rec_4x, rec_4x_zs, rec_50, rec_50_zs, rec_100, rec_100_zs, dtime = self.eval.test_pre(self.model)
+    (rec_100, rec_100_zs, rec_50, rec_50_zs, rel_4x, rel_4x_zs), dtime = self.eval.test_pre(self.model, [100, 50, 4.])
     print("CLS PRED TEST:\nAll:\tR@4x: {: 6.3f}\tR@50: {: 6.3f}\tR@100: {: 6.3f}\nZShot:\tR@4x: {: 6.3f}\tR@50: {: 6.3f}\tR@100: {: 6.3f}".format(rec_4x, rec_50, rec_100, rec_4x_zs, rec_50_zs, rec_100_zs))
     print("TEST Time: {}".format(utils.time_diff_str(dtime)))
     return rec_4x, rec_4x_zs, rec_50, rec_50_zs, rec_100, rec_100_zs, dtime
 
   def test_rel(self):
-    rec_4x, rec_4x_zs, rec_50, rec_50_zs, rec_100, rec_100_zs, pos_num, loc_num, gt_num, dtime = self.eval.test_rel(self.model)
+    (rec_100, rec_100_zs, rec_50, rec_50_zs, rel_4x, rel_4x_zs), pos_num, loc_num, gt_num, dtime = self.eval.test_rel(self.model, [100, 50, 4.])
     print("CLS REL TEST:\nAll:\tR@4x: {: 6.3f}\tR@50: {: 6.3f}\tR@100: {: 6.3f}\nZShot:\tR@4x: {: 6.3f}\tR@50: {: 6.3f}\tR@100: {: 6.3f}".format(rec_4x, rec_50, rec_100, rec_4x_zs, rec_50_zs, rec_100_zs))
     print("CLS OBJ TEST POS: {: 6.3f}, LOC: {: 6.3f}, GT: {: 6.3f}, Precision: {: 6.3f}, Recall: {: 6.3f}".format(pos_num, loc_num, gt_num, np.float64(pos_num)/(pos_num+loc_num), np.float64(pos_num)/gt_num))
     print("TEST Time: {}".format(utils.time_diff_str(dtime)))

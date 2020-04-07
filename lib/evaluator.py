@@ -87,7 +87,7 @@ class VRDEvaluator():
       self.num_imgs = None
       # TODO: self.num_imgs = 8995
 
-  def test_pre(self, vrd_model):
+  def test_pre(self, vrd_model, Ns = [100, 50, 4.]):
     """ Test model on Predicate Prediction """
     if self.gt is None:
       return np.nan, np.nan, np.nan, np.nan, 0.1
@@ -163,13 +163,13 @@ class VRDEvaluator():
         "obj_bboxes_ours" : obj_bboxes_cell,
       }
 
-      rec_100, rec_100_zs, rec_50, rec_50_zs, rel_4x, rel_4x_zs = eval_recall_at_N(res, gts = [self.gt, self.gt_zs], Ns = [100, 50, 4.], num_imgs = self.num_imgs)
+      recalls = eval_recall_at_N(res, gts = [self.gt, self.gt_zs], Ns = Ns, num_imgs = self.num_imgs)
       time2 = time.time()
 
-      return rel_4x, rel_4x_zs, rec_50, rec_50_zs, rec_100, rec_100_zs, (time2-time1)
+      return recalls, (time2-time1)
 
   # Relationship Prediction
-  def test_rel(self, vrd_model):
+  def test_rel(self, vrd_model, Ns = [100, 50, 4.]):
     """ Test model on Relationship Prediction """
     if self.gt is None:
       return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 0.1
@@ -341,7 +341,7 @@ class VRDEvaluator():
       # if len(len(self.dataloader)) != len(res["obj_bboxes_ours"]):
       #   warnings.warn("Warning! Rel test results and gt do not have the same length: rel test performance might be off! {} != {}".format(len(len(self.dataloader)), len(res["obj_bboxes_ours"])), UserWarning)
 
-      rec_100, rec_100_zs, rec_50, rec_50_zs, rel_4x, rel_4x_zs = eval_recall_at_N(res, gts = [self.gt, self.gt_zs], Ns = [100, 50, 4.], num_imgs = self.num_imgs)
+      recalls = eval_recall_at_N(res, gts = [self.gt, self.gt_zs], Ns = Ns, num_imgs = self.num_imgs)
       time2 = time.time()
 
-      return rel_4x, rel_4x_zs, rec_50, rec_50_zs, rec_100, rec_100_zs, pos_num, loc_num, gt_num, (time2 - time1)
+      return recalls, pos_num, loc_num, gt_num, (time2 - time1)
