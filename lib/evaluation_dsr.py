@@ -103,7 +103,7 @@ def eval_recall_at_N(res, gts, Ns = [100, 50, 4.], num_imgs = None, use_rel = Tr
       warnings.warn("Warning! Ground truths provided do not share the same length: test performance might be off! {} != {}".format(len(gts[i_gt]["obj_bboxes"]), len(gts[i_gt+1]["obj_bboxes"])), UserWarning)
 
   Ns = sorted(Ns, reverse=True)
-  # max_N = Ns[0]
+  max_N = Ns[0]
 
   base_pred = {}
   base_pred["tuple_label"] = copy.deepcopy(res["rlp_labels_ours"])
@@ -126,6 +126,8 @@ def eval_recall_at_N(res, gts, Ns = [100, 50, 4.], num_imgs = None, use_rel = Tr
     base_pred["tuple_confs"][i]  = tuple_confs[idx_order]
     base_pred["sub_bboxes"][i]   = sub_bboxes[idx_order,:]
     base_pred["obj_bboxes"][i]   = obj_bboxes[idx_order,:]
+    if and len(idx_order) < max_N:
+      raise ValueError("Can't compute R@{}: input is malformed (idx_order.shape: {}, pred[\"tuple_confs\"][{}].shape: {}".format(max_N, idx_order.shape, ii, base_pred["tuple_confs"][ii].shape))
 
     # if idx_order.shape[0] != max_N:
     #   raise ValueError("Can't compute R@{}: input is malformed (idx_order.shape: {}, pred[\"tuple_confs\"][{}].shape".format(max_N, idx_order.shape, pred["tuple_confs"][ii].shape))
@@ -158,8 +160,6 @@ def eval_recall_at_N(res, gts, Ns = [100, 50, 4.], num_imgs = None, use_rel = Tr
         pred["sub_bboxes"][i]   = pred["sub_bboxes"][i][:x]
         pred["obj_bboxes"][i]   = pred["obj_bboxes"][i][:x]
         print(x)
-        if not isinstance(N, float) and len(pred["tuple_label"][i]) != N:
-          raise ValueError("Can't compute R@{}: input is malformed (idx_order.shape: {}, pred[\"tuple_confs\"][{}].shape".format(max_N, idx_order.shape, pred["tuple_confs"][ii].shape))
       recalls.append(get_recall(pred, gt))
 
   return tuple(recalls)
