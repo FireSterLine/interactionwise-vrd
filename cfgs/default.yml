@@ -32,7 +32,8 @@ eval:
   test_pre: True
   test_rel: True
   use_obj_prior: True
-  use_preload: True
+  use_preload: False
+  eval_obj: True
 
 # Training parameters
 training:
@@ -47,9 +48,9 @@ training:
   num_epochs: 6
   checkpoint_freq: .5
   # Number of lines printed with loss ...TODO explain smart freq
-  print_freq: 10
+  print_freq: 0.1
   # TODO
   batch_size: 1
   loss: mlab
   # loss: mse
-  use_preload: True
+  use_preload: False

@@ -159,7 +159,7 @@ def eval_recall_at_N(res, gts, Ns = [100, 50, 4.], num_imgs = None, use_rel = Tr
         pred["tuple_confs"][i]  = pred["tuple_confs"][i][:x]
         pred["sub_bboxes"][i]   = pred["sub_bboxes"][i][:x]
         pred["obj_bboxes"][i]   = pred["obj_bboxes"][i][:x]
-        print(x)
+        # print(x)
       recalls.append(get_recall(pred, gt))
 
   return tuple(recalls)

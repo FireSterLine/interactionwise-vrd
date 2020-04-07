@@ -2,6 +2,7 @@ import numpy as np
 import torch
 
 from lib.datalayers import VRDDataLayer
+import lib.datalayers
 from lib.evaluation_dsr import eval_recall_at_N, eval_obj_img # TODO remove this module
 import time
 import pickle
@@ -72,7 +73,7 @@ class VRDEvaluator():
         #print(type(self.gt))
         if self.args.justafew != False and isinstance(self.args.justafew, int):
           x =self.args.justafew
-          print(self.gt["tuple_label"][0].shape)
+          print(self.gt["tuple_label"][self.args.justafew].shape)
           self.gt    = {'tuple_label' : [self.gt['tuple_label'][x]],    'obj_bboxes' : [self.gt['obj_bboxes'][x]],    'sub_bboxes' : [self.gt['sub_bboxes'][x]]}
           print(self.gt["tuple_label"][0].shape)
           self.gt_zs = {'tuple_label' : [self.gt_zs['tuple_label'][x]], 'obj_bboxes' : [self.gt_zs['obj_bboxes'][x]], 'sub_bboxes' : [self.gt_zs['sub_bboxes'][x]]}
@@ -87,7 +88,7 @@ class VRDEvaluator():
       self.num_imgs = None
       # TODO: self.num_imgs = 8995
 
-  def test_pre(self, vrd_model, Ns = [100, 50, 4.]):
+  def test_pre(self, vrd_model, Ns = [100, 50]):
     """ Test model on Predicate Prediction """
     if self.gt is None:
       return np.nan, np.nan, np.nan, np.nan, 0.1
@@ -115,6 +116,7 @@ class VRDEvaluator():
           print("{}/{}\r".format(tmp_i, len(self.dataloader_pre)), end="")
 
         (gt_obj_classes, gt_obj_boxes) = gt_obj
+        net_input = lib.datalayers.net_input_to(net_input, utils.device)
         img_blob, obj_classes, obj_boxes, u_boxes, idx_s, idx_o, spatial_features = net_input
 
         tuple_confs_im = np.zeros((N,),   dtype = np.float) # Confidence...
@@ -127,8 +129,8 @@ class VRDEvaluator():
         # TODO: fix when batch_size>1
         idx_s           = deepcopy(idx_s[0])
         idx_o           = deepcopy(idx_o[0])
-        gt_obj_classes = deepcopy(gt_obj_classes[0])
-        gt_obj_boxes      = deepcopy(gt_obj_boxes[0])
+        gt_obj_classes  = deepcopy(gt_obj_classes[0])
+        gt_obj_boxes    = deepcopy(gt_obj_boxes[0])
         rel_scores      = deepcopy(rel_scores[0])
         #print(gt_obj_classes.shape)
         #print(gt_obj_boxes.shape)
@@ -169,7 +171,7 @@ class VRDEvaluator():
       return recalls, (time2-time1)
 
   # Relationship Prediction
-  def test_rel(self, vrd_model, Ns = [100, 50, 4.]):
+  def test_rel(self, vrd_model, Ns = [100, 50]):
     """ Test model on Relationship Prediction """
     if self.gt is None:
       return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 0.1
@@ -182,9 +184,10 @@ class VRDEvaluator():
 
       N = 100 # What's this? (num of rel_res) (with this you can compute R@i for any i<=N)
 
-      pos_num = 0.0
-      loc_num = 0.0
-      gt_num  = 0.0
+      if self.args.eval_obj:
+        pos_num = 0.0
+        loc_num = 0.0
+        gt_num  = 0.0
 
       rlp_labels_cell  = []
       tuple_confs_cell = []
@@ -249,6 +252,7 @@ class VRDEvaluator():
         continue
         """
 
+        net_input = lib.datalayers.net_input_to(net_input, utils.device)
         obj_score, rel_score = vrd_model(*net_input) # img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
 
         # TODO: remove and fix everyhing else to allow batching
@@ -264,6 +268,7 @@ class VRDEvaluator():
         gt_soP_prior = gt_soP_prior.data.cpu().numpy()
         rel_prob += np.log(0.5*(gt_soP_prior+1.0 / self.any_datalayer.n_pred))
 
+
         img_blob, obj_classes, obj_boxes, u_boxes, idx_s, idx_o, spatial_features = net_input
 
         # print("gt_obj_boxes.shape: \t", gt_obj_boxes.shape)
@@ -276,10 +281,11 @@ class VRDEvaluator():
         idx_o = deepcopy(idx_o[0])
         det_obj_boxes = deepcopy(det_obj_boxes[0])
 
-        pos_num_img, loc_num_img = eval_obj_img(gt_obj_boxes, gt_obj_classes, det_obj_boxes, obj_pred.cpu().numpy(), gt_thr=0.5)
-        pos_num += pos_num_img
-        loc_num += loc_num_img
-        gt_num  += gt_obj_boxes.shape[0]
+        if self.args.eval_obj:
+          pos_num_img, loc_num_img = eval_obj_img(gt_obj_boxes, gt_obj_classes, det_obj_boxes, obj_pred.cpu().numpy(), gt_thr=0.5)
+          pos_num += pos_num_img
+          loc_num += loc_num_img
+          gt_num  += gt_obj_boxes.shape[0]
 
         # TODO: remove this to allow batching
         det_obj_confs   = deepcopy(det_obj_confs[0])
@@ -344,4 +350,7 @@ class VRDEvaluator():
       recalls = eval_recall_at_N(res, gts = [self.gt, self.gt_zs], Ns = Ns, num_imgs = self.num_imgs)
       time2 = time.time()
 
-      return recalls, pos_num, loc_num, gt_num, (time2 - time1)
+      if self.args.eval_obj:
+        return recalls, (pos_num, loc_num, gt_num), (time2 - time1)
+      else:
+        return recalls, (np.nan, np.nan, np.nan), (time2 - time1)

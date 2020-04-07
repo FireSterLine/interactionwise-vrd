@@ -29,11 +29,12 @@ from munch import munchify
 import globals, utils
 from lib.vrd_models import VRDModel
 from lib.datalayers import VRDDataLayer
+import lib.datalayers
 from lib.evaluator import VRDEvaluator
 
 TESTOVERFIT = False # True
-TESTVALIDITY = True # False # True
-DEBUGGING = False # True # False
+TESTVALIDITY = False # True # False # True
+DEBUGGING = False #  True #False # True # True # False
 
 if utils.device == torch.device("cpu"):
   DEBUGGING = True
@@ -61,8 +62,8 @@ class vrd_trainer():
       args["eval"]["justafew"] = 3
     if TESTVALIDITY:
       args["data"]["name"] = "vrd/dsr"
-      args["training"]["print_freq"] = 0.1
-      args["model"]["use_pred_false"] = True
+      #args["training"]["print_freq"] = 0.1
+      # args["model"]["use_pred_sem"] = True
       # args["training"]["use_preload"] = False
 
 
@@ -132,14 +133,14 @@ class vrd_trainer():
       dataset = self.datalayer,
       batch_size = 1, # self.training.batch_size,
       # sampler= Random ...,
-      # num_workers=self.num_workers
+      num_workers = 2, # num_workers=self.num_workers
       shuffle = self.training.use_shuffle,
     )
 
     # Model
     self.model_args.n_obj  = self.datalayer.n_obj
     self.model_args.n_pred = self.datalayer.n_pred
-    if self.model_args.use_pred_sem == True:
+    if self.model_args.use_pred_sem != False:
       self.model_args.pred_emb = np.array(self.datalayer.dataset.readJSON("predicates-emb.json"))
     print("Initializing VRD Model: ", self.model_args)
     self.model = VRDModel(self.model_args).to(utils.device)
@@ -191,9 +192,11 @@ class vrd_trainer():
     # Prepare result table
     res_headers = ["Epoch"]
     if self.eval_args.test_pre:
-      res_headers += ["Pre R4x", "ZS", "R@50", "ZS", "R@100", "ZS"]
+      #res_headers += ["Pre R4x", "ZS", "R@50", "ZS", "R@100", "ZS"]
+      res_headers += ["Pre R@50", "ZS", "R@100", "ZS"]
     if self.eval_args.test_rel:
-      res_headers += ["Rel R@4x", "ZS", "R@50", "ZS", "R@100", "ZS"]
+      #res_headers += ["Rel R@4x", "ZS", "R@50", "ZS", "R@100", "ZS"]
+      res_headers += ["Rel R@50", "ZS", "R@100", "ZS"]
     res = []
 
     end_epoch = self.state["epoch"] + self.training.num_epochs
@@ -221,11 +224,17 @@ class vrd_trainer():
       # Test results
       res_row = [self.state["epoch"]]
       if self.eval_args.test_pre:
-        rec_4x, rec_4x_zs, rec_50, rec_50_zs, rec_100, rec_100_zs, dtime = self.test_pre()
-        res_row += [rec_4x, rec_4x_zs, rec_50, rec_50_zs, rec_100, rec_100_zs]
+        recalls, dtime = self.test_pre()
+        #rec_100, rec_100_zs, rec_50, rec_50_zs, rec_4x, rec_4x_zs = recalls
+        #res_row += [rec_4x, rec_4x_zs, rec_50, rec_50_zs, rec_100, rec_100_zs]
+        rec_100, rec_100_zs, rec_50, rec_50_zs = recalls
+        res_row += [rec_50, rec_50_zs, rec_100, rec_100_zs]
       if self.eval_args.test_rel:
-        rec_4x, rec_4x_zs, rec_50, rec_50_zs, rec_100, rec_100_zs, dtime = self.test_rel()
-        res_row += [rec_4x, rec_4x_zs, rec_50, rec_50_zs, rec_100, rec_100_zs]
+        recalls, dtime = self.test_rel()
+        #rec_100, rec_100_zs, rec_50, rec_50_zs, rec_4x, rec_4x_zs = recalls
+        #res_row += [rec_4x, rec_4x_zs, rec_50, rec_50_zs, rec_100, rec_100_zs]
+        rec_100, rec_100_zs, rec_50, rec_50_zs = recalls
+        res_row += [rec_50, rec_50_zs, rec_100, rec_100_zs]
       res.append(res_row)
 
       with open(save_file, 'w') as f:
@@ -267,6 +276,10 @@ class vrd_trainer():
       # print(type(net_input))
       # print(type(gt_soP_prior))
       # print(type(mlab_target))
+
+      net_input = lib.datalayers.net_input_to(net_input, utils.device)
+      gt_pred_sem      = torch.as_tensor(gt_pred_sem,    dtype=torch.long,     device = utils.device)
+      mlab_target      = torch.as_tensor(mlab_target,    dtype=torch.long,     device = utils.device)
 
       batch_size = mlab_target.size()[0]
 
@@ -316,32 +329,53 @@ class vrd_trainer():
     """
 
   def test_pre(self):
-    (rec_100, rec_100_zs, rec_50, rec_50_zs, rec_4x, rec_4x_zs), dtime = self.eval.test_pre(self.model, [100, 50, 4.])
-    print("CLS PRED TEST:\nAll:\tR@4x: {: 6.3f}\tR@50: {: 6.3f}\tR@100: {: 6.3f}\nZShot:\tR@4x: {: 6.3f}\tR@50: {: 6.3f}\tR@100: {: 6.3f}".format(rec_4x, rec_50, rec_100, rec_4x_zs, rec_50_zs, rec_100_zs))
+    recalls, dtime = self.eval.test_pre(self.model, [100, 50])
+    rec_100, rec_100_zs, rec_50, rec_50_zs = recalls
+    print("CLS PRED TEST:\nAll:\tR@50: {: 6.3f}\tR@100: {: 6.3f}\nZShot:\tR@50: {: 6.3f}\tR@100: {: 6.3f}".format(rec_50, rec_100, rec_50_zs, rec_100_zs))
     print("TEST Time: {}".format(utils.time_diff_str(dtime)))
-    return rec_4x, rec_4x_zs, rec_50, rec_50_zs, rec_100, rec_100_zs, dtime
+    return recalls, dtime
 
   def test_rel(self):
-    (rec_100, rec_100_zs, rec_50, rec_50_zs, rec_4x, rec_4x_zs), pos_num, loc_num, gt_num, dtime = self.eval.test_rel(self.model, [100, 50, 4.])
+    recalls, (pos_num, loc_num, gt_num), dtime = self.eval.test_rel(self.model, [100, 50])
+    rec_100, rec_100_zs, rec_50, rec_50_zs = recalls
+    print("CLS REL TEST:\nAll:\tR@50: {: 6.3f}\tR@100: {: 6.3f}\nZShot:\tR@50: {: 6.3f}\tR@100: {: 6.3f}".format(rec_50, rec_100, rec_50_zs, rec_100_zs))
+    print("CLS OBJ TEST POS: {: 6.3f}, LOC: {: 6.3f}, GT: {: 6.3f}, Precision: {: 6.3f}, Recall: {: 6.3f}".format(pos_num, loc_num, gt_num, np.float64(pos_num)/(pos_num+loc_num), np.float64(pos_num)/gt_num))
+    print("TEST Time: {}".format(utils.time_diff_str(dtime)))
+    return recalls, dtime
+
+  """
+  # 100, 50, 4x
+  def test_pre(self):
+    recalls, dtime = self.eval.test_pre(self.model, [100, 50, 4.])
+    rec_100, rec_100_zs, rec_50, rec_50_zs, rec_4x, rec_4x_zs = recalls
+    print("CLS PRED TEST:\nAll:\tR@4x: {: 6.3f}\tR@50: {: 6.3f}\tR@100: {: 6.3f}\nZShot:\tR@4x: {: 6.3f}\tR@50: {: 6.3f}\tR@100: {: 6.3f}".format(rec_4x, rec_50, rec_100, rec_4x_zs, rec_50_zs, rec_100_zs))
+    print("TEST Time: {}".format(utils.time_diff_str(dtime)))
+    return recalls, dtime
+
+  def test_rel(self):
+    recalls, pos_num, loc_num, gt_num, dtime = self.eval.test_rel(self.model, [100, 50, 4.])
+    rec_100, rec_100_zs, rec_50, rec_50_zs, rec_4x, rec_4x_zs = recalls
     print("CLS REL TEST:\nAll:\tR@4x: {: 6.3f}\tR@50: {: 6.3f}\tR@100: {: 6.3f}\nZShot:\tR@4x: {: 6.3f}\tR@50: {: 6.3f}\tR@100: {: 6.3f}".format(rec_4x, rec_50, rec_100, rec_4x_zs, rec_50_zs, rec_100_zs))
     print("CLS OBJ TEST POS: {: 6.3f}, LOC: {: 6.3f}, GT: {: 6.3f}, Precision: {: 6.3f}, Recall: {: 6.3f}".format(pos_num, loc_num, gt_num, np.float64(pos_num)/(pos_num+loc_num), np.float64(pos_num)/gt_num))
     print("TEST Time: {}".format(utils.time_diff_str(dtime)))
-    return rec_4x, rec_4x_zs, rec_50, rec_50_zs, rec_100, rec_100_zs, dtime
+    return recalls, dtime
+  """
 
 if __name__ == "__main__":
-  trainer = vrd_trainer("original-checkpoint", {"training" : {"num_epochs" : 1}}, checkpoint="epoch_4_checkpoint.pth.tar")
-  #trainer = vrd_trainer("original")
+  #trainer = vrd_trainer("original-checkpoint", {"training": {"num_epochs":1}}, checkpoint="epoch_4_checkpoint.pth.tar")
+  #trainer = vrd_trainer("original", {"training": {"num_epochs":10}, "eval" : {"test_pre" : True, "test_rel" : True}})
   #trainer = vrd_trainer("test", {"training" : {"num_epochs" : 1}, "eval" : {"test_pre" : True, "test_rel" : True}}, checkpoint = False)
-  trainer.train()
-  trainer = vrd_trainer("original")
-  trainer.train()
-  sys.exit(0)
-  for lr in [0.001, 0.00001]: # [0.001, 0.0001, 0.00001, 0.000001]:
+  #trainer.train()
+  #sys.exit(0)
+  for lr in [0.001, 0.0001, 0.00001]: # [0.001, 0.0001, 0.00001, 0.000001]:
     for weight_decay in [0.0005]:
-        for lr_rel_fus_ratio in [1]: # , 10, 100]:
-          trainer = vrd_trainer("pred-sem-scan-2-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio), {"training" : {"opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio},"checkpoint_freq" : 0.1 },}, profile = "cfgs/pred_sem.yml", checkpoint = False)
-          trainer.train()
+      for lr_rel_fus_ratio in [1, 10]: # , 10, 100]:
+        for pred_sem_mode in [1, 2]: # , 10, 100]:
+            trainer = vrd_trainer("pred-sem-scan-2-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio), {"model" : {"use_pred_sem" : pred_sem_mode}, "eval" : {"eval_obj":False, "test_rel":False}, "training" : {"opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}}, profile = "cfgs/pred_sem.yml", checkpoint = False)
+            trainer.train()
 
+  trainer = vrd_trainer("original", {"training": {"num_epochs":10}, "eval" : {"test_pre" : True, "test_rel" : True}})
+  trainer.train()
   # trainer = vrd_trainer({}, checkpoint = "epoch_4_checkpoint.pth.tar")
   #trainer.train()
   #trainer.test_pre()
