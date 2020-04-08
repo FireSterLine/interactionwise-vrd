@@ -372,14 +372,15 @@ if __name__ == "__main__":
   for lr in [0.0001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
     for weight_decay in [0.0005]:
       for lr_rel_fus_ratio in [1, 10, 100]:
-        for pred_sem_mode in [5, 6, 9, 10, 5+8, 6+8]: # , 10, 100]:
+        # TODO: try 7,8,8+7,8+8
+        for pred_sem_mode in [5, 6, 1+8, 2+8, 5+8, 6+8]: # , 10, 100]:
             trainer = vrd_trainer("pred-sem-scan-v4-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode), {"model" : {"use_pred_sem" : pred_sem_mode}, "eval" : {"eval_obj":False, "test_rel":True, "test_pre":True}, "training" : {"num_epochs" : 5, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}}, profile = "cfgs/pred_sem.yml", checkpoint = False)
             #trainer = vrd_trainer("pred-sem-scan-3-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode), {"model" : {"use_pred_sem" : pred_sem_mode}, "eval" : {"eval_obj":False, "test_rel":.2, "test_pre":.2}, "training" : {"num_epochs" : 5, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}}, profile = "cfgs/pred_sem.yml", checkpoint = False)
             trainer.train()
 
   #trainer = vrd_trainer("original", {"training": {"num_epochs":10}, "eval" : {"test_pre" : True, "test_rel" : True}})
   #trainer.train()
-  
+
   # trainer = vrd_trainer({}, checkpoint = "epoch_4_checkpoint.pth.tar")
   #trainer.train()
   #trainer.test_pre()
