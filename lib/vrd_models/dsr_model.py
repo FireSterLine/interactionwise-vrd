@@ -132,12 +132,16 @@ class DSRModel(nn.Module):
       self.fc_rel    = FC(256, self.args.n_pred, relu = False)
     else:
       assert self.args.pred_emb.shape[0] == self.args.n_pred
-      self.fc_fusion = FC(self.total_fus_neurons, 512)
-      self.fc_rel    = nn.Sequential(
-        FC(512, 300, relu = False),
-        # nn.Sigmoid(),
-        SemSim(self.args.pred_emb, mode=int(self.args.use_pred_sem)),
-      )
+      if self.args.use_pred_sem <= 8:
+        self.fc_fusion = FC(self.total_fus_neurons, 512)
+        self.fc_rel    = nn.Sequential(
+          FC(512, 300, relu = False),
+          SemSim(self.args.pred_emb, mode=int(self.args.use_pred_sem)),
+        )
+      else:
+        self.fc_fusion = FC(self.total_fus_neurons, 300, relu = False)
+        self.fc_rel    = SemSim(self.args.pred_emb, mode = int(self.args.use_pred_sem-8))
+
 
   def forward(self, img_blob, obj_classes, obj_boxes, u_boxes, idx_s, idx_o, spatial_features):
 

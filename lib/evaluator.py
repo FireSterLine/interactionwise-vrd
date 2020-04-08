@@ -10,6 +10,7 @@ import os.path as osp
 import torch.nn.functional as F
 import warnings
 import utils
+from random import sample
 
 # from copy import deepcopy
 deepcopy = lambda x: x
@@ -95,7 +96,11 @@ class VRDEvaluator():
     with torch.no_grad():
       vrd_model.eval()
       time1 = time.time()
-
+      
+      index = range(len(self.dataloader_pre))
+      if isinstance(self.args.test_pre, float):
+        index = sample(index, max(int(self.args.test_pre*len(index)),1))
+      
       rlp_labels_cell  = []
       tuple_confs_cell = []
       sub_bboxes_cell  = []
@@ -104,7 +109,7 @@ class VRDEvaluator():
       N = 100 # What's this? (num of rel_res) (with this you can compute R@i for any i<=N)
 
       for (tmp_i,(net_input, gt_obj, _, _)) in enumerate(self.dataloader_pre):
-
+        if not tmp_i in index: continue
         if(isinstance(net_input, torch.Tensor) and net_input.size() == (1,)): # Check this one TODO
           rlp_labels_cell.append(None)
           tuple_confs_cell.append(None)
@@ -165,7 +170,10 @@ class VRDEvaluator():
         "obj_bboxes_ours" : obj_bboxes_cell,
       }
 
-      recalls = eval_recall_at_N(res, gts = [self.gt, self.gt_zs], Ns = Ns, num_imgs = self.num_imgs)
+      gt    = {'tuple_label' : np.array(self.gt['tuple_label'])[index],    'obj_bboxes' : np.array(self.gt['obj_bboxes'])[index],    'sub_bboxes' : np.array(self.gt['sub_bboxes'])[index]}
+      gt_zs = {'tuple_label' : np.array(self.gt_zs['tuple_label'])[index],    'obj_bboxes' : np.array(self.gt_zs['obj_bboxes'])[index],    'sub_bboxes' : np.array(self.gt_zs['sub_bboxes'])[index]}
+
+      recalls = eval_recall_at_N(res, gts = [gt, gt_zs], Ns = Ns, num_imgs = self.num_imgs)
       time2 = time.time()
 
       return recalls, (time2-time1)
@@ -189,6 +197,10 @@ class VRDEvaluator():
         loc_num = 0.0
         gt_num  = 0.0
 
+      index = range(len(self.dataloader_rel))
+      if isinstance(self.args.test_rel, float):
+        index = sample(index, max(int(self.args.test_rel*len(index)),1))
+      
       rlp_labels_cell  = []
       tuple_confs_cell = []
       sub_bboxes_cell  = []
@@ -202,8 +214,7 @@ class VRDEvaluator():
       for step,(anno_img, test_data) in enumerate(zip(anno, self.dataloader_rel)):
         if utils.smart_frequency_check(step, n_iter, 0.1):
             print("{}/{}\r".format(step,n_iter), end="")
-        if step >= n_iter:
-          break
+        if not step in index: continue
         net_input, gt_obj, det_obj, gt_soP_prior  = test_data
 
         if(isinstance(net_input, torch.Tensor) and net_input.size() == (1,)): # Check this one TODO
@@ -326,7 +337,7 @@ class VRDEvaluator():
 
         # Why is this needed? ...
         tuple_confs_im = np.array(tuple_confs_im)
-        idx_order = tuple_confs_im.argsort()[::-1][:N]
+        idx_order = tuple_confs_im.argsort()[::-1][:N] # TODO: remove this :N to allow R@4x
         rlp_labels_im = rlp_labels_im[idx_order,:]
         tuple_confs_im = tuple_confs_im[idx_order]
         sub_bboxes_im  = sub_bboxes_im[idx_order,:]
@@ -347,7 +358,11 @@ class VRDEvaluator():
       # if len(len(self.dataloader)) != len(res["obj_bboxes_ours"]):
       #   warnings.warn("Warning! Rel test results and gt do not have the same length: rel test performance might be off! {} != {}".format(len(len(self.dataloader)), len(res["obj_bboxes_ours"])), UserWarning)
 
-      recalls = eval_recall_at_N(res, gts = [self.gt, self.gt_zs], Ns = Ns, num_imgs = self.num_imgs)
+      gt    = {'tuple_label' : np.array(self.gt['tuple_label'])[index],    'obj_bboxes' : np.array(self.gt['obj_bboxes'])[index],    'sub_bboxes' : np.array(self.gt['sub_bboxes'])[index]}
+      gt_zs = {'tuple_label' : np.array(self.gt_zs['tuple_label'])[index],    'obj_bboxes' : np.array(self.gt_zs['obj_bboxes'])[index],    'sub_bboxes' : np.array(self.gt_zs['sub_bboxes'])[index]}
+
+
+      recalls = eval_recall_at_N(res, gts = [gt, gt_zs], Ns = Ns, num_imgs = self.num_imgs)
       time2 = time.time()
 
       if self.args.eval_obj:

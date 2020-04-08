@@ -48,7 +48,7 @@ class SemSim(nn.Module):
     super(SemSim, self).__init__()
     self.emb = torch.as_tensor(emb).to("cuda:0") # TODO fix
     self.mode = mode
-    if mode == 2:
+    if self.mode % 2 == 0:
       self.sig = nn.Sigmoid()
     #print(emb.shape)
   def forward(self, x):
@@ -63,13 +63,15 @@ class SemSim(nn.Module):
     x = x[0]
     #print(x.device)
     #print(self.emb.device)
-    if self.mode == 2:
+    if self.mode % 2 == 0:
       x = (self.sig(x)*2)-1
     cos_sim = lambda x : F.cosine_similarity(x, self.emb, dim=-1)
     shift = lambda x : x-x.min()
     scale = lambda x : x/x.sum()
-    new_tens = [cos_sim(x[r]) for r in range(rel_size)]
-    #new_tens = ([scale(shift(cos_sim(x[r]))) for r in range(rel_size)])
+    if self.mode <= 4:
+      new_tens = [cos_sim(x[r]) for r in range(rel_size)]
+    else:
+      new_tens = ([scale(shift(cos_sim(x[r]))) for r in range(rel_size)])
     a = torch.stack(new_tens)
     a = a.unsqueeze(0)
     #a.shape
