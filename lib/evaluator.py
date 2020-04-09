@@ -35,6 +35,7 @@ class VRDEvaluator():
         dataset = self.datalayer_pre,
         batch_size = 1, # 256,
         shuffle = False,
+        pin_memory = True,
       )
 
     # Setup RELATIONSHIP DETECTION Data Layer
@@ -44,6 +45,7 @@ class VRDEvaluator():
         dataset = self.datalayer_rel,
         batch_size = 1, # 256,
         shuffle = False,
+        pin_memory = True,
       )
 
     #self.datalayer  = VRDDataLayer(data_args, "test", use_preload = self.args.use_preload, use_proposals = self.args.test_rel)

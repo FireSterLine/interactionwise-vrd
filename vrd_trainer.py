@@ -25,9 +25,9 @@ from lib.datalayers import VRDDataLayer
 from lib.evaluator import VRDEvaluator
 
 # Test if code compiles
-TEST_DEBUGGING = False # True # False # False # True # False # True # True # False
+TEST_DEBUGGING = False # False # True # False # False # True # False # True # True # False
 # Test if a newly-introduced change affects the validity of the code
-TEST_VALIDITY = True # True # False # True
+TEST_VALIDITY = False # True
 # Try overfitting to a single element
 TEST_OVERFIT = False #True # False # True
 
@@ -44,7 +44,7 @@ class vrd_trainer():
     if profile is not None:
       profile = utils.listify(profile)
       for p in profile:
-        def_args = utils.dict_patch(utils.cfg_from_file(profile), def_args)
+        def_args = utils.dict_patch(utils.cfg_from_file(p), def_args)
     args = utils.dict_patch(args, def_args)
 
     #print("Arguments:\n", yaml.dump(args, default_flow_style=False))
@@ -108,6 +108,7 @@ class vrd_trainer():
       batch_size = 1, # self.training.batch_size,
       # sampler= Random ...,
       num_workers = 4, # num_workers=self.num_workers
+      pin_memory = True,
       shuffle = self.training.use_shuffle,
     )
 
