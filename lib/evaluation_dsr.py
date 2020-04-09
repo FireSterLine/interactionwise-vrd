@@ -116,11 +116,9 @@ def eval_recall_at_N(res, gts, Ns = [100, 50, 4.], num_imgs = None, use_rel = Tr
 
   # Sort by confidence
   for i,(tuple_labels, tuple_confs, sub_bboxes, obj_bboxes) in enumerate(zip(base_pred["tuple_label"], base_pred["tuple_confs"], base_pred["sub_bboxes"], base_pred["obj_bboxes"])):
-    if(tuple_confs is None):
-      continue
+    if(tuple_confs is None): continue
     tuple_confs = np.array(tuple_confs)
-    if(tuple_confs.shape[0] == 0):
-      continue
+    if(tuple_confs.shape[0] == 0): continue
     idx_order = tuple_confs.argsort()[::-1] # [:max_N]
     base_pred["tuple_label"][i]  = tuple_labels[idx_order,:]
     base_pred["tuple_confs"][i]  = tuple_confs[idx_order]
