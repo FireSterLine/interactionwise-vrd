@@ -97,15 +97,13 @@ class VRDEvaluator():
       vrd_model.eval()
       time1 = time.time()
 
-      dataloader = self.dataloader_pre
       gt         = self.gt
       gt_zs      = self.gt_zs
+      index = range(len(self.dataloader_pre))
       if isinstance(self.args.test_pre, float):
-        index = range(len(self.dataloader_pre))
-        index = sample(index, max(int(self.args.test_pre*len(index)),1))
-        dataloader = self.dataloader_pre[index]
-        gt    = {'tuple_label' : np.array(self.gt['tuple_label'])[index],    'obj_bboxes' : np.array(self.gt['obj_bboxes'])[index],    'sub_bboxes' : np.array(self.gt['sub_bboxes'])[index]}
-        gt_zs = {'tuple_label' : np.array(self.gt_zs['tuple_label'])[index],    'obj_bboxes' : np.array(self.gt_zs['obj_bboxes'])[index],    'sub_bboxes' : np.array(self.gt_zs['sub_bboxes'])[index]}
+        index = sorted(sample(index, max(int(self.args.test_pre*len(index)),1)))
+        gt    = {'tuple_label' : np.array(gt['tuple_label'])[index],    'obj_bboxes' : np.array(gt['obj_bboxes'])[index],    'sub_bboxes' : np.array(gt['sub_bboxes'])[index]}
+        gt_zs = {'tuple_label' : np.array(gt_zs['tuple_label'])[index],    'obj_bboxes' : np.array(gt_zs['obj_bboxes'])[index],    'sub_bboxes' : np.array(gt_zs['sub_bboxes'])[index]}
 
       rlp_labels_cell  = []
       tuple_confs_cell = []
@@ -115,6 +113,8 @@ class VRDEvaluator():
       N = 100 # What's this? (num of rel_res) (with this you can compute R@i for any i<=N)
 
       for (i_iter,(net_input, gt_obj, _, _)) in enumerate(dataloader):
+
+        if i_iter not in index: continue
         if(isinstance(net_input, torch.Tensor) and net_input.size() == (1,)): # Check this one TODO
           rlp_labels_cell.append(None)
           tuple_confs_cell.append(None)
@@ -196,33 +196,33 @@ class VRDEvaluator():
         loc_num = 0.0
         gt_num  = 0.0
 
-      dataloader = self.dataloader_rel
       gt         = self.gt
       gt_zs      = self.gt_zs
+      index = range(len(self.dataloader_rel))
       if isinstance(self.args.test_rel, float):
-        index = range(len(self.dataloader_rel))
-        index = sample(index, max(int(self.args.test_rel*len(index)),1))
-        dataloader = self.dataloader_rel[index]
-        gt    = {'tuple_label' : np.array(self.gt['tuple_label'])[index],    'obj_bboxes' : np.array(self.gt['obj_bboxes'])[index],    'sub_bboxes' : np.array(self.gt['sub_bboxes'])[index]}
-        gt_zs = {'tuple_label' : np.array(self.gt_zs['tuple_label'])[index],    'obj_bboxes' : np.array(self.gt_zs['obj_bboxes'])[index],    'sub_bboxes' : np.array(self.gt_zs['sub_bboxes'])[index]}
+        index = sorted(sample(index, max(int(self.args.test_rel*len(index)),1)))
+        gt    = {'tuple_label' : np.array(gt['tuple_label'])[index],    'obj_bboxes' : np.array(gt['obj_bboxes'])[index],    'sub_bboxes' : np.array(gt['sub_bboxes'])[index]}
+        gt_zs = {'tuple_label' : np.array(gt_zs['tuple_label'])[index],    'obj_bboxes' : np.array(gt_zs['obj_bboxes'])[index],    'sub_bboxes' : np.array(gt_zs['sub_bboxes'])[index]}
 
       rlp_labels_cell  = []
       tuple_confs_cell = []
       sub_bboxes_cell  = []
       obj_bboxes_cell  = []
 
-      n_iter = len(dataloader)
-      for i_iter,test_data in enumerate(dataloader):
-        if utils.smart_frequency_check(i_iter, n_iter, 0.1):
-            print("{}/{}\r".format(i_iter,n_iter), end="")
-        net_input, gt_obj, det_obj, gt_soP_prior  = test_data
+      n_iter = len(self.dataloader_rel)
+      for i_iter,test_data in enumerate(self.dataloader_rel):
+        if i_iter not in index: continue
 
+        net_input, gt_obj, det_obj, gt_soP_prior  = test_data
         if(isinstance(net_input, torch.Tensor) and net_input.size() == (1,)): # Check this one TODO
           rlp_labels_cell.append(None)
           tuple_confs_cell.append(None)
           sub_bboxes_cell.append(None)
           obj_bboxes_cell.append(None)
           continue
+
+        if utils.smart_frequency_check(i_iter, n_iter, 0.1):
+            print("{}/{}\r".format(i_iter,n_iter), end="")
 
         (gt_obj_classes, gt_obj_boxes) = gt_obj
         (det_obj_classes, det_obj_boxes, det_obj_confs) = det_obj
