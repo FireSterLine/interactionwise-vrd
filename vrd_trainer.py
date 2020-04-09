@@ -34,7 +34,7 @@ from lib.evaluator import VRDEvaluator
 
 TESTOVERFIT = False #True # False # True
 TESTVALIDITY = False # True # False # True
-DEBUGGING = False # True # False # True # True # False
+DEBUGGING = True # False # True # True # False
 
 if utils.device == torch.device("cpu"):
   DEBUGGING = True
@@ -370,9 +370,10 @@ if __name__ == "__main__":
   for lr in [0.0001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
     for weight_decay in [0.0005]:
       for lr_rel_fus_ratio in [0.1, 1, 10]:
-        for pred_sem_mode in [7,8,8+7,8+8]:
-            trainer = vrd_trainer("pred-sem-scan-v5-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode), {"model" : {"use_pred_sem" : pred_sem_mode}, "eval" : {"eval_obj":False, "test_rel":True, "test_pre":True}, "training" : {"num_epochs" : 5, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}}, profile = "cfgs/pred_sem.yml", checkpoint = False)
+        for pred_sem_mode in [5,6,7,8,8+7,8+8]:
+            #trainer = vrd_trainer("pred-sem-scan-v5-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode), {"model" : {"use_pred_sem" : pred_sem_mode}, "eval" : {"eval_obj":False, "test_rel":True, "test_pre":True}, "training" : {"num_epochs" : 5, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}}, profile = "cfgs/pred_sem.yml", checkpoint = False)
             #trainer = vrd_trainer("pred-sem-scan-3-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode), {"model" : {"use_pred_sem" : pred_sem_mode}, "eval" : {"eval_obj":False, "test_rel":.2, "test_pre":.2}, "training" : {"num_epochs" : 5, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}}, profile = "cfgs/pred_sem.yml", checkpoint = False)
+            trainer = vrd_trainer("pred-sem-scan-v5-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode), {"model" : {"use_pred_sem" : pred_sem_mode}, "eval" : {"eval_obj":False, "test_rel":1., "test_pre":1.}, "training" : {"num_epochs" : 5, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}}, profile = "cfgs/pred_sem.yml", checkpoint = False)
             trainer.train()
 
   #trainer = vrd_trainer("original", {"training": {"num_epochs":10}, "eval" : {"test_pre" : True, "test_rel" : True}})
