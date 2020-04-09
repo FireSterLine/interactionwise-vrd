@@ -187,9 +187,6 @@ class VRDEvaluator():
       vrd_model.eval()
       time1 = time.time()
 
-      with open(osp.join(self.any_datalayer.dataset.metadata_dir, "test.pkl"), 'rb') as fid:
-        anno = pickle.load(fid, encoding="latin1")
-
       N = 100 # What's this? (num of rel_res) (with this you can compute R@i for any i<=N)
 
       if self.args.eval_obj:
@@ -206,12 +203,8 @@ class VRDEvaluator():
       sub_bboxes_cell  = []
       obj_bboxes_cell  = []
 
-      # ... if len(anno) != len(proposals["cls"]):
-      #   print("ERROR: something is wrong in prediction: {} != {}".format(len(anno), len(proposals["cls"])))
-      # print(len(anno))
-      # print(len(self.dataloader))
-      n_iter = min(len(anno), len(self.dataloader_rel))
-      for step,(anno_img, test_data) in enumerate(zip(anno, self.dataloader_rel)):
+      n_iter = len(self.dataloader_rel)
+      for step,test_data in enumerate(self.dataloader_rel):
         if utils.smart_frequency_check(step, n_iter, 0.1):
             print("{}/{}\r".format(step,n_iter), end="")
         if not step in index: continue
@@ -229,39 +222,6 @@ class VRDEvaluator():
         # TODO: remove this to allow batching
         gt_obj_boxes  = gt_obj_boxes[0].data.cpu().numpy().astype(np.float32)
         gt_obj_classes = gt_obj_classes[0].data.cpu().numpy().astype(np.float32)
-
-        """
-        #TODO: perform this check after you switch to anno and unify dsr data preparation with the other one
-        gt_boxes = anno_img["boxes"].astype(np.float32)
-        gt_cls = np.array(anno_img["classes"]).astype(np.float32)
-
-        inds_1 = gt_obj_boxes.sum(axis=1).argsort()
-        print(inds_1)
-        gt_obj_boxes = gt_obj_boxes[inds_1]
-        gt_obj_classes = gt_obj_classes[inds_1]
-        # gt_obj_classes = np.take_along_axis(gt_obj_classes, inds_1, axis=0)
-        inds_2 = gt_boxes.sum(axis=1).argsort()
-        print(inds_2)
-        gt_boxes = gt_boxes[inds_2]
-        gt_cls = gt_cls[inds_2]
-        # gt_cls = np.take_along_axis(gt_cls, inds_2, axis=0)
-        if not np.all(gt_cls == gt_obj_classes) or not np.all(gt_boxes == gt_obj_boxes):
-          print("Boxes")
-          print("gt_boxes: \t", gt_boxes.shape) # 10
-          print("gt_boxes: \t", gt_obj_boxes.shape)
-          print("Classes")
-          print("gt_cls: \t", gt_cls.shape) # 10
-          print("gt_obj_classes: \t", gt_obj_classes.shape)
-          print()
-          print("Boxes")
-          print("gt_boxes: \n", gt_boxes) # 10
-          print("gt_obj_boxes: \n", gt_obj_boxes)
-          print("Classes")
-          print("gt_cls: \n", gt_cls) # 10
-          print("gt_obj_classes: \n", gt_obj_classes)
-          input()
-        continue
-        """
 
         net_input = lib.datalayers.net_input_to(net_input, utils.device)
         obj_score, rel_score = vrd_model(*net_input) # img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
@@ -359,8 +319,7 @@ class VRDEvaluator():
       #   warnings.warn("Warning! Rel test results and gt do not have the same length: rel test performance might be off! {} != {}".format(len(len(self.dataloader)), len(res["obj_bboxes_ours"])), UserWarning)
 
       gt    = {'tuple_label' : np.array(self.gt['tuple_label'])[index],    'obj_bboxes' : np.array(self.gt['obj_bboxes'])[index],    'sub_bboxes' : np.array(self.gt['sub_bboxes'])[index]}
-      gt_zs = {'tuple_label' : np.array(self.gt_zs['tuple_label'])[index],    'obj_bboxes' : np.array(self.gt_zs['obj_bboxes'])[index],    'sub_bboxes' : np.array(self.gt_zs['sub_bboxes'])[index]}
-
+      gt_zs = {'tuple_label' : np.array(self.gt_zs['tuple_label'])[index], 'obj_bboxes' : np.array(self.gt_zs['obj_bboxes'])[index], 'sub_bboxes' : np.array(self.gt_zs['sub_bboxes'])[index]}
 
       recalls = eval_recall_at_N(res, gts = [gt, gt_zs], Ns = Ns, num_imgs = self.num_imgs)
       time2 = time.time()
