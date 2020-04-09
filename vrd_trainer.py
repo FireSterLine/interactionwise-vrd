@@ -191,12 +191,10 @@ class vrd_trainer():
 
     # Prepare result table
     res_headers = ["Epoch"]
-    if self.eval_args.test_pre:
-      #res_headers += ["Pre R4x", "ZS", "R@50", "ZS", "R@100", "ZS"]
-      res_headers += ["Pre {} R@50".format(self.eval_args.test_pre), "ZS", "R@100", "ZS"]
-    if self.eval_args.test_rel:
-      #res_headers += ["Rel R@4x", "ZS", "R@50", "ZS", "R@100", "ZS"]
-      res_headers += ["Rel {} R@50".format(self.eval_args.test_rel), "ZS", "R@100", "ZS"]
+    self.eval_args.rec = sorted(self.eval_args.rec, reverse=True)
+    if self.eval_args.test_pre: res_headers += self.gt_headers("Pre", self.eval_args.test_pre)
+    if self.eval_args.test_rel: res_headers += self.gt_headers("Rel", self.eval_args.test_rel)
+
     res = []
 
     end_epoch = self.state["epoch"] + self.training.num_epochs
@@ -226,16 +224,10 @@ class vrd_trainer():
         res_row = [self.state["epoch"]]
         if self.eval_args.test_pre:
           recalls, dtime = self.test_pre()
-          #rec_100, rec_100_zs, rec_50, rec_50_zs, rec_4x, rec_4x_zs = recalls
-          #res_row += [rec_4x, rec_4x_zs, rec_50, rec_50_zs, rec_100, rec_100_zs]
-          rec_100, rec_100_zs, rec_50, rec_50_zs = recalls
-          res_row += [rec_50, rec_50_zs, rec_100, rec_100_zs]
+          res_row += test_rel
         if self.eval_args.test_rel:
           recalls, dtime = self.test_rel()
-          #rec_100, rec_100_zs, rec_50, rec_50_zs, rec_4x, rec_4x_zs = recalls
-          #res_row += [rec_4x, rec_4x_zs, rec_50, rec_50_zs, rec_100, rec_100_zs]
-          rec_100, rec_100_zs, rec_50, rec_50_zs = recalls
-          res_row += [rec_50, rec_50_zs, rec_100, rec_100_zs]
+          res_row += test_rel
         res.append(res_row)
 
       with open(save_file, 'w') as f:
@@ -330,37 +322,38 @@ class vrd_trainer():
     """
 
   def test_pre(self):
-    recalls, dtime = self.eval.test_pre(self.model, [100, 50])
-    rec_100, rec_100_zs, rec_50, rec_50_zs = recalls
-    print("CLS PRED TEST:\nAll:\tR@50: {: 6.3f}\tR@100: {: 6.3f}\nZShot:\tR@50: {: 6.3f}\tR@100: {: 6.3f}".format(rec_50, rec_100, rec_50_zs, rec_100_zs))
+    recalls, dtime = self.eval.test_pre(self.model, self.eval_args.rec)
+    print("PRED TEST:")
+    print(self.get_format_str().format(*recalls))
     print("TEST Time: {}".format(utils.time_diff_str(dtime)))
     return recalls, dtime
 
   def test_rel(self):
-    recalls, (pos_num, loc_num, gt_num), dtime = self.eval.test_rel(self.model, [100, 50])
-    rec_100, rec_100_zs, rec_50, rec_50_zs = recalls
-    print("CLS REL TEST:\nAll:\tR@50: {: 6.3f}\tR@100: {: 6.3f}\nZShot:\tR@50: {: 6.3f}\tR@100: {: 6.3f}".format(rec_50, rec_100, rec_50_zs, rec_100_zs))
-    print("CLS OBJ TEST POS: {: 6.3f}, LOC: {: 6.3f}, GT: {: 6.3f}, Precision: {: 6.3f}, Recall: {: 6.3f}".format(pos_num, loc_num, gt_num, np.float64(pos_num)/(pos_num+loc_num), np.float64(pos_num)/gt_num))
+    recalls, (pos_num, loc_num, gt_num), dtime = self.eval.test_rel(self.model, self.eval_args.rec)
+    print("REL TEST:")
+    print(self.get_format_str().format(*recalls))
+    # print("OBJ TEST: POS: {: 6.3f}, LOC: {: 6.3f}, GT: {: 6.3f}, Precision: {: 6.3f}, Recall: {: 6.3f}".format(pos_num, loc_num, gt_num, np.float64(pos_num)/(pos_num+loc_num), np.float64(pos_num)/gt_num))
     print("TEST Time: {}".format(utils.time_diff_str(dtime)))
     return recalls, dtime
 
-  """
-  # 100, 50, 4x
-  def test_pre(self):
-    recalls, dtime = self.eval.test_pre(self.model, [100, 50, 4.])
-    rec_100, rec_100_zs, rec_50, rec_50_zs, rec_4x, rec_4x_zs = recalls
-    print("CLS PRED TEST:\nAll:\tR@4x: {: 6.3f}\tR@50: {: 6.3f}\tR@100: {: 6.3f}\nZShot:\tR@4x: {: 6.3f}\tR@50: {: 6.3f}\tR@100: {: 6.3f}".format(rec_4x, rec_50, rec_100, rec_4x_zs, rec_50_zs, rec_100_zs))
-    print("TEST Time: {}".format(utils.time_diff_str(dtime)))
-    return recalls, dtime
+  def get_format_str(self):
+    return "".join(["\t{}: {: 6.3f}".format(x) if i % 2 == 0 else "\t{}: {: 6.3f}\n".format(x) for i,x in enumerate(self.gt_headers())])
 
-  def test_rel(self):
-    recalls, pos_num, loc_num, gt_num, dtime = self.eval.test_rel(self.model, [100, 50, 4.])
-    rec_100, rec_100_zs, rec_50, rec_50_zs, rec_4x, rec_4x_zs = recalls
-    print("CLS REL TEST:\nAll:\tR@4x: {: 6.3f}\tR@50: {: 6.3f}\tR@100: {: 6.3f}\nZShot:\tR@4x: {: 6.3f}\tR@50: {: 6.3f}\tR@100: {: 6.3f}".format(rec_4x, rec_50, rec_100, rec_4x_zs, rec_50_zs, rec_100_zs))
-    print("CLS OBJ TEST POS: {: 6.3f}, LOC: {: 6.3f}, GT: {: 6.3f}, Precision: {: 6.3f}, Recall: {: 6.3f}".format(pos_num, loc_num, gt_num, np.float64(pos_num)/(pos_num+loc_num), np.float64(pos_num)/gt_num))
-    print("TEST Time: {}".format(utils.time_diff_str(dtime)))
-    return recalls, dtime
-  """
+  def gt_headers(self, prefix="", test_type = True):
+    def metric_name(x):
+      if isinstance(x, float): return "{}x".format(x)
+      else isinstance(x, int): return str(x)
+    if prefix == "":        fst_col_prefix = ""
+    elif test_type != True: fst_col_prefix = "{} {} ".format(prefix, test_type)
+    else:                   fst_col_prefix = "{} ".format(prefix)
+    headers = []
+    for i,x in enumerate(self.eval_args.rec):
+      if i == 0: name = fst_col_prefix
+      else:      name = ""
+      name += "R@" + metric_name(x)
+      headers.append(name)
+      headers.append("ZS")
+    return headers
 
 if __name__ == "__main__":
   #trainer = vrd_trainer("original-checkpoint", {"training": {"num_epochs":1}}, checkpoint="epoch_4_checkpoint.pth.tar")
@@ -372,14 +365,15 @@ if __name__ == "__main__":
   for lr in [0.0001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
     for weight_decay in [0.0005]:
       for lr_rel_fus_ratio in [1, 10, 100]:
-        for pred_sem_mode in [5, 6, 9, 10, 5+8, 6+8]: # , 10, 100]:
+        # TODO: try 7,8,8+7,8+8
+        for pred_sem_mode in [5, 6, 1+8, 2+8, 5+8, 6+8]: # , 10, 100]:
             trainer = vrd_trainer("pred-sem-scan-v4-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode), {"model" : {"use_pred_sem" : pred_sem_mode}, "eval" : {"eval_obj":False, "test_rel":True, "test_pre":True}, "training" : {"num_epochs" : 5, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}}, profile = "cfgs/pred_sem.yml", checkpoint = False)
             #trainer = vrd_trainer("pred-sem-scan-3-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode), {"model" : {"use_pred_sem" : pred_sem_mode}, "eval" : {"eval_obj":False, "test_rel":.2, "test_pre":.2}, "training" : {"num_epochs" : 5, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}}, profile = "cfgs/pred_sem.yml", checkpoint = False)
             trainer.train()
 
   #trainer = vrd_trainer("original", {"training": {"num_epochs":10}, "eval" : {"test_pre" : True, "test_rel" : True}})
   #trainer.train()
-  
+
   # trainer = vrd_trainer({}, checkpoint = "epoch_4_checkpoint.pth.tar")
   #trainer.train()
   #trainer.test_pre()

@@ -34,6 +34,8 @@ eval:
   use_obj_prior: True
   use_preload: False
   eval_obj: True
+  # R@x metrics
+  rec: [100, 50]
 
 # Training parameters
 training:

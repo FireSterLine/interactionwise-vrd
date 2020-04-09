@@ -63,15 +63,28 @@ class SemSim(nn.Module):
     x = x[0]
     #print(x.device)
     #print(self.emb.device)
+
     if self.mode % 2 == 0:
+      # This sigmoid seems to help, compared with no sigmoid (and no tanh)
       x = (self.sig(x)*2)-1
+    else:
+      # Note: In scan-v3 this tanh was not here.
+      x = self.tanh(x)
+
     cos_sim = lambda x : F.cosine_similarity(x, self.emb, dim=-1)
-    shift = lambda x : x-x.min()
-    scale = lambda x : x/x.sum()
+
     if self.mode <= 4:
       new_tens = [cos_sim(x[r]) for r in range(rel_size)]
-    else:
+    elif self.mode <= 6:
+      # TODO try new_tens = [(cos_sim(x[r])+1)/2 for r in range(rel_size)]
+      shift   = lambda x : x-x.min()
+      scale   = lambda x : x/x.sum()
       new_tens = ([scale(shift(cos_sim(x[r]))) for r in range(rel_size)])
+    else:
+      # TODO: test this case (mode 5 and 6)
+      atanh   = lambda x : 0.5 * torch.log((1+x)/(1-x))
+      new_tens = [atanh(cos_sim(x[r])) for r in range(rel_size)]
+
     a = torch.stack(new_tens)
     a = a.unsqueeze(0)
     #a.shape
