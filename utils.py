@@ -219,7 +219,7 @@ def get(dataDict, mapList, dig = False):
   return reduce(fun, mapList, dataDict)
 
 def listify(elem_or_list):
-  return elem_or_list if isinstance(elem_or_list, list) else [elem_or_list]
+  return elem_or_list if not isinstance(elem_or_list, str) and isinstance(elem_or_list, list) else [elem_or_list]
 
 def patch_key(d, old_key, new_key):
   old_key = listify(old_key)
