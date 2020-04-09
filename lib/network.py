@@ -53,19 +53,16 @@ class SemSim(nn.Module):
     else:
       self.tanh = nn.Tanh()
     #print(emb.shape)
+
   def forward(self, x):
     #print(x.shape)
     batch_size = x.shape[0]
     rel_size   = x.shape[1]
-    #similarities = torch.as_tensor([[F.cosine_similarity(x[b][r], self.emb,
-    #    dim=-1) for r in rel_size] for b in batch_size])
-    # similarities = torch.as_tensor([[F.cosine_similarity(x[b][r], self.emb dim=-1) for r in rel_size] for b in batch_size])
-    # TODO: allow batching
-    #a = torch.stack([F.cosine_similarity(x[0][r], self.emb, dim=-1) for r in range(rel_size)]).to(device=utils.device)
-    x = x[0]
-    #print(x.device)
-    #print(self.emb.device)
 
+    # TODO: allow batching
+    x = x[0]
+
+    # Force the values individually to be in [-1,+1]
     if self.mode % 2 == 0:
       # This sigmoid seems to help, compared with no sigmoid (and no tanh)
       x = (self.sig(x)*2)-1
@@ -73,23 +70,38 @@ class SemSim(nn.Module):
       # Note: In scan-v3 this tanh was not here.
       x = self.tanh(x)
 
+    # First result: SIGMOID is better than none, in every case.
+
+    # At this point, the vectors are not normalized, although the values are in [-1,1]
+    # Since we only care about cosine simmilarity, there is no need to normalize the vectors.
+
     cos_sim = lambda x : F.cosine_similarity(x, self.emb, dim=-1)
 
+    # Now we compute the "similarity scores" between the predicted vectors and
+    #  the existing embeddings for the predicates. Note that these are not to be considered as probabilities
+    #  because a probability distribution over the predicates would lose the information regarding the likelihood of said object pair to be in a relationship.
+    # Here, for object pairs with no relationships, we should yield low scores for every predicate,
+    #  whereas object pairs in a relationship should have high scores corresponding to the right predicates.
     if self.mode <= 4:
+      # We can compute the scores through simple cosine similarity (output is vector of values in [-1,1])
       new_tens = [cos_sim(x[r]) for r in range(rel_size)]
     elif self.mode <= 6:
-      # TODO try new_tens = [(cos_sim(x[r])+1)/2 for r in range(rel_size)]
-      shift   = lambda x : x-x.min()
-      scale   = lambda x : x/x.sum()
-      new_tens = ([scale(shift(cos_sim(x[r]))) for r in range(rel_size)])
+      # We can compute the scores by remapping the cosine similarities in [0,1]
+      new_tens = [(cos_sim(x[r])+1)/2 for r in range(rel_size)]
+      # We can also compute the cosine similarity and remap each distribution to [0,1]
+      #  This is actually wrong, because the information "likelihood that there is a relationship in the object pair"
+      #  gets lost when the vector is remapped.
+      # # shift   = lambda x : x-x.min()
+      # # scale   = lambda x : x/x.sum()
+      # # new_tens = ([scale(shift(cos_sim(x[r]))) for r in range(rel_size)])
     else:
-      # TODO: test this case (mode 5 and 6)
+      # We can compute the cosine similarity and remap the scores into the real axis
       atanh   = lambda x : 0.5 * torch.log((1+x)/(1-x))
       new_tens = [atanh(cos_sim(x[r])) for r in range(rel_size)]
 
     a = torch.stack(new_tens)
     a = a.unsqueeze(0)
-    #a.shape
+
     return a
 
 # This function is the batched version of torch.index_select

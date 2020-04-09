@@ -4,13 +4,13 @@ REFERENCE test performance for the pre-trained DSR Model:
 08/04/2020
 Trained from scratch:
 
-CLS PRED TEST:
-All:    R@50:  85.729   R@100:  93.388
-ZShot:  R@50:  62.874   R@100:  82.464
-CLS REL TEST:
-All:    R@50:  18.822   R@100:  23.055
-ZShot:  R@50:  4.729    R@100:  7.825
-
+PRED TEST:
+        R@100:  93.415  ZS:  82.121
+        R@50:  86.122   ZS:  64.671
+TEST Time: 00:01:10
+REL TEST:
+        R@100:  23.173  ZS:  8.083
+        R@50:  18.638   ZS:  4.557
 
 07/04/2020
 
