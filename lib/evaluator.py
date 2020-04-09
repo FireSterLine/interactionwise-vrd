@@ -112,7 +112,7 @@ class VRDEvaluator():
 
       N = 100 # What's this? (num of rel_res) (with this you can compute R@i for any i<=N)
 
-      for (i_iter,(net_input, gt_obj, _, _)) in enumerate(dataloader):
+      for (i_iter,(net_input, gt_obj, _, _)) in enumerate(self.dataloader_pre):
 
         if i_iter not in index: continue
         if(isinstance(net_input, torch.Tensor) and net_input.size() == (1,)): # Check this one TODO
@@ -122,8 +122,8 @@ class VRDEvaluator():
           obj_bboxes_cell.append(None)
           continue
 
-        if utils.smart_frequency_check(i_iter, len(dataloader), 0.1):
-          print("{}/{}\r".format(i_iter, len(dataloader)), end="")
+        if utils.smart_frequency_check(i_iter, len(self.dataloader_pre), 0.1):
+          print("{}/{}\r".format(i_iter, len(self.dataloader_pre)), end="")
 
         (gt_obj_classes, gt_obj_boxes) = gt_obj
         net_input = lib.datalayers.net_input_to(net_input, utils.device)
