@@ -5,6 +5,7 @@ from datetime import datetime
 import time
 
 import pickle
+import yaml
 from munch import munchify
 from tabulate import tabulate
 import warnings
@@ -26,7 +27,7 @@ from lib.evaluator import VRDEvaluator
 # Test if code compiles
 TEST_DEBUGGING = False # False # True # False # True # True # False
 # Test if a newly-introduced change affects the validity of the code
-TEST_VALIDITY = False # True # False # True
+TEST_VALIDITY = True # True # False # True
 # Try overfitting to a single element
 TEST_OVERFIT = False #True # False # True
 
