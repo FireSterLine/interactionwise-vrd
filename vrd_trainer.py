@@ -39,26 +39,21 @@ class vrd_trainer():
 
   def __init__(self, session_name, args = {}, profile = None, checkpoint = False):
 
+    # Load arguments cascade from profiles
     def_args = utils.cfg_from_file("cfgs/default.yml")
     if profile is not None:
-      def_args = utils.dict_patch(utils.cfg_from_file(profile), def_args)
+      profile = utils.listify(profile)
+      for p in profile:
+        def_args = utils.dict_patch(utils.cfg_from_file(profile), def_args)
     args = utils.dict_patch(args, def_args)
 
-    print("Arguments:")
-    if checkpoint:
-      print("Checkpoint: {}", checkpoint)
-    else:
-      print("No Checkpoint")
-    print("args:", yaml.dump(args, default_flow_style=False))
-
+    #print("Arguments:\n", yaml.dump(args, default_flow_style=False))
 
     self.session_name = session_name
+    self.args         = args
+    self.checkpoint   = checkpoint
 
-    self.checkpoint = checkpoint
-    self.args       = args
-    self.state      = {"epoch" : 0}
-
-
+    self.state        = {"epoch" : 0}
 
     # Load checkpoint, if any
     if isinstance(self.checkpoint, str):
@@ -93,6 +88,8 @@ class vrd_trainer():
       utils.patch_key(checkpoint, "optimizer", ["state", "optimizer_state_dict"]) # (patching)
       self.state = checkpoint["state"]
 
+    print("Arguments:\n", yaml.dump(args, default_flow_style=False))
+
     # TODO: idea, don't use data_args.name but data.name?
     self.data_args    = munchify(self.args["data"])
     self.model_args   = munchify(self.args["model"])
@@ -104,13 +101,13 @@ class vrd_trainer():
 
     # Data
     print("Initializing data: ", self.data_args)
-    # TODO: VRDDataLayer has to know what to yield (DRS -> img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
+    # TODO? VRDDataLayer has to know what to yield (DRS -> img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
     self.datalayer = VRDDataLayer(self.data_args, "train", use_preload = self.training.use_preload)
     self.dataloader = torch.utils.data.DataLoader(
       dataset = self.datalayer,
       batch_size = 1, # self.training.batch_size,
       # sampler= Random ...,
-      num_workers = 2, # num_workers=self.num_workers
+      num_workers = 4, # num_workers=self.num_workers
       shuffle = self.training.use_shuffle,
     )
 
@@ -122,11 +119,10 @@ class vrd_trainer():
     print("Initializing VRD Model: ", self.model_args)
     self.model = VRDModel(self.model_args).to(utils.device)
     if "model_state_dict" in self.state:
-      # TODO: Make sure that this doesn't need the random initialization first
       print("Loading state_dict")
       self.model.load_state_dict(self.state["model_state_dict"])
     else:
-      print("Random initialization")
+      print("Random initialization...")
       # Random initialization
       utils.weights_normal_init(self.model, dev=0.01)
       # Load VGG layers
@@ -136,13 +132,13 @@ class vrd_trainer():
         with open(osp.join(self.datalayer.dataset.metadata_dir, "params_emb.pkl"), 'rb') as f:
           self.model.state_dict()["emb.weight"].copy_(torch.from_numpy(pickle.load(f, encoding="latin1")))
       except FileNotFoundError:
-        warnings.warn("Initialization weights for emb.weight layer not found!", UserWarning)
+        print("Warning: Initialization weights for emb.weight layer not found!")
     # Evaluation
-    print("Initializing evaluator: ", self.eval_args)
+    print("Initializing evaluator...")
     self.eval = VRDEvaluator(self.data_args, self.eval_args)
 
     # Training
-    print("Initializing training: ", self.training)
+    print("Initializing training...")
     self.optimizer = self.model.OriginalAdamOptimizer(**self.training.opt)
 
     if self.training.loss == "mlab":
@@ -155,16 +151,14 @@ class vrd_trainer():
       raise ValueError("Unknown loss specified: '{}'".format(self.training.loss))
 
     if "optimizer_state_dict" in self.state:
+      print("Loading optimizer state_dict...")
       self.optimizer.load_state_dict(self.state["optimizer_state_dict"])
+    else: # TODO remove
+      print("Optimizer state_dict not found!")
 
   # Perform the complete training process
   def train(self):
     print("train()")
-
-    save_dir = osp.join(globals.models_dir, self.session_name)
-    if not osp.exists(save_dir):
-      os.mkdir(save_dir)
-    save_file = osp.join(globals.models_dir, "{}.txt".format(self.session_name))
 
     # Prepare result table
     res_headers = ["Epoch"]
@@ -194,12 +188,9 @@ class vrd_trainer():
         for i in range(len(self.optimizer.param_groups)):
           self.optimizer.param_groups[i]["lr"] /= 10
 
-      self.__train_epoch()
-
       # Test results
-      if True or utils.smart_frequency_check(self.state["epoch"],
-              self.training.num_epochs,
-              self.training.checkpoint_freq) or self.state["epoch"] % 2:
+      save_checkpoint = self.state["epoch"] != 0 and utils.smart_frequency_check(self.state["epoch"], self.training.num_epochs, self.training.checkpoint_freq)
+      if (save_checkpoint or self.state["epoch"] % 2) and (self.training.test_first or self.state["epoch"] != 0):
         res_row = [self.state["epoch"]]
         if self.eval_args.test_pre:
           recalls, dtime = self.test_pre()
@@ -209,11 +200,15 @@ class vrd_trainer():
           res_row += recalls
         res.append(res_row)
 
-      with open(save_file, 'w') as f:
+      with open(osp.join(globals.models_dir, "{}.txt".format(self.session_name)), 'w') as f:
         f.write(tabulate(res, res_headers))
 
       # Save checkpoint
-      if utils.smart_frequency_check(self.state["epoch"], self.training.num_epochs, self.training.checkpoint_freq):
+      if save_checkpoint:
+
+        save_dir = osp.join(globals.models_dir, self.session_name)
+        if not osp.exists(save_dir):
+          os.mkdir(save_dir)
 
         # TODO: the loss should be a result: self.result.loss (which is ignored at loading,only used when saving checkpoint)...
         self.state["model_state_dict"]     = self.model.state_dict()
@@ -226,7 +221,7 @@ class vrd_trainer():
           "result"        : dict(zip(res_headers, res_row)),
         }, osp.join(save_dir, "checkpoint_epoch_{}.pth.tar".format(self.state["epoch"])))
 
-      #self.__train_epoch()
+      self.__train_epoch()
 
       self.state["epoch"] += 1
 
@@ -240,18 +235,12 @@ class vrd_trainer():
     # Iterate over the dataset
     n_iter = len(self.dataloader)
 
-    # for iter in range(n_iter):
     for i_iter,(net_input, gt_soP_prior, gt_pred_sem, mlab_target) in enumerate(self.dataloader):
 
-      # print("{}/{}".format(i_iter, n_iter))
-
-      # print(type(net_input))
-      # print(type(gt_soP_prior))
-      # print(type(mlab_target))
-
-      net_input = lib.datalayers.net_input_to(net_input, utils.device)
-      gt_pred_sem      = torch.as_tensor(gt_pred_sem,    dtype=torch.long,     device = utils.device)
-      mlab_target      = torch.as_tensor(mlab_target,    dtype=torch.long,     device = utils.device)
+      net_input    = lib.datalayers.net_input_to(net_input, utils.device)
+      gt_soP_prior = gt_soP_prior.to(utils.device)
+      gt_pred_sem  = torch.as_tensor(gt_pred_sem,    dtype=torch.long,     device = utils.device)
+      mlab_target  = torch.as_tensor(mlab_target,    dtype=torch.long,     device = utils.device)
 
       batch_size = mlab_target.size()[0]
 
@@ -259,11 +248,10 @@ class vrd_trainer():
       self.optimizer.zero_grad()
       model_output = self.model(*net_input)
 
-      # Preprocessing the gt_soP_prior before factoring it into the loss
-      gt_soP_prior = gt_soP_prior.to(utils.device)
       # Note that maybe introducing no_predicate may be better:
       #  After all, there may not be a relationship between two objects...
       #  And this would avoid dirtying up the predictions?
+      # TODO: change some constant to the gt_soP_prior before factoring it into the loss
       gt_soP_prior = -0.5 * ( gt_soP_prior + (1.0 / self.datalayer.n_pred))
 
       # DSR:
@@ -290,14 +278,12 @@ class vrd_trainer():
     self.state["loss"] = losses.avg(1)
     time2 = time.time()
 
-    print("TRAIN Loss: {: 6.3f}".format(self.state["loss"]))
-    print("TRAIN Time: {}".format(utils.time_diff_str(time1, time2)))
+    print("TRAIN Loss: {: 6.3f} Time: {}".format(self.state["loss"], utils.time_diff_str(time1, time2)))
 
     """
       # the gt_soP_prior here is a subset of the 100*70*70 dimensional so_prior array, which contains the predicate prob distribution for all object pairs
       # the gt_soP_prior here contains the predicate probability distribution of only the object pairs in this annotation
       # Also, it might be helpful to keep in mind that this data layer currently works for a single annotation at a time - no batching is implemented!
-      image_blob, boxes, rel_boxes, SpatialFea, classes, ix1, ix2, rel_labels, gt_soP_prior = self.datalayer...
     """
 
   def test_pre(self):
@@ -351,7 +337,7 @@ if __name__ == "__main__":
   if TEST_VALIDITY:
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
-    trainer = vrd_trainer("original-checkpoint", {"training" : {"num_epochs" : 1}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd/dsr"}}, checkpoint="epoch_4_checkpoint.pth.tar")
+    trainer = vrd_trainer("original-checkpoint", {"training" : {"num_epochs" : 1, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd/dsr"}}, checkpoint="epoch_4_checkpoint.pth.tar")
     trainer.train()
     trainer = vrd_trainer("original", {"training" : {"num_epochs" : 5}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd/dsr"}})
     trainer.train()
@@ -366,7 +352,7 @@ if __name__ == "__main__":
     torch.manual_seed(datetime.now())
     args = {"training" : {"num_epochs" : 6}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type, "justafew" : justafew},  "data" : {"justafew" : justafew}}
     #args = {"model" : {"use_pred_sem" : pred_sem_mode}, "training" : {"num_epochs" : 5, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}}
-    trainer = vrd_trainer("test-overfit", profile = "cfgs/pred_sem.yml")
+    trainer = vrd_trainer("test-overfit", args = args, profile = "cfgs/pred_sem.yml")
     trainer.train()
 
   # Scan (rotating parameters)

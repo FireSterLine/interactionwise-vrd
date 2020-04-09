@@ -56,3 +56,4 @@ training:
   loss: mlab
   # loss: mse
   use_preload: False
+  test_first: False
