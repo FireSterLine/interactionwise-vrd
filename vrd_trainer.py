@@ -34,7 +34,7 @@ from lib.evaluator import VRDEvaluator
 
 TESTOVERFIT = False #True # False # True
 TESTVALIDITY = False # True # False # True
-DEBUGGING = True # False # True # True # False
+DEBUGGING = False # False # True # False # True # True # False
 
 if utils.device == torch.device("cpu"):
   DEBUGGING = True
@@ -220,7 +220,7 @@ class vrd_trainer():
       self.__train_epoch()
 
       # Test results
-      if utils.smart_frequency_check(self.state["epoch"],
+      if True or utils.smart_frequency_check(self.state["epoch"],
               self.training.num_epochs,
               self.training.checkpoint_freq) or self.state["epoch"] % 2:
         res_row = [self.state["epoch"]]
@@ -249,7 +249,7 @@ class vrd_trainer():
           "result"        : dict(zip(res_headers, res_row)),
         }, osp.join(save_dir, "checkpoint_epoch_{}.pth.tar".format(self.state["epoch"])))
 
-      # self.__train_epoch()
+      #self.__train_epoch()
 
       self.state["epoch"] += 1
 
@@ -359,12 +359,13 @@ class vrd_trainer():
 
 if __name__ == "__main__":
   # Check validity of the code
-  # trainer = vrd_trainer("original-checkpoint", {"training": {"num_epochs":1}}, checkpoint="epoch_4_checkpoint.pth.tar")
+  #trainer = vrd_trainer("original-checkpoint", {"training": {"num_epochs":1}}, checkpoint="epoch_4_checkpoint.pth.tar")
+  #trainer = vrd_trainer("original-checkpoint", {"data" : {"name" : "vrd/dsr"}, "training": {"num_epochs":1}, "eval" : {"test_pre" : False}}, checkpoint="epoch_4_checkpoint.pth.tar")
   #trainer = vrd_trainer("original", {"training": {"num_epochs":5}, "eval" : {"test_pre" : True, "test_rel" : True}})
-  #trainer = vrd_trainer("original-checkpoint", {"training": {"num_epochs":1}, "eval" : {"test_pre" : 0.1, "test_rel" : 0.1}}, checkpoint="epoch_4_checkpoint.pth.tar")
+  trainer = vrd_trainer("original-checkpoint", {"training": {"num_epochs":1}, "eval" : {"test_pre" : 0.1, "test_rel" : 0.1}}, checkpoint="epoch_4_checkpoint.pth.tar")
   #trainer = vrd_trainer("test", {"training" : {"num_epochs" : 1}, "eval" : {"test_pre" : True, "test_rel" : True}}, checkpoint = False)
-  #trainer.train()
-  #sys.exit(0)
+  trainer.train()
+  sys.exit(0)
   
   # Scan (rotating parameters)
   for lr in [0.0001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
