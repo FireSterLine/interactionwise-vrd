@@ -1,47 +1,38 @@
 import os
 import os.path as osp
 import sys
-import pickle
-from tabulate import tabulate
+from datetime import datetime
 import time
-import json
+
+import pickle
+from munch import munchify
+from tabulate import tabulate
 import warnings
 
-#import random
-# only for debugging (i.e TODO remove)
-#random.seed(0)
+import random
+random.seed(0) # only for debugging (i.e TODO remove)
 import numpy as np
-# only for debugging (i.e TODO remove)
-np.random.seed(0)
-
+np.random.seed(0) # only for debugging (i.e TODO remove)
 import torch
-# only for debugging (i.e TODO remove)
-torch.manual_seed(0)
-#torch.backends.cudnn.deterministic = True
-#torch.backends.cudnn.benchmark = False
-torch.backends.cudnn.benchmark = True
+torch.manual_seed(0) # only for debugging (i.e TODO remove)
 
-import torch.nn as nn
-import torch.nn.init
-import torch.nn.functional as F
-
-from munch import munchify
 import globals, utils
+
 from lib.vrd_models import VRDModel
-from lib.datalayers import VRDDataLayer
 import lib.datalayers
+from lib.datalayers import VRDDataLayer
 from lib.evaluator import VRDEvaluator
 
-TESTOVERFIT = False #True # False # True
-TESTVALIDITY = False # True # False # True
-DEBUGGING = False # False # True # False # True # True # False
+# Test if code compiles
+TEST_DEBUGGING = False # False # True # False # True # True # False
+# Test if a newly-introduced change affects the validity of the code
+TEST_VALIDITY = False # True # False # True
+# Try overfitting to a single element
+TEST_OVERFIT = False #True # False # True
 
 if utils.device == torch.device("cpu"):
   DEBUGGING = True
 
-if TESTOVERFIT: DEBUGGING = False
-if TESTOVERFIT: TESTVALIDITY = False
-if TESTVALIDITY: DEBUGGING = False
 
 class vrd_trainer():
 
@@ -52,27 +43,12 @@ class vrd_trainer():
       def_args = utils.dict_patch(utils.cfg_from_file(profile), def_args)
     args = utils.dict_patch(args, def_args)
 
-    if DEBUGGING:
-      # args["training"]["num_epochs"] = 6
-      args["data"]["justafew"] = True
-      args["training"]["use_shuffle"] = False
-      torch.backends.cudnn.benchmark = False
-    if TESTOVERFIT:
-      args["data"]["justafew"] = 3
-      args["eval"]["justafew"] = 3
-    if TESTVALIDITY:
-      args["data"]["name"] = "vrd/dsr"
-      #args["training"]["print_freq"] = 0.1
-      # args["model"]["use_pred_sem"] = True
-      # args["training"]["use_preload"] = False
-
-
     print("Arguments:")
     if checkpoint:
       print("Checkpoint: {}", checkpoint)
     else:
       print("No Checkpoint")
-    print("args:", json.dumps(args, indent=2, sort_keys=True))
+    print("args:", yaml.dump(args, default_flow_style=False))
 
 
     self.session_name = session_name
@@ -169,11 +145,11 @@ class vrd_trainer():
     self.optimizer = self.model.OriginalAdamOptimizer(**self.training.opt)
 
     if self.training.loss == "mlab":
-      self.criterion = nn.MultiLabelMarginLoss(reduction="sum").to(device=utils.device)
+      self.criterion = torch.nn.MultiLabelMarginLoss(reduction="sum").to(device=utils.device)
     elif self.training.loss == "cross-entropy":
-      self.criterion = nn.CrossEntropyLoss(reduction="sum").to(device=utils.device)
+      self.criterion = torch.nn.CrossEntropyLoss(reduction="sum").to(device=utils.device)
     elif self.training.loss == "mse":
-      self.criterion = nn.MSELoss(reduction="sum").to(device=utils.device)
+      self.criterion = torch.nn.MSELoss(reduction="sum").to(device=utils.device)
     else:
       raise ValueError("Unknown loss specified: '{}'".format(self.training.loss))
 
@@ -358,30 +334,48 @@ class vrd_trainer():
     return headers
 
 if __name__ == "__main__":
-  # Check validity of the code
-  #trainer = vrd_trainer("original-checkpoint", {"training": {"num_epochs":1}}, checkpoint="epoch_4_checkpoint.pth.tar")
-  #trainer = vrd_trainer("original-checkpoint", {"data" : {"name" : "vrd/dsr"}, "training": {"num_epochs":1}, "eval" : {"test_pre" : False}}, checkpoint="epoch_4_checkpoint.pth.tar")
-  #trainer = vrd_trainer("original", {"training": {"num_epochs":5}, "eval" : {"test_pre" : True, "test_rel" : True}})
-  trainer = vrd_trainer("original-checkpoint", {"training": {"num_epochs":1}, "eval" : {"test_pre" : 0.1, "test_rel" : 0.1}}, checkpoint="epoch_4_checkpoint.pth.tar")
-  #trainer = vrd_trainer("test", {"training" : {"num_epochs" : 1}, "eval" : {"test_pre" : True, "test_rel" : True}}, checkpoint = False)
-  trainer.train()
-  sys.exit(0)
-  
+
+  test_type = 0.1
+  test_type = True
+
+  # DEBUGGING: Test if code compiles
+  if TEST_DEBUGGING:
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    trainer = vrd_trainer("test", {"training" : {"num_epochs" : 1}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"justafew" : True}}, checkpoint="epoch_4_checkpoint.pth.tar")
+    trainer.train()
+
+
+  # TEST_VALIDITY: Test if a newly-introduced change affects the validity of the code
+  if TEST_VALIDITY:
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    trainer = vrd_trainer("original-checkpoint", {"training" : {"num_epochs" : 1}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd/dsr"}}, checkpoint="epoch_4_checkpoint.pth.tar")
+    trainer.train()
+    trainer = vrd_trainer("original", {"training" : {"num_epochs" : 5}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd/dsr"}})
+    trainer.train()
+
+  # TEST_OVERFIT: Try overfitting the network to a single batch
+  if TEST_OVERFIT:
+    justafew = 3
+    torch.backends.cudnn.deterministic = False
+    torch.backends.cudnn.benchmark = True
+    random.seed(datetime.now())
+    np.random.seed(datetime.now())
+    torch.manual_seed(datetime.now())
+    args = {"training" : {"num_epochs" : 6}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type, "justafew" : justafew},  "data" : {"justafew" : justafew}}
+    #args = {"model" : {"use_pred_sem" : pred_sem_mode}, "training" : {"num_epochs" : 5, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}}
+    trainer = vrd_trainer("test-overfit", profile = "cfgs/pred_sem.yml")
+    trainer.train()
+
   # Scan (rotating parameters)
   for lr in [0.0001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
     for weight_decay in [0.0005]:
       for lr_rel_fus_ratio in [0.1, 1, 10]:
         for pred_sem_mode in [5,6,7,8,8+7,8+8]:
-            #trainer = vrd_trainer("pred-sem-scan-v5-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode), {"model" : {"use_pred_sem" : pred_sem_mode}, "eval" : {"eval_obj":False, "test_rel":True, "test_pre":True}, "training" : {"num_epochs" : 5, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}}, profile = "cfgs/pred_sem.yml", checkpoint = False)
-            #trainer = vrd_trainer("pred-sem-scan-3-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode), {"model" : {"use_pred_sem" : pred_sem_mode}, "eval" : {"eval_obj":False, "test_rel":.2, "test_pre":.2}, "training" : {"num_epochs" : 5, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}}, profile = "cfgs/pred_sem.yml", checkpoint = False)
+            #trainer = vrd_trainer("pred-sem-scan-v5-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode), {"model" : {"use_pred_sem" : pred_sem_mode}, "eval" : {"eval_obj":False, "test_rel":.2, "test_pre":.2}, "training" : {"num_epochs" : 5, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}}, profile = "cfgs/pred_sem.yml", checkpoint = False)
             trainer = vrd_trainer("pred-sem-scan-v5-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode), {"model" : {"use_pred_sem" : pred_sem_mode}, "eval" : {"eval_obj":False, "test_rel":1., "test_pre":1.}, "training" : {"num_epochs" : 5, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}}, profile = "cfgs/pred_sem.yml", checkpoint = False)
+            #trainer = vrd_trainer("pred-sem-scan-v5-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode), {"model" : {"use_pred_sem" : pred_sem_mode}, "eval" : {"eval_obj":False, "test_rel":True, "test_pre":True}, "training" : {"num_epochs" : 5, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}}, profile = "cfgs/pred_sem.yml", checkpoint = False)
             trainer.train()
 
-  #trainer = vrd_trainer("original", {"training": {"num_epochs":10}, "eval" : {"test_pre" : True, "test_rel" : True}})
-  #trainer.train()
-
-  # trainer = vrd_trainer({}, checkpoint = "epoch_4_checkpoint.pth.tar")
-  #trainer.train()
-  #trainer.test_pre()
-  # trainer.test_rel()
-  #trainer.train()
+  sys.exit(0)

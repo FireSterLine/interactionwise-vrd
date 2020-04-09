@@ -21,7 +21,6 @@ eval:
 
 # Training parameters
 training:
-  use_shuffle: True
   num_epochs: 6
   checkpoint_freq: 0
   loss: mlab
