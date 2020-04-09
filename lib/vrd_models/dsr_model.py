@@ -132,13 +132,20 @@ class DSRModel(nn.Module):
       self.fc_rel    = FC(256, self.args.n_pred, relu = False)
     else:
       assert self.args.pred_emb.shape[0] == self.args.n_pred
+      # Two different ways of implementing the Semantic Similarity layer
+      #  The input to the semantic similarity layer is a 300-dimensional semantic vector
+      #  and the layer has to output one score per predicate (e.g 70 scores) given a similarity measure
+      #  between two semantic vectors. The embeddings are 300-dimensional normalized vectors with values in [-1, 1]
+      #  so the output of the previous layer is not activated with relu (which forces values to be non-negatives)
       if self.args.use_pred_sem <= 8:
+        # 2 Fully-Connected layers: 1024 -> 512 -> 300
         self.fc_fusion = FC(self.total_fus_neurons, 512)
         self.fc_rel    = nn.Sequential(
           FC(512, 300, relu = False),
           SemSim(self.args.pred_emb, mode=int(self.args.use_pred_sem)),
         )
       else:
+        # 1 Fully-Connected layers:1024 -> 300
         self.fc_fusion = FC(self.total_fus_neurons, 300, relu = False)
         self.fc_rel    = SemSim(self.args.pred_emb, mode = int(self.args.use_pred_sem-8))
 
@@ -364,5 +371,3 @@ class DSRModel(nn.Module):
     return torch.optim.Adam(opt_params,
             lr = lr,
             weight_decay = weight_decay)
-
-
