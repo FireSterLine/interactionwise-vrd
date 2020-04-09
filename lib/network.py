@@ -50,6 +50,8 @@ class SemSim(nn.Module):
     self.mode = mode
     if self.mode % 2 == 0:
       self.sig = nn.Sigmoid()
+    else:
+      self.tanh = nn.Tanh()
     #print(emb.shape)
   def forward(self, x):
     #print(x.shape)

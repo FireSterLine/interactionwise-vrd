@@ -34,7 +34,7 @@ from lib.evaluator import VRDEvaluator
 
 TESTOVERFIT = False #True # False # True
 TESTVALIDITY = False # True # False # True
-DEBUGGING = False # True # True # False
+DEBUGGING = False # True # False # True # True # False
 
 if utils.device == torch.device("cpu"):
   DEBUGGING = True
@@ -200,7 +200,7 @@ class vrd_trainer():
     end_epoch = self.state["epoch"] + self.training.num_epochs
     while self.state["epoch"] < end_epoch:
 
-      # print("Epoch {}/{}".format((self.state["epoch"]+1), end_epoch))
+      print("Epoch {}/{}".format((self.state["epoch"]+1), end_epoch))
 
 
       # TODO check if this works (Note that you'd have to make it work cross-sessions as well)
@@ -220,14 +220,16 @@ class vrd_trainer():
       self.__train_epoch()
 
       # Test results
-      if self.state["epoch"] % 2:
+      if utils.smart_frequency_check(self.state["epoch"],
+              self.training.num_epochs,
+              self.training.checkpoint_freq): #  or self.state["epoch"] % 2:
         res_row = [self.state["epoch"]]
         if self.eval_args.test_pre:
           recalls, dtime = self.test_pre()
-          res_row += test_rel
+          res_row += recalls
         if self.eval_args.test_rel:
           recalls, dtime = self.test_rel()
-          res_row += test_rel
+          res_row += recalls
         res.append(res_row)
 
       with open(save_file, 'w') as f:
@@ -337,12 +339,12 @@ class vrd_trainer():
     return recalls, dtime
 
   def get_format_str(self):
-    return "".join(["\t{}: {: 6.3f}".format(x) if i % 2 == 0 else "\t{}: {: 6.3f}\n".format(x) for i,x in enumerate(self.gt_headers())])
+    return "".join(["\t{}: {{: 6.3f}}".format(x) if i % 2 == 0 else "\t{}: {{: 6.3f}}\n".format(x) for i,x in enumerate(self.gt_headers())])
 
   def gt_headers(self, prefix="", test_type = True):
     def metric_name(x):
       if isinstance(x, float): return "{}x".format(x)
-      else isinstance(x, int): return str(x)
+      elif isinstance(x, int): return str(x)
     if prefix == "":        fst_col_prefix = ""
     elif test_type != True: fst_col_prefix = "{} {} ".format(prefix, test_type)
     else:                   fst_col_prefix = "{} ".format(prefix)
@@ -356,18 +358,21 @@ class vrd_trainer():
     return headers
 
 if __name__ == "__main__":
-  #trainer = vrd_trainer("original-checkpoint", {"training": {"num_epochs":1}}, checkpoint="epoch_4_checkpoint.pth.tar")
-  #trainer = vrd_trainer("original", {"training": {"num_epochs":10}, "eval" : {"test_pre" : True, "test_rel" : True}})
+  # Check validity of the code
+  # trainer = vrd_trainer("original-checkpoint", {"training": {"num_epochs":1}}, checkpoint="epoch_4_checkpoint.pth.tar")
+  trainer = vrd_trainer("original", {"training": {"num_epochs":5}, "eval" : {"test_pre" : True, "test_rel" : True}})
   #trainer = vrd_trainer("original-checkpoint", {"training": {"num_epochs":1}, "eval" : {"test_pre" : 0.1, "test_rel" : 0.1}}, checkpoint="epoch_4_checkpoint.pth.tar")
   #trainer = vrd_trainer("test", {"training" : {"num_epochs" : 1}, "eval" : {"test_pre" : True, "test_rel" : True}}, checkpoint = False)
-  #trainer.train()
+  trainer.train()
   #sys.exit(0)
+  
+  # Scan (rotating parameters)
   for lr in [0.0001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
     for weight_decay in [0.0005]:
       for lr_rel_fus_ratio in [1, 10, 100]:
         # TODO: try 7,8,8+7,8+8
-        for pred_sem_mode in [5, 6, 1+8, 2+8, 5+8, 6+8]: # , 10, 100]:
-            trainer = vrd_trainer("pred-sem-scan-v4-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode), {"model" : {"use_pred_sem" : pred_sem_mode}, "eval" : {"eval_obj":False, "test_rel":True, "test_pre":True}, "training" : {"num_epochs" : 5, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}}, profile = "cfgs/pred_sem.yml", checkpoint = False)
+        for pred_sem_mode in [7,8,8+7,8+8]: # 5, 6, 1+8, 2+8, 5+8, 6+8]: # , 10, 100]:
+            trainer = vrd_trainer("pred-sem-scan-v5-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode), {"model" : {"use_pred_sem" : pred_sem_mode}, "eval" : {"eval_obj":False, "test_rel":True, "test_pre":True}, "training" : {"num_epochs" : 5, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}}, profile = "cfgs/pred_sem.yml", checkpoint = False)
             #trainer = vrd_trainer("pred-sem-scan-3-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode), {"model" : {"use_pred_sem" : pred_sem_mode}, "eval" : {"eval_obj":False, "test_rel":.2, "test_pre":.2}, "training" : {"num_epochs" : 5, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}}, profile = "cfgs/pred_sem.yml", checkpoint = False)
             trainer.train()
 
