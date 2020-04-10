@@ -1,0 +1,258 @@
+import re
+import os
+import sys
+import time
+import pickle
+import unicodedata
+from gensim.models import Word2Vec
+from gensim.models.callbacks import CallbackAny2Vec
+from gensim.test.utils import datapath, get_tmpfile
+from gensim.corpora import WikiCorpus, MmCorpus
+
+
+PAT_ALPHABETIC = re.compile(r'(((?![\d])\w)+)', re.UNICODE)
+TOKEN_MIN_LEN = 2
+TOKEN_MAX_LEN = 15
+unicode = str
+multi_word_phrases = [
+    "traffic light",
+    "trash can",
+    "next to",
+    "sleep next to",
+    "sit next to",
+    "stand next to",
+    "park next",
+    "walk next to",
+    "stand behind",
+    "sit behind",
+    "park behind",
+    "in the front of",
+    "stand under",
+    "sit under",
+    "walk to",
+    "walk past",
+    "walk beside",
+    "on the top of",
+    "on the left of",
+    "on the right of",
+    "sit on",
+    "stand on",
+    "attach to",
+    "adjacent to",
+    "drive on",
+    "taller than",
+    "park on",
+    "lying on",
+    "lean on",
+    "play with",
+    "sleep on",
+    "outside of",
+    "rest on",
+    "skate on",
+    "banana bunch",
+    "mountain range",
+    "door frame",
+    "tail fin",
+    "telephone pole",
+    "moustache",
+    "train platform",
+    "purple flower",
+    "left ear",
+    "tennis net",
+    "windshield wiper",
+    "bus stop",
+    "lamp shade",
+    "light switch",
+    "shower curtain",
+    "cardboard box",
+    "table cloth",
+    "doughnut",
+    "laptop computer",
+    "parking lot",
+    "guard rail",
+    "tv stand",
+    "traffic signal",
+    "tennis racket",
+    "flower pot",
+    "number 2",
+    "baseball uniform",
+    "fence post",
+    "left hand",
+    "palm tree",
+    "ceiling fan",
+    "clock hand",
+    "lamp post",
+    "light pole",
+    "oven door",
+    "traffic sign",
+    "baseball cap",
+    "tree top",
+    "light bulb",
+    "computer monitor",
+    "door knob",
+    "baseball field",
+    "grass patch",
+    "passenger car",
+    "tennis ball",
+    "window sill",
+    "shower head",
+    "name tag",
+    "front window",
+    "computer mouse",
+    "cutting board",
+    "hind leg",
+    "paper towel",
+    "computer screen",
+    "tissue box",
+    "american flag",
+    "evergreen tree",
+    "tree trunk",
+    "mouse pad",
+    "baseball glove",
+    "minute hand",
+    "window pane",
+    "coffee maker",
+    "front wheel",
+    "road sign",
+    "steering wheel",
+    "tennis player",
+    "manhole cover",
+    "stop light",
+    "street sign",
+    "train station",
+    "brake light",
+    "wine glass"
+]
+
+
+def to_unicode(text, encoding='utf-8', errors='strict'):
+    if isinstance(text, unicode):
+        return text
+    return unicode(text, encoding, errors)
+
+
+def tokenize(text, lowercase=False, deacc=False, encoding='utf8', errors="strict"):
+    text = to_unicode(text, encoding, errors=errors)
+    if lowercase:
+        text = text.lower()
+    if deacc:
+        text = deaccent(text)
+    return simple_tokenize(text)
+
+
+def simple_tokenize(text):
+    for match in PAT_ALPHABETIC.finditer(text):
+        yield match.group()
+
+
+def deaccent(text):
+    if not isinstance(text, unicode):
+        # assume utf8 for byte strings, use default (strict) error handling
+        text = text.decode('utf8')
+    norm = unicodedata.normalize("NFD", text)
+    result = ''.join(ch for ch in norm if unicodedata.category(ch) != 'Mn')
+    return unicodedata.normalize("NFC", result)
+
+
+def vrd_tokenize(content, token_min_len=2, token_max_len=15, lowercase=True):
+    for word in multi_word_phrases:
+        content = re.sub(r'\b%s\b' % word, '_'.join(word.split()), content)
+    return [
+        to_unicode(token) for token in tokenize(content, lowercase=lowercase, errors='ignore')
+        if token_min_len <= len(token) <= token_max_len and not token.startswith('_')
+    ]
+
+
+class MakeIter(object):
+    """
+        We are wrapping the wiki.get_texts() function (which returns a generator) inside an Iterator,
+        since Word2Vec requires an iterable for training.
+    """
+    def __init__(self, wiki):
+        self.wiki = wiki
+
+    def __iter__(self):
+        return self.wiki.get_texts()
+
+
+class EpochSaver(CallbackAny2Vec):
+    def __init__(self, path_prefix):
+        self.path_prefix = path_prefix
+        self.epoch = 0
+
+    def on_epoch_end(self, model):
+        print("Saving checkpoint {}".format(self.epoch))
+        output_path = get_tmpfile("{}epoch_{}.model".format(self.path_prefix, self.epoch))
+        model.save(output_path)
+        self.epoch += 1
+
+
+class EpochLogger(CallbackAny2Vec):
+    def __init__(self):
+        self.epoch = 0
+
+    def on_epoch_begin(self, model):
+        print("Starting epoch # {}".format(self.epoch))
+
+    def on_epoch_end(self, model):
+        print("Ending epoch {}".format(self.epoch))
+        print("----------------------")
+        self.epoch += 1
+
+
+if __name__ == '__main__':
+    server_local = sys.argv[1]
+    num_cores = int(sys.argv[2])
+    server_flag = False
+    serialize = False
+
+    if server_local.lower().strip() == 'server':
+        server_flag = True
+
+    if server_flag:
+        path_prefix = "/home/findwise/interactionwise/wikipedia_dump/"
+    else:
+        path_prefix = "/media/azfar/New Volume/WikiDump/"
+
+    wiki_path = os.path.join(path_prefix, "wiki.pkl")
+    if os.path.exists(wiki_path):
+        print("Loading wiki from pickle file!")
+        wiki = pickle.load(open(wiki_path, 'rb'))
+    else:
+        print("Creating datapath...")
+        # path_to_wiki_dump = datapath("enwiki-latest-pages-articles1.xml-p000000010p000030302-shortened.bz2")
+        path_to_wiki_dump = datapath(os.path.join(path_prefix, "enwiki-latest-pages-articles.xml.bz2"))
+
+        print("Initializing corpus...")
+        start = time.time()
+        wiki = WikiCorpus(path_to_wiki_dump, tokenizer_func=vrd_tokenize)  # create word->word_id mapping, ~8h on full wiki
+        end = time.time()
+        print("Time taken to initialize corpus: {}".format(end-start))
+        print("Dumping wiki to disk...")
+        pickle.dump(wiki, open(os.path.join(path_prefix, "wiki.pkl"), 'w'))
+
+        if serialize is True:
+            print("Creating corpus path...")
+            corpus_path = get_tmpfile(os.path.join(path_prefix, "wiki-corpus.mm"))
+            print("Serializing corpus...")
+            start = time.time()
+            MmCorpus.serialize(corpus_path, wiki)
+            end = time.time()
+            print("Time taken to serialize corpus: {}".format(end-start))
+
+    # make an iterator around the get_texts() function of wiki
+    wiki_iterator = MakeIter(wiki)
+
+    epoch_logger = EpochLogger()
+    epoch_saver = EpochSaver(path_prefix=path_prefix)
+
+    print("Training Word2Vec...")
+    start = time.time()
+    model = Word2Vec(wiki_iterator, workers=num_cores, min_count=1, callbacks=[epoch_logger, epoch_saver])
+    end = time.time()
+    print("Time taken to train the model: {}".format(end-start))
+
+    # print("Dumping model to disk...")
+    # model.save("/media/azfar/New Volume/WikiDump/word2vec_model")
+
+    print(model.wv['person'])
