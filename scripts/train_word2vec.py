@@ -218,6 +218,7 @@ if __name__ == '__main__':
     if os.path.exists(wiki_path):
         print("Loading wiki from pickle file!")
         wiki = pickle.load(open(wiki_path, 'rb'))
+        wiki.fname = os.path.join(path_prefix, "enwiki-latest-pages-articles.xml.bz2")
     else:
         print("Creating datapath...")
         # path_to_wiki_dump = datapath("enwiki-latest-pages-articles1.xml-p000000010p000030302-shortened.bz2")
