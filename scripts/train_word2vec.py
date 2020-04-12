@@ -184,6 +184,11 @@ class EpochSaver(CallbackAny2Vec):
         print("Saving checkpoint {}".format(self.epoch))
         output_path = get_tmpfile("{}epoch_{}.model".format(self.path_prefix, self.epoch))
         model.save(output_path)
+        # remove previously saved checkpoint for storage purposes
+        prev_checkpoint = "{}epoch_{}.model".format(self.path_prefix, self.epoch - 1)
+        if os.path.exists(prev_checkpoint):
+            print("Removing previous checkpoint...")
+            os.remove(prev_checkpoint)
         self.epoch += 1
 
 
