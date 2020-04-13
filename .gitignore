@@ -22,6 +22,7 @@ data/pretrained_model
 data/cache/*
 data/genome/visual_genome_python_driver
 data/genome/coco_splits
+data/genome/vg-dsr
 data/genome/xml
 data/genome/*/xml
 data/genome/*/json

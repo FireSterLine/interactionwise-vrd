@@ -77,3 +77,7 @@ wget https://raw.githubusercontent.com/GriffinLiang/vrd-dsr/master/data/vrd/4392
 mv 4392556686_44d71ff5a0_o.jpg data/vrd/sg_dataset/sg_test_images/4392556686_44d71ff5a0_o.jpg
 rm data/vrd/sg_dataset/sg_test_images/4392556686_44d71ff5a0_o.gif
 
+
+./scripts/gd.pl https://drive.google.com/file/d/1QrxXRE4WBPDVN81bYsecCxrlzDkR2zXZ/view vg.zip
+unzip vg.zip
+mv vg data/genome/vg-dsr
