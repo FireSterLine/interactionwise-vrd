@@ -265,14 +265,39 @@ python trainval_net.py \
 SESSION=1
 EPOCH=20
 CHECKPOINT=489
-python test_net.py --dataset vg --net res101 \
-                   --cag \
+python gen_obj_det.py --dataset vg --net res101 \
+                   --cut_predictions_at gt
                    --checksession $SESSION --checkepoch $EPOCH --checkpoint $CHECKPOINT \
                    --cuda
 
 python
 import pickle
-filename = "output/res101/vg_150-50-50_minival/faster_rcnn_10/frcnn-det_res.pkl"
+filename = "faster-rcnn/output/res101/vg_150-50-50_minival/faster_rcnn_10/frcnn-det_res.pkl"
 with open(filename, 'rb') as f:
   d2 = pickle.load(f, encoding="latin1")
+
+np.array(d2["boxes"][0], dtype=np.int)[np.argsort(d2["confs"][0], axis=0)[-10:]]
 len(d2["confs"][0])
+
+
+import pickle
+filename = "data/genome/vg-dsr/gt.pkl"
+with open(filename, 'rb') as f:
+  ddsr = pickle.load(f, encoding="latin1")
+
+len(ddsr["obj_bboxes"])
+len(ddsr["obj_bboxes"][0])
+
+ddsr.keys()
+d2.keys()
+
+ddsr["obj_bboxes"][0], np.array(d2["boxes"][0], dtype=np.int)[np.argsort(d2["confs"][0], axis=0)[-10:]]
+ddsr["tuple_label"][0], np.array(d2["cls"][0], dtype=np.int)[np.argsort(d2["confs"][0], axis=0)[-10:]]
+
+for i in range(len(ddsr["obj_bboxes"])):
+  ddsr["obj_bboxes"][i], np.array(d2["boxes"][i], dtype=np.int)[np.argsort(d2["confs"][i], axis=0)[-10:]]
+  input()
+
+  cut_val = 7
+  ind = np.argsort(d2["confs"][0], axis=0)[-cut_val:]
+  np.array(d2["boxes"][0], dtype=np.int)[ind]

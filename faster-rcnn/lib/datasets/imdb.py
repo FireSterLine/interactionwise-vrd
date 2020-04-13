@@ -130,7 +130,7 @@ class imdb(object):
     self._image_index = self._image_index * 2
 
   # Mini-credited to FireSterLine
-  def create_obj_det_pkl(self, all_boxes, det_file):
+  def create_obj_det_pkl(self, all_boxes, det_file, cut_at = False):
       proposals = {}
       proposals["boxes"] = []
       proposals["confs"] = []
@@ -144,6 +144,18 @@ class imdb(object):
               confs = np.vstack((confs, all_boxes[jj][ii][:, 4:5]))
               for kk in range(all_boxes[jj][ii].shape[0]):
                   cls.append(jj-1)
+
+          if cut_at != False:
+            if cut_at == "gt":
+              cut_at_val = 0
+              raise NotImplementedError()
+            else:
+              cut_at_val = int(cut_at_val)
+            ind = np.argsort(confs, axis=0)[-cut_at_val:]
+            box = np.array(box, dtype=np.int)[ind].tolist()
+            cls = np.array(cls, dtype=np.int)[ind].tolist()
+            ind = np.array(ind, dtype=np.int)[ind].tolist()
+
           proposals["boxes"].append(box)
           proposals["confs"].append(confs)
           proposals["cls"].append(cls)

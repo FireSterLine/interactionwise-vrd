@@ -88,6 +88,11 @@ def parse_args():
   parser.add_argument('--vis', dest='vis',
                       help='visualization mode',
                       action='store_true')
+
+  parser.add_argument('--cut_predictions_at', dest='cut_predictions_at',
+                      help='gt, number',
+                      default='gt', type=str)
+
   args = parser.parse_args()
   return args
 
@@ -336,8 +341,12 @@ if __name__ == '__main__':
   with open(det_file, 'wb') as f:
       pickle.dump(all_boxes, f, pickle.HIGHEST_PROTOCOL)
 
-  print('Evaluating detections')
-  imdb.evaluate_detections(all_boxes, output_dir)
+  # print('Evaluating detections')
+  # imdb.evaluate_detections(all_boxes, output_dir)
+
+  print("Saving detections to pickle")
+  det_file = osp.join(output_dir, "frcnn-det_res.pkl")
+  proposals = imdb.create_obj_det_pkl(all_boxes, det_file, cut_at = args.cut_predictions_at)
 
   end = time.time()
   print("test time: %0.4fs" % (end - start))
