@@ -8,6 +8,7 @@ with open("data/vrd/train.pkl", 'rb') as f:
 with open("data/vrd/test.pkl", 'rb') as f:
   test = pickle.load(f, encoding="latin1")
 
+
 with open("data/vrd/dsr_relst_test.json", 'r') as f:
   test_pkl = json.load(f)
 
@@ -223,3 +224,40 @@ with open(gt_path, 'rb') as fid:
   gt = pickle.load(fid, encoding="latin1")
   print(gt.keys())
   print(len(gt["obj_bboxes"]))
+
+
+
+import pickle
+filename = "data/genome/vg-dsr/gt.pkl"
+filename = "detections.pkl"
+filename = "data/genome/vg_image_index_minival.p"
+filename = "data/genome/vg_image_index_minitrain.p"
+
+with open(filename, 'rb') as f:
+  d = pickle.load(f, encoding="latin1")
+
+filename = "data/genome/vg_id_to_dir_minitrain.p"
+
+with open(filename, 'rb') as f:
+  d2 = pickle.load(f, encoding="latin1")
+
+
+BATCH_SIZE=4
+WORKER_NUMBER=1
+LEARNING_RATE="0.001"
+DECAY_STEP=5
+
+python trainval_net.py \
+                    --dataset vg --net vgg16 \
+                    --bs $BATCH_SIZE --nw $WORKER_NUMBER \
+                    --lr $LEARNING_RATE --lr_decay_step $DECAY_STEP \
+                    --cuda
+
+# faster_rcnn_1_20_489.pth
+SESSION=1
+EPOCH=20
+CHECKPOINT=489
+
+python test_net.py --dataset vg --net vgg16 \
+                   --checksession $SESSION --checkepoch $EPOCH --checkpoint $CHECKPOINT \
+                   --cuda

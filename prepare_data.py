@@ -528,6 +528,8 @@ class VGPrep(DataPreparer):
 
         return relst
 
+    def prepareEval(self):
+      raise NotImplementedError
 
 if __name__ == '__main__':
 
@@ -539,7 +541,7 @@ if __name__ == '__main__':
     w2v_model = None
     if generate_embeddings:
       w2v_model = KeyedVectors.load_word2vec_format(osp.join(globals.data_dir, globals.w2v_model_path), binary=True)
-    
+
     #"""
     data_preparer_vrd = VRDPrep(multi_label=multi_label, generate_emb = w2v_model)
     data_preparer_vrd.prepareEvalFromLP()
@@ -561,6 +563,7 @@ if __name__ == '__main__':
     data_preparer_vg = VGPrep((150, 50, 50), multi_label=multi_label, generate_emb=w2v_model)
     # data_preparer_vg  = VGPrep((1600, 400, 20), multi_label=multi_label, generate_emb = w2v_model)
     print("Generating relst data with granularity img...")
+    data_preparer_vrd.prepareEval()
     data_preparer_vg.save_data("relst")
     print("Generating relst data with granularity rel...")
     data_preparer_vg.save_data("relst", "rel")

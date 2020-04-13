@@ -289,7 +289,7 @@ if __name__ == '__main__':
               cls_boxes = pred_boxes[inds, :]
             else:
               cls_boxes = pred_boxes[inds][:, j * 4:(j + 1) * 4]
-            
+
             cls_dets = torch.cat((cls_boxes, cls_scores.unsqueeze(1)), 1)
             # cls_dets = torch.cat((cls_boxes, cls_scores), 1)
             cls_dets = cls_dets[order]
@@ -329,6 +329,10 @@ if __name__ == '__main__':
 
   print('Evaluating detections')
   imdb.evaluate_detections(all_boxes, output_dir)
+
+  print("Saving detections to pickle")
+  det_file = osp.join(output_dir, "proposal_faster_rcnn.pkl")
+  proposals = self.create_obj_det_pkl(all_boxes, det_file)
 
   end = time.time()
   print("test time: %0.4fs" % (end - start))

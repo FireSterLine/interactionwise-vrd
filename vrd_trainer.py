@@ -25,7 +25,7 @@ from lib.datalayers import VRDDataLayer
 from lib.evaluator import VRDEvaluator
 
 # Test if code compiles
-TEST_DEBUGGING = False # False # True # False # False # True # False # True # True # False
+TEST_DEBUGGING = True # False # True # False # False # True # False # True # True # False
 # Test if a newly-introduced change affects the validity of the code
 TEST_VALIDITY = False # True
 # Try overfitting to a single element
@@ -331,7 +331,7 @@ if __name__ == "__main__":
   if TEST_DEBUGGING:
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
-    trainer = vrd_trainer("test", {"training" : {"num_epochs" : 1}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"justafew" : True}}, checkpoint="epoch_4_checkpoint.pth.tar")
+    trainer = vrd_trainer("test", {"training" : {"num_epochs" : 1}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"justafew" : True}}, profile = ["cfgs/vg.myl", "cfgs/pred_sem.yml"], checkpoint="epoch_4_checkpoint.pth.tar")
     trainer.train()
 
 
@@ -339,7 +339,7 @@ if __name__ == "__main__":
   if TEST_VALIDITY:
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
-    trainer = vrd_trainer("original-checkpoint", {"training" : {"num_epochs" : 1, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd/dsr"}}, checkpoint="epoch_4_checkpoint.pth.tar")
+    trainer = vrd_trainer("original-checkpoint", {"training" : {"num_epochs" : 1, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd/dsr"}}, profile = ["cfgs/vg.myl", "cfgs/pred_sem.yml"], checkpoint="epoch_4_checkpoint.pth.tar")
     trainer.train()
     trainer = vrd_trainer("original", {"training" : {"num_epochs" : 5}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd/dsr"}})
     trainer.train()
@@ -354,16 +354,16 @@ if __name__ == "__main__":
     torch.manual_seed(datetime.now())
     args = {"training" : {"num_epochs" : 6}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type, "justafew" : justafew},  "data" : {"justafew" : justafew}}
     #args = {"model" : {"use_pred_sem" : pred_sem_mode}, "training" : {"num_epochs" : 5, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}}
-    trainer = vrd_trainer("test-overfit", args = args, profile = "cfgs/pred_sem.yml")
+    trainer = vrd_trainer("test-overfit", args = args, profile = ["cfgs/vg.myl", "cfgs/pred_sem.yml"])
     trainer.train()
 
   # Scan (rotating parameters)
   for lr in [0.0001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
     for weight_decay in [0.0005]:
-      for lr_rel_fus_ratio in [0.1, 1, 10]:
-        for pred_sem_mode in [5,6,7,8,8+7,8+8]:
+      for lr_rel_fus_ratio in [1]: # 0.1, 1, 10]:
+        for pred_sem_mode in [5,6]: # ,7,8,8+7,8+8]:
             #trainer = vrd_trainer("pred-sem-scan-v5-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode), {"model" : {"use_pred_sem" : pred_sem_mode}, "eval" : {"eval_obj":False, "test_rel":.2, "test_pre":.2}, "training" : {"num_epochs" : 5, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}}, profile = "cfgs/pred_sem.yml", checkpoint = False)
-            trainer = vrd_trainer("pred-sem-scan-v5-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode), {"model" : {"use_pred_sem" : pred_sem_mode}, "eval" : {"eval_obj":False, "test_rel":True, "test_pre":True}, "training" : {"num_epochs" : 5, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}}, profile = "cfgs/pred_sem.yml", checkpoint = False)
+            trainer = vrd_trainer("pred-sem-scan-v6-vg-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode), {"model" : {"use_pred_sem" : pred_sem_mode}, "eval" : {"eval_obj":False, "test_rel":True, "test_pre":True}, "training" : {"num_epochs" : 5, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}}, profile = ["cfgs/vg.myl", "cfgs/pred_sem.yml"], checkpoint = False)
             trainer.train()
 
   sys.exit(0)

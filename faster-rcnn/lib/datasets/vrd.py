@@ -196,30 +196,13 @@ class vrd(imdb):
         return gt_roidb
 
     def evaluate_detections(self, all_boxes, output_dir):
-        det_file = osp.join(output_dir, 'proposal_faster_rcnn.pkl')
+        det_file = osp.join(output_dir, "proposal_faster_rcnn.pkl")
         # if os.path.exists(det_file):
         #     with open(det_file, 'rb') as fid:
         #         proposals = cPickle.load(fid)
         #     print '{} ss roidb loaded from {}'.format(self.name, det_file)
         # else:
-        proposals = {}
-        proposals['boxes'] = []
-        proposals['confs'] = []
-        proposals['cls'] = []
-        for ii in range(self.num_images):
-            box = np.zeros((0,4))
-            cls = []
-            confs = np.zeros((0,1))
-            for jj in range(1, self.num_classes):
-                box = np.vstack((box, all_boxes[jj][ii][:, 0:4]))
-                confs = np.vstack((confs, all_boxes[jj][ii][:, 4:5]))
-                for kk in range(all_boxes[jj][ii].shape[0]):
-                    cls.append(jj-1)
-            proposals['boxes'].append(box)
-            proposals['confs'].append(confs)
-            proposals['cls'].append(cls)
-        with open(det_file, 'wb') as f:
-            cPickle.dump(proposals, f, cPickle.HIGHEST_PROTOCOL)
+        proposals = self.create_obj_det_pkl(all_boxes, det_file)
 
         # TODO: bring back? (Gio)
         #res = self.evaluate_recall(candidate_boxes=proposals['boxes'], thresholds=[0.5], area='all')

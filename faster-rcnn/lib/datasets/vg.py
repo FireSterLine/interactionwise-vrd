@@ -363,7 +363,7 @@ class vg(imdb):
                     prec = np.array([prec])
                     rec = np.array([rec])
                     scores = np.array([scores])
-                
+
                 f = np.nan_to_num((prec*rec)/(prec+rec))
                 thresh += [scores[np.argmax(f)]]
             else:
