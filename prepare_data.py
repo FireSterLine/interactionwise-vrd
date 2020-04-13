@@ -12,7 +12,6 @@ import json
 import pickle
 import globals
 import utils
-import warnings
 from copy import deepcopy
 
 from data.genome.clean_vg import VGCleaner
@@ -150,7 +149,7 @@ class DataPreparer:
 
     def prepareGT(self):
       if self.cur_dformat != "relst":
-        warnings.warn("prepareGT requires relst format (I'll convert it, but maybe you want to prepareGT later or sooner than now)", UserWarning)
+        print("prepareGT requires relst format (I'll convert it, but maybe you want to prepareGT later or sooner than now)")
         if not osp.exists(save_dir):
           os.mkdir(save_dir)
         self.to_dformat("relst")
@@ -206,7 +205,7 @@ class DataPreparer:
         return (k, self.vrd_data[k])
       except KeyError:
         if k is not None:
-          warnings.warn("Image '{}' not found in train vrd_data (e.g {})".format(k, next(iter(self.vrd_data))), UserWarning)
+          print("Image '{}' not found in train vrd_data (e.g {})".format(k, next(iter(self.vrd_data))))
         return (None, None)
 
 
