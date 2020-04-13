@@ -256,7 +256,7 @@ LEARNING_RATE="0.001"
 DECAY_STEP=5
 
 python trainval_net.py \
-                    --dataset vg --net vgg16 \
+                    --dataset vg --net res101 \
                     --bs $BATCH_SIZE --nw $WORKER_NUMBER \
                     --lr $LEARNING_RATE --lr_decay_step $DECAY_STEP \
                     --cuda
@@ -265,6 +265,14 @@ python trainval_net.py \
 SESSION=1
 EPOCH=20
 CHECKPOINT=489
-python test_net.py --dataset vg --net vgg16 \
+python test_net.py --dataset vg --net res101 \
+                   --cag \
                    --checksession $SESSION --checkepoch $EPOCH --checkpoint $CHECKPOINT \
                    --cuda
+
+python
+import pickle
+filename = "output/res101/vg_150-50-50_minival/faster_rcnn_10/frcnn-det_res.pkl"
+with open(filename, 'rb') as f:
+  d2 = pickle.load(f, encoding="latin1")
+len(d2["confs"][0])

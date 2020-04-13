@@ -122,11 +122,19 @@ if __name__ == '__main__':
       args.imdbval_name = "imagenet_val"
       args.set_cfgs = ['ANCHOR_SCALES', '[8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
   elif args.dataset == "vg":
-      args.imdb_name = "vg_150-50-50_minitrain"
-      args.imdbval_name = "vg_150-50-50_minival"
-      #args.imdb_name = "vg_1600-400-20_minitrain"
-      #args.imdbval_name = "vg_1600-400-20_minival"
-      args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]']
+      # train sizes: train, smalltrain, minitrain
+      # train scale: ['150-50-20', '150-50-50', '500-150-80', '750-250-150', '1750-700-450', '1600-400-20']
+
+      # setsizes = "mini"
+      # setsizes = "small"
+      setsizes = ""
+
+      subset = (150, 50, 50)
+      # subset = (1600, 400, 20)
+
+      args.imdb_name = "vg_{}_{}train".format("{}-{}-{}".format(*subset), setsizes)
+      args.imdbval_name = "vg_{}_{}val".format("{}-{}-{}".format(*subset), setsizes)
+      args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
   elif args.dataset == "vrd":
       args.imdb_name = "vrd_train"
       args.imdbval_name = "vrd_test"

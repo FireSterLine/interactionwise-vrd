@@ -68,7 +68,7 @@ def parse_args():
                       action='store_true')
   parser.add_argument('--ls', dest='large_scale',
                       help='whether use large imag scale',
-                      action='store_true')                      
+                      action='store_true')
   parser.add_argument('--mGPUs', dest='mGPUs',
                       help='whether use multiple GPUs',
                       action='store_true')
@@ -171,10 +171,16 @@ if __name__ == '__main__':
   elif args.dataset == "vg":
       # train sizes: train, smalltrain, minitrain
       # train scale: ['150-50-20', '150-50-50', '500-150-80', '750-250-150', '1750-700-450', '1600-400-20']
-      args.imdb_name = "vg_150-50-50_minitrain"
-      args.imdbval_name = "vg_150-50-50_minival"
-      #args.imdb_name = "vg_1600-400-20_minitrain"
-      #args.imdbval_name = "vg_1600-400-20_minival"
+
+      # setsizes = "mini"
+      # setsizes = "small"
+      setsizes = ""
+
+      subset = (150, 50, 50)
+      # subset = (1600, 400, 20)
+
+      args.imdb_name = "vg_{}_{}train".format("{}-{}-{}".format(*subset), setsizes)
+      args.imdbval_name = "vg_{}_{}val".format("{}-{}-{}".format(*subset), setsizes)
       args.set_cfgs = ['ANCHOR_SCALES', '[4, 8, 16, 32]', 'ANCHOR_RATIOS', '[0.5,1,2]', 'MAX_NUM_GT_BOXES', '50']
   elif args.dataset == "vrd":
       args.imdb_name = "vrd_train"
@@ -270,7 +276,7 @@ if __name__ == '__main__':
 
   if args.cuda:
     fasterRCNN.cuda()
-      
+
   if args.optimizer == "adam":
     lr = lr * 0.1
     optimizer = torch.optim.Adam(params)
