@@ -170,21 +170,20 @@ class DataPreparer:
         _, relst = self.get_vrd_data_pair(img_path)
 
         if relst is None:
-          gt_pkl["tuple_label"].append(None)
-          gt_pkl["sub_bboxes"].append(None)
-          gt_pkl["obj_bboxes"].append(None)
-          break
+          tuple_label = None
+          sub_bboxes  = None
+          obj_bboxes  = None
+        else:
+          tuple_label = []
+          sub_bboxes  = []
+          obj_bboxes  = []
 
-        tuple_label = []
-        sub_bboxes  = []
-        obj_bboxes  = []
-
-        for i_rel, rel in enumerate(relst):
-          # multi_label (namely multi-predicate relationships) are not allowed in ground-truth pickles
-          for id in rel["predicate"]["id"]:
-            tuple_label.append([rel["subject"]["id"], id, rel["object"]["id"]])
-            sub_bboxes.append(rel["subject"]["bbox"])
-            obj_bboxes.append(rel["object"]["bbox"])
+          for i_rel, rel in enumerate(relst):
+            # multi_label (namely multi-predicate relationships) are not allowed in ground-truth pickles
+            for id in rel["predicate"]["id"]:
+              tuple_label.append([rel["subject"]["id"], id, rel["object"]["id"]])
+              sub_bboxes.append(rel["subject"]["bbox"])
+              obj_bboxes.append(rel["object"]["bbox"])
 
         gt_pkl["tuple_label"].append(tuple_label)
         gt_pkl["sub_bboxes"].append(sub_bboxes)
