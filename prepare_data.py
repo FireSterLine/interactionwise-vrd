@@ -322,7 +322,7 @@ class VRDPrep(DataPreparer):
             else:
               found = False
               for i,rel in enumerate(relst):
-                if rel_data["subject"] == rel["subject"] and rel_data["object"] == rel["object"]:
+                if rel_data["subject"] == rel["subject"] and rel_data["object"] == rel["object"] and not rel_data['predicate']['id'][0] in relst[i]['predicate']['id']:
                   relst[i]['predicate']['name'] += rel_data['predicate']['name']
                   relst[i]['predicate']['id']   += rel_data['predicate']['id']
                   found = True
@@ -563,7 +563,7 @@ class VGPrep(DataPreparer):
             else:
                 found = False
                 for i, rel in enumerate(relst):
-                    if rel_data["subject"] == rel["subject"] and rel_data["object"] == rel["object"]:
+                    if rel_data["subject"] == rel["subject"] and rel_data["object"] == rel["object"] and not rel_data['predicate']['id'][0] in relst[i]['predicate']['id']:
                         relst[i]['predicate']['name'] += rel_data['predicate']['name']
                         relst[i]['predicate']['id']   += rel_data['predicate']['id']
                         found = True
