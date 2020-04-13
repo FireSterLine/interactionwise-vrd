@@ -86,7 +86,7 @@ class DataPreparer:
                 vrd_data_train.append((k, self.vrd_data[k]))
             except KeyError:
                 if k is not None:
-                  warnings.warn("Image '{}' not found in train vrd_data ({})".format(k, self.vrd_data.keys()), UserWarning)
+                  warnings.warn("Train image '{}' not found in train vrd_data (e.g {})".format(k, next(iter(self.vrd_data))), UserWarning)
                 vrd_data_train.append((None, None))
 
         for k in self.splits['test']:
@@ -94,7 +94,7 @@ class DataPreparer:
                 vrd_data_test.append((k, self.vrd_data[k]))
             except KeyError:
                 if k is not None:
-                  warnings.warn("Image '{}' not found in test vrd_data ({})".format(k, self.vrd_data.keys()), UserWarning)
+                  warnings.warn("Test image '{}' not found in test vrd_data (e.g {})".format(k, next(iter(self.vrd_data))), UserWarning)
                 vrd_data_test.append((None, None))
 
         if granularity == "rel":
@@ -162,9 +162,13 @@ class DataPreparer:
     def prepareGT(self):
       if self.cur_dformat != "relst":
         warnings.warn("prepareGT requires relst format (I'll convert it, but maybe you want to prepareGT later or sooner than now)", UserWarning)
+        if not osp.exists(save_dir):
+          os.mkdir(save_dir)
         self.to_dformat("relst")
 
       # Output files
+      if not osp.exists(self.fullpath("eval")):
+        os.mkdir(self.fullpath("eval"))
       gt_output_path         = osp.join("eval", "gt.pkl")
       # TODO: zeroshot
       # gt_zs_output_path      = osp.join("eval", "gt_zs.pkl")
@@ -174,7 +178,8 @@ class DataPreparer:
       gt_pkl["sub_bboxes"]  = []
       gt_pkl["obj_bboxes"]  = []
 
-      for img_path, relst in self.vrd_data.items():
+      for img_path in self.splits['test']:
+        relst = self.vrd_data[img_path]
 
         tuple_label = []
         sub_bboxes  = []
@@ -570,19 +575,19 @@ if __name__ == '__main__':
 
     # TODO: filter out relationships between the same object?
 
-    multi_label = True
-    generate_embeddings = True
+    multi_label = False
+    generate_embeddings = False
 
     w2v_model = None
     if generate_embeddings:
       w2v_model = KeyedVectors.load_word2vec_format(osp.join(globals.data_dir, globals.w2v_model_path), binary=True)
 
-    #"""
+    """
     data_preparer_vrd = VRDPrep(multi_label=multi_label, generate_emb = w2v_model)
     data_preparer_vrd.prepareEvalFromLP()
     data_preparer_vrd.load_vrd()
     data_preparer_vrd.save_data("relst")
-    data_preparer_vrd.prepareGT()
+    #data_preparer_vrd.prepareGT()
     data_preparer_vrd.save_data("relst", "rel")
     data_preparer_vrd.save_data("annos")
 
@@ -591,7 +596,7 @@ if __name__ == '__main__':
     data_preparer_vrd.save_data("relst")
     data_preparer_vrd.save_data("relst", "rel")
     data_preparer_vrd.save_data("annos")
-    #"""
+    """
     #"""
     # TODO: test to see if VG preparation is valid
     # TODO: allow multi-word vocabs, so that we can load 1600-400-20_bottomup
@@ -600,6 +605,7 @@ if __name__ == '__main__':
     # data_preparer_vg  = VGPrep((1600, 400, 20), multi_label=multi_label, generate_emb = w2v_model)
     print("Generating relst data with granularity img...")
     data_preparer_vg.save_data("relst")
+    print("Generating ground-truth pickle...")
     data_preparer_vg.prepareGT()
     print("Generating relst data with granularity rel...")
     data_preparer_vg.save_data("relst", "rel")

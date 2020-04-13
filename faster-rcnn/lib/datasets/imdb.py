@@ -154,7 +154,7 @@ class imdb(object):
             ind = np.argsort(confs, axis=0)[-cut_at_val:]
             box = np.array(box, dtype=np.int)[ind].tolist()
             cls = np.array(cls, dtype=np.int)[ind].tolist()
-            ind = np.array(ind, dtype=np.int)[ind].tolist()
+            confs = np.array(confs)[ind].tolist()
 
           proposals["boxes"].append(box)
           proposals["confs"].append(confs)
