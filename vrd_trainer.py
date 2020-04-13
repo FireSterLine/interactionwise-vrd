@@ -25,7 +25,7 @@ from lib.datalayers import VRDDataLayer
 from lib.evaluator import VRDEvaluator
 
 # Test if code compiles
-TEST_DEBUGGING = True # False # True # False # False # True # False # True # True # False
+TEST_DEBUGGING = False # True # False # False # True # False # True # True # False
 # Test if a newly-introduced change affects the validity of the code
 TEST_VALIDITY = False # True
 # Try overfitting to a single element
@@ -324,14 +324,13 @@ class vrd_trainer():
 if __name__ == "__main__":
 
   #test_type = 0.1
-  test_type = 1.
-  #test_type = True
+  test_type = True
 
   # DEBUGGING: Test if code compiles
   if TEST_DEBUGGING:
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
-    trainer = vrd_trainer("test", {"training" : {"num_epochs" : 1}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"justafew" : True}}, profile = ["cfgs/vg.yml", "cfgs/pred_sem.yml"], checkpoint="epoch_4_checkpoint.pth.tar")
+    trainer = vrd_trainer("test", {"training" : {"num_epochs" : 1}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"justafew" : True}}, profile = ["cfgs/pred_sem.yml"], checkpoint="epoch_4_checkpoint.pth.tar")
     trainer.train()
 
 
@@ -339,7 +338,7 @@ if __name__ == "__main__":
   if TEST_VALIDITY:
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
-    trainer = vrd_trainer("original-checkpoint", {"training" : {"num_epochs" : 1, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd/dsr"}}, profile = ["cfgs/vg.yml", "cfgs/pred_sem.yml"], checkpoint="epoch_4_checkpoint.pth.tar")
+    trainer = vrd_trainer("original-checkpoint", {"training" : {"num_epochs" : 1, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd/dsr"}}, profile = ["cfgs/pred_sem.yml"], checkpoint="epoch_4_checkpoint.pth.tar")
     trainer.train()
     trainer = vrd_trainer("original", {"training" : {"num_epochs" : 5}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd/dsr"}})
     trainer.train()
@@ -357,7 +356,10 @@ if __name__ == "__main__":
     trainer = vrd_trainer("test-overfit", args = args, profile = ["cfgs/vg.yml", "cfgs/pred_sem.yml"])
     trainer.train()
 
-  # Scan (rotating parameters)
+  trainer = vrd_trainer("original", {"training" : {"num_epochs" : 5}, "eval" : {"test_pre" : test_type}}, profile = "cfgs/vg.yml")
+  trainer.train()
+    
+    # Scan (rotating parameters)
   for lr in [0.0001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
     for weight_decay in [0.0005]:
       for lr_rel_fus_ratio in [1]: # 0.1, 1, 10]:

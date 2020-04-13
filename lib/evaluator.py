@@ -64,24 +64,27 @@ class VRDEvaluator():
         self.any_datalayer = self.datalayer_pre
       elif self.args.test_rel:
         self.any_datalayer = self.datalayer_rel
+
     if True:
+      # Load ground truths
       try:
-        # TODO: solve these by using the same dataset as the training one
-        if self.any_datalayer.dataset.name == "vg":
-          raise FileNotFoundError()
-        # Load ground truths
         self.gt    = self.any_datalayer.dataset.readPKL(osp.join("eval", "gt.pkl"))
-        self.gt_zs = self.any_datalayer.dataset.readPKL(osp.join("eval", "gt_zs.pkl"))
         #print(self.gt.keys())
         #print(type(self.gt))
         if self.args.justafew != False and isinstance(self.args.justafew, int):
-          x =self.args.justafew
+          x = self.args.justafew
           print(self.gt["tuple_label"][self.args.justafew].shape)
           self.gt    = {'tuple_label' : [self.gt['tuple_label'][x]],    'obj_bboxes' : [self.gt['obj_bboxes'][x]],    'sub_bboxes' : [self.gt['sub_bboxes'][x]]}
           print(self.gt["tuple_label"][0].shape)
+      except FileNotFoundError:
+        warnings.warn("Warning! Couldn't find ground-truth pickle. Evaluation will be skipped.")
+      try:
+        self.gt_zs = self.any_datalayer.dataset.readPKL(osp.join("eval", "gt_zs.pkl"))
+        if self.args.justafew != False and isinstance(self.args.justafew, int):
+          x = self.args.justafew
           self.gt_zs = {'tuple_label' : [self.gt_zs['tuple_label'][x]], 'obj_bboxes' : [self.gt_zs['obj_bboxes'][x]], 'sub_bboxes' : [self.gt_zs['sub_bboxes'][x]]}
       except FileNotFoundError:
-        warnings.warn("Warning! Couldn't find ground truths pickles. Evaluation will be skipped.")
+        warnings.warn("Warning! Couldn't find zero-shot ground-truth pickle. Evaluation will be skipped.")
 
     # If None, the num_imgs that will be used is the size of the ground-truths
     self.num_imgs = None
