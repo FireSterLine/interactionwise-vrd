@@ -238,8 +238,16 @@ with open(filename, 'rb') as f:
 
 filename = "data/genome/vg_id_to_dir_minitrain.p"
 
+import pickle
+filename = "output/vgg16/vg_150-50-50_minival/faster_rcnn_10/proposal_faster_rcnn.pkl"
 with open(filename, 'rb') as f:
   d2 = pickle.load(f, encoding="latin1")
+
+import pickle
+filename = "data/vrd/eval/det_res.pkl"
+with open(filename, 'rb') as f:
+  d3 = pickle.load(f, encoding="latin1")
+
 
 
 BATCH_SIZE=4
@@ -257,7 +265,6 @@ python trainval_net.py \
 SESSION=1
 EPOCH=20
 CHECKPOINT=489
-
 python test_net.py --dataset vg --net vgg16 \
                    --checksession $SESSION --checkepoch $EPOCH --checkpoint $CHECKPOINT \
                    --cuda
