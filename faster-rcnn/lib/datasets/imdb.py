@@ -128,28 +128,28 @@ class imdb(object):
       self.roidb.append(entry)
     self._image_index = self._image_index * 2
 
-    # Mini-credited to FireSterLine
-    def create_obj_det_pkl(self, all_boxes, det_file):
-        proposals = {}
-        proposals["boxes"] = []
-        proposals["confs"] = []
-        proposals["cls"]   = []
-        for ii in range(self.num_images):
-            box = np.zeros((0,4))
-            cls = []
-            confs = np.zeros((0,1))
-            for jj in range(1, self.num_classes):
-                box = np.vstack((box, all_boxes[jj][ii][:, 0:4]))
-                confs = np.vstack((confs, all_boxes[jj][ii][:, 4:5]))
-                for kk in range(all_boxes[jj][ii].shape[0]):
-                    cls.append(jj-1)
-            proposals["boxes"].append(box)
-            proposals["confs"].append(confs)
-            proposals["cls"].append(cls)
-        with open(det_file, 'wb') as f:
-            cPickle.dump(proposals, f, cPickle.HIGHEST_PROTOCOL)
+  # Mini-credited to FireSterLine
+  def create_obj_det_pkl(self, all_boxes, det_file):
+      proposals = {}
+      proposals["boxes"] = []
+      proposals["confs"] = []
+      proposals["cls"]   = []
+      for ii in range(self.num_images):
+          box = np.zeros((0,4))
+          cls = []
+          confs = np.zeros((0,1))
+          for jj in range(1, self.num_classes):
+              box = np.vstack((box, all_boxes[jj][ii][:, 0:4]))
+              confs = np.vstack((confs, all_boxes[jj][ii][:, 4:5]))
+              for kk in range(all_boxes[jj][ii].shape[0]):
+                  cls.append(jj-1)
+          proposals["boxes"].append(box)
+          proposals["confs"].append(confs)
+          proposals["cls"].append(cls)
+      with open(det_file, 'wb') as f:
+          cPickle.dump(proposals, f, cPickle.HIGHEST_PROTOCOL)
 
-        return proposals
+      return proposals
 
   # def evaluate_recall(self, candidate_boxes=None, thresholds=None,
   #                     area='all', limit=None):
