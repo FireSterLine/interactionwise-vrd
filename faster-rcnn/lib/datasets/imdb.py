@@ -16,6 +16,7 @@ import numpy as np
 import scipy.sparse
 from model.utils.config import cfg
 import pdb
+import pickle
 
 ROOT_DIR = osp.join(osp.dirname(__file__), '..', '..')
 
@@ -147,7 +148,7 @@ class imdb(object):
           proposals["confs"].append(confs)
           proposals["cls"].append(cls)
       with open(det_file, 'wb') as f:
-          cPickle.dump(proposals, f, cPickle.HIGHEST_PROTOCOL)
+          pickle.dump(proposals, f, pickle.HIGHEST_PROTOCOL)
 
       return proposals
 
