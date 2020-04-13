@@ -265,10 +265,13 @@ python trainval_net.py \
 SESSION=1
 EPOCH=20
 CHECKPOINT=489
-python gen_obj_det.py --dataset vg --net res101 \
-                   --cut_predictions_at gt
+#CUT_AT=gt
+CUT_AT=7
+python gen_obj_det.py --dataset vg --net vgg16 \
+                   --cut_predictions_at $CUT_AT \
                    --checksession $SESSION --checkepoch $EPOCH --checkpoint $CHECKPOINT \
                    --cuda
+
 
 python
 import pickle

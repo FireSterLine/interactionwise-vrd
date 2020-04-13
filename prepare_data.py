@@ -159,6 +159,44 @@ class DataPreparer:
         self.vrd_data = new_vrd_data
         self.cur_dformat = "annos"
 
+    def prepareGT(self):
+      if self.cur_dformat != "relst":
+        warnings.warn("prepareGT requires relst format (I'll convert it, but maybe you want to prepareGT later or sooner than now)", UserWarning)
+        self.to_dformat("relst")
+
+      # Output files
+      gt_output_path         = osp.join("eval", "gt.pkl")
+      # TODO: zeroshot
+      # gt_zs_output_path      = osp.join("eval", "gt_zs.pkl")
+
+      gt_pkl = {}
+      gt_pkl["tuple_label"] = []
+      gt_pkl["sub_bboxes"]  = []
+      gt_pkl["obj_bboxes"]  = []
+
+      for img_path, relst in self.vrd_data.items():
+
+        tuple_label = []
+        sub_bboxes  = []
+        obj_bboxes  = []
+
+        for i_rel, rel in enumerate(relst):
+          # multi_label (namely multi-predicate relationships) are not allowed in ground-truth pickles
+          for id in rel["predicate"]["id"]:
+            tuple_label.append([rel["subject"]["id"], id, rel["object"]["id"]])
+            sub_bboxes.append(rel["subject"]["bbox"])
+            obj_bboxes.append(rel["object"]["bbox"])
+
+        gt_pkl["tuple_label"].append(tuple_label)
+        gt_pkl["sub_bboxes"].append(sub_bboxes)
+        gt_pkl["obj_bboxes"].append(obj_bboxes)
+
+      self.writepickle(gt_pkl, gt_output_path)
+
+      # TODO: zeroshot
+      # self.writepickle(gt_zs_pkl, gt_zs_output_path)
+
+
     # def annos2relst(self):
     #     TODO
     #     self.cur_dformat = "relst"
@@ -528,9 +566,6 @@ class VGPrep(DataPreparer):
 
         return relst
 
-    def prepareEval(self):
-      raise NotImplementedError
-
 if __name__ == '__main__':
 
     # TODO: filter out relationships between the same object?
@@ -547,6 +582,7 @@ if __name__ == '__main__':
     data_preparer_vrd.prepareEvalFromLP()
     data_preparer_vrd.load_vrd()
     data_preparer_vrd.save_data("relst")
+    data_preparer_vrd.prepareGT()
     data_preparer_vrd.save_data("relst", "rel")
     data_preparer_vrd.save_data("annos")
 
@@ -563,8 +599,8 @@ if __name__ == '__main__':
     data_preparer_vg = VGPrep((150, 50, 50), multi_label=multi_label, generate_emb=w2v_model)
     # data_preparer_vg  = VGPrep((1600, 400, 20), multi_label=multi_label, generate_emb = w2v_model)
     print("Generating relst data with granularity img...")
-    data_preparer_vrd.prepareEval()
     data_preparer_vg.save_data("relst")
+    data_preparer_vg.prepareGT()
     print("Generating relst data with granularity rel...")
     data_preparer_vg.save_data("relst", "rel")
     print("Generating annos data...")
