@@ -1,3 +1,6 @@
 # Dataset in use
 data:
   name: vg
+
+eval:
+  test_rel: False
