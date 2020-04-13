@@ -9,6 +9,7 @@ from __future__ import print_function
 
 import _init_paths
 import os
+from os import path as osp
 import sys
 import numpy as np
 import argparse
@@ -331,8 +332,8 @@ if __name__ == '__main__':
   imdb.evaluate_detections(all_boxes, output_dir)
 
   print("Saving detections to pickle")
-  det_file = osp.join(output_dir, "proposal_faster_rcnn.pkl")
-  proposals = self.create_obj_det_pkl(all_boxes, det_file)
+  det_file = osp.join(output_dir, "frcnn-det_res.pkl")
+  proposals = imdb.create_obj_det_pkl(all_boxes, det_file)
 
   end = time.time()
   print("test time: %0.4fs" % (end - start))
