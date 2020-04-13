@@ -81,21 +81,10 @@ class DataPreparer:
 
         vrd_data_train = []
         vrd_data_test = []
-        for k in self.splits['train']:
-            try:
-                vrd_data_train.append((k, self.vrd_data[k]))
-            except KeyError:
-                if k is not None:
-                  warnings.warn("Train image '{}' not found in train vrd_data (e.g {})".format(k, next(iter(self.vrd_data))), UserWarning)
-                vrd_data_train.append((None, None))
-
-        for k in self.splits['test']:
-            try:
-                vrd_data_test.append((k, self.vrd_data[k]))
-            except KeyError:
-                if k is not None:
-                  warnings.warn("Test image '{}' not found in test vrd_data (e.g {})".format(k, next(iter(self.vrd_data))), UserWarning)
-                vrd_data_test.append((None, None))
+        for img_path in self.splits['train']:
+          vrd_data_train.append(self.get_vrd_data_pair(img_path))
+        for img_path in self.splits['test']:
+          vrd_data_test.append(self.get_vrd_data_pair(img_path))
 
         if granularity == "rel":
           assert dformat == "relst", "Mh. Does it make sense to granulate 'rel' with dformat {}?".format(dformat)
@@ -179,7 +168,13 @@ class DataPreparer:
       gt_pkl["obj_bboxes"]  = []
 
       for img_path in self.splits['test']:
-        relst = self.vrd_data[img_path]
+        _, relst = self.get_vrd_data_pair(img_path)
+
+        if relst is None:
+          gt_pkl["tuple_label"].append(None)
+          gt_pkl["sub_bboxes"].append(None)
+          gt_pkl["obj_bboxes"].append(None)
+          break
 
         tuple_label = []
         sub_bboxes  = []
@@ -205,6 +200,15 @@ class DataPreparer:
     # def annos2relst(self):
     #     TODO
     #     self.cur_dformat = "relst"
+
+    def get_vrd_data_pair(self, k):
+      try:
+        return (k, self.vrd_data[k])
+      except KeyError:
+        if k is not None:
+          warnings.warn("Image '{}' not found in train vrd_data (e.g {})".format(k, next(iter(self.vrd_data))), UserWarning)
+        return (None, None)
+
 
     def readbbox_arr(self, bbox, margin=0):
         return {
