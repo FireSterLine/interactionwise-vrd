@@ -9,7 +9,6 @@ import copy
 import time
 import sys
 import pdb
-import warnings
 import os.path as osp
 this_dir = osp.dirname(osp.realpath(__file__))
 # print this_dir
@@ -92,16 +91,20 @@ def eval_per_image(i, gt, pred, use_rel, gt_thr = 0.5, return_match = False):
 def eval_recall_at_N(res, gts, Ns = [100, 50, 4.], num_imgs = None, use_rel = True):
 
   # If not specified, num_imgs is the length of the ground truth
-  tmp_gts = [gt for gt in gts if gt is not None]
-  if num_imgs is None:
-    num_imgs = len(tmp_gts[0]["obj_bboxes"])
+  valid_gts = [gt for gt in gts if gt is not None]
+  if len(valid_gts) == 0:
+    print("Warning! No valid ground-truths were provided. Can't really evaluate")
 
+  for i_gt in range(len(valid_gts)-1):
+    if len(valid_gts[i_gt]["obj_bboxes"]) != len(valid_gts[i_gt+1]["obj_bboxes"]):
+      print("Warning! Ground truths provided do not share the same length: test performance might be off! {} != {}".format(len(valid_gts[i_gt]["obj_bboxes"]), len(valid_gts[i_gt+1]["obj_bboxes"])))
+
+  if num_imgs is None and len(valid_gts):
+    num_imgs = len(valid_gts[0]["obj_bboxes"])
+
+  test_set_size = min(num_imgs, len(res["rlp_confs_ours"]))
   if num_imgs != len(res["rlp_confs_ours"]):
-    warnings.warn("Warning! Test results and ground truths do not have the same length: test performance might be off! {} != {}".format(num_imgs, len(res["rlp_confs_ours"])), UserWarning)
-  
-  for i_gt in range(len(tmp_gts)-1):
-    if len(tmp_gts[i_gt]["obj_bboxes"]) != len(tmp_gts[i_gt+1]["obj_bboxes"]):
-      warnings.warn("Warning! Ground truths provided do not share the same length: test performance might be off! {} != {}".format(len(tmp_gts[i_gt]["obj_bboxes"]), len(tmp_gts[i_gt+1]["obj_bboxes"])), UserWarning)
+    print("Warning! Test results and ground truths do not have the same length: test performance might be off! {} != {}. The minimum will be used: {}".format(num_imgs, len(res["rlp_confs_ours"]), test_set_size))
 
   Ns = sorted(Ns, reverse=True)
   max_N = Ns[0]
@@ -111,9 +114,6 @@ def eval_recall_at_N(res, gts, Ns = [100, 50, 4.], num_imgs = None, use_rel = Tr
   base_pred["tuple_confs"] = copy.deepcopy(res["rlp_confs_ours"])
   base_pred["sub_bboxes"]  = copy.deepcopy(res["sub_bboxes_ours"])
   base_pred["obj_bboxes"]  = copy.deepcopy(res["obj_bboxes_ours"])
-
-  # TODO: stop at test_set_size
-  test_set_size = min(num_imgs, len(res["rlp_confs_ours"]))
 
   # Sort by confidence
   for i,(tuple_labels, tuple_confs, sub_bboxes, obj_bboxes) in enumerate(zip(base_pred["tuple_label"], base_pred["tuple_confs"], base_pred["sub_bboxes"], base_pred["obj_bboxes"])):
@@ -154,8 +154,7 @@ def eval_recall_at_N(res, gts, Ns = [100, 50, 4.], num_imgs = None, use_rel = Tr
         recalls.append(None)
         continue
       for i,(tuple_labels, tuple_confs, sub_bboxes, obj_bboxes) in enumerate(zip(pred["tuple_label"], pred["tuple_confs"], pred["sub_bboxes"], pred["obj_bboxes"])):
-        if(tuple_confs is None):
-          continue
+        if(tuple_confs is None): continue
         if isinstance(N, float): x = int(np.ceil(N * len(gt["tuple_label"][i])))
         pred["tuple_label"][i]  = pred["tuple_label"][i][:x]
         pred["tuple_confs"][i]  = pred["tuple_confs"][i][:x]

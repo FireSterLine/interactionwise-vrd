@@ -16,20 +16,31 @@ import utils, globals
 
 class VRDDataset():
 
-  def __init__(self, name, subset=None, with_bg_obj=True, with_bg_pred=False, justafew=False):
+  def __init__(self, name, subset = None, with_bg_obj=True, with_bg_pred=False, justafew=False):
 
+    img_subset = ""
     # This allows to use names like "vrd/dsr", "vg/150-50-50"
     if "/" in name and subset == None:
-        name,subset = name.split("/")
+      pieces = name.split("/")
+      if len(pieces) == 2:
+        name,subset = pieces
+      elif len(pieces) == 3:
+        name,subset,img_subset = pieces
+      else:
+        raise ValueError("Can't initialize VRDDataset with {}".format(pieces))
 
     self.name         = name
     self.subset       = subset
+    self.img_subset   = img_subset
     self.with_bg_obj  = with_bg_obj
     self.with_bg_pred = with_bg_pred
     self.justafew     = justafew
 
     if self.justafew != False:
       print("Warning: Using less data (because of 'justafew' debugging)")
+
+    if self.img_subset == "" and self.name != "vg":
+      raise ValueError("Couldn't initialize img_subset '{}' for dataset '{}'".format(self.img_subset, self.name))
 
     self.img_dir      = None
     self.metadata_dir = None
@@ -86,10 +97,20 @@ class VRDDataset():
           filename = "dsr_{}_{}_{}.json".format(format, granularity, stage)
       print("Data not cached. Reading {}...".format(filename))
       data = self.readJSON(filename)
+      if self.img_subset != "":
+        if self.img_subset == "mini" and stage == "train":
+          data = data[:1000]
+        elif self.img_subset == "small" and stage == "train":
+          data = data[:20000]
+        elif self.img_subset == "mini" and stage == "test":
+          data = data[:100]
+        elif self.img_subset == "small" and stage == "test":
+          data = data[:2000]
+
       if self.justafew == True:
           data = data[:100]
       elif self.justafew != False and isinstance(self.justafew, int):
-          data = data[self.justafew:self.justafew+1] # [:100]
+          data = data[self.justafew:self.justafew+1]
       self._vrd_data_cache[(format, stage, granularity)] = data
     return self._vrd_data_cache[(format, stage, granularity)]
 
