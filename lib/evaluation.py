@@ -151,7 +151,7 @@ def eval_recall_at_N(res, gts, Ns = [100, 50, 4.], num_imgs = None, use_rel = Tr
       pred = copy.deepcopy(base_pred)
     else:
       pred = base_pred
-    
+
     if not isinstance(N, float):
       for i,(tuple_labels, tuple_confs, sub_bboxes, obj_bboxes) in enumerate(zip(pred["tuple_label"], pred["tuple_confs"], pred["sub_bboxes"], pred["obj_bboxes"])):
         if i > test_set_size: break
@@ -220,6 +220,7 @@ def eval_obj_img(gt_boxes, gt_cls, pred_boxes, pred_cls, gt_thr=0.5, return_flag
 
 # What to do with this?
 def eval_object_recognition_top_N(proposals_path):
+  raise NotImplementedError
   with open("data/vrd/test.pkl", 'rb') as fid:
     anno = pickle.load(fid)
 
