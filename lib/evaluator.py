@@ -153,7 +153,7 @@ class VRDEvaluator():
         #print(idx_s)
         #print(idx_o)
         rel_prob = rel_scores.data.cpu().numpy() # Is this the correct way?
-        rel_res = np.dstack(np.unravel_index(np.argsort(-rel_prob.ravel()), rel_prob.shape))[0][:N]
+        rel_res = np.dstack(np.unravel_index(np.argsort(-rel_prob.ravel()), rel_prob.shape))[0][:N] # TODO: remove this :N to allow R@4x
 
         for ii in range(rel_res.shape[0]):
           rel = rel_res[ii, 1]

@@ -176,7 +176,7 @@ class VRDDataset():
   # Read pickle datafile
   def readPKL(self, filename):
     with open(osp.join(self.metadata_dir, filename), 'rb') as rfile:
-      return pickle.load(rfile)
+      return pickle.load(rfile, encoding="latin1")
   # TODO
   # def readMetadata(self, data_name):
   #   """ Wrapper for read/cache metadata file. This prevents loading the same metadata file more than once """

@@ -130,10 +130,13 @@ class vrd_trainer():
       self.model.load_pretrained_conv(osp.join(globals.data_dir, "VGG_imagenet.npy"), fix_layers=True)
       # Load existing embeddings
       try:
-        with open(osp.join(self.datalayer.dataset.metadata_dir, "params_emb.pkl"), 'rb') as f:
-          self.model.state_dict()["emb.weight"].copy_(torch.from_numpy(pickle.load(f, encoding="latin1")))
+        # obj_emb = torch.from_numpy(self.datalayer.dataset.readPKL("params_emb.pkl"))
+        obj_emb = torch.from_numpy(np.array(self.datalayer.dataset.readJSON("objects-emb.json")))
       except FileNotFoundError:
-        print("Warning: Initialization weights for emb.weight layer not found!")
+        print("Warning: Initialization weights for emb.weight layer not found! Weights are initialized randomly")
+        # set_trainability(self.model.emb, requires_grad=True)
+      self.model.state_dict()["emb.weight"].copy_(obj_emb)
+
     # Evaluation
     print("Initializing evaluator...")
     self.eval = VRDEvaluator(self.data_args, self.eval_args)
@@ -358,7 +361,7 @@ if __name__ == "__main__":
 
   trainer = vrd_trainer("original", {"training" : {"num_epochs" : 5}, "eval" : {"test_pre" : test_type}}, profile = "cfgs/vg.yml")
   trainer.train()
-    
+
     # Scan (rotating parameters)
   for lr in [0.0001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
     for weight_decay in [0.0005]:
