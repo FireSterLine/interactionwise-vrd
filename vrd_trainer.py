@@ -25,7 +25,7 @@ from lib.datalayers import VRDDataLayer
 from lib.evaluator import VRDEvaluator
 
 # Test if code compiles
-TEST_DEBUGGING = False # True # False # False # True # False # True # True # False
+TEST_DEBUGGING = False # False # True # False # False # True # False # True # True # False
 # Test if a newly-introduced change affects the validity of the code
 TEST_VALIDITY = False # True
 # Try overfitting to a single element
@@ -330,7 +330,7 @@ if __name__ == "__main__":
   if TEST_DEBUGGING:
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
-    trainer = vrd_trainer("test", {"training" : {"num_epochs" : 1}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"justafew" : True}}, profile = ["cfgs/pred_sem.yml"], checkpoint="epoch_4_checkpoint.pth.tar")
+    trainer = vrd_trainer("test", {"training" : {"num_epochs" : 1}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"justafew" : True}}, checkpoint="epoch_4_checkpoint.pth.tar")
     trainer.train()
 
 
@@ -338,8 +338,8 @@ if __name__ == "__main__":
   if TEST_VALIDITY:
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
-    trainer = vrd_trainer("original-checkpoint", {"training" : {"num_epochs" : 1, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd/dsr"}}, profile = ["cfgs/pred_sem.yml"], checkpoint="epoch_4_checkpoint.pth.tar")
-    trainer.train()
+    #trainer = vrd_trainer("original-checkpoint", {"training" : {"num_epochs" : 1, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd/dsr"}}, profile = ["cfgs/pred_sem.yml"], checkpoint="epoch_4_checkpoint.pth.tar")
+    #trainer.train()
     trainer = vrd_trainer("original", {"training" : {"num_epochs" : 5}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd/dsr"}})
     trainer.train()
 

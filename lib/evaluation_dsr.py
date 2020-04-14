@@ -92,15 +92,16 @@ def eval_per_image(i, gt, pred, use_rel, gt_thr = 0.5, return_match = False):
 def eval_recall_at_N(res, gts, Ns = [100, 50, 4.], num_imgs = None, use_rel = True):
 
   # If not specified, num_imgs is the length of the ground truth
+  tmp_gts = [gt for gt in gts if gt is not None]
   if num_imgs is None:
-    num_imgs = len(gts[0]["obj_bboxes"])
+    num_imgs = len(tmp_gts[0]["obj_bboxes"])
 
   if num_imgs != len(res["rlp_confs_ours"]):
     warnings.warn("Warning! Test results and ground truths do not have the same length: test performance might be off! {} != {}".format(num_imgs, len(res["rlp_confs_ours"])), UserWarning)
-
-  for i_gt in range(len(gts)-1):
-    if len(gts[i_gt]["obj_bboxes"]) != len(gts[i_gt+1]["obj_bboxes"]):
-      warnings.warn("Warning! Ground truths provided do not share the same length: test performance might be off! {} != {}".format(len(gts[i_gt]["obj_bboxes"]), len(gts[i_gt+1]["obj_bboxes"])), UserWarning)
+  
+  for i_gt in range(len(tmp_gts)-1):
+    if len(tmp_gts[i_gt]["obj_bboxes"]) != len(tmp_gts[i_gt+1]["obj_bboxes"]):
+      warnings.warn("Warning! Ground truths provided do not share the same length: test performance might be off! {} != {}".format(len(tmp_gts[i_gt]["obj_bboxes"]), len(tmp_gts[i_gt+1]["obj_bboxes"])), UserWarning)
 
   Ns = sorted(Ns, reverse=True)
   max_N = Ns[0]
@@ -149,6 +150,9 @@ def eval_recall_at_N(res, gts, Ns = [100, 50, 4.], num_imgs = None, use_rel = Tr
     pred = copy.deepcopy(base_pred)
     x = N
     for gt in gts:
+      if gt is None:
+        recalls.append(None)
+        continue
       for i,(tuple_labels, tuple_confs, sub_bboxes, obj_bboxes) in enumerate(zip(pred["tuple_label"], pred["tuple_confs"], pred["sub_bboxes"], pred["obj_bboxes"])):
         if(tuple_confs is None):
           continue

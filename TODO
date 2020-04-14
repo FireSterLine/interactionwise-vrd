@@ -1,4 +1,8 @@
-TODO: add fallback embedding for:
+Allow train on vg smalltrain, and test on vg smallval
+figure out why data preparation can't find some images. Right now they
+are skipped and None is placed instead
+
+-TODO: add fallback embedding for:
 
 "street lamp"           : [],
 "ski pant"              : [],
