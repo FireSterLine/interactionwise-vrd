@@ -584,33 +584,41 @@ if __name__ == '__main__':
     if generate_embeddings:
       w2v_model = KeyedVectors.load_word2vec_format(osp.join(globals.data_dir, globals.w2v_model_path), binary=True)
 
-    """
+    print("Preparing data for VRD!")
     data_preparer_vrd = VRDPrep(multi_label=multi_label, generate_emb = w2v_model)
+    print("\tPreparing evaluation data from Language Priors...")
     data_preparer_vrd.prepareEvalFromLP()
+    print("\tLoad VRD data...")
     data_preparer_vrd.load_vrd()
+    print("\tGenerating data in relst format...")
     data_preparer_vrd.save_data("relst")
+    # print("\tGenerating ground truth data...")
     #data_preparer_vrd.prepareGT()
+    print("\tGenerating data in relst format at relationship level...")
     data_preparer_vrd.save_data("relst", "rel")
+    print("\tGenerating data in annos format...")
     data_preparer_vrd.save_data("annos")
 
+    """
     # Generate the data in relst format using the {train,test}.pkl files provided by DSR
+    print("Generating data in DSR format...")
     data_preparer_vrd.load_dsr()
     data_preparer_vrd.save_data("relst")
     data_preparer_vrd.save_data("relst", "rel")
     data_preparer_vrd.save_data("annos")
     """
-    #"""
+    """
     # TODO: test to see if VG preparation is valid
     # TODO: allow multi-word vocabs, so that we can load 1600-400-20_bottomup
-    print("Preparing data...")
+    print("Preparing data for VG...")
     data_preparer_vg = VGPrep((150, 50, 50), multi_label=multi_label, generate_emb=w2v_model)
     # data_preparer_vg  = VGPrep((1600, 400, 20), multi_label=multi_label, generate_emb = w2v_model)
-    print("Generating relst data with granularity img...")
+    print("\tGenerating relst data with granularity img...")
     data_preparer_vg.save_data("relst")
-    print("Generating ground-truth pickle...")
+    print("\tGenerating ground-truth pickle...")
     data_preparer_vg.prepareGT()
-    print("Generating relst data with granularity rel...")
+    print("\tGenerating relst data with granularity rel...")
     data_preparer_vg.save_data("relst", "rel")
-    print("Generating annos data...")
+    print("\tGenerating annos data...")
     data_preparer_vg.save_data("annos")
-    #"""
+    """
