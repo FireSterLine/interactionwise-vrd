@@ -18,6 +18,9 @@ class DSRModel(nn.Module):
 
     self.args = args
 
+    # TODO: fix this cols thing, maybe rename it and also expand it dsr_spat_vec, dsr_spat_mat
+    self.cols = ["dsr_spat_vec"]
+
     if not hasattr(self.args, "n_obj"):
       raise ValueError("Can't build vrd model without knowing n_obj")
     if not hasattr(self.args, "n_pred"):
