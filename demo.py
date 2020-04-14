@@ -21,7 +21,7 @@ from lib.blob import prep_im_for_blob
 from easydict import EasyDict
 
 from obj_det import obj_detector
-from lib.dataset import dataset
+from lib.dataset import VRDDataset
 import globals
 import utils
 import pdb
@@ -41,7 +41,7 @@ class vr_detector():
     # TODO: Hardcoding this until we have an object detection model for the VRD dataset
     self.obj_det = obj_detector('vg')
 
-    self.dataset = dataset(self.dataset_name, with_bg_obj=True)
+    self.dataset = VRDDataset(self.dataset_name, with_bg_obj=True)
 
     self.args = EasyDict()
     self.args.n_obj   = self.dataset.n_obj

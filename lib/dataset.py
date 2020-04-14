@@ -10,13 +10,11 @@ import math
 import os.path as osp
 from collections import defaultdict
 import utils, globals
-import warnings
 
-# TODO: rename to VRDDataset
 # TODO: add flag that forbids/allows caching with pickles
 #  (default behaviour would be to pickle everything, since the dataset won't change that much)
 
-class dataset():
+class VRDDataset():
 
   def __init__(self, name, subset=None, with_bg_obj=True, with_bg_pred=False, justafew=False):
 
@@ -31,7 +29,7 @@ class dataset():
     self.justafew     = justafew
 
     if self.justafew != False:
-      warnings.warn("Warning: Using less data (because of 'justafew' debugging)", UserWarning)
+      print("Warning: Using less data (because of 'justafew' debugging)")
 
     self.img_dir      = None
     self.metadata_dir = None
@@ -57,7 +55,7 @@ class dataset():
       raise Exception("Unknown dataset: {}".format(self.name))
 
     # load the vocabularies for objects and predicates
-    obj_additional = []
+    obj_additional  = []
     pred_additional = []
     if with_bg_obj:  obj_additional  += ["__background__"]
     if with_bg_pred: pred_additional += ["__nopredicate__"]

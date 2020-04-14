@@ -39,7 +39,7 @@ from model.faster_rcnn.vgg16 import vgg16
 from model.faster_rcnn.resnet import resnet
 from easydict import EasyDict
 
-from lib.dataset import dataset
+from lib.dataset import VRDDataset
 import globals
 import utils
 import pdb
@@ -61,7 +61,7 @@ class obj_detector():
     self.cuda = torch.cuda.is_available()
     # self.cuda = True ...
     self.class_agnostic = False
-    self.dataset = dataset(self.dataset_name, with_bg_obj=True)
+    self.dataset = VRDDataset(self.dataset_name, with_bg_obj=True)
 
     # If a config file is specified for the model, then it is loaded, and the default model configurations are overridden
     # Those model parameters which are not specified in this config file, the default parameter values are used for them

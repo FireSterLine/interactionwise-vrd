@@ -5,7 +5,7 @@ import scipy
 
 import pickle
 from lib.blob import prep_im_for_blob
-from lib.dataset import dataset
+from lib.dataset import VRDDataset
 import torch
 import warnings
 
@@ -28,7 +28,7 @@ class VRDDataLayer(data.Dataset):
 
 
 
-    self.dataset = dataset(**self.ds_args)
+    self.dataset = VRDDataset(**self.ds_args)
     self.n_obj   = self.dataset.n_obj
     self.n_pred  = self.dataset.n_pred
 
