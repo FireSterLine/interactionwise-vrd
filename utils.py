@@ -118,12 +118,6 @@ def getSemanticVector(subject_label, object_label, emb_model):
     return np.concatenate((subject_vector, object_vector), axis=0)
 
 
-# data_info may be just the dataset name
-def data_info_to_ds_args(data_info):
-  if isinstance(data_info, str):
-    data_info = {"name" : data_info}
-  return data_info
-
 
 # Wrapper for cv2.imread
 def read_img(im_file):
@@ -247,7 +241,7 @@ def patch_key(d, old_key, new_key):
 # Read a list from a file, line-by-line
 def load_txt_list(filename):
   l = []
-  with  open(filename, 'r') as rfile:
+  with open(filename, 'r') as rfile:
     for index, line in enumerate(rfile):
       l.append(line.strip())
   return l

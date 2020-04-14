@@ -20,8 +20,8 @@ torch.manual_seed(0) # only for debugging (i.e TODO remove)
 import globals, utils
 
 from lib.vrd_models import VRDModel
-import lib.datalayers
-from lib.datalayers import VRDDataLayer
+from lib.dataset import VRDDataset
+from lib.datalayer import VRDDataLayer, net_input_to
 from lib.evaluator import VRDEvaluator
 
 # Test if code compiles
@@ -96,8 +96,9 @@ class vrd_trainer():
 
     # Data
     print("Initializing data: ", self.args.data)
+    self.dataset = VRDDataset(**self.args.data)
     # TODO? VRDDataLayer has to know what to yield (DRS -> img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
-    self.datalayer = VRDDataLayer(self.args.data, "train", use_preload = self.args.use_preload, cols = ["dsr_spat_vec"])
+    self.datalayer = VRDDataLayer(self.dataset, "train", use_preload = self.args.use_preload, cols = ["dsr_spat_vec"])
     self.dataloader = torch.utils.data.DataLoader(
       dataset = self.datalayer,
       batch_size = 1, # self.args.batch_size,
@@ -134,7 +135,7 @@ class vrd_trainer():
 
     # Evaluation
     print("Initializing evaluator...")
-    self.eval = VRDEvaluator(self.args.data, self.args.eval)
+    self.eval = VRDEvaluator(self.dataset, self.args.eval)
 
     # Training
     print("Initializing training...")
@@ -236,7 +237,7 @@ class vrd_trainer():
 
     for i_iter,(net_input, gt_soP_prior, gt_pred_sem, mlab_target) in enumerate(self.dataloader):
 
-      net_input    = lib.datalayers.net_input_to(net_input, utils.device)
+      net_input    = net_input_to(net_input, utils.device)
       gt_soP_prior = gt_soP_prior.to(utils.device)
       gt_pred_sem  = torch.as_tensor(gt_pred_sem,    dtype=torch.long,     device = utils.device)
       mlab_target  = torch.as_tensor(mlab_target,    dtype=torch.long,     device = utils.device)
@@ -254,7 +255,7 @@ class vrd_trainer():
       gt_soP_prior = -0.5 * ( gt_soP_prior + (1.0 / self.datalayer.n_pred))
 
       # DSR:
-      # TODO: fix this weird-shaped mlab_target in datalayers and remove this view thingy
+      # TODO: fix this weird-shaped mlab_target in datalayer and remove this view thingy
       if self.args.loss == "mlab":
         _, rel_scores = model_output
         loss = self.criterion((gt_soP_prior + rel_scores).view(batch_size, -1), mlab_target)

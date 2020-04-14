@@ -16,10 +16,10 @@ from torch.utils import data
 class VRDDataLayer(data.Dataset):
   """ Iterate through the dataset and yield the input and target for the network """
 
-  def __init__(self, data_info, stage, use_proposals = False, use_preload = False, cols = []):
+  def __init__(self, dataset, stage, use_proposals = False, use_preload = False, cols = []):
     super(VRDDataLayer, self).__init__()
 
-    self.ds_args = utils.data_info_to_ds_args(data_info)
+    self.dataset = dataset
     self.stage   = stage
 
     # TODO: Receive this parameter as an argument, don't hardcode this
@@ -29,7 +29,7 @@ class VRDDataLayer(data.Dataset):
 
     self.cols = cols
 
-    self.dataset = VRDDataset(**self.ds_args)
+    # TODO: remove these two?
     self.n_obj   = self.dataset.n_obj
     self.n_pred  = self.dataset.n_pred
 
@@ -64,8 +64,7 @@ class VRDDataLayer(data.Dataset):
       # TODO: proposals is not ordered, but a dictionary with im_path keys
       # TODO: expand so that we don't need the proposals pickle, and we generate it if it's not there, using Faster-RCNN?
       # TODO: move the proposals file path to a different one (maybe in Faster-RCNN)
-      with open(osp.join(self.dataset.metadata_dir, "eval", "det_res.pkl"), 'rb') as fid:
-        proposals = pickle.load(fid)
+      proposals = self.dataset.readPKL(osp.join("eval", "det_res.pkl"))
       # TODO fix data bottlenecks like this one
       self.objdet_res = [ {
           "boxes"   : proposals["boxes"][i],

@@ -1,8 +1,7 @@
 import numpy as np
 import torch
 
-from lib.datalayers import VRDDataLayer
-import lib.datalayers
+from lib.datalayer import VRDDataLayer, net_input_to
 from lib.evaluation import eval_recall_at_N, eval_obj_img # TODO remove this module
 import time
 import pickle
@@ -19,8 +18,8 @@ deepcopy = lambda x: x
 class VRDEvaluator():
   """ Evaluator for Predicate Prediction and Relationship Prediction """
 
-  def __init__(self, data_args, args):
-    self.data_args = data_args
+  def __init__(self, dataset, args):
+    self.dataset = dataset
     self.args = args
 
     # Default args
@@ -30,15 +29,15 @@ class VRDEvaluator():
 
     # Setup PREDICATE PREDICTION Data Layer
     if self.args.test_pre:
-      self.datalayer_pre  = VRDDataLayer(data_args, "test", use_preload = self.args.use_preload, cols = ["dsr_spat_vec"])
+      self.datalayer_pre  = VRDDataLayer(self.dataset, "test", use_preload = self.args.use_preload, cols = ["dsr_spat_vec"])
       self.dataloader_pre = torch.utils.data.DataLoader(dataset = self.datalayer_pre, **kwargs_dataloader)
 
     # Setup RELATIONSHIP DETECTION Data Layer
     if self.args.test_rel:
-      self.datalayer_rel  = VRDDataLayer(data_args, "test", use_preload = self.args.use_preload, use_proposals = True, cols = ["dsr_spat_vec"])
+      self.datalayer_rel  = VRDDataLayer(self.dataset, "test", use_preload = self.args.use_preload, use_proposals = True, cols = ["dsr_spat_vec"])
       self.dataloader_rel = torch.utils.data.DataLoader(dataset = self.datalayer_rel, **kwargs_dataloader)
 
-    #self.datalayer  = VRDDataLayer(data_args, "test", use_preload = self.args.use_preload, use_proposals = self.args.test_rel)
+    #self.datalayer  = VRDDataLayer(self.dataset, "test", use_preload = self.args.use_preload, use_proposals = self.args.test_rel)
     #self.dataloader = torch.utils.data.DataLoader(
     #  dataset = self.datalayer,
     #  batch_size = 1, # 256,
@@ -80,7 +79,7 @@ class VRDEvaluator():
     self.num_imgs = None
 
     # VG is too slow, so we only test part of it
-    if(self.data_args.name == "vg"):
+    if(self.dataset.name == "vg"):
       self.num_imgs = None
       # TODO: self.num_imgs = 8995
 
@@ -125,7 +124,7 @@ class VRDEvaluator():
           print("{}/{}\r".format(i_iter, len(dataloader_pre)), end="")
 
         (gt_obj_classes, gt_obj_boxes) = gt_obj
-        net_input = lib.datalayers.net_input_to(net_input, utils.device)
+        net_input = net_input_to(net_input, utils.device)
         img_blob, obj_classes, obj_boxes, u_boxes, idx_s, idx_o, spatial_features = net_input
 
         tuple_confs_im = np.zeros((N,  ), dtype = np.float) # Confidence
@@ -222,7 +221,7 @@ class VRDEvaluator():
         (gt_obj_classes, gt_obj_boxes) = gt_obj
         (det_obj_classes, det_obj_boxes, det_obj_confs) = det_obj
 
-        net_input = lib.datalayers.net_input_to(net_input, utils.device)
+        net_input = net_input_to(net_input, utils.device)
         obj_score, rel_score = vrd_model(*net_input)
 
         # TODO: remove and fix everyhing else to allow batching
