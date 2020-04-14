@@ -48,10 +48,6 @@ class SemSim(nn.Module):
     super(SemSim, self).__init__()
     self.emb = torch.as_tensor(emb).to("cuda:0") # TODO fix
     self.mode = mode
-    if self.mode % 2 == 0:
-      self.sig = nn.Sigmoid()
-    else:
-      self.tanh = nn.Tanh()
     #print(emb.shape)
 
   def forward(self, x):
@@ -62,13 +58,10 @@ class SemSim(nn.Module):
     # TODO: allow batching
     x = x[0]
 
-    # Force the values individually to be in [-1,+1]
-    if self.mode % 2 == 0:
-      # This sigmoid seems to help, compared with no sigmoid (and no tanh)
-      x = (self.sig(x)*2)-1
-    else:
-      # Note: In scan-v3 this tanh was not here.
-      x = self.tanh(x)
+    # Force the values individually to be in [-1,+1].
+    # This is not mandatory but it seems to help
+    x = nn.Tanh(x)
+    # TODO: try again with x = (nn.Sigmoid(x)*2)-1 instead
 
     # First result: SIGMOID is better than none, in every case.
 
@@ -88,12 +81,6 @@ class SemSim(nn.Module):
     elif self.mode <= 6:
       # We can compute the scores by remapping the cosine similarities in [0,1]
       new_tens = [(cos_sim(x[r])+1)/2 for r in range(rel_size)]
-      # We can also compute the cosine similarity and remap each distribution to [0,1]
-      #  This is actually wrong, because the information "likelihood that there is a relationship in the object pair"
-      #  gets lost when the vector is remapped.
-      # # shift   = lambda x : x-x.min()
-      # # scale   = lambda x : x/x.sum()
-      # # new_tens = ([scale(shift(cos_sim(x[r]))) for r in range(rel_size)])
     else:
       # We can compute the cosine similarity and remap the scores into the real axis
       atanh   = lambda x : 0.5 * torch.log((1+x)/(1-x))

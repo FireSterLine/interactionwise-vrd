@@ -16,7 +16,7 @@ from torch.utils import data
 class VRDDataLayer(data.Dataset):
   """ Iterate through the dataset and yield the input and target for the network """
 
-  def __init__(self, data_info, stage, use_proposals = False, use_preload = False):
+  def __init__(self, data_info, stage, use_proposals = False, use_preload = False, cols = []):
     super(VRDDataLayer, self).__init__()
 
     self.ds_args = utils.data_info_to_ds_args(data_info)
@@ -27,6 +27,7 @@ class VRDDataLayer(data.Dataset):
     self.granularity = "img"
 
 
+    self.cols = cols
 
     self.dataset = VRDDataset(**self.ds_args)
     self.n_obj   = self.dataset.n_obj
@@ -203,14 +204,12 @@ class VRDDataLayer(data.Dataset):
     # Union bounding boxes
     u_boxes = np.zeros((n_rels, 4))
 
-    # Spatial vector containing the relative location and log-distance
-    dsr_spat_vec = np.zeros((n_rels, 8))
-
-    # TODO: Introduce the other spatial feature thingy
-    # dsr_spat_mat = np.zeros((n_rels, 2, 32, 32))
-
-    # TODO: Semantic vector consisting of the concatenation of emb(sub) and emb(obj)
-    # sem_cat_vec = np.zeros((n_rels, 2 * 300))
+    if "dsr_spat_vec" in self.cols:
+      # Spatial vector containing the relative location and log-distance
+      obj_sem_feat = np.zeros((n_rels, 8))
+    elif "dsr_spat_mat" in self.cols:
+      # Binary matrix displaying the relative location
+      obj_sem_feat = np.zeros((n_rels, 2, 32, 32))
 
     # Prior distribution of the object pairs across all predicates
     gt_soP_prior = np.zeros((n_rels, self.dataset.n_pred))
@@ -219,7 +218,7 @@ class VRDDataLayer(data.Dataset):
     idx_s, idx_o = [], []
 
     def addRel(i_rel,               \
-                sub_idx,  obj_idx,    \
+                sub_idx,  obj_idx,  \
                 sub_cls,  obj_cls,  \
                 sub_bbox, obj_bbx):
       # Subject and object local indices (useful when selecting ROI results)
@@ -237,14 +236,11 @@ class VRDDataLayer(data.Dataset):
       u_boxes[i_rel] = np.array(rBBox) * im_scale
 
       # store the scaled dimensions of the union bounding box here, with the id i_rel
-      dsr_spat_vec[i_rel] = utils.getRelativeLoc(sBBox, oBBox)
-
-      # semantic features of obj and subj
-      # sem_cat_vec[i_rel] = utils.getSemanticVector(objs[rel["sub"]]["name"], objs[rel["obj"]]["name"], self.emb["obj"])
-      # sem_cat_vec[i_rel] = np.zeros(600)
-
-      #     TODO: dsr_spat_mat[ii] = [self._getDualMask(ih, iw, sBBox),
-      #               self._getDualMask(ih, iw, oBBox)]
+      if "dsr_spat_vec" in self.cols:
+        obj_sem_feat[i_rel] = utils.getRelativeLoc(sBBox, oBBox)
+      elif "dsr_spat_mat" in self.cols:
+        obj_sem_feat[i_rel] = [self._getDualMask(ih, iw, sBBox),
+                               self._getDualMask(ih, iw, oBBox)]
 
       # store the probability distribution of this subject-object pair from the soP_prior
       gt_soP_prior[i_rel] = self.soP_prior[sub_cls][obj_cls]
@@ -308,9 +304,7 @@ class VRDDataLayer(data.Dataset):
     roi_u_boxes       = torch.as_tensor(roi_u_boxes,     dtype=torch.float)
     idx_s             = torch.as_tensor(idx_s,           dtype=torch.long)
     idx_o             = torch.as_tensor(idx_o,           dtype=torch.long)
-    dsr_spat_vec      = torch.as_tensor(dsr_spat_vec,    dtype=torch.float)
-    # sem_cat_vec       = torch.as_tensor(sem_cat_vec,     dtype=torch.float)
-    # dsr_spat_mat      = torch.as_tensor(dsr_spat_mat,     dtype=torch.float)
+    obj_sem_feat      = torch.as_tensor(obj_sem_feat,    dtype=torch.float)
     obj_classes       = torch.as_tensor(obj_classes,     dtype=torch.long)
 
     # gt_soP_prior      = torch.as_tensor(gt_soP_prior,    dtype=torch.float)
@@ -322,9 +316,7 @@ class VRDDataLayer(data.Dataset):
                  roi_u_boxes,
                  idx_s,
                  idx_o,
-                 dsr_spat_vec,
-                 # dsr_spat_mat,
-                #  sem_cat_vec,
+                 obj_sem_feat
       )
 
     gt_obj  = (gt_obj_classes,  gt_obj_boxes)
@@ -354,9 +346,7 @@ def net_input_to(net_input, device):
              roi_u_boxes,
              idx_s,
              idx_o,
-             dsr_spat_vec,
-             # dsr_spat_mat,
-            #  sem_cat_vec,
+             obj_sem_feat,
     ) = net_input
 
     img_blob          = img_blob.to(device) # torch.as_tensor(img_blob,        dtype=torch.float,    device = device)
@@ -365,9 +355,7 @@ def net_input_to(net_input, device):
     roi_u_boxes       = roi_u_boxes.to(device) # torch.as_tensor(roi_u_boxes,     dtype=torch.float,    device = device)
     idx_s             = idx_s.to(device) # torch.as_tensor(idx_s,           dtype=torch.long,     device = device)
     idx_o             = idx_o.to(device) # torch.as_tensor(idx_o,           dtype=torch.long,     device = device)
-    dsr_spat_vec      = dsr_spat_vec.to(device) # torch.as_tensor(dsr_spat_vec,    dtype=torch.float,    device = device)
-    # sem_cat_vec       = sem_cat_vec.to(device) # torch.as_tensor(sem_cat_vec,     dtype=torch.float,    device = device)
-    # dsr_spat_mat      = dsr_spat_mat.to(device) # torch.as_tensor(dsr_spat_mat,    dtype=torch.float,    device = device)
+    obj_sem_feat      = obj_sem_feat.to(device) # torch.as_tensor(obj_sem_feat,    dtype=torch.float,    device = device)
 
     net_input = (img_blob,
              obj_classes,
@@ -375,9 +363,7 @@ def net_input_to(net_input, device):
              roi_u_boxes,
              idx_s,
              idx_o,
-             dsr_spat_vec,
-             # dsr_spat_mat,
-            #  sem_cat_vec,
+             obj_sem_feat,
     )
   return net_input
 

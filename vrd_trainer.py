@@ -97,7 +97,7 @@ class vrd_trainer():
     # Data
     print("Initializing data: ", self.args.data)
     # TODO? VRDDataLayer has to know what to yield (DRS -> img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
-    self.datalayer = VRDDataLayer(self.args.data, "train", use_preload = self.args.use_preload)
+    self.datalayer = VRDDataLayer(self.args.data, "train", use_preload = self.args.use_preload, cols = ["dsr_spat_vec"])
     self.dataloader = torch.utils.data.DataLoader(
       dataset = self.datalayer,
       batch_size = 1, # self.args.batch_size,

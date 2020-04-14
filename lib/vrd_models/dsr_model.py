@@ -105,13 +105,12 @@ class DSRModel(nn.Module):
       self.fc_spatial  = FC(8, self.args.n_fus_neurons)
       self.total_fus_neurons += self.args.n_fus_neurons
     # using type 2 of spatial features
-    elif(self.args.use_spat == 2):
-      raise NotImplementedError()
-      # self.conv_spat = nn.Sequential(Conv2d(2, 96, 5, same_padding=True, stride=2, bn=bn),
-      #                            Conv2d(96, 128, 5, same_padding=True, stride=2, bn=bn),
-      #                            Conv2d(128, 64, 8, same_padding=False, bn=bn))
-      # self.fc_spatial = FC(64, self.args.n_fus_neurons)
-      # self.total_fus_neurons += self.args.n_fus_neurons
+    elif(self.args.use_spat == 2): # TODO: test
+      self.conv_spatial = nn.Sequential(Conv2d(2, 96, 5, same_padding=True, stride=2, bn=bn),
+                                 Conv2d(96, 128, 5, same_padding=True, stride=2, bn=bn),
+                                 Conv2d(128, 64, 8, same_padding=False, bn=bn))
+      self.fc_spatial = FC(64, self.args.n_fus_neurons)
+      self.total_fus_neurons += self.args.n_fus_neurons
 
     if(self.args.use_sem):
       # self.fc_semantic = FC(2*300, self.args.n_fus_neurons)
@@ -248,11 +247,11 @@ class DSRModel(nn.Module):
       x_spat = self.fc_spatial(spatial_features)
       x_fused = torch.cat((x_fused, x_spat), 2)
     elif(self.args.use_spat == 2):
-      raise NotImplementedError
-      # lo = self.conv_lo(SpatialFea)
-      # lo = lo.view(lo.size()[0], -1)
-      # lo = self.fc_spatial(lo)
-      # x_fused = torch.cat((x_fused, lo), 2)
+      x_spat = self.conv_spatial(spatial_features)
+      x_spat = x_spat.view(n_batches, x_spat.size()[0], -1)
+      # TODO: maybe this is actually the correct one: x_spat = x_spat.view(x_spat.size()[0], -1)
+      x_spat = self.fc_spatial(x_spat)
+      x_fused = torch.cat((x_fused, x_spat), 2)
 
     if(self.args.use_sem):
       # x_sem  = self.fc_semantic(semantic_features)
@@ -362,9 +361,8 @@ class DSRModel(nn.Module):
     if(self.args.use_spat == 1):
       opt_params.append({'params': self.fc_spatial.parameters(), 'lr': lr*10})
     elif(self.args.use_spat == 2):
-      raise NotImplementedError
-      # opt_params.append({'params': self.conv_lo.parameters(), 'lr': lr*10})
-      # opt_params.append({'params': self.fc_spatial.parameters(), 'lr': lr*10})
+      opt_params.append({'params': self.conv_spatial.parameters(), 'lr': lr*10})
+      opt_params.append({'params': self.fc_spatial.parameters(), 'lr': lr*10})
     if(self.args.use_sem):
       opt_params.append({'params': self.fc_semantic.parameters(), 'lr': lr*10})
 

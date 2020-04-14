@@ -30,12 +30,12 @@ class VRDEvaluator():
 
     # Setup PREDICATE PREDICTION Data Layer
     if self.args.test_pre:
-      self.datalayer_pre  = VRDDataLayer(data_args, "test", use_preload = self.args.use_preload)
+      self.datalayer_pre  = VRDDataLayer(data_args, "test", use_preload = self.args.use_preload, cols = ["dsr_spat_vec"])
       self.dataloader_pre = torch.utils.data.DataLoader(dataset = self.datalayer_pre, **kwargs_dataloader)
 
     # Setup RELATIONSHIP DETECTION Data Layer
     if self.args.test_rel:
-      self.datalayer_rel  = VRDDataLayer(data_args, "test", use_preload = self.args.use_preload, use_proposals = True)
+      self.datalayer_rel  = VRDDataLayer(data_args, "test", use_preload = self.args.use_preload, use_proposals = True, cols = ["dsr_spat_vec"])
       self.dataloader_rel = torch.utils.data.DataLoader(dataset = self.datalayer_rel, **kwargs_dataloader)
 
     #self.datalayer  = VRDDataLayer(data_args, "test", use_preload = self.args.use_preload, use_proposals = self.args.test_rel)
