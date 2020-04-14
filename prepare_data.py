@@ -8,6 +8,8 @@ import scipy.io as sio
 
 # from gensim.models import KeyedVectors
 from gensim.models import Word2Vec
+from gensim.models.callbacks import CallbackAny2Vec
+from gensim.test.utils import get_tmpfile
 
 import json
 import pickle
@@ -573,6 +575,37 @@ class VGPrep(DataPreparer):
                   relst.append(rel_data)
 
         return relst
+
+
+class EpochSaver(CallbackAny2Vec):
+    def __init__(self, path_prefix):
+        self.path_prefix = path_prefix
+        self.epoch = 0
+
+    def on_epoch_end(self, model):
+        print("Saving checkpoint {}".format(self.epoch))
+        output_path = get_tmpfile("{}epoch_{}.model".format(self.path_prefix, self.epoch))
+        model.save(output_path)
+        # remove previously saved checkpoint for storage purposes
+        prev_checkpoint = "{}epoch_{}.model".format(self.path_prefix, self.epoch - 1)
+        if os.path.exists(prev_checkpoint):
+            print("Removing previous checkpoint...")
+            os.remove(prev_checkpoint)
+        self.epoch += 1
+
+
+class EpochLogger(CallbackAny2Vec):
+    def __init__(self):
+        self.epoch = 0
+
+    def on_epoch_begin(self, model):
+        print("Starting epoch # {}".format(self.epoch))
+
+    def on_epoch_end(self, model):
+        print("Ending epoch {}".format(self.epoch))
+        print("----------------------")
+        self.epoch += 1
+
 
 if __name__ == '__main__':
 
