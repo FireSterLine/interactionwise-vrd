@@ -269,10 +269,9 @@ class vrd_trainer():
 
       # Track loss
       losses.update(loss.item())
-
       if utils.smart_frequency_check(i_iter, n_iter, self.args.print_freq):
-          print("\t{:4d}/{:<4d}: LOSS: {: 6.3f}\r".format(i_iter, n_iter, losses.avg(0)), end="")
-          losses.reset(0)
+        print("\t{:4d}/{:<4d}: LOSS: {: 6.3f}".format(i_iter, n_iter, losses.avg(0)), end="")
+        losses.reset(0)
 
     self.state["loss"] = losses.avg(1)
     time2 = time.time()

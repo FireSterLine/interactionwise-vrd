@@ -133,7 +133,7 @@ class VRDEvaluator():
         net_input = lib.datalayers.net_input_to(net_input, utils.device)
         img_blob, obj_classes, obj_boxes, u_boxes, idx_s, idx_o, spatial_features = net_input
 
-        tuple_confs_im = np.zeros((N,),   dtype = np.float) # Confidence...
+        tuple_confs_im = np.zeros((N,  ), dtype = np.float) # Confidence
         rlp_labels_im  = np.zeros((N, 3), dtype = np.float) # Rel triples
         sub_bboxes_im  = np.zeros((N, 4), dtype = np.float) # Subj bboxes
         obj_bboxes_im  = np.zeros((N, 4), dtype = np.float) # Obj bboxes
@@ -153,7 +153,7 @@ class VRDEvaluator():
         #print(idx_s)
         #print(idx_o)
         rel_prob = rel_scores.data.cpu().numpy() # Is this the correct way?
-        rel_res = np.dstack(np.unravel_index(np.argsort(-rel_prob.ravel()), rel_prob.shape))[0][:N] # TODO: remove this :N to allow R@4x
+        rel_res = np.dstack(np.unravel_index(np.argsort(-rel_prob.ravel()), rel_prob.shape))[0][:N] # TODO: remove this :N to allow R@4x for num rels > 100/4=25
 
         for ii in range(rel_res.shape[0]):
           rel = rel_res[ii, 1]
@@ -161,9 +161,7 @@ class VRDEvaluator():
 
           conf = rel_prob[tuple_idx, rel]
           tuple_confs_im[ii] = conf
-
           rlp_labels_im[ii] = [gt_obj_classes[idx_s[tuple_idx]], rel, gt_obj_classes[idx_o[tuple_idx]]]
-
           sub_bboxes_im[ii] = gt_obj_boxes[idx_s[tuple_idx]]
           obj_bboxes_im[ii] = gt_obj_boxes[idx_o[tuple_idx]]
 
@@ -185,6 +183,9 @@ class VRDEvaluator():
 
       N = 100 # What's this? (num of rel_res) (with this you can compute R@i for any i<=N)
 
+      pos_num = np.nan
+      loc_num = np.nan
+      gt_num  = np.nan
       if self.args.eval_obj:
         pos_num = 0.0
         loc_num = 0.0
@@ -220,26 +221,13 @@ class VRDEvaluator():
 
         (gt_obj_classes, gt_obj_boxes) = gt_obj
         (det_obj_classes, det_obj_boxes, det_obj_confs) = det_obj
-        # TODO: remove this to allow batching
-        gt_obj_boxes  = gt_obj_boxes[0].data.cpu().numpy().astype(np.float32)
-        gt_obj_classes = gt_obj_classes[0].data.cpu().numpy().astype(np.float32)
 
         net_input = lib.datalayers.net_input_to(net_input, utils.device)
-        obj_score, rel_score = vrd_model(*net_input) # img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
+        obj_score, rel_score = vrd_model(*net_input)
 
         # TODO: remove and fix everyhing else to allow batching
         # obj_score = obj_score[0]
         #rel_score = rel_score[0]
-
-        _, obj_pred = obj_score[:, 1::].data.topk(1, 1, True, True)
-
-        # TODO: use this (what for? Just print, maybe) (it's dim=2 maybe?)
-        obj_score = F.softmax(obj_score, dim=1)[:, 1::].data.cpu().numpy()
-
-        rel_prob = rel_score.data.cpu().numpy()
-        gt_soP_prior = gt_soP_prior.data.cpu().numpy()
-        rel_prob += np.log(0.5*(gt_soP_prior+1.0 / self.any_datalayer.n_pred))
-
 
         img_blob, obj_classes, obj_boxes, u_boxes, idx_s, idx_o, spatial_features = net_input
 
@@ -248,26 +236,38 @@ class VRDEvaluator():
         # print("det_obj_boxes.shape: \t", det_obj_boxes.shape)
         # print("obj_pred.shape: \t", obj_pred.shape)
         # print()
-        # TODO: remove this to allow batching
-        idx_s = deepcopy(idx_s[0])
-        idx_o = deepcopy(idx_o[0])
-        det_obj_boxes = deepcopy(det_obj_boxes[0])
+
+        # TODO: remove these to allow batching
+        # TODO: maybe deepcopy is needed here?
+        idx_s           = idx_s[0]
+        idx_o           = idx_o[0]
+        gt_obj_boxes    = gt_obj_boxes[0]
+        gt_obj_classes  = gt_obj_classes[0]
+        det_obj_confs   = det_obj_confs[0]
+        det_obj_boxes   = det_obj_boxes[0]
+        det_obj_classes = det_obj_classes[0]
+        rel_score       = rel_score[0]
+
+        gt_obj_boxes   = gt_obj_boxes.data.cpu().numpy().astype(np.float32)
+        gt_obj_classes = gt_obj_classes.data.cpu().numpy().astype(np.float32)
+
+        rel_prob     = rel_score.data.cpu().numpy()
+        # gt_soP_prior = gt_soP_prior.data.cpu().numpy() TODO remove? or try doing it on the GPU
+        rel_prob += np.log(0.5*(gt_soP_prior+1.0 / self.any_datalayer.n_pred))
 
         if self.args.eval_obj:
+          _, obj_pred = obj_score[:, 1::].data.topk(1, 1, True, True)
+          # TODO: use this (what for? Maybe just print) (it's dim=2 maybe?)
+          # obj_score = F.softmax(obj_score, dim=1)[:, 1::].data.cpu().numpy()
           pos_num_img, loc_num_img = eval_obj_img(gt_obj_boxes, gt_obj_classes, det_obj_boxes, obj_pred.cpu().numpy(), gt_thr=0.5)
           pos_num += pos_num_img
           loc_num += loc_num_img
           gt_num  += gt_obj_boxes.shape[0]
 
-        # TODO: remove this to allow batching
-        det_obj_confs   = deepcopy(det_obj_confs[0])
-        rel_prob = deepcopy(rel_prob[0])
-        det_obj_classes = deepcopy(det_obj_classes[0])
-
-        tuple_confs_im = []
-        rlp_labels_im  = np.zeros((rel_prob.shape[0]*rel_prob.shape[1], 3), dtype = np.float)
-        sub_bboxes_im  = np.zeros((rel_prob.shape[0]*rel_prob.shape[1], 4), dtype = np.float)
-        obj_bboxes_im  = np.zeros((rel_prob.shape[0]*rel_prob.shape[1], 4), dtype = np.float)
+        tuple_confs_im = np.zeros((rel_prob.shape[0]*rel_prob.shape[1],  ), dtype = np.float) # Confidence
+        rlp_labels_im  = np.zeros((rel_prob.shape[0]*rel_prob.shape[1], 3), dtype = np.float) # Rel triples
+        sub_bboxes_im  = np.zeros((rel_prob.shape[0]*rel_prob.shape[1], 4), dtype = np.float) # Subj bboxes
+        obj_bboxes_im  = np.zeros((rel_prob.shape[0]*rel_prob.shape[1], 4), dtype = np.float) # Obj bboxes
         n_idx = 0
 
         # print("det_res['confs'].shape: ", det_obj_confs.shape)
@@ -290,15 +290,13 @@ class VRDEvaluator():
                 conf = np.log(det_obj_confs[idx_s[tuple_idx], 0]) + np.log(det_obj_confs[idx_o[tuple_idx], 0]) + rel_prob[tuple_idx, rel]
             else:
               conf = rel_prob[tuple_idx, rel]
-            tuple_confs_im.append(conf)
-            sub_bboxes_im[n_idx] = det_obj_boxes[idx_s[tuple_idx]]
-            obj_bboxes_im[n_idx] = det_obj_boxes[idx_o[tuple_idx]]
-            rlp_labels_im[n_idx] = [det_obj_classes[idx_s[tuple_idx]], rel, det_obj_classes[idx_o[tuple_idx]]]
+            tuple_confs_im[n_ids] = conf
+            rlp_labels_im[n_idx]  = [det_obj_classes[idx_s[tuple_idx]], rel, det_obj_classes[idx_o[tuple_idx]]]
+            sub_bboxes_im[n_idx]  = det_obj_boxes[idx_s[tuple_idx]]
+            obj_bboxes_im[n_idx]  = det_obj_boxes[idx_o[tuple_idx]]
             n_idx += 1
 
-        # Why is this needed? ...
-        tuple_confs_im = np.array(tuple_confs_im)
-        idx_order = tuple_confs_im.argsort()[::-1][:N] # TODO: remove this :N to allow R@4x
+        idx_order = tuple_confs_im.argsort()[::-1][:N] # TODO: remove this :N to allow R@4x for num rels > 100/4=25
         rlp_labels_im = rlp_labels_im[idx_order,:]
         tuple_confs_im = tuple_confs_im[idx_order]
         sub_bboxes_im  = sub_bboxes_im[idx_order,:]
@@ -312,10 +310,7 @@ class VRDEvaluator():
       recalls = eval_recall_at_N(res, gts = [gt, gt_zs], Ns = Ns, num_imgs = self.num_imgs)
       time2 = time.time()
 
-      if self.args.eval_obj:
-        return recalls, (pos_num, loc_num, gt_num), (time2 - time1)
-      else:
-        return recalls, (np.nan, np.nan, np.nan), (time2 - time1)
+      return recalls, (pos_num, loc_num, gt_num), (time2 - time1)
 
   def _get_gt_subset(self, gt, index):
     return {'tuple_label' : np.array(gt['tuple_label'])[index],
