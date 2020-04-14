@@ -88,37 +88,32 @@ class vrd_trainer():
       utils.patch_key(checkpoint, "optimizer", ["state", "optimizer_state_dict"]) # (patching)
       self.state = checkpoint["state"]
 
-    print("Arguments:\n", yaml.dump(args, default_flow_style=False))
-
-    # TODO: idea, don't use data_args.name but data.name?
-    self.data_args    = munchify(self.args["data"])
-    self.model_args   = munchify(self.args["model"])
-    self.eval_args    = munchify(self.args["eval"])
-    self.training     = munchify(self.args["training"])
+    print("Arguments:\n", yaml.dump(self.args, default_flow_style=False))
+    self.args = munchify(self.args)
 
     # TODO: change split to avoid overfitting on this split! (https://towardsdatascience.com/understanding-pytorch-with-an-example-a-step-by-step-tutorial-81fc5f8c4e8e)
     #  train_dataset, val_dataset = random_split(dataset, [80, 20])
 
     # Data
-    print("Initializing data: ", self.data_args)
+    print("Initializing data: ", self.args.data)
     # TODO? VRDDataLayer has to know what to yield (DRS -> img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
-    self.datalayer = VRDDataLayer(self.data_args, "train", use_preload = self.training.use_preload)
+    self.datalayer = VRDDataLayer(self.args.data, "train", use_preload = self.args.training.use_preload)
     self.dataloader = torch.utils.data.DataLoader(
       dataset = self.datalayer,
-      batch_size = 1, # self.training.batch_size,
+      batch_size = 1, # self.args.training.batch_size,
       # sampler= Random ...,
       num_workers = 4, # num_workers=self.num_workers
       pin_memory = True,
-      shuffle = self.training.use_shuffle,
+      shuffle = self.args.training.use_shuffle,
     )
 
     # Model
-    self.model_args.n_obj  = self.datalayer.n_obj
-    self.model_args.n_pred = self.datalayer.n_pred
-    if self.model_args.use_pred_sem != False:
-      self.model_args.pred_emb = np.array(self.datalayer.dataset.readJSON("predicates-emb.json"))
-    print("Initializing VRD Model: ", self.model_args)
-    self.model = VRDModel(self.model_args).to(utils.device)
+    self.args.model.n_obj  = self.datalayer.n_obj
+    self.args.model.n_pred = self.datalayer.n_pred
+    if self.args.model.use_pred_sem != False:
+      self.args.model.pred_emb = np.array(self.datalayer.dataset.readJSON("predicates-emb.json"))
+    print("Initializing VRD Model: ", self.args.model)
+    self.model = VRDModel(self.args.model).to(utils.device)
     if "model_state_dict" in self.state:
       print("Loading state_dict")
       self.model.load_state_dict(self.state["model_state_dict"])
@@ -139,20 +134,20 @@ class vrd_trainer():
 
     # Evaluation
     print("Initializing evaluator...")
-    self.eval = VRDEvaluator(self.data_args, self.eval_args)
+    self.eval = VRDEvaluator(self.args.data, self.args.eval)
 
     # Training
     print("Initializing training...")
-    self.optimizer = self.model.OriginalAdamOptimizer(**self.training.opt)
+    self.optimizer = self.model.OriginalAdamOptimizer(**self.args.training.opt)
 
-    if self.training.loss == "mlab":
+    if self.args.training.loss == "mlab":
       self.criterion = torch.nn.MultiLabelMarginLoss(reduction="sum").to(device=utils.device)
-    elif self.training.loss == "cross-entropy":
+    elif self.args.training.loss == "cross-entropy":
       self.criterion = torch.nn.CrossEntropyLoss(reduction="sum").to(device=utils.device)
-    elif self.training.loss == "mse":
+    elif self.args.training.loss == "mse":
       self.criterion = torch.nn.MSELoss(reduction="sum").to(device=utils.device)
     else:
-      raise ValueError("Unknown loss specified: '{}'".format(self.training.loss))
+      raise ValueError("Unknown loss specified: '{}'".format(self.args.training.loss))
 
     if "optimizer_state_dict" in self.state:
       print("Loading optimizer state_dict...")
@@ -166,22 +161,22 @@ class vrd_trainer():
 
     # Prepare result table
     res_headers = ["Epoch"]
-    self.eval_args.rec = sorted(self.eval_args.rec, reverse=True)
-    if self.eval_args.test_pre: res_headers += self.gt_headers("Pre", self.eval_args.test_pre)
-    if self.eval_args.test_rel: res_headers += self.gt_headers("Rel", self.eval_args.test_rel)
+    self.args.eval.rec = sorted(self.args.eval.rec, reverse=True)
+    if self.args.eval.test_pre: res_headers += self.gt_headers("Pre", self.args.eval.test_pre)
+    if self.args.eval.test_rel: res_headers += self.gt_headers("Rel", self.args.eval.test_rel)
 
     res = []
 
-    end_epoch = self.state["epoch"] + self.training.num_epochs
+    end_epoch = self.state["epoch"] + self.args.training.num_epochs
     while self.state["epoch"] < end_epoch:
 
       print("Epoch {}/{}".format((self.state["epoch"]+1), end_epoch))
 
 
       # TODO check if this works (Note that you'd have to make it work cross-sessions as well)
-      # if (self.state["epoch"] % (self.training.lr_decay_step + 1)) == 0:
+      # if (self.state["epoch"] % (self.args.training.lr_decay_step + 1)) == 0:
       #   print("*adjust_learning_rate*")
-      #   utils.adjust_learning_rate(self.optimizer, self.training.lr_decay_gamma)
+      #   utils.adjust_learning_rate(self.optimizer, self.args.training.lr_decay_gamma)
       # TODO do it with the scheduler, see if it's the same: https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
       # exp_lr_scheduler = lr_scheduler.StepLR(self.optimizer, step_size=5, gamma=0.1)
 
@@ -193,13 +188,13 @@ class vrd_trainer():
           self.optimizer.param_groups[i]["lr"] /= 10
 
       # Test results
-      save_checkpoint = self.state["epoch"] != 0 and utils.smart_frequency_check(self.state["epoch"], self.training.num_epochs, self.training.checkpoint_freq)
-      if (save_checkpoint or self.state["epoch"] % 2) and (self.training.test_first or self.state["epoch"] != 0):
+      save_checkpoint = self.state["epoch"] != 0 and utils.smart_frequency_check(self.state["epoch"], self.args.training.num_epochs, self.args.training.checkpoint_freq)
+      if (save_checkpoint or self.state["epoch"] % 2) and (self.args.training.test_first or self.state["epoch"] != 0):
         res_row = [self.state["epoch"]]
-        if self.eval_args.test_pre:
+        if self.args.eval.test_pre:
           recalls, dtime = self.test_pre()
           res_row += recalls
-        if self.eval_args.test_rel:
+        if self.args.eval.test_rel:
           recalls, dtime = self.test_rel()
           res_row += recalls
         res.append(res_row)
@@ -220,7 +215,7 @@ class vrd_trainer():
 
         utils.save_checkpoint({
           "session_name"  : self.session_name,
-          "args"          : self.args,
+          "args"          : unmunchify(self.args),
           "state"         : self.state,
           "result"        : dict(zip(res_headers, res_row)),
         }, osp.join(save_dir, "checkpoint_epoch_{}.pth.tar".format(self.state["epoch"])))
@@ -260,11 +255,11 @@ class vrd_trainer():
 
       # DSR:
       # TODO: fix this weird-shaped mlab_target in datalayers and remove this view thingy
-      if self.training.loss == "mlab":
+      if self.args.training.loss == "mlab":
         _, rel_scores = model_output
         loss = self.criterion((gt_soP_prior + rel_scores).view(batch_size, -1), mlab_target)
         # loss = self.criterion((rel_scores).view(batch_size, -1), mlab_target)
-      elif self.training.loss == "mse":
+      elif self.args.training.loss == "mse":
         _, pred_sem = model_output
         # TODO use the weighted embeddings of gt_soP_prior ?
         loss = self.criterion(pred_sem, gt_pred_sem)
@@ -275,7 +270,7 @@ class vrd_trainer():
       # Track loss
       losses.update(loss.item())
 
-      if utils.smart_frequency_check(i_iter, n_iter, self.training.print_freq):
+      if utils.smart_frequency_check(i_iter, n_iter, self.args.training.print_freq):
           print("\t{:4d}/{:<4d}: LOSS: {: 6.3f}\r".format(i_iter, n_iter, losses.avg(0)), end="")
           losses.reset(0)
 
@@ -291,14 +286,14 @@ class vrd_trainer():
     """
 
   def test_pre(self):
-    recalls, dtime = self.eval.test_pre(self.model, self.eval_args.rec)
+    recalls, dtime = self.eval.test_pre(self.model, self.args.eval.rec)
     print("PRED TEST:")
     print(self.get_format_str().format(*recalls))
     print("TEST Time: {}".format(utils.time_diff_str(dtime)))
     return recalls, dtime
 
   def test_rel(self):
-    recalls, (pos_num, loc_num, gt_num), dtime = self.eval.test_rel(self.model, self.eval_args.rec)
+    recalls, (pos_num, loc_num, gt_num), dtime = self.eval.test_rel(self.model, self.args.eval.rec)
     print("REL TEST:")
     print(self.get_format_str().format(*recalls))
     # print("OBJ TEST: POS: {: 6.3f}, LOC: {: 6.3f}, GT: {: 6.3f}, Precision: {: 6.3f}, Recall: {: 6.3f}".format(pos_num, loc_num, gt_num, np.float64(pos_num)/(pos_num+loc_num), np.float64(pos_num)/gt_num))
@@ -316,7 +311,7 @@ class vrd_trainer():
     elif test_type != True: fst_col_prefix = "{} {} ".format(prefix, test_type)
     else:                   fst_col_prefix = "{} ".format(prefix)
     headers = []
-    for i,x in enumerate(self.eval_args.rec):
+    for i,x in enumerate(self.args.eval.rec):
       if i == 0: name = fst_col_prefix
       else:      name = ""
       name += "R@" + metric_name(x)
