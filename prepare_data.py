@@ -6,7 +6,8 @@ from collections import defaultdict
 import numpy as np
 import scipy.io as sio
 
-from gensim.models import KeyedVectors
+# from gensim.models import KeyedVectors
+from gensim.models import Word2Vec
 
 import json
 import pickle
@@ -582,7 +583,8 @@ if __name__ == '__main__':
 
     w2v_model = None
     if generate_embeddings:
-      w2v_model = KeyedVectors.load_word2vec_format(osp.join(globals.data_dir, globals.w2v_model_path), binary=True)
+        # w2v_model = KeyedVectors.load_word2vec_format(osp.join(globals.data_dir, globals.w2v_model_path), binary=True)
+        w2v_model = Word2Vec.load(globals.w2v_model_path)
 
     print("Preparing data for VRD!")
     data_preparer_vrd = VRDPrep(multi_label=multi_label, generate_emb = w2v_model)
