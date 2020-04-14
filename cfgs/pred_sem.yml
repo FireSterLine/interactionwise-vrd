@@ -20,9 +20,8 @@ eval:
   test_rel: False
 
 # Training parameters
-training:
-  num_epochs: 6
-  checkpoint_freq: 0
-  loss: mlab
-  # loss: mse
-  use_preload: False
+num_epochs: 6
+checkpoint_freq: 0
+loss: mlab
+# loss: mse
+use_preload: False
