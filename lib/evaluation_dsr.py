@@ -108,6 +108,7 @@ def eval_recall_at_N(res, gts, Ns = [100, 50, 4.], num_imgs = None, use_rel = Tr
 
   Ns = sorted(Ns, reverse=True)
   max_N = Ns[0]
+  there_are_float_Ns = len([1 for N in Ns if isinstance(N, float)]) > 0
 
   base_pred = {}
   base_pred["tuple_label"] = copy.deepcopy(res["rlp_labels_ours"])
@@ -117,19 +118,21 @@ def eval_recall_at_N(res, gts, Ns = [100, 50, 4.], num_imgs = None, use_rel = Tr
 
   # Sort by confidence
   for i,(tuple_labels, tuple_confs, sub_bboxes, obj_bboxes) in enumerate(zip(base_pred["tuple_label"], base_pred["tuple_confs"], base_pred["sub_bboxes"], base_pred["obj_bboxes"])):
+    if i > test_set_size: break
     if(tuple_confs is None): continue
     tuple_confs = np.array(tuple_confs)
     if(tuple_confs.shape[0] == 0): continue
-    idx_order = tuple_confs.argsort()[::-1] # [:max_N]
+    if not there_are_float_Ns:
+      idx_order = tuple_confs.argsort()[::-1][:max_N]
+    else:
+      idx_order = tuple_confs.argsort()[::-1]
     base_pred["tuple_label"][i]  = tuple_labels[idx_order,:]
     base_pred["tuple_confs"][i]  = tuple_confs[idx_order]
     base_pred["sub_bboxes"][i]   = sub_bboxes[idx_order,:]
     base_pred["obj_bboxes"][i]   = obj_bboxes[idx_order,:]
+
     if len(idx_order) < max_N:
       raise ValueError("Can't compute R@{}: input is malformed (idx_order.shape: {}, pred[\"tuple_confs\"][{}].shape: {}".format(max_N, idx_order.shape, ii, base_pred["tuple_confs"][ii].shape))
-
-    # if idx_order.shape[0] != max_N:
-    #   raise ValueError("Can't compute R@{}: input is malformed (idx_order.shape: {}, pred[\"tuple_confs\"][{}].shape".format(max_N, idx_order.shape, pred["tuple_confs"][ii].shape))
 
   def get_recall(pred, this_gt):
     # Evaluate each image
@@ -142,25 +145,35 @@ def eval_recall_at_N(res, gts, Ns = [100, 50, 4.], num_imgs = None, use_rel = Tr
     return (np.float64(tp_num)/num_pos_tuple)*100
 
   recalls = []
-  # for gt in gts:
-  #   recalls.append(get_recall(pred, gt))
 
-  # if len(Ns) > 0:
-  for N in Ns: # Ns[1:]:
-    pred = copy.deepcopy(base_pred)
-    x = N
+  for N in Ns:
+    if there_are_float_Ns: # float_Ns break the "pyramidality" of R@x and R@y for x > y
+      pred = copy.deepcopy(base_pred)
+    else:
+      pred = base_pred
+    
+    if not isinstance(N, float):
+      for i,(tuple_labels, tuple_confs, sub_bboxes, obj_bboxes) in enumerate(zip(pred["tuple_label"], pred["tuple_confs"], pred["sub_bboxes"], pred["obj_bboxes"])):
+        if i > test_set_size: break
+        if(tuple_confs is None): continue
+        pred["tuple_label"][i]  = pred["tuple_label"][i][:N]
+        pred["tuple_confs"][i]  = pred["tuple_confs"][i][:N]
+        pred["sub_bboxes"][i]   = pred["sub_bboxes"][i][:N]
+        pred["obj_bboxes"][i]   = pred["obj_bboxes"][i][:N]
     for gt in gts:
       if gt is None:
         recalls.append(None)
         continue
-      for i,(tuple_labels, tuple_confs, sub_bboxes, obj_bboxes) in enumerate(zip(pred["tuple_label"], pred["tuple_confs"], pred["sub_bboxes"], pred["obj_bboxes"])):
-        if(tuple_confs is None): continue
-        if isinstance(N, float): x = int(np.ceil(N * len(gt["tuple_label"][i])))
-        pred["tuple_label"][i]  = pred["tuple_label"][i][:x]
-        pred["tuple_confs"][i]  = pred["tuple_confs"][i][:x]
-        pred["sub_bboxes"][i]   = pred["sub_bboxes"][i][:x]
-        pred["obj_bboxes"][i]   = pred["obj_bboxes"][i][:x]
-        # print(x)
+      if isinstance(N, float): # TODO: validate
+        for i,(tuple_labels, tuple_confs, sub_bboxes, obj_bboxes) in enumerate(zip(pred["tuple_label"], pred["tuple_confs"], pred["sub_bboxes"], pred["obj_bboxes"])):
+          if i > test_set_size: break
+          if(tuple_confs is None): continue
+          x = int(np.ceil(N * len(gt["tuple_label"][i])))
+          pred["tuple_label"][i]  = pred["tuple_label"][i][:x]
+          pred["tuple_confs"][i]  = pred["tuple_confs"][i][:x]
+          pred["sub_bboxes"][i]   = pred["sub_bboxes"][i][:x]
+          pred["obj_bboxes"][i]   = pred["obj_bboxes"][i][:x]
+          # print(x)
       recalls.append(get_recall(pred, gt))
 
   return tuple(recalls)
