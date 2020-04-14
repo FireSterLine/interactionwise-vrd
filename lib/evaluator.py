@@ -57,7 +57,7 @@ class VRDEvaluator():
     if True:
       # Load ground truths
       try:
-        self.gt    = self.any_datalayer.dataset.readPKL(osp.join("eval", "gt.pkl"))
+        self.gt = self.any_datalayer.dataset.readPKL(osp.join("eval", "gt.pkl"))
         #print(self.gt.keys())
         #print(type(self.gt))
         if self.args.justafew != False and isinstance(self.args.justafew, int):

@@ -97,22 +97,12 @@ class vrd_trainer():
     # Data
     print("Initializing data: ", self.args.data)
     self.dataset = VRDDataset(**self.args.data)
-    # TODO? VRDDataLayer has to know what to yield (DRS -> img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
-    self.datalayer = VRDDataLayer(self.dataset, "train", use_preload = self.args.use_preload, cols = ["dsr_spat_vec"])
-    self.dataloader = torch.utils.data.DataLoader(
-      dataset = self.datalayer,
-      batch_size = 1, # self.args.batch_size,
-      # sampler= Random ...,
-      num_workers = 4, # num_workers=self.num_workers
-      pin_memory = True,
-      shuffle = self.args.use_shuffle,
-    )
 
     # Model
-    self.args.model.n_obj  = self.datalayer.n_obj
-    self.args.model.n_pred = self.datalayer.n_pred
+    self.args.model.n_obj  = self.dataset.n_obj
+    self.args.model.n_pred = self.dataset.n_pred
     if self.args.model.use_pred_sem != False:
-      self.args.model.pred_emb = np.array(self.datalayer.dataset.readJSON("predicates-emb.json"))
+      self.args.model.pred_emb = np.array(self.dataset.readJSON("predicates-emb.json"))
     print("Initializing VRD Model: ", self.args.model)
     self.model = VRDModel(self.args.model).to(utils.device)
     if "model_state_dict" in self.state:
@@ -126,12 +116,24 @@ class vrd_trainer():
       self.model.load_pretrained_conv(osp.join(globals.data_dir, "VGG_imagenet.npy"), fix_layers=True)
       # Load existing embeddings
       try:
-        # obj_emb = torch.from_numpy(self.datalayer.dataset.readPKL("params_emb.pkl"))
-        obj_emb = torch.from_numpy(np.array(self.datalayer.dataset.readJSON("objects-emb.json")))
+        # obj_emb = torch.from_numpy(self.dataset.readPKL("params_emb.pkl"))
+        obj_emb = torch.from_numpy(np.array(self.dataset.readJSON("objects-emb.json")))
       except FileNotFoundError:
         print("Warning: Initialization weights for emb.weight layer not found! Weights are initialized randomly")
         # set_trainability(self.model.emb, requires_grad=True)
       self.model.state_dict()["emb.weight"].copy_(obj_emb)
+
+    # DataLoader
+    # TODO? VRDDataLayer has to know what to yield (DRS -> img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
+    self.datalayer = VRDDataLayer(self.dataset, "train", use_preload = self.args.use_preload, cols = ["dsr_spat_vec"])
+    self.dataloader = torch.utils.data.DataLoader(
+      dataset = self.datalayer,
+      batch_size = 1, # self.args.batch_size,
+      # sampler= Random ...,
+      num_workers = 4, # num_workers=self.num_workers
+      pin_memory = True,
+      shuffle = self.args.use_shuffle,
+    )
 
     # Evaluation
     print("Initializing evaluator...")
@@ -252,7 +254,7 @@ class vrd_trainer():
       #  After all, there may not be a relationship between two objects...
       #  And this would avoid dirtying up the predictions?
       # TODO: change some constant to the gt_soP_prior before factoring it into the loss
-      gt_soP_prior = -0.5 * ( gt_soP_prior + (1.0 / self.datalayer.n_pred))
+      gt_soP_prior = -0.5 * ( gt_soP_prior + (1.0 / self.dataset.n_pred))
 
       # DSR:
       # TODO: fix this weird-shaped mlab_target in datalayer and remove this view thingy
