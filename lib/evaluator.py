@@ -31,22 +31,12 @@ class VRDEvaluator():
     # Setup PREDICATE PREDICTION Data Layer
     if self.args.test_pre:
       self.datalayer_pre  = VRDDataLayer(data_args, "test", use_preload = self.args.use_preload)
-      self.dataloader_pre = torch.utils.data.DataLoader(
-        dataset = self.datalayer_pre,
-        batch_size = 1, # 256,
-        shuffle = False,
-        pin_memory = True,
-      )
+      self.dataloader_pre = torch.utils.data.DataLoader(dataset = self.datalayer_pre, **kwargs_dataloader)
 
     # Setup RELATIONSHIP DETECTION Data Layer
     if self.args.test_rel:
       self.datalayer_rel  = VRDDataLayer(data_args, "test", use_preload = self.args.use_preload, use_proposals = True)
-      self.dataloader_rel = torch.utils.data.DataLoader(
-        dataset = self.datalayer_rel,
-        batch_size = 1, # 256,
-        shuffle = False,
-        pin_memory = True,
-      )
+      self.dataloader_rel = torch.utils.data.DataLoader(dataset = self.datalayer_rel, **kwargs_dataloader)
 
     #self.datalayer  = VRDDataLayer(data_args, "test", use_preload = self.args.use_preload, use_proposals = self.args.test_rel)
     #self.dataloader = torch.utils.data.DataLoader(
@@ -104,9 +94,15 @@ class VRDEvaluator():
 
       gt         = self.gt
       gt_zs      = self.gt_zs
-      index = range(len(self.dataloader_pre))
-      if isinstance(self.args.test_pre, float):
+      dataloader_pre = self.dataloader_pre
+      if isinstance(self.args.test_pre, float): # TODO: validate
+        index = range(len(self.dataloader_pre))
         index = sorted(sample(index, max(int(self.args.test_pre*len(index)),1)))
+        dataloader_pre = torch.utils.data.DataLoader(
+          dataset = self.datalayer_pre,
+          sampler = torch.utils.data.Subset(self.datalayer_pre, index),
+          **kwargs_dataloader
+        )
         gt    = self._get_gt_subset(gt, index)
         gt_zs = self._get_gt_subset(gt_zs, index)
 
@@ -119,15 +115,14 @@ class VRDEvaluator():
 
       N = 100 # What's this? (num of rel_res) (with this you can compute R@i for any i<=N)
 
-      for (i_iter,(net_input, gt_obj, _, _)) in enumerate(self.dataloader_pre):
+      for (i_iter,(net_input, gt_obj, _, _)) in enumerate(dataloader_pre):
 
-        if i_iter not in index: continue
         if(isinstance(net_input, torch.Tensor) and net_input.size() == (1,)): # Check this one TODO
           self._append_res(res, None)
           continue
 
-        if utils.smart_frequency_check(i_iter, len(self.dataloader_pre), 0.1):
-          print("{}/{}\r".format(i_iter, len(self.dataloader_pre)), end="")
+        if utils.smart_frequency_check(i_iter, len(dataloader_pre), 0.1):
+          print("{}/{}\r".format(i_iter, len(dataloader_pre)), end="")
 
         (gt_obj_classes, gt_obj_boxes) = gt_obj
         net_input = lib.datalayers.net_input_to(net_input, utils.device)
@@ -193,9 +188,15 @@ class VRDEvaluator():
 
       gt         = self.gt
       gt_zs      = self.gt_zs
-      index = range(len(self.dataloader_rel))
-      if isinstance(self.args.test_rel, float):
+      dataloader_rel = self.dataloader_rel
+      if isinstance(self.args.test_rel, float): # TODO: validate
+        index = range(len(self.dataloader_rel))
         index = sorted(sample(index, max(int(self.args.test_rel*len(index)),1)))
+        dataloader_rel = torch.utils.data.DataLoader(
+          dataset = self.datalayer_rel,
+          sampler = torch.utils.data.Subset(self.datalayer_rel, index),
+          **kwargs_dataloader
+        )
         gt    = self._get_gt_subset(gt, index)
         gt_zs = self._get_gt_subset(gt_zs, index)
 
@@ -207,9 +208,8 @@ class VRDEvaluator():
         "obj_bboxes_ours" : [],
       }
 
-      n_iter = len(self.dataloader_rel)
-      for i_iter,test_data in enumerate(self.dataloader_rel):
-        if i_iter not in index: continue
+      n_iter = len(dataloader_rel)
+      for i_iter,test_data in enumerate(dataloader_rel):
 
         net_input, gt_obj, det_obj, gt_soP_prior  = test_data
         if(isinstance(net_input, torch.Tensor) and net_input.size() == (1,)): # Check this one TODO
@@ -304,8 +304,8 @@ class VRDEvaluator():
 
         self._append_res(res, (tuple_confs_im, rlp_labels_im, sub_bboxes_im, obj_bboxes_im))
 
-      # if len(len(self.dataloader)) != len(res["obj_bboxes_ours"]):
-      #   warnings.warn("Warning! Rel test results and gt do not have the same length: rel test performance might be off! {} != {}".format(len(len(self.dataloader)), len(res["obj_bboxes_ours"])), UserWarning)
+      # if len(len(dataloader_rel)) != len(res["obj_bboxes_ours"]):
+      #   warnings.warn("Warning! Rel test results and gt do not have the same length: rel test performance might be off! {} != {}".format(len(len(dataloader_rel)), len(res["obj_bboxes_ours"])), UserWarning)
 
       recalls = eval_recall_at_N(res, gts = [gt, gt_zs], Ns = Ns, num_imgs = self.num_imgs)
       time2 = time.time()
