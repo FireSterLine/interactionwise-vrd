@@ -6,7 +6,7 @@ import time
 
 import pickle
 import yaml
-from munch import munchify
+from munch import munchify, unmunchify
 from tabulate import tabulate
 import warnings
 
@@ -25,9 +25,9 @@ from lib.datalayer import VRDDataLayer, net_input_to
 from lib.evaluator import VRDEvaluator
 
 # Test if code compiles
-TEST_DEBUGGING = False # False # True # False # False # True # False # True # True # False
+TEST_DEBUGGING = False # False # True # False # True # True # False
 # Test if a newly-introduced change affects the validity of the code
-TEST_VALIDITY = False # True
+TEST_VALIDITY = True
 # Try overfitting to a single element
 TEST_OVERFIT = False #True # False # True
 
@@ -340,7 +340,9 @@ if __name__ == "__main__":
     torch.backends.cudnn.benchmark = False
     #trainer = vrd_trainer("original-checkpoint", {"num_epochs" : 1, "test_first" : True, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd/dsr"}}, profile = ["cfgs/pred_sem.yml"], checkpoint="epoch_4_checkpoint.pth.tar")
     #trainer.train()
-    trainer = vrd_trainer("original", {"num_epochs" : 5, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd/dsr"}})
+    trainer = vrd_trainer("original", {"num_epochs" : 5, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd"}})
+    trainer.train()
+    trainer = vrd_trainer("original", {"num_epochs" : 5, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd/dsr"}}, checkpoint="epoch_4_checkpoint.pth.tar")
     trainer.train()
 
   # TEST_OVERFIT: Try overfitting the network to a single batch

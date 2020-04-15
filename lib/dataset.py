@@ -39,7 +39,7 @@ class VRDDataset():
     if self.justafew != False:
       print("Warning: Using less data (because of 'justafew' debugging)")
 
-    if self.img_subset == "" and self.name != "vg":
+    if self.img_subset != "" and self.name != "vg":
       raise ValueError("Couldn't initialize img_subset '{}' for dataset '{}'".format(self.img_subset, self.name))
 
     self.img_dir      = None

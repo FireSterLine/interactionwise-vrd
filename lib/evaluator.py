@@ -27,16 +27,17 @@ class VRDEvaluator():
     self.args.test_pre      = self.args.get("test_pre", True)
     self.args.test_rel      = self.args.get("test_rel", True)
     self.args.use_obj_prior = self.args.get("use_obj_prior", True)
+    self.kwargs_dataloader = { "batch_size" : 1, "shuffle" : False, "pin_memory" : True }
 
     # Setup PREDICATE PREDICTION Data Layer
     if self.args.test_pre:
       self.datalayer_pre  = VRDDataLayer(self.dataset, "test", use_preload = self.args.use_preload, cols = self.cols)
-      self.dataloader_pre = torch.utils.data.DataLoader(dataset = self.datalayer_pre, **kwargs_dataloader)
+      self.dataloader_pre = torch.utils.data.DataLoader(dataset = self.datalayer_pre, **self.kwargs_dataloader)
 
     # Setup RELATIONSHIP DETECTION Data Layer
     if self.args.test_rel:
       self.datalayer_rel  = VRDDataLayer(self.dataset, "test", use_preload = self.args.use_preload, use_proposals = True, cols = self.cols)
-      self.dataloader_rel = torch.utils.data.DataLoader(dataset = self.datalayer_rel, **kwargs_dataloader)
+      self.dataloader_rel = torch.utils.data.DataLoader(dataset = self.datalayer_rel, **self.kwargs_dataloader)
 
     #self.datalayer  = VRDDataLayer(self.dataset, "test", use_preload = self.args.use_preload, use_proposals = self.args.test_rel)
     #self.dataloader = torch.utils.data.DataLoader(
@@ -101,7 +102,7 @@ class VRDEvaluator():
         dataloader_pre = torch.utils.data.DataLoader(
           dataset = self.datalayer_pre,
           sampler = torch.utils.data.Subset(self.datalayer_pre, index),
-          **kwargs_dataloader
+          **self.kwargs_dataloader
         )
         gt    = self._get_gt_subset(gt, index)
         gt_zs = self._get_gt_subset(gt_zs, index)
@@ -195,7 +196,7 @@ class VRDEvaluator():
         dataloader_rel = torch.utils.data.DataLoader(
           dataset = self.datalayer_rel,
           sampler = torch.utils.data.Subset(self.datalayer_rel, index),
-          **kwargs_dataloader
+          **self.kwargs_dataloader
         )
         gt    = self._get_gt_subset(gt, index)
         gt_zs = self._get_gt_subset(gt_zs, index)
@@ -247,12 +248,13 @@ class VRDEvaluator():
         det_obj_boxes   = det_obj_boxes[0]
         det_obj_classes = det_obj_classes[0]
         rel_score       = rel_score[0]
+        gt_soP_prior    = gt_soP_prior[0]
 
         gt_obj_boxes   = gt_obj_boxes.data.cpu().numpy().astype(np.float32)
         gt_obj_classes = gt_obj_classes.data.cpu().numpy().astype(np.float32)
 
         rel_prob     = rel_score.data.cpu().numpy()
-        # gt_soP_prior = gt_soP_prior.data.cpu().numpy() TODO remove? or try doing it on the GPU
+        gt_soP_prior = gt_soP_prior.data.cpu().numpy() # TODO remove? or try doing it on the GPU
         rel_prob += np.log(0.5*(gt_soP_prior+1.0 / self.any_datalayer.n_pred))
 
         if self.args.eval_obj:
@@ -290,7 +292,7 @@ class VRDEvaluator():
                 conf = np.log(det_obj_confs[idx_s[tuple_idx], 0]) + np.log(det_obj_confs[idx_o[tuple_idx], 0]) + rel_prob[tuple_idx, rel]
             else:
               conf = rel_prob[tuple_idx, rel]
-            tuple_confs_im[n_ids] = conf
+            tuple_confs_im[n_idx] = conf
             rlp_labels_im[n_idx]  = [det_obj_classes[idx_s[tuple_idx]], rel, det_obj_classes[idx_o[tuple_idx]]]
             sub_bboxes_im[n_idx]  = det_obj_boxes[idx_s[tuple_idx]]
             obj_bboxes_im[n_idx]  = det_obj_boxes[idx_o[tuple_idx]]
