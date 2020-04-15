@@ -62,8 +62,8 @@ class SemSim(nn.Module):
 
     # Force the values individually to be in [-1,+1].
     # This is not mandatory but it seems to help
-    x = nn.tanh(x)
-    # TODO: try again with x = (nn.sig(x)*2)-1 instead
+    x = self.tanh(x)
+    # TODO: try again with x = (self.sig(x)*2)-1 instead
 
     # First result: SIGMOID is better than none, in every case.
 
