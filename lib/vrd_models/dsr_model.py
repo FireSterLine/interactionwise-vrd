@@ -172,7 +172,7 @@ class DSRModel(nn.Module):
         )
         self.fc_rel    = FC(self.args.n_pred, self.args.n_pred, relu = False, bias = ((mode//4) % 2))
         with torch.no_grad():
-          self.fc_rel.weight.data = pred2pred_sim
+          self.fc_rel.fc.weight.data.copy_(pred2pred_sim)
         if ((mode//8) % 2):
           self.fc_rel_not_trainable = True # TODO fix
           set_trainability(self.fc_rel, requires_grad = False)

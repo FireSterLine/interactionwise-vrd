@@ -187,7 +187,7 @@ def smart_frequency_check(i_iter, num_iters, smart_frequency, last = False):
     abs_freq = max(int(num_iters*smart_frequency),1)
   mod = 0
   if last: mod = abs_freq-1
-  return (i_iter % abs_freq) == mod
+  return (i_iter % abs_freq) == mod or (last and (num_iters-i_iter)<=1)
 
 def time_diff_str(time1, time2 = None):
   if time2 is None:

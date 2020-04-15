@@ -21,9 +21,9 @@ eval:
 
 # Training parameters
 training:
-  num_epochs: 6
+  num_epochs: 4
   checkpoint_freq: 0
   loss: mlab
   # loss: mse
   use_preload: False
-  test_freq: 3
+  test_freq: 2
