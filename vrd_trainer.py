@@ -192,7 +192,8 @@ class vrd_trainer():
 
       # Test results
       save_checkpoint = self.state["epoch"] != 0 and utils.smart_frequency_check(self.state["epoch"], self.args.training.num_epochs, self.args.training.checkpoint_freq)
-      if (save_checkpoint or self.state["epoch"] % 2) and (self.args.training.test_first or self.state["epoch"] != 0):
+      if (True or save_checkpoint or self.state["epoch"] % 2) \
+              and (self.args.training.test_first or self.state["epoch"] != 0):
         res_row = [self.state["epoch"]]
         if self.args.eval.test_pre:
           recalls, dtime = self.test_pre()
@@ -340,9 +341,9 @@ if __name__ == "__main__":
     torch.backends.cudnn.benchmark = False
     #trainer = vrd_trainer("original-checkpoint", {"training" : {"num_epochs" : 1, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd/dsr"}}, profile = ["cfgs/pred_sem.yml"], checkpoint="epoch_4_checkpoint.pth.tar")
     #trainer.train()
-    trainer = vrd_trainer("original", {"training" : {"num_epochs" : 5}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd"}})
+    trainer = vrd_trainer("original", {"training" : {"num_epochs" : 5, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd"}})
     trainer.train()
-    trainer = vrd_trainer("original", {"training" : {"num_epochs" : 5}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd/dsr"}}, checkpoint="epoch_4_checkpoint.pth.tar")
+    trainer = vrd_trainer("original-checkpoint", {"training" : {"num_epochs" : 1, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd"}}, checkpoint="epoch_4_checkpoint.pth.tar")
     trainer.train()
 
   # TEST_OVERFIT: Try overfitting the network to a single batch
