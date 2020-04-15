@@ -125,7 +125,7 @@ class vrd_trainer():
 
     # DataLoader
     # TODO? VRDDataLayer has to know what to yield (DRS -> img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
-    self.datalayer = VRDDataLayer(self.dataset, "train", use_preload = self.args.training.use_preload, cols = self.model.cols)
+    self.datalayer = VRDDataLayer(self.dataset, "train", use_preload = self.args.training.use_preload, cols = self.model.input_cols)
     self.dataloader = torch.utils.data.DataLoader(
       dataset = self.datalayer,
       batch_size = 1, # self.args.training.batch_size,
@@ -137,7 +137,7 @@ class vrd_trainer():
 
     # Evaluation
     print("Initializing evaluator...")
-    self.eval = VRDEvaluator(self.dataset, self.args.eval, cols = self.model.cols)
+    self.eval = VRDEvaluator(self.dataset, self.args.eval, input_cols = self.model.input_cols)
 
     # Training
     print("Initializing training...")
@@ -273,7 +273,7 @@ class vrd_trainer():
       # Track loss
       losses.update(loss.item())
       if utils.smart_frequency_check(i_iter, n_iter, self.args.training.print_freq):
-        print("\t{:4d}/{:<4d}: LOSS: {: 6.3f}".format(i_iter, n_iter, losses.avg(0)), end="")
+        print("\t{:4d}/{:<4d}: LOSS: {: 6.3f}\n".format(i_iter, n_iter, losses.avg(0)), end="")
         losses.reset(0)
 
     self.state["loss"] = losses.avg(1)
