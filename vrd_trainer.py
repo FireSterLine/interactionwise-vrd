@@ -27,7 +27,7 @@ from lib.evaluator import VRDEvaluator
 # Test if code compiles
 TEST_DEBUGGING = False # True # False # True # True # False
 # Test if a newly-introduced change affects the validity of the code
-TEST_VALIDITY = True # True
+TEST_VALIDITY = False #  True # True
 # Try overfitting to a single element
 TEST_OVERFIT = False #True # False # True
 
@@ -101,7 +101,7 @@ class vrd_trainer():
     # Model
     self.args.model.n_obj  = self.dataset.n_obj
     self.args.model.n_pred = self.dataset.n_pred
-    if not self.args.model.use_pred_sem:
+    if self.args.model.use_pred_sem:
       self.args.model.pred_emb = np.array(self.dataset.readJSON("predicates-emb.json"))
     print("Initializing VRD Model: ", self.args.model)
     self.model = VRDModel(self.args.model).to(utils.device)
@@ -197,8 +197,8 @@ class vrd_trainer():
       self.__train_epoch()
 
       # Save test results, save checkpoint
-      is_last_epoch = (self.state["epoch"]-end_epoch) <= 1)
-      do_save_checkpoint = (is_last_epoch or utils.smart_frequency_check(self.state["epoch"], end_epoch, self.args.training.checkpoint_freq, last = True)
+      is_last_epoch = ((self.state["epoch"]-end_epoch) <= 1)
+      do_save_checkpoint = (is_last_epoch and float(self.args.training.checkpoint_freq) != 0.0) or utils.smart_frequency_check(self.state["epoch"], end_epoch, self.args.training.checkpoint_freq, last = True)
       do_test = is_last_epoch or do_save_checkpoint or utils.smart_frequency_check(self.state["epoch"], end_epoch, self.args.training.test_freq, last = True)
 
       if do_test:
@@ -218,7 +218,7 @@ class vrd_trainer():
           "session_name"  : self.session_name,
           "args"          : unmunchify(self.args),
           "state"         : self.state,
-          "result"        : dict(zip(res_headers, res_row)),
+          "result"        : dict(zip(res_headers, res[-1])),
         }, osp.join(save_dir, "checkpoint_epoch_{}.pth.tar".format(self.state["epoch"])))
 
       self.state["epoch"] += 1
@@ -249,7 +249,7 @@ class vrd_trainer():
     for i_iter,(net_input, gt_soP_prior, gt_pred_sem, mlab_target) in enumerate(self.dataloader):
 
       if utils.smart_frequency_check(i_iter, n_iter, self.args.training.print_freq):
-        print("\t{:4d}/{:<4d}:".format(i_iter, n_iter), end="")
+        print("\t{:4d}/{:<4d}: ".format(i_iter, n_iter), end="")
 
       net_input    = net_input_to(net_input, utils.device)
       gt_soP_prior = gt_soP_prior.to(utils.device)
@@ -342,7 +342,9 @@ if __name__ == "__main__":
     print("########################### TEST_DEBUGGING ###########################")
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
-    trainer = vrd_trainer("test", {"training" : {"num_epochs" : 1, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"justafew" : True}}, checkpoint="epoch_4_checkpoint.pth.tar")
+    trainer = vrd_trainer("test", {"training" : {"num_epochs" : 1, "test_first" : True},
+        "eval" : {"test_pre" : test_type,  "test_rel" : test_type},
+        "data" : {"justafew" : True}}, checkpoint="epoch_4_checkpoint.pth.tar")
     trainer.train()
 
 
@@ -386,8 +388,9 @@ if __name__ == "__main__":
             test_type = True # 0.5
 
             trainer = vrd_trainer(session_id, {
+                "data" : {"justafew" : True},
                 "model" : {"use_pred_sem" : pred_sem_mode},
-                "eval" : {"eval_obj" : False, "test_pre" : test_type, "test_rel" : test_type},
+                "eval" : {"test_pre" : test_type, "test_rel" : test_type},
                 "opt": {
                   "lr": lr,
                   "weight_decay" : weight_decay,
