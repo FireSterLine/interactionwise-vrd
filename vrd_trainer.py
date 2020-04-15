@@ -381,7 +381,7 @@ if __name__ == "__main__":
 
             trainer = vrd_trainer(session_id, {
                 "model" : {"use_pred_sem" : pred_sem_mode},
-                "eval" : {"eval_obj" : False, "test_rel" : test_type, "test_pre" : test_type},
+                "eval" : {"eval_obj" : False, "test_pre" : test_type, "test_rel" : test_type},
                 "opt": {
                   "lr": lr,
                   "weight_decay" : weight_decay,

@@ -6,7 +6,7 @@ from collections import defaultdict
 import numpy as np
 import scipy.io as sio
 
-# from gensim.models import KeyedVectors
+from gensim.models import KeyedVectors
 from gensim.models import Word2Vec
 from gensim.models.callbacks import CallbackAny2Vec
 from gensim.test.utils import get_tmpfile
