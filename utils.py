@@ -22,8 +22,10 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # Test
 try:
   torch.LongTensor([1]).to(device)
-except RuntimeError:
+except RuntimeError as e:
+  print("The following exception occurred: {}".format(str(e)))
   if torch.cuda.is_available():
+    print("Fallback: cpu will be used")
     device = torch.device("cpu")
     torch.LongTensor([1]).to(device)
 
