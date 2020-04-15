@@ -101,7 +101,7 @@ class vrd_trainer():
     # Model
     self.args.model.n_obj  = self.dataset.n_obj
     self.args.model.n_pred = self.dataset.n_pred
-    if self.args.model.use_pred_sem != False:
+    if not self.args.model.use_pred_sem:
       self.args.model.pred_emb = np.array(self.dataset.readJSON("predicates-emb.json"))
     print("Initializing VRD Model: ", self.args.model)
     self.model = VRDModel(self.args.model).to(utils.device)
@@ -223,7 +223,7 @@ class vrd_trainer():
 
 
   def do_test(self, res, res_headers):
-    res_row = [self.state["epoch"]]
+    res_row = [self.state["epoch"]+1]
     if self.args.eval.test_pre:
       recalls, dtime = self.test_pre()
       res_row += recalls
@@ -371,13 +371,13 @@ if __name__ == "__main__":
   for lr in [0.00001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
     for weight_decay in [0.0005]:
       for lr_rel_fus_ratio in [10, 1]: # 0.1, 1, 10]:
-        for pred_sem_mode in [0,1, 8+0,8+1, 16+0,16+1,16+2, 16+4+0, -1]:
+        for pred_sem_mode in [-1,0,1, 8+0,8+1, 16+0,16+1,16+2, 16+4+0]:
             # session_id = "pred-sem-scan-v6-vg-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode)
             # profile = ["cfgs/vg.yml", "cfgs/pred_sem.yml"]
             pred_sem_mode = pred_sem_mode+1
             session_id = "pred-sem-scan-v6-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode)
             profile = ["cfgs/pred_sem.yml"]
-            test_type = 0.5
+            test_type = True # 0.5
 
             trainer = vrd_trainer(session_id, {
                 "model" : {"use_pred_sem" : pred_sem_mode},
