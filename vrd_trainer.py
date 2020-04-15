@@ -125,14 +125,14 @@ class vrd_trainer():
 
     # DataLoader
     # TODO? VRDDataLayer has to know what to yield (DRS -> img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
-    self.datalayer = VRDDataLayer(self.dataset, "train", use_preload = self.args.use_preload, cols = self.model.cols)
+    self.datalayer = VRDDataLayer(self.dataset, "train", use_preload = self.args.training.use_preload, cols = self.model.cols)
     self.dataloader = torch.utils.data.DataLoader(
       dataset = self.datalayer,
-      batch_size = 1, # self.args.batch_size,
+      batch_size = 1, # self.args.training.batch_size,
       # sampler= Random ...,
       num_workers = 4, # num_workers=self.num_workers
       pin_memory = True,
-      shuffle = self.args.use_shuffle,
+      shuffle = self.args.training.use_shuffle,
     )
 
     # Evaluation
@@ -143,14 +143,14 @@ class vrd_trainer():
     print("Initializing training...")
     self.optimizer = self.model.OriginalAdamOptimizer(**self.args.opt)
 
-    if self.args.loss == "mlab":
+    if self.args.training.loss == "mlab":
       self.criterion = torch.nn.MultiLabelMarginLoss(reduction="sum").to(device=utils.device)
-    elif self.args.loss == "cross-entropy":
+    elif self.args.training.loss == "cross-entropy":
       self.criterion = torch.nn.CrossEntropyLoss(reduction="sum").to(device=utils.device)
-    elif self.args.loss == "mse":
+    elif self.args.training.loss == "mse":
       self.criterion = torch.nn.MSELoss(reduction="sum").to(device=utils.device)
     else:
-      raise ValueError("Unknown loss specified: '{}'".format(self.args.loss))
+      raise ValueError("Unknown loss specified: '{}'".format(self.args.training.loss))
 
     if "optimizer_state_dict" in self.state:
       print("Loading optimizer state_dict...")
@@ -170,16 +170,16 @@ class vrd_trainer():
 
     res = []
 
-    end_epoch = self.state["epoch"] + self.args.num_epochs
+    end_epoch = self.state["epoch"] + self.args.training.num_epochs
     while self.state["epoch"] < end_epoch:
 
       print("Epoch {}/{}".format((self.state["epoch"]+1), end_epoch))
 
 
       # TODO check if this works (Note that you'd have to make it work cross-sessions as well)
-      # if (self.state["epoch"] % (self.args.lr_decay_step + 1)) == 0:
+      # if (self.state["epoch"] % (self.args.training.lr_decay_step + 1)) == 0:
       #   print("*adjust_learning_rate*")
-      #   utils.adjust_learning_rate(self.optimizer, self.args.lr_decay_gamma)
+      #   utils.adjust_learning_rate(self.optimizer, self.args.training.lr_decay_gamma)
       # TODO do it with the scheduler, see if it's the same: https://pytorch.org/docs/stable/optim.html#how-to-adjust-learning-rate
       # exp_lr_scheduler = lr_scheduler.StepLR(self.optimizer, step_size=5, gamma=0.1)
 
@@ -191,8 +191,8 @@ class vrd_trainer():
           self.optimizer.param_groups[i]["lr"] /= 10
 
       # Test results
-      save_checkpoint = self.state["epoch"] != 0 and utils.smart_frequency_check(self.state["epoch"], self.args.num_epochs, self.args.checkpoint_freq)
-      if (save_checkpoint or self.state["epoch"] % 2) and (self.args.test_first or self.state["epoch"] != 0):
+      save_checkpoint = self.state["epoch"] != 0 and utils.smart_frequency_check(self.state["epoch"], self.args.training.num_epochs, self.args.training.checkpoint_freq)
+      if (save_checkpoint or self.state["epoch"] % 2) and (self.args.training.test_first or self.state["epoch"] != 0):
         res_row = [self.state["epoch"]]
         if self.args.eval.test_pre:
           recalls, dtime = self.test_pre()
@@ -258,11 +258,11 @@ class vrd_trainer():
 
       # DSR:
       # TODO: fix this weird-shaped mlab_target in datalayer and remove this view thingy
-      if self.args.loss == "mlab":
+      if self.args.training.loss == "mlab":
         _, rel_scores = model_output
         loss = self.criterion((gt_soP_prior + rel_scores).view(batch_size, -1), mlab_target)
         # loss = self.criterion((rel_scores).view(batch_size, -1), mlab_target)
-      elif self.args.loss == "mse":
+      elif self.args.training.loss == "mse":
         _, pred_sem = model_output
         # TODO use the weighted embeddings of gt_soP_prior ?
         loss = self.criterion(pred_sem, gt_pred_sem)
@@ -272,7 +272,7 @@ class vrd_trainer():
 
       # Track loss
       losses.update(loss.item())
-      if utils.smart_frequency_check(i_iter, n_iter, self.args.print_freq):
+      if utils.smart_frequency_check(i_iter, n_iter, self.args.training.print_freq):
         print("\t{:4d}/{:<4d}: LOSS: {: 6.3f}".format(i_iter, n_iter, losses.avg(0)), end="")
         losses.reset(0)
 
@@ -330,7 +330,7 @@ if __name__ == "__main__":
   if TEST_DEBUGGING:
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
-    trainer = vrd_trainer("test", {"num_epochs" : 1, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"justafew" : True}}, checkpoint="epoch_4_checkpoint.pth.tar")
+    trainer = vrd_trainer("test", {"training" : {"num_epochs" : 1}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"justafew" : True}}, checkpoint="epoch_4_checkpoint.pth.tar")
     trainer.train()
 
 
@@ -338,9 +338,9 @@ if __name__ == "__main__":
   if TEST_VALIDITY:
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
-    #trainer = vrd_trainer("original-checkpoint", {"num_epochs" : 1, "test_first" : True, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd/dsr"}}, profile = ["cfgs/pred_sem.yml"], checkpoint="epoch_4_checkpoint.pth.tar")
+    #trainer = vrd_trainer("original-checkpoint", {"training" : {"num_epochs" : 1, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd/dsr"}}, profile = ["cfgs/pred_sem.yml"], checkpoint="epoch_4_checkpoint.pth.tar")
     #trainer.train()
-    trainer = vrd_trainer("original", {"num_epochs" : 5, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd/dsr"}})
+    trainer = vrd_trainer("original", {"training" : {"num_epochs" : 5}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd/dsr"}})
     trainer.train()
 
   # TEST_OVERFIT: Try overfitting the network to a single batch
@@ -351,12 +351,12 @@ if __name__ == "__main__":
     random.seed(datetime.now())
     np.random.seed(datetime.now())
     torch.manual_seed(datetime.now())
-    args = {"num_epochs" : 6, "eval" : {"test_pre" : test_type,  "test_rel" : test_type, "justafew" : justafew},  "data" : {"justafew" : justafew}}
+    args = {"training" : {"num_epochs" : 6}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type, "justafew" : justafew},  "data" : {"justafew" : justafew}}
     #args = {"model" : {"use_pred_sem" : pred_sem_mode}, "num_epochs" : 5, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}}
     trainer = vrd_trainer("test-overfit", args = args, profile = ["cfgs/vg.yml", "cfgs/pred_sem.yml"])
     trainer.train()
 
-  trainer = vrd_trainer("original", {"num_epochs" : 5, "eval" : {"test_pre" : test_type}}, profile = "cfgs/vg.yml")
+  trainer = vrd_trainer("original", {"training" : {"num_epochs" : 5}, "eval" : {"test_pre" : test_type}}, profile = "cfgs/vg.yml")
   trainer.train()
 
     # Scan (rotating parameters)
@@ -364,8 +364,8 @@ if __name__ == "__main__":
     for weight_decay in [0.0005]:
       for lr_rel_fus_ratio in [1]: # 0.1, 1, 10]:
         for pred_sem_mode in [5,6]: # ,7,8,8+7,8+8]:
-            #trainer = vrd_trainer("pred-sem-scan-v5-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode), {"model" : {"use_pred_sem" : pred_sem_mode}, "eval" : {"eval_obj":False, "test_rel":.2, "test_pre":.2}, "num_epochs" : 5, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}, profile = "cfgs/pred_sem.yml", checkpoint = False)
-            trainer = vrd_trainer("pred-sem-scan-v6-vg-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode), {"model" : {"use_pred_sem" : pred_sem_mode}, "eval" : {"eval_obj":False, "test_rel":True, "test_pre":True}, "num_epochs" : 5, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}, profile = ["cfgs/vg.yml", "cfgs/pred_sem.yml"], checkpoint = False)
+            #trainer = vrd_trainer("pred-sem-scan-v5-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode), {"model" : {"use_pred_sem" : pred_sem_mode}, "eval" : {"eval_obj":False, "test_rel":.2, "test_pre":.2}, "training" : {"num_epochs" : 5}, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}, profile = "cfgs/pred_sem.yml", checkpoint = False)
+            trainer = vrd_trainer("pred-sem-scan-v6-vg-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode), {"model" : {"use_pred_sem" : pred_sem_mode}, "eval" : {"eval_obj":False, "test_rel":True, "test_pre":True}, "training" : {"num_epochs" : 5}, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}, profile = ["cfgs/vg.yml", "cfgs/pred_sem.yml"], checkpoint = False)
             trainer.train()
 
   sys.exit(0)
