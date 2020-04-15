@@ -25,7 +25,7 @@ from lib.datalayer import VRDDataLayer, net_input_to
 from lib.evaluator import VRDEvaluator
 
 # Test if code compiles
-TEST_DEBUGGING = False # False # True # False # True # True # False
+TEST_DEBUGGING = True # False # True # False # True # True # False
 # Test if a newly-introduced change affects the validity of the code
 TEST_VALIDITY = True
 # Try overfitting to a single element
@@ -170,6 +170,9 @@ class vrd_trainer():
 
     res = []
 
+    if self.args.training.test_first:
+      self.do_test(res, res_headers)
+
     end_epoch = self.state["epoch"] + self.args.training.num_epochs
     while self.state["epoch"] < end_epoch:
 
@@ -185,29 +188,21 @@ class vrd_trainer():
 
       # TODO: after the third epoch, we divide learning rate by 10
       # the authors mention doing this in their paper, but we couldn't find it in the actual code
-      if self.state["epoch"] != 0 and (self.state["epoch"] % 3) == 0:
+      if self.state["epoch"] == 3:
         print("Dividing the learning rate by 10 at epoch {}!".format(self.state["epoch"]))
         for i in range(len(self.optimizer.param_groups)):
           self.optimizer.param_groups[i]["lr"] /= 10
 
-      # Test results
-      save_checkpoint = self.state["epoch"] != 0 and utils.smart_frequency_check(self.state["epoch"], self.args.training.num_epochs, self.args.training.checkpoint_freq)
-      if (True or save_checkpoint or self.state["epoch"] % 2) \
-              and (self.args.training.test_first or self.state["epoch"] != 0):
-        res_row = [self.state["epoch"]]
-        if self.args.eval.test_pre:
-          recalls, dtime = self.test_pre()
-          res_row += recalls
-        if self.args.eval.test_rel:
-          recalls, dtime = self.test_rel()
-          res_row += recalls
-        res.append(res_row)
+      # Train
+      self.__train_epoch()
 
-      with open(osp.join(globals.models_dir, "{}.txt".format(self.session_name)), 'w') as f:
-        f.write(tabulate(res, res_headers))
+      # Save test results, save checkpoint
+      do_save_checkpoint = utils.smart_frequency_check(self.state["epoch"], end_epoch, self.args.training.checkpoint_freq, last = True)
+      do_test = do_save_checkpoint or utils.smart_frequency_check(self.state["epoch"], end_epoch, self.args.training.test_freq, last = True)
+      if do_test:
+        self.do_test(res, res_headers)
 
-      # Save checkpoint
-      if save_checkpoint:
+      if do_save_checkpoint:
 
         save_dir = osp.join(globals.models_dir, self.session_name)
         if not osp.exists(save_dir):
@@ -224,9 +219,20 @@ class vrd_trainer():
           "result"        : dict(zip(res_headers, res_row)),
         }, osp.join(save_dir, "checkpoint_epoch_{}.pth.tar".format(self.state["epoch"])))
 
-      self.__train_epoch()
-
       self.state["epoch"] += 1
+
+
+  def do_test(self, res, res_headers):
+    res_row = [self.state["epoch"]]
+    if self.args.eval.test_pre:
+      recalls, dtime = self.test_pre()
+      res_row += recalls
+    if self.args.eval.test_rel:
+      recalls, dtime = self.test_rel()
+      res_row += recalls
+    res.append(res_row)
+    with open(osp.join(globals.models_dir, "{}.txt".format(self.session_name)), 'w') as f:
+      f.write(tabulate(res, res_headers))
 
   def __train_epoch(self):
     self.model.train()
@@ -324,11 +330,11 @@ class vrd_trainer():
 
 if __name__ == "__main__":
 
-  #test_type = 0.1
-  test_type = True
+  test_type = 0.2
 
   # DEBUGGING: Test if code compiles
   if TEST_DEBUGGING:
+    print("########################### TEST_DEBUGGING ###########################")
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
     trainer = vrd_trainer("test", {"training" : {"num_epochs" : 1}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"justafew" : True}}, checkpoint="epoch_4_checkpoint.pth.tar")
@@ -337,6 +343,7 @@ if __name__ == "__main__":
 
   # TEST_VALIDITY: Test if a newly-introduced change affects the validity of the code
   if TEST_VALIDITY:
+    print("########################### TEST_VALIDITY ###########################")
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
     #trainer = vrd_trainer("original-checkpoint", {"training" : {"num_epochs" : 1, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd/dsr"}}, profile = ["cfgs/pred_sem.yml"], checkpoint="epoch_4_checkpoint.pth.tar")
@@ -348,6 +355,7 @@ if __name__ == "__main__":
 
   # TEST_OVERFIT: Try overfitting the network to a single batch
   if TEST_OVERFIT:
+    print("########################### TEST_OVERFIT ###########################")
     justafew = 3
     torch.backends.cudnn.deterministic = False
     torch.backends.cudnn.benchmark = True
@@ -355,20 +363,36 @@ if __name__ == "__main__":
     np.random.seed(datetime.now())
     torch.manual_seed(datetime.now())
     args = {"training" : {"num_epochs" : 6}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type, "justafew" : justafew},  "data" : {"justafew" : justafew}}
-    #args = {"model" : {"use_pred_sem" : pred_sem_mode}, "num_epochs" : 5, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}}
+    #args = {"model" : {"use_pred_sem" : ...}, "num_epochs" : 5, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}}
     trainer = vrd_trainer("test-overfit", args = args, profile = ["cfgs/vg.yml", "cfgs/pred_sem.yml"])
     trainer.train()
 
-  trainer = vrd_trainer("original", {"training" : {"num_epochs" : 5}, "eval" : {"test_pre" : test_type}}, profile = "cfgs/vg.yml")
-  trainer.train()
-
-    # Scan (rotating parameters)
-  for lr in [0.0001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
+  # Scan (rotating parameters)
+  for lr in [0.00001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
     for weight_decay in [0.0005]:
-      for lr_rel_fus_ratio in [1]: # 0.1, 1, 10]:
-        for pred_sem_mode in [5,6]: # ,7,8,8+7,8+8]:
-            #trainer = vrd_trainer("pred-sem-scan-v5-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode), {"model" : {"use_pred_sem" : pred_sem_mode}, "eval" : {"eval_obj":False, "test_rel":.2, "test_pre":.2}, "training" : {"num_epochs" : 5}, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}, profile = "cfgs/pred_sem.yml", checkpoint = False)
-            trainer = vrd_trainer("pred-sem-scan-v6-vg-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode), {"model" : {"use_pred_sem" : pred_sem_mode}, "eval" : {"eval_obj":False, "test_rel":True, "test_pre":True}, "training" : {"num_epochs" : 5}, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}, profile = ["cfgs/vg.yml", "cfgs/pred_sem.yml"], checkpoint = False)
+      for lr_rel_fus_ratio in [10, 1]: # 0.1, 1, 10]:
+        for pred_sem_mode in [0,1, 8+0,8+1, 16+0,16+1,16+2, 16+4+0]:
+            # session_id = "pred-sem-scan-v6-vg-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode)
+            # profile = ["cfgs/vg.yml", "cfgs/pred_sem.yml"]
+            pred_sem_mode = pred_sem_mode+1
+            session_id = "pred-sem-scan-v6-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode)
+            profile = ["cfgs/pred_sem.yml"]
+            test_type = 0.2
+
+            trainer = vrd_trainer(session_id, {
+                "model" : {"use_pred_sem" : pred_sem_mode},
+                "eval" : {"eval_obj" : False, "test_rel" : test_type, "test_pre" : test_type},
+                "opt": {
+                  "lr": lr,
+                  "weight_decay" : weight_decay,
+                  "lr_fus_ratio" : lr_rel_fus_ratio,
+                  "lr_rel_ratio" : lr_rel_fus_ratio,
+                }
+              }, profile = profile)
             trainer.train()
+
+  # Test VG
+  trainer = vrd_trainer("original-vg", {"training" : {"num_epochs" : 5}, "eval" : {"test_pre" : test_type}}, profile = "cfgs/vg.yml")
+  trainer.train()
 
   sys.exit(0)

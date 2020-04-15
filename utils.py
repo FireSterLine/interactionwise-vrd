@@ -169,13 +169,14 @@ class LeveledAverageMeter(object):
 
 
 # Smart frequency = a frequency that can be a relative (a precentage) or absolute (integer)
-def smart_frequency_check(i_iter, num_iters, smart_frequency):
+def smart_frequency_check(i_iter, num_iters, smart_frequency, last = False):
   if float(smart_frequency) == 0.0: return False
-  if isinstance(smart_frequency, int):
-    abs_freq = smart_frequency
-  else:
+  abs_freq = smart_frequency
+  if not isinstance(smart_frequency, int):
     abs_freq = max(int(num_iters*smart_frequency),1)
-  return (i_iter % abs_freq) == 0
+  mod = 0
+  if last: mod = abs_freq-1
+  return (i_iter % abs_freq) == mod
 
 def time_diff_str(time1, time2 = None):
   if time2 is None:

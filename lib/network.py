@@ -10,9 +10,9 @@ ROIPool = torchvision.ops.RoIPool
 class FC(nn.Module):
   """ Wrapper for linear layers with relu """
 
-  def __init__(self, in_features, out_features, relu=True):
+  def __init__(self, in_features, out_features, relu=True, bias=True):
     super(FC, self).__init__()
-    self.fc = nn.Linear(in_features, out_features)
+    self.fc = nn.Linear(in_features, out_features, bias=bias)
     self.relu = nn.ReLU(inplace=True) if relu else None
 
   def forward(self, x):
@@ -44,7 +44,7 @@ class SemSim(nn.Module):
   """ This layer computes the the similarity of an input vector with the embeddings in an embedding space.
         the similarity is given in terms of a probability distribution """
 
-  def __init__(self, emb, mode=1):
+  def __init__(self, emb, mode = 0):
     super(SemSim, self).__init__()
     self.emb = torch.as_tensor(emb).to("cuda:0") # TODO fix
     self.mode = mode
@@ -75,7 +75,7 @@ class SemSim(nn.Module):
     #  because a probability distribution over the predicates would lose the information regarding the likelihood of said object pair to be in a relationship.
     # Here, for object pairs with no relationships, we should yield low scores for every predicate,
     #  whereas object pairs in a relationship should have high scores corresponding to the right predicates.
-    if self.mode <= 4:
+    if self.mode % 2:
       # We can compute the scores through simple cosine similarity (output is vector of values in [0,1])
       new_tens = [cos_sim(x[r]) for r in range(rel_size)]
     else:

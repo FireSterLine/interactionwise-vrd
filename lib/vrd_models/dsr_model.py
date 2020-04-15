@@ -136,23 +136,46 @@ class DSRModel(nn.Module):
       self.fc_rel    = FC(256, self.args.n_pred, relu = False)
     else:
       assert self.args.pred_emb.shape[0] == self.args.n_pred
+      mode = self.args.use_pred_sem-1
       # Two different ways of implementing the Semantic Similarity layer
       #  The input to the semantic similarity layer is a 300-dimensional semantic vector
       #  and the layer has to output one score per predicate (e.g 70 scores) given a similarity measure
       #  between two semantic vectors. The embeddings are 300-dimensional normalized vectors with values in [-1, 1]
       #  so the output of the previous layer is not activated with relu (which forces values to be non-negatives)
-      if self.args.use_pred_sem <= 8:
+      if mode < 8:
+        mode = mode
         # 2 Fully-Connected layers: 1024 -> 512 -> 300
         self.fc_fusion = FC(self.total_fus_neurons, 512)
         self.fc_rel    = nn.Sequential(
           FC(512, 300, relu = False),
-          SemSim(self.args.pred_emb, mode=int(self.args.use_pred_sem)),
+          SemSim(self.args.pred_emb, mode = mode),
         )
-      else:
-        # 1 Fully-Connected layers:1024 -> 300
+      elif mode < 16:
+        mode = mode - 8
+        # 1 Fully-Connected layers: 1024 -> 300
         self.fc_fusion = FC(self.total_fus_neurons, 300, relu = False)
-        self.fc_rel    = SemSim(self.args.pred_emb, mode = int(self.args.use_pred_sem-8))
+        self.fc_rel    = SemSim(self.args.pred_emb, mode = mode)
+      else:
+        mode = mode - 16
+        from sklearn.metrics.pairwise import cosine_similarity
+        pred2pred_sim = cosine_similarity(self.args.pred_emb, self.args.pred_emb)
 
+        if mode % 2:
+          pred2pred_sim = pred2pred_sim / np.linalg.norm(pred2pred_sim,axis=0)
+
+        pred2pred_sim = torch.from_numpy(pred2pred_sim).to("cuda:0") # TODO fix
+
+        # 1 Fully-Connected layers: 1024 -> 300
+        self.fc_fusion = nn.Sequential(
+          FC(self.total_fus_neurons, 256),
+          FC(256, self.args.n_pred, relu = ((mode//2) % 2))
+        )
+        self.fc_rel    = FC(self.args.n_pred, self.args.n_pred, relu = False, bias = ((mode//4) % 2))
+        with torch.no_grad():
+          self.fc_rel.weight.data = pred2pred_sim
+        if ((mode//8) % 2):
+          self.fc_rel_not_trainable = True # TODO fix
+          set_trainability(self.fc_rel, requires_grad = False)
 
   def forward(self, img_blob, obj_classes, obj_boxes, u_boxes, idx_s, idx_o, spatial_features):
 
@@ -359,15 +382,16 @@ class DSRModel(nn.Module):
     opt_params = [
       {'params': self.fc8.parameters(),       'lr': lr*10},
       {'params': self.fc_fusion.parameters(), 'lr': lr*lr_fus_ratio},
-      {'params': self.fc_rel.parameters(),    'lr': lr*lr_rel_ratio},
     ]
+    if(not hasattr(self, "fc_rel_not_trainable") or not self.fc_rel_not_trainable):
+      opt_params.append({'params': self.fc_rel.parameters(),       'lr': lr*lr_rel_ratio})
     if(self.args.use_so):
-      opt_params.append({'params': self.fc_so.parameters(), 'lr': lr*10})
+      opt_params.append({'params': self.fc_so.parameters(),        'lr': lr*10})
     if(self.args.use_spat == 1):
-      opt_params.append({'params': self.fc_spatial.parameters(), 'lr': lr*10})
+      opt_params.append({'params': self.fc_spatial.parameters(),   'lr': lr*10})
     elif(self.args.use_spat == 2):
       opt_params.append({'params': self.conv_spatial.parameters(), 'lr': lr*10})
-      opt_params.append({'params': self.fc_spatial.parameters(), 'lr': lr*10})
+      opt_params.append({'params': self.fc_spatial.parameters(),   'lr': lr*10})
     if(self.args.use_sem):
       opt_params.append({'params': self.fc_semantic.parameters(), 'lr': lr*10})
 
