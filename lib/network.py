@@ -76,15 +76,13 @@ class SemSim(nn.Module):
     # Here, for object pairs with no relationships, we should yield low scores for every predicate,
     #  whereas object pairs in a relationship should have high scores corresponding to the right predicates.
     if self.mode <= 4:
-      # We can compute the scores through simple cosine similarity (output is vector of values in [-1,1])
+      # We can compute the scores through simple cosine similarity (output is vector of values in [0,1])
       new_tens = [cos_sim(x[r]) for r in range(rel_size)]
-    elif self.mode <= 6:
-      # We can compute the scores by remapping the cosine similarities in [0,1]
-      new_tens = [(cos_sim(x[r])+1)/2 for r in range(rel_size)]
     else:
-      # We can compute the cosine similarity and remap the scores into the real axis
-      atanh   = lambda x : 0.5 * torch.log((1+x)/(1-x))
-      new_tens = [atanh(cos_sim(x[r])) for r in range(rel_size)]
+      # We can compute the cosine similarities scores and remap them into the real axis
+      # atanh   = lambda x : 0.5 * torch.log((1+x)/(1-x))
+      logit = lambda x : torch.log(x/(1-x))
+      new_tens = [logit(cos_sim(x[r])) for r in range(rel_size)]
 
     a = torch.stack(new_tens)
     a = a.unsqueeze(0)

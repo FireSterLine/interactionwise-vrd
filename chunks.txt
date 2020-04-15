@@ -304,3 +304,16 @@ for i in range(len(ddsr["obj_bboxes"])):
   cut_val = 7
   ind = np.argsort(d2["confs"][0], axis=0)[-cut_val:]
   np.array(d2["boxes"][0], dtype=np.int)[ind]
+
+
+
+import json
+filename = "data/vrd/predicates-emb.json"
+with open(filename, 'r') as f:
+  d2 = json.load(f)
+
+import numpy as np
+d2 =np.array(d2)
+from sklearn.metrics.pairwise import cosine_similarity
+cosine_similarity(d2, d2)
+[[scipy.spatial.distance.cosine(u, v) for v in d2] for u in d2]
