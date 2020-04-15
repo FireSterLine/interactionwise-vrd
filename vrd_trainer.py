@@ -197,8 +197,10 @@ class vrd_trainer():
       self.__train_epoch()
 
       # Save test results, save checkpoint
-      do_save_checkpoint = utils.smart_frequency_check(self.state["epoch"], end_epoch, self.args.training.checkpoint_freq, last = True)
-      do_test = do_save_checkpoint or utils.smart_frequency_check(self.state["epoch"], end_epoch, self.args.training.test_freq, last = True)
+      is_last_epoch = (self.state["epoch"]-end_epoch) <= 1)
+      do_save_checkpoint = (is_last_epoch or utils.smart_frequency_check(self.state["epoch"], end_epoch, self.args.training.checkpoint_freq, last = True)
+      do_test = is_last_epoch or do_save_checkpoint or utils.smart_frequency_check(self.state["epoch"], end_epoch, self.args.training.test_freq, last = True)
+
       if do_test:
         self.do_test(res, res_headers)
 
@@ -246,6 +248,9 @@ class vrd_trainer():
 
     for i_iter,(net_input, gt_soP_prior, gt_pred_sem, mlab_target) in enumerate(self.dataloader):
 
+      if utils.smart_frequency_check(i_iter, n_iter, self.args.training.print_freq):
+        print("\t{:4d}/{:<4d}:".format(i_iter, n_iter), end="")
+
       net_input    = net_input_to(net_input, utils.device)
       gt_soP_prior = gt_soP_prior.to(utils.device)
       gt_pred_sem  = torch.as_tensor(gt_pred_sem,    dtype=torch.long,     device = utils.device)
@@ -279,8 +284,8 @@ class vrd_trainer():
 
       # Track loss
       losses.update(loss.item())
-      if utils.smart_frequency_check(i_iter, n_iter, self.args.training.print_freq):
-        print("\t{:4d}/{:<4d}: LOSS: {: 6.3f}\n".format(i_iter, n_iter, losses.avg(0)), end="")
+      if utils.smart_frequency_check(i_iter, n_iter, self.args.training.print_freq, last=True):
+        print("LOSS: {: 6.3f}\n".format(losses.avg(0)), end="")
         losses.reset(0)
 
     self.state["loss"] = losses.avg(1)
