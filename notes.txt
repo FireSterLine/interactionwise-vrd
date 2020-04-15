@@ -1,35 +1,31 @@
-"lr": 0.001,
-"lr_fus_ratio": 1,
-"lr_rel_ratio": 1,
-"weight_decay": 0.0005
-...epoch 9/10
-CLS PRED TEST:
-All:    R@20:  35.192   R@50:  58.340   R@100:  74.548
-ZShot:  R@20:  20.616   R@50:  43.028   R@100:  60.308
-TEST Time: 00:01:12
-CLS REL TEST:
-All:    R@20:  11.527   R@50:  17.219   R@100:  21.714
-ZShot:  R@20:  0.602    R@50:  2.322    R@100:  4.127
-CLS OBJ TEST POS:  92.000, LOC:  6176.000, GT:  6694.000, Precision:  0.015, Recall:  0.014
+One direct way to dealwith incomplete predicate annotation is to take the unla-
+beled relationships as negative samples and solve the rela
+tionship detection problem using a multi-label classification
+framework based on cross-entropy loss
+
+In this paper, we propose a deep neural network frame-work with structural ranking loss to tackle the visual rela-tionship detection problem
+
+Moreover, we integrate the structural losswith the probability of the predicates conditioned on its sub-ject and object to further reduce the impact of incompleteannotations
+
+The VGG16 comes from (Simonyanand Zisserman 2014)
+
+MultiLabelMarginLoss: multi-label ranking loss
+
+Long-tail Classification (e.g read a little bit of https://arxiv.org/pdf/2004.00436.pdf)
 
 
-"lr": 0.0001,
-"lr_fus_ratio": 1,
-"lr_rel_ratio": 1,
-"weight_decay": 0.0005
-...epoch 3
-CLS PRED TEST:
-All:    R@20:  45.457   R@50:  60.775   R@100:  73.566
-ZShot:  R@20:  25.064   R@50:  40.804   R@100:  55.261
-TEST Time: 00:01:12
-CLS REL TEST:
-All:    R@20:  11.790   R@50:  17.324   R@100:  21.780
-ZShot:  R@20:  0.860    R@50:  2.236    R@100:  4.299
-CLS OBJ TEST POS:  85.000, LOC:  6183.000, GT:  6694.000, Precision:  0.014, Recall:  0.013
 
+IDEAS:
+
+Also try using MSE instead of cosine_similarity
+
+Introduce a new metric (inspired from https://arxiv.org/pdf/2004.00436.pdf),
+consisting of a variation of R@50 and R@100 where the semantics of the predicates is taken into account.
+Some cosine distance-based metric.
 
 
 https://sagivtech.com/2017/09/19/optimizing-pytorch-training-code/
+
 New idea:
  look for "Let’s build a proper (yet simple" here: https://towardsdatascience.com/understanding-pytorch-with-an-example-a-step-by-step-tutorial-81fc5f8c4e8e
  They have single parameters. Well, implement the linear projection for a predicate there. Beforee that, check if it's already there somewhere int he code.
@@ -39,11 +35,9 @@ New idea:
 
 # TODO: use sampler in evaluation instead of subsampling with the index thing: torch.utils.data.Subset(dataset, indices)
 
-num_workers>1
-to(device outside datalayer)
-pin_memory=True in dataloader
+
 cache datalayer output to file and load like with torch.load('data/' + ID + '.pt')
 
 
- criterion = nn.CrossEntropyLoss()
- optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+criterion = nn.CrossEntropyLoss()
+optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)

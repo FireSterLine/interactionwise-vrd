@@ -160,20 +160,25 @@ class DSRModel(nn.Module):
         from sklearn.metrics.pairwise import cosine_similarity
         pred2pred_sim = cosine_similarity(self.args.pred_emb, self.args.pred_emb)
 
+        print("Mode {} = {}{}{}{}{}".format(mode, mode%2, (mode//2)%2,, (mode//4)%2,, (mode//8)%2,, (mode//16)%2))
+
         if mode % 2:
           pred2pred_sim = pred2pred_sim / np.linalg.norm(pred2pred_sim,axis=0)
 
         pred2pred_sim = torch.from_numpy(pred2pred_sim).to("cuda:0") # TODO fix
 
         # 1 Fully-Connected layers: 1024 -> 300
-        self.fc_fusion = nn.Sequential(
-          FC(self.total_fus_neurons, 256),
-          FC(256, self.args.n_pred, relu = ((mode//2) % 2))
-        )
-        self.fc_rel    = FC(self.args.n_pred, self.args.n_pred, relu = False, bias = ((mode//4) % 2))
+        if ((mode//16) % 2):
+          self.fc_fusion = nn.Sequential(
+            FC(self.total_fus_neurons, 256),
+            FC(256, self.args.n_pred, relu = ((mode//2) % 2))
+          )
+        else:
+          self.fc_fusion = FC(self.total_fus_neurons, self.args.n_pred, relu = ((mode//2)%2))
+        self.fc_rel    = FC(self.args.n_pred, self.args.n_pred, relu = False, bias = ((mode//4)%2))
         with torch.no_grad():
           self.fc_rel.fc.weight.data.copy_(pred2pred_sim)
-        if ((mode//8) % 2):
+        if ((mode//8)%2):
           self.fc_rel_not_trainable = True # TODO fix
           set_trainability(self.fc_rel, requires_grad = False)
 

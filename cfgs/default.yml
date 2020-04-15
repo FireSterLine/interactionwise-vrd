@@ -4,6 +4,8 @@ data:
   with_bg_obj: False
   with_bg_pred: False
 
+  justafew : False
+
 # Architecture (or model) type
 model:
   # Constructor
