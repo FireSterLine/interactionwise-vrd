@@ -48,6 +48,8 @@ class SemSim(nn.Module):
     super(SemSim, self).__init__()
     self.emb = torch.as_tensor(emb).to("cuda:0") # TODO fix
     self.mode = mode
+    self.tanh = nn.Tanh()
+    self.sig = nn.Sigmoid()
     #print(emb.shape)
 
   def forward(self, x):
@@ -60,8 +62,8 @@ class SemSim(nn.Module):
 
     # Force the values individually to be in [-1,+1].
     # This is not mandatory but it seems to help
-    x = nn.Tanh(x)
-    # TODO: try again with x = (nn.Sigmoid(x)*2)-1 instead
+    x = nn.tanh(x)
+    # TODO: try again with x = (nn.sig(x)*2)-1 instead
 
     # First result: SIGMOID is better than none, in every case.
 

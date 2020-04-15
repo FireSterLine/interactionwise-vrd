@@ -25,9 +25,9 @@ from lib.datalayer import VRDDataLayer, net_input_to
 from lib.evaluator import VRDEvaluator
 
 # Test if code compiles
-TEST_DEBUGGING = True # False # True # False # True # True # False
+TEST_DEBUGGING = False # True # False # True # True # False
 # Test if a newly-introduced change affects the validity of the code
-TEST_VALIDITY = True
+TEST_VALIDITY = False # True
 # Try overfitting to a single element
 TEST_OVERFIT = False #True # False # True
 
@@ -371,13 +371,13 @@ if __name__ == "__main__":
   for lr in [0.00001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
     for weight_decay in [0.0005]:
       for lr_rel_fus_ratio in [10, 1]: # 0.1, 1, 10]:
-        for pred_sem_mode in [0,1, 8+0,8+1, 16+0,16+1,16+2, 16+4+0]:
+        for pred_sem_mode in [0,1, 8+0,8+1, 16+0,16+1,16+2, 16+4+0, -1]:
             # session_id = "pred-sem-scan-v6-vg-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode)
             # profile = ["cfgs/vg.yml", "cfgs/pred_sem.yml"]
             pred_sem_mode = pred_sem_mode+1
             session_id = "pred-sem-scan-v6-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode)
             profile = ["cfgs/pred_sem.yml"]
-            test_type = 0.2
+            test_type = 0.5
 
             trainer = vrd_trainer(session_id, {
                 "model" : {"use_pred_sem" : pred_sem_mode},
