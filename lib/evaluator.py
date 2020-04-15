@@ -101,7 +101,7 @@ class VRDEvaluator():
         index = sorted(sample(index, max(int(self.args.test_pre*len(index)),1)))
         dataloader_pre = torch.utils.data.DataLoader(
           dataset = self.datalayer_pre,
-          sampler = torch.utils.data.Subset(self.datalayer_pre, index),
+          sampler = utils.SubsetSequentialSampler(index),
           **self.kwargs_dataloader
         )
         gt    = self._get_gt_subset(gt, index)
@@ -195,7 +195,7 @@ class VRDEvaluator():
         index = sorted(sample(index, max(int(self.args.test_rel*len(index)),1)))
         dataloader_rel = torch.utils.data.DataLoader(
           dataset = self.datalayer_rel,
-          sampler = torch.utils.data.Subset(self.datalayer_rel, index),
+          sampler = utils.SubsetSequentialSampler(index),
           **self.kwargs_dataloader
         )
         gt    = self._get_gt_subset(gt, index)

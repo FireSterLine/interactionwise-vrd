@@ -337,7 +337,7 @@ if __name__ == "__main__":
     print("########################### TEST_DEBUGGING ###########################")
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
-    trainer = vrd_trainer("test", {"training" : {"num_epochs" : 1}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"justafew" : True}}, checkpoint="epoch_4_checkpoint.pth.tar")
+    trainer = vrd_trainer("test", {"training" : {"num_epochs" : 1, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"justafew" : True}}, checkpoint="epoch_4_checkpoint.pth.tar")
     trainer.train()
 
 
