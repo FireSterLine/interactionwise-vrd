@@ -37,22 +37,24 @@ eval:
   # R@x metrics
   rec: [100, 50]
 
-# Training parameters
 opt:
   lr: 0.00001
   # momentum: 0.9
   weight_decay: 0.0005
-# Adjust learning rate every lr_decay_step epochs
-# TOD: check if this work: #lr_decay_step: 3
-#lr_decay_gamma: .1
-use_shuffle: True
-num_epochs: 6
-checkpoint_freq: .5
-# Number of lines printed with loss ...TODO explain smart freq
-print_freq: 0.1
-# TODO
-batch_size: 1
-loss: mlab
-# loss: mse
-use_preload: False
-test_first: False
+
+# Training parameters
+training:
+  # Adjust learning rate every lr_decay_step epochs
+  # TODO: check if this work: #lr_decay_step: 3
+  #lr_decay_gamma: .1
+  use_shuffle: True
+  num_epochs: 6
+  checkpoint_freq: .5
+  # Number of lines printed with loss ...TODO explain smart freq
+  print_freq: 0.1
+  # TODO
+  batch_size: 1
+  loss: mlab
+  # loss: mse
+  use_preload: False
+  test_first: False
