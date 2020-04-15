@@ -27,7 +27,7 @@ from lib.evaluator import VRDEvaluator
 # Test if code compiles
 TEST_DEBUGGING = False # True # False # True # True # False
 # Test if a newly-introduced change affects the validity of the code
-TEST_VALIDITY = False # True
+TEST_VALIDITY = True # True
 # Try overfitting to a single element
 TEST_OVERFIT = False #True # False # True
 
@@ -330,7 +330,7 @@ class vrd_trainer():
 
 if __name__ == "__main__":
 
-  test_type = 0.2
+  test_type = True # 0.2
 
   # DEBUGGING: Test if code compiles
   if TEST_DEBUGGING:
@@ -348,10 +348,11 @@ if __name__ == "__main__":
     torch.backends.cudnn.benchmark = False
     #trainer = vrd_trainer("original-checkpoint", {"training" : {"num_epochs" : 1, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd/dsr"}}, profile = ["cfgs/pred_sem.yml"], checkpoint="epoch_4_checkpoint.pth.tar")
     #trainer.train()
-    trainer = vrd_trainer("original", {"training" : {"num_epochs" : 5, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd"}})
-    trainer.train()
     trainer = vrd_trainer("original-checkpoint", {"training" : {"num_epochs" : 1, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd"}}, checkpoint="epoch_4_checkpoint.pth.tar")
     trainer.train()
+    if TEST_VALIDITY > 1:
+      trainer = vrd_trainer("original", {"training" : {"num_epochs" : 5, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd"}})
+      trainer.train()
 
   # TEST_OVERFIT: Try overfitting the network to a single batch
   if TEST_OVERFIT:
