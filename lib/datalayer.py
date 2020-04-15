@@ -240,8 +240,8 @@ class VRDDataLayer(data.Dataset):
       if "dsr_spat_vec" in self.cols:
         obj_spat_feat[i_rel] = utils.getRelativeLoc(sBBox, oBBox)
       elif "dsr_spat_mat" in self.cols:
-        obj_spat_feat[i_rel] = [self._getDualMask(ih, iw, sBBox),
-                                self._getDualMask(ih, iw, oBBox)]
+        obj_spat_feat[i_rel] = [utils.getDualMask(ih, iw, sBBox),
+                                utils.getDualMask(ih, iw, oBBox)]
 
       # store the probability distribution of this subject-object pair from the soP_prior
       gt_soP_prior[i_rel] = self.soP_prior[sub_cls][obj_cls]

@@ -19,8 +19,13 @@ vrd_pixel_means = np.array([[[102.9801, 115.9465, 122.7717]]])
 # Pytorch CUDA Fallback
 # TODO: check if this works and then use it everywhere instead of cuda()
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-torch.LongTensor([1]).to(device) # Test
-
+# Test
+try:
+  torch.LongTensor([1]).to(device)
+except RuntimeError:
+  if torch.cuda.is_available():
+    device = torch.device("cpu")
+    torch.LongTensor([1]).to(device)
 
 weights_normal_init  = frcnn_net_utils.weights_normal_init
 save_checkpoint      = frcnn_net_utils.save_checkpoint
@@ -42,6 +47,7 @@ def bboxDictToList(bbox_dict):
           bbox_dict["xmax"],
           bbox_dict["ymax"]]
 
+
 # Union box of two boxes
 def getUnionBBox(aBB, bBB, ih, iw, margin=10):
   return [max(0,  min(aBB[0], bBB[0]) - margin),
@@ -58,8 +64,7 @@ def getRelativeLoc(aBB, bBB):
   wh = np.log(np.array([sw / ow, sh / oh, ow / sw, oh / sh]))
   return np.hstack((xy, wh))
 
-"""
-def getDualMask(self, ih, iw, bb):
+def getDualMask(ih, iw, bb):
   rh = 32.0 / ih
   rw = 32.0 / iw
   x1 = max(0, int(math.floor(bb[0] * rw)))
@@ -70,7 +75,14 @@ def getDualMask(self, ih, iw, bb):
   mask[y1 : y2, x1 : x2] = 1
   assert(mask.sum() == (y2 - y1) * (x2 - x1))
   return mask
-"""
+
+# Get word embedding of subject and object label and concatenate them
+def getSemanticVector(subject_label, object_label, emb_model):
+  subject_vector = emb_model[subject_label]
+  object_vector  = emb_model[object_label]
+  return np.concatenate((subject_vector, object_vector), axis=0)
+
+
 
 def getEmbedding(word, emb_model, depth=0):
     if not hasattr(getEmbedding, "fallback_emb_map"):
@@ -110,12 +122,6 @@ def getEmbedding(word, emb_model, depth=0):
       return embedding
     return embedding / np.linalg.norm(embedding)
 
-
-# Get word embedding of subject and object label and concatenate them
-def getSemanticVector(subject_label, object_label, emb_model):
-    subject_vector = emb_model[subject_label]
-    object_vector  = emb_model[object_label]
-    return np.concatenate((subject_vector, object_vector), axis=0)
 
 
 

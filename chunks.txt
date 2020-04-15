@@ -261,13 +261,13 @@ python trainval_net.py \
                     --lr $LEARNING_RATE --lr_decay_step $DECAY_STEP \
                     --cuda
 
-# faster_rcnn_1_20_489.pth
+# faster_rcnn_1_5_47969.pth
 SESSION=1
-EPOCH=20
-CHECKPOINT=489
+EPOCH=5
+CHECKPOINT=47969
 #CUT_AT=gt
 CUT_AT=7
-python gen_obj_det.py --dataset vg --net vgg16 \
+python gen_obj_det.py --dataset vg --net res101 \
                    --cut_predictions_at $CUT_AT \
                    --checksession $SESSION --checkepoch $EPOCH --checkpoint $CHECKPOINT \
                    --cuda
