@@ -93,12 +93,14 @@ class VRDEvaluator():
       vrd_model.eval()
       time1 = time.time()
 
+      N = 100 # What's this? (num of rel_res) (with this you can compute R@i for any i<=N)
+
       gt         = self.gt
       gt_zs      = self.gt_zs
       dataloader_pre = self.dataloader_pre
       if isinstance(self.args.test_pre, float): # TODO: validate
-        index = range(len(self.dataloader_pre))
-        index = sorted(sample(index, max(int(self.args.test_pre*len(index)),1)))
+        index = range(len(dataloader_pre))
+        index = sorted(sample(index, max(int(self.args.test_pre*len(dataloader_pre)),1)))
         dataloader_pre = torch.utils.data.DataLoader(
           dataset = self.datalayer_pre,
           sampler = utils.SubsetSequentialSampler(index),
@@ -113,8 +115,6 @@ class VRDEvaluator():
         "sub_bboxes_ours" : [],
         "obj_bboxes_ours" : [],
       }
-
-      N = 100 # What's this? (num of rel_res) (with this you can compute R@i for any i<=N)
 
       for (i_iter,(net_input, gt_obj, _, _)) in enumerate(dataloader_pre):
 
@@ -191,8 +191,8 @@ class VRDEvaluator():
       gt_zs      = self.gt_zs
       dataloader_rel = self.dataloader_rel
       if isinstance(self.args.test_rel, float): # TODO: validate
-        index = range(len(self.dataloader_rel))
-        index = sorted(sample(index, max(int(self.args.test_rel*len(index)),1)))
+        index = range(len(dataloader_rel))
+        index = sorted(sample(index, max(int(self.args.test_rel*len(dataloader_rel)),1)))
         dataloader_rel = torch.utils.data.DataLoader(
           dataset = self.datalayer_rel,
           sampler = utils.SubsetSequentialSampler(index),
@@ -200,7 +200,6 @@ class VRDEvaluator():
         )
         gt    = self._get_gt_subset(gt, index)
         gt_zs = self._get_gt_subset(gt_zs, index)
-
 
       res = {
         "rlp_confs_ours"  : [],
