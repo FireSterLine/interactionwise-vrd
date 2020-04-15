@@ -34,6 +34,17 @@ save_checkpoint      = frcnn_net_utils.save_checkpoint
 load_checkpoint      = lambda path : torch.load(path, map_location = device)
 adjust_learning_rate = frcnn_net_utils.adjust_learning_rate
 
+# Source: https://github.com/pytorch/pytorch/issues/1337
+class SubsetSequentialSampler(torch.utils.data.Sampler):
+  """Samples elements sequentially from a given list of indices, always in the same order.
+  Arguments:
+      indices (list): a list of indices
+  """
+  def __init__(self, indices):
+    self.num_samples = len(indices)
+    self.indices = indices
+  def __iter__(self): return iter(self.indices)
+  def __len__(self):  return self.num_samples
 
 # Bbox as a list to numpy array
 bboxListToNumpy = np.array
