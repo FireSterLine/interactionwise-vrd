@@ -18,8 +18,8 @@ class DSRModel(nn.Module):
 
     self.args = args
 
-    # TODO: fix this cols thing, maybe rename it and also expand it dsr_spat_vec, dsr_spat_mat
-    self.cols = ["dsr_spat_vec"]
+    # TODO: fix this cols thing, maybe rename it and also expand it
+    self.cols = []
 
     if not hasattr(self.args, "n_obj"):
       raise ValueError("Can't build vrd model without knowing n_obj")
@@ -105,10 +105,12 @@ class DSRModel(nn.Module):
 
     # using type 1 of spatial features
     if(self.args.use_spat == 1):
+      self.cols.append("dsr_spat_vec")
       self.fc_spatial  = FC(8, self.args.n_fus_neurons)
       self.total_fus_neurons += self.args.n_fus_neurons
     # using type 2 of spatial features
     elif(self.args.use_spat == 2): # TODO: test
+      self.cols.append("dsr_spat_mat")
       self.conv_spatial = nn.Sequential(Conv2d(2, 96, 5, same_padding=True, stride=2, bn=bn),
                                  Conv2d(96, 128, 5, same_padding=True, stride=2, bn=bn),
                                  Conv2d(128, 64, 8, same_padding=False, bn=bn))
