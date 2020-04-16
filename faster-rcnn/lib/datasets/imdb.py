@@ -135,6 +135,7 @@ class imdb(object):
       proposals["boxes"] = []
       proposals["confs"] = []
       proposals["cls"]   = []
+      # for ii in range(len(all_boxes[0])):
       for ii in range(self.num_images):
           box = np.zeros((0,4))
           cls = []
@@ -152,10 +153,12 @@ class imdb(object):
             else: # elif isinstance(cut_at, int):
               cut_at_val = int(cut_at)
             ind = np.argsort(confs, axis=0)[-cut_at_val:]
-            box = np.array(box, dtype=np.int)[ind].tolist()
-            cls = np.array(cls, dtype=np.int)[ind].tolist()
-            confs = np.array(confs)[ind].tolist()
-
+            box   = np.array(box,   dtype=np.int)[ind].squeeze(axis=1)
+            cls   = np.array(cls,   dtype=np.int)[ind]
+            confs = np.array(confs, dtype=np.float32)[ind].squeeze(axis=1)
+          #print(box.shape)
+          #print(cls.shape)
+          #print(confs.shape)
           proposals["boxes"].append(box)
           proposals["confs"].append(confs)
           proposals["cls"].append(cls)

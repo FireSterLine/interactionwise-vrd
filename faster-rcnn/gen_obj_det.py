@@ -205,10 +205,10 @@ if __name__ == '__main__':
     gt_boxes = gt_boxes.cuda()
 
   # make variable
-  im_data = Variable(im_data)
-  im_info = Variable(im_info)
+  im_data   = Variable(im_data)
+  im_info   = Variable(im_info)
   num_boxes = Variable(num_boxes)
-  gt_boxes = Variable(gt_boxes)
+  gt_boxes  = Variable(gt_boxes)
 
   if args.cuda:
     cfg.CUDA = True
