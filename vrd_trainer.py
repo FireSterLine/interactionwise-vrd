@@ -389,7 +389,7 @@ if __name__ == "__main__":
 
             trainer = vrd_trainer(session_id, {
                 # "data" : {"justafew" : True}, "training" : {"num_epochs" : 2, "test_freq" : 0},
-                "training" : {"num_epochs" : 2, "test_freq" : 0},
+                "training" : {"num_epochs" : 3, "test_freq" : [1,2]},
                 "model" : {"use_pred_sem" : pred_sem_mode},
                 "eval" : {"test_pre" : test_type, "test_rel" : test_type},
                 "opt": {

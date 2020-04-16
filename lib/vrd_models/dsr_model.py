@@ -160,7 +160,7 @@ class DSRModel(nn.Module):
         from sklearn.metrics.pairwise import cosine_similarity
         pred2pred_sim = cosine_similarity(self.args.pred_emb, self.args.pred_emb)
 
-        print("Mode {} = {}{}{}{}{}".format(mode, mode%2, (mode//2)%2,, (mode//4)%2,, (mode//8)%2,, (mode//16)%2))
+        print("Mode {} = {}{}{}{}{}".format(mode, mode%2, (mode//2)%2, (mode//4)%2, (mode//8)%2, (mode//16)%2))
 
         if mode % 2:
           pred2pred_sim = pred2pred_sim / np.linalg.norm(pred2pred_sim,axis=0)
