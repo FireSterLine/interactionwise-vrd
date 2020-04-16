@@ -152,7 +152,7 @@ class DataPreparer:
 
     def prepareGT(self):
       if self.cur_dformat != "relst":
-        print("prepareGT requires relst format (I'll convert it, but maybe you want to prepareGT later or sooner than now)")
+        print("Warning! prepareGT requires relst format (I'll convert it, but maybe you want to prepareGT later or sooner than now)")
         if not osp.exists(save_dir):
           os.mkdir(save_dir)
         self.to_dformat("relst")
@@ -172,29 +172,29 @@ class DataPreparer:
       for img_path in self.splits['test']:
         _, relst = self.get_vrd_data_pair(img_path)
 
-        if relst is None:
-          tuple_label = None
-          sub_bboxes  = None
-          obj_bboxes  = None
-        else:
-          tuple_label = []
-          sub_bboxes  = []
-          obj_bboxes  = []
-
+        tuple_label = []
+        sub_bboxes  = []
+        obj_bboxes  = []
+        
+        if relst is not None:
           for i_rel, rel in enumerate(relst):
             # multi_label (namely multi-predicate relationships) are not allowed in ground-truth pickles
             for id in rel["predicate"]["id"]:
               tuple_label.append([rel["subject"]["id"], id, rel["object"]["id"]])
-              sub_bboxes.append(rel["subject"]["bbox"])
-              obj_bboxes.append(rel["object"]["bbox"])
-
-        gt_pkl["tuple_label"].append(tuple_label)
-        gt_pkl["sub_bboxes"].append(sub_bboxes)
-        gt_pkl["obj_bboxes"].append(obj_bboxes)
+              sub_bboxes.append(utils.bboxDictToNumpy(rel["subject"]["bbox"]))
+              obj_bboxes.append(utils.bboxDictToNumpy(rel["object"]["bbox"]))
+          
+        tuple_label = np.array(tuple_label, dtype=np.uint8)
+        sub_bboxes  = np.array(sub_bboxes,  dtype=np.uint16)
+        obj_bboxes  = np.array(obj_bboxes,  dtype=np.uint16)
+        
+        gt_pkl["tuple_label"].append(np.array(tuple_label))
+        gt_pkl["sub_bboxes"].append(np.array(sub_bboxes))
+        gt_pkl["obj_bboxes"].append(np.array(obj_bboxes))
 
       self.writepickle(gt_pkl, gt_output_path)
 
-      # TODO: zeroshot
+      # TODO: zeroshot: count all the different triples in the train set, and filter out the ones in the test set that are also in the train set
       # self.writepickle(gt_zs_pkl, gt_zs_output_path)
 
 
@@ -619,20 +619,22 @@ if __name__ == '__main__':
         # w2v_model = KeyedVectors.load_word2vec_format(osp.join(globals.data_dir, globals.w2v_model_path), binary=True)
         w2v_model = Word2Vec.load(globals.w2v_model_path)
 
+    #"""
     print("Preparing data for VRD!")
     data_preparer_vrd = VRDPrep(multi_label=multi_label, generate_emb = w2v_model)
-    print("\tPreparing evaluation data from Language Priors...")
-    data_preparer_vrd.prepareEvalFromLP()
+    #print("\tPreparing evaluation data from Language Priors...")
+    #data_preparer_vrd.prepareEvalFromLP()
     print("\tLoad VRD data...")
     data_preparer_vrd.load_vrd()
     print("\tGenerating data in relst format...")
     data_preparer_vrd.save_data("relst")
-    # print("\tGenerating ground truth data...")
+    #print("\tGenerating ground truth data...")
     #data_preparer_vrd.prepareGT()
     print("\tGenerating data in relst format at relationship level...")
     data_preparer_vrd.save_data("relst", "rel")
     print("\tGenerating data in annos format...")
     data_preparer_vrd.save_data("annos")
+    #"""
 
     """
     # Generate the data in relst format using the {train,test}.pkl files provided by DSR

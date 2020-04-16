@@ -7,7 +7,6 @@ import time
 import pickle
 import os.path as osp
 import torch.nn.functional as F
-import warnings
 import utils
 from random import sample
 
@@ -68,14 +67,14 @@ class VRDEvaluator():
           self.gt    = {'tuple_label' : [self.gt['tuple_label'][x]],    'obj_bboxes' : [self.gt['obj_bboxes'][x]],    'sub_bboxes' : [self.gt['sub_bboxes'][x]]}
           print(self.gt["tuple_label"][0].shape)
       except FileNotFoundError:
-        warnings.warn("Warning! Couldn't find ground-truth pickle. Evaluation will be skipped.")
+        print("Warning! Couldn't find ground-truth pickle. Evaluation will be skipped.")
       try:
         self.gt_zs = self.any_datalayer.dataset.readPKL(osp.join("eval", "gt_zs.pkl"))
         if self.args.justafew != False and isinstance(self.args.justafew, int):
           x = self.args.justafew
           self.gt_zs = {'tuple_label' : [self.gt_zs['tuple_label'][x]], 'obj_bboxes' : [self.gt_zs['obj_bboxes'][x]], 'sub_bboxes' : [self.gt_zs['sub_bboxes'][x]]}
       except FileNotFoundError:
-        warnings.warn("Warning! Couldn't find zero-shot ground-truth pickle. Evaluation will be skipped.")
+        print("Warning! Couldn't find zero-shot ground-truth pickle. Evaluation will be skipped.")
 
     # If None, the num_imgs that will be used is the size of the ground-truths
     self.num_imgs = None
@@ -306,7 +305,7 @@ class VRDEvaluator():
         self._append_res(res, (tuple_confs_im, rlp_labels_im, sub_bboxes_im, obj_bboxes_im))
 
       # if len(len(dataloader_rel)) != len(res["obj_bboxes_ours"]):
-      #   warnings.warn("Warning! Rel test results and gt do not have the same length: rel test performance might be off! {} != {}".format(len(len(dataloader_rel)), len(res["obj_bboxes_ours"])), UserWarning)
+      #   print("Warning! Rel test results and gt do not have the same length: rel test performance might be off! {} != {}".format(len(len(dataloader_rel)), len(res["obj_bboxes_ours"])))
 
       recalls = eval_recall_at_N(res, gts = [gt, gt_zs], Ns = Ns, num_imgs = self.num_imgs)
       time2 = time.time()

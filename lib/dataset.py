@@ -95,7 +95,7 @@ class VRDDataset():
       filename = "data_{}_{}_{}.json".format(format, granularity, stage)
       if self.name == "vrd" and self.subset == "dsr":
           filename = "dsr_{}_{}_{}.json".format(format, granularity, stage)
-      print("Data not cached. Reading {}...".format(filename))
+      # print("Data not cached. Reading {}...".format(filename))
       data = self.readJSON(filename)
       if self.img_subset != "":
         if self.img_subset == "mini" and stage == "train":

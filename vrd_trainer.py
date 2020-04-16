@@ -27,7 +27,7 @@ from lib.evaluator import VRDEvaluator
 # Test if code compiles
 TEST_DEBUGGING = False # True # False # True # True # False
 # Test if a newly-introduced change affects the validity of the code
-TEST_VALIDITY = False #  True # True
+TEST_VALIDITY = True # False #  True # True
 # Try overfitting to a single element
 TEST_OVERFIT = False #True # False # True
 
@@ -375,6 +375,10 @@ if __name__ == "__main__":
     trainer = vrd_trainer("test-overfit", args = args, profile = ["cfgs/vg.yml", "cfgs/pred_sem.yml"])
     trainer.train()
 
+  # Test VG
+  trainer = vrd_trainer("original-vg", {"training" : {"num_epochs" : 5, "test_first" : True}, "eval" : {"test_pre" : test_type}}, profile = "cfgs/vg.yml")
+  trainer.train()
+
   # Scan (rotating parameters)
   for lr in [0.00001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
     for weight_decay in [0.0005]:
@@ -400,9 +404,5 @@ if __name__ == "__main__":
                 }
               }, profile = profile)
             trainer.train()
-
-  # Test VG
-  trainer = vrd_trainer("original-vg", {"training" : {"num_epochs" : 5}, "eval" : {"test_pre" : test_type}}, profile = "cfgs/vg.yml")
-  trainer.train()
 
   sys.exit(0)
