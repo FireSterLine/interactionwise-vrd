@@ -162,7 +162,7 @@ def eval_recall_at_N(res, gts, Ns = [100, 50, 4.], num_imgs = None, use_rel = Tr
         pred["obj_bboxes"][i]   = pred["obj_bboxes"][i][:N]
     for gt in gts:
       if gt is None:
-        recalls.append(None)
+        recalls.append(np.nan)
         continue
       if isinstance(N, float): # TODO: validate
         for i,(tuple_labels, tuple_confs, sub_bboxes, obj_bboxes) in enumerate(zip(pred["tuple_label"], pred["tuple_confs"], pred["sub_bboxes"], pred["obj_bboxes"])):

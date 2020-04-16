@@ -27,7 +27,7 @@ from lib.evaluator import VRDEvaluator
 # Test if code compiles
 TEST_DEBUGGING = False # True # False # True # True # False
 # Test if a newly-introduced change affects the validity of the code
-TEST_VALIDITY = True # False #  True # True
+TEST_VALIDITY = False # True # False #  True # True
 # Try overfitting to a single element
 TEST_OVERFIT = False #True # False # True
 
@@ -165,8 +165,8 @@ class vrd_trainer():
     # Prepare result table
     res_headers = ["Epoch"]
     self.args.eval.rec = sorted(self.args.eval.rec, reverse=True)
-    if self.args.eval.test_pre: res_headers += self.gt_headers("Pre", self.args.eval.test_pre)
-    if self.args.eval.test_rel: res_headers += self.gt_headers("Rel", self.args.eval.test_rel)
+    if self.args.eval.test_pre: res_headers += self.gt_headers(self.args.eval.test_pre, "Pre")
+    if self.args.eval.test_rel: res_headers += self.gt_headers(self.args.eval.test_rel, "Rel")
 
     res = []
 
@@ -302,22 +302,22 @@ class vrd_trainer():
   def test_pre(self):
     recalls, dtime = self.eval.test_pre(self.model, self.args.eval.rec)
     print("PRED TEST:")
-    print(self.get_format_str().format(*recalls))
+    print(self.get_format_str(self.gt_headers(self.args.eval.test_pre)).format(*recalls))
     print("TEST Time: {}".format(utils.time_diff_str(dtime)))
     return recalls, dtime
 
   def test_rel(self):
     recalls, (pos_num, loc_num, gt_num), dtime = self.eval.test_rel(self.model, self.args.eval.rec)
     print("REL TEST:")
-    print(self.get_format_str().format(*recalls))
+    print(self.get_format_str(self.gt_headers(self.args.eval.test_rel)).format(*recalls))
     # print("OBJ TEST: POS: {: 6.3f}, LOC: {: 6.3f}, GT: {: 6.3f}, Precision: {: 6.3f}, Recall: {: 6.3f}".format(pos_num, loc_num, gt_num, np.float64(pos_num)/(pos_num+loc_num), np.float64(pos_num)/gt_num))
     print("TEST Time: {}".format(utils.time_diff_str(dtime)))
     return recalls, dtime
 
-  def get_format_str(self):
-    return "".join(["\t{}: {{: 6.3f}}".format(x) if i % 2 == 0 else "\t{}: {{: 6.3f}}\n".format(x) for i,x in enumerate(self.gt_headers())])
+  def get_format_str(self, gt_headers):
+    return "".join(["\t{}: {{: 6.3f}}".format(x) if i % 2 == 0 else "\t{}: {{: 6.3f}}\n".format(x) for i,x in enumerate(gt_headers)])
 
-  def gt_headers(self, prefix="", test_type = True):
+  def gt_headers(self, test_type, prefix=""):
     def metric_name(x):
       if isinstance(x, float): return "{}x".format(x)
       elif isinstance(x, int): return str(x)
@@ -376,7 +376,7 @@ if __name__ == "__main__":
     trainer.train()
 
   # Test VG
-  trainer = vrd_trainer("original-vg", {"training" : {"num_epochs" : 5, "test_first" : True}, "eval" : {"test_pre" : test_type}}, profile = "cfgs/vg.yml")
+  trainer = vrd_trainer("original-vg", {"data" : {"justafew" : True}, "training" : {"num_epochs" : 5, "test_first" : True}, "eval" : {"test_pre" : test_type}}, profile = "cfgs/vg.yml")
   trainer.train()
 
   # Scan (rotating parameters)

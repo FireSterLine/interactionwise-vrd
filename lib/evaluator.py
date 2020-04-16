@@ -313,6 +313,7 @@ class VRDEvaluator():
       return recalls, (pos_num, loc_num, gt_num), (time2 - time1)
 
   def _get_gt_subset(self, gt, index):
+    if gt is None: return None
     return {'tuple_label' : np.array(gt['tuple_label'])[index],
             'obj_bboxes'  : np.array(gt['obj_bboxes'])[index],
             'sub_bboxes'  : np.array(gt['sub_bboxes'])[index]}

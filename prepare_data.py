@@ -93,7 +93,7 @@ class DataPreparer:
           def granulate(d):
             new_vrd_data = []
             for (img_path, relst) in d:
-              if img_path is None:
+              if relst is None:
                 new_vrd_data.append((None, None))
                 continue
               for img_rel in relst:
@@ -124,6 +124,9 @@ class DataPreparer:
     def relst2annos(self):
         new_vrd_data = {}
         for img_path, relst in self.vrd_data.items():
+            if relst is None:
+                new_vrd_data[img_path] = None
+                continue
             objects  = []
             rels     = []
             def add_object(obj):
@@ -204,7 +207,9 @@ class DataPreparer:
 
     def get_vrd_data_pair(self, k):
       try:
-        return (k, self.vrd_data[k])
+        data = self.vrd_data[k]
+        if data is None: return (None, None)
+        else: return (k, data)
       except KeyError:
         if k is not None:
           print("Image '{}' not found in train vrd_data (e.g {})".format(k, next(iter(self.vrd_data))))
@@ -499,8 +504,8 @@ class VGPrep(DataPreparer):
         self.dir = osp.join("genome", "{}-{}-{}".format(num_objects, num_attributes, num_predicates))
 
         self.data_format = "json"
-        self.json_selector = osp.join(self.data_format, "*.{}".format(self.data_format))
-        # if the path to JSON files does not exist, generate those files using VGCleaner
+        self.img_metadata_file_format = osp.join(self.data_format, "{{}}.{}".format(self.data_format))
+        # if the path to metadata files does not exist, generate those files using VGCleaner
         if osp.exists(self.fullpath(self.data_format)) is False:
             print("Generating {} files for VG relationships...".format(self.data_format))
             cleaner = VGCleaner(num_objects, num_attributes, num_predicates, self.data_format)
@@ -513,24 +518,32 @@ class VGPrep(DataPreparer):
         self.predicates_label_to_id_mapping = utils.invert_dict(self.pred_vocab)
         # print(self.predicates_label_to_id_mapping)
         # print(self.objects_label_to_id_mapping)
+        
+        self.splits = {
+            "train" : [line.split(" ")[0] for line in utils.load_txt_list(self.fullpath("../train.txt"))],
+            "test"  : [line.split(" ")[0] for line in utils.load_txt_list(self.fullpath("../val.txt"))],
+        }
+        needed_idxs = [idx for _,idxs in self.splits.items() for idx in idxs]
 
         vrd_data = {}
-        for ix, filename in enumerate(glob(self.fullpath(self.json_selector))):
-
-            # NOTE: glob outputs the whole path relative to the current directory
-            data = self.readjson("/".join(filename.split("/")[-2:]))
-
-            img_path = osp.join(data['folder'], data['filename'])
-            # print(filename, img_path)
-            vrd_data[img_path] = self._generate_relst(data)
+        n_not_found = []
+        for ix, img_path in enumerate(needed_idxs):
+            
+            filepath = self.img_metadata_file_format.format(osp.splitext(osp.basename(img_path))[0])
+            try:
+              relst = self._generate_relst(self.readjson(filepath))
+            except FileNotFoundError:
+              relst = None
+              n_not_found.append(filepath)
+            
+            vrd_data[img_path] = relst
+        
+        if len(n_not_found) > 0:
+          print("Warning! Couldn't find metadata for {}/{} images. (e.g '{}')".format(len(n_not_found), len(needed_idxs), n_not_found[0]))
 
         self.vrd_data = vrd_data
         self.cur_dformat = "relst"
 
-        self.splits = {
-            "train" : [line.split(" ")[0] for line in utils.load_txt_list(self.fullpath("../train.txt"))],
-            "test"  : [line.split(" ")[0] for line in utils.load_txt_list(self.fullpath("../test.txt"))],
-        }
 
     def _generate_relst(self, data):
         objects_info = {}
@@ -619,7 +632,7 @@ if __name__ == '__main__':
         # w2v_model = KeyedVectors.load_word2vec_format(osp.join(globals.data_dir, globals.w2v_model_path), binary=True)
         w2v_model = Word2Vec.load(globals.w2v_model_path)
 
-    #"""
+    """
     print("Preparing data for VRD!")
     data_preparer_vrd = VRDPrep(multi_label=multi_label, generate_emb = w2v_model)
     #print("\tPreparing evaluation data from Language Priors...")
@@ -634,7 +647,7 @@ if __name__ == '__main__':
     data_preparer_vrd.save_data("relst", "rel")
     print("\tGenerating data in annos format...")
     data_preparer_vrd.save_data("annos")
-    #"""
+    """
 
     """
     # Generate the data in relst format using the {train,test}.pkl files provided by DSR
@@ -644,7 +657,7 @@ if __name__ == '__main__':
     data_preparer_vrd.save_data("relst", "rel")
     data_preparer_vrd.save_data("annos")
     """
-    """
+    #"""
     # TODO: test to see if VG preparation is valid
     # TODO: allow multi-word vocabs, so that we can load 1600-400-20_bottomup
     print("Preparing data for VG...")
@@ -658,4 +671,4 @@ if __name__ == '__main__':
     data_preparer_vg.save_data("relst", "rel")
     print("\tGenerating annos data...")
     data_preparer_vg.save_data("annos")
-    """
+    #"""
