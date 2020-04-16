@@ -376,26 +376,27 @@ if __name__ == "__main__":
     trainer.train()
 
   # Test VG
-  trainer = vrd_trainer("original-vg", {"data" : {"justafew" : True}, "training" : {"num_epochs" : 5, "test_first" : True}, "eval" : {"test_pre" : test_type}}, profile = "cfgs/vg.yml")
-  trainer.train()
+  # trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : False, "test_rel" : test_type}}, profile = "cfgs/vg.yml")
+  #trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : test_type}}, profile = "cfgs/vg.yml")
+  #trainer.train()
 
   # Scan (rotating parameters)
   for lr in [0.00001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
     for weight_decay in [0.0005]:
-      for lr_rel_fus_ratio in [10]: # Try, 1 0.1, 1, 10]:
-        for pred_sem_mode in [-1,0,1, 8+0,8+1, 16+0,16+1,16+2, 16+8+0, 16+8+4+0, 16+16+0]:
+      for lr_rel_fus_ratio in [1,10,.1]: # Try, 1 0.1, 1, 10]:
+          for pred_sem_mode in [-1,1,8+1,16+0,16+4]: # , 16+0,16+1,16+2, 16+8+0, 16+8+4+0, 16+16+0]:
             # session_id = "pred-sem-scan-v6-vg-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode)
             # profile = ["cfgs/vg.yml", "cfgs/pred_sem.yml"]
             pred_sem_mode = pred_sem_mode+1
-            session_id = "pred-sem-scan-v6-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode)
-            profile = ["cfgs/pred_sem.yml"]
+            session_id = "pred-sem-scan-v7-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode)
+            profile = ["cfgs/pred_sem.yml"] # , "cfgs/vg.yml"]
             test_type = True # 0.5
 
             trainer = vrd_trainer(session_id, {
                 # "data" : {"justafew" : True}, "training" : {"num_epochs" : 2, "test_freq" : 0},
                 "training" : {"num_epochs" : 3, "test_freq" : [1,2]},
                 "model" : {"use_pred_sem" : pred_sem_mode},
-                "eval" : {"test_pre" : test_type, "test_rel" : test_type},
+                "eval" : {"test_pre" : test_type}, # , "test_rel" : test_type},
                 "opt": {
                   "lr": lr,
                   "weight_decay" : weight_decay,
