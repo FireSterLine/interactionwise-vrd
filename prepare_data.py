@@ -1,3 +1,4 @@
+import os
 import os.path as osp
 from glob import glob
 
@@ -77,6 +78,7 @@ class DataPreparer:
 
     # Save data
     def save_data(self, dformat, granularity = "img"):
+        print("\tGenerating '{}' data with '{}' granularity...".format(dformat, granularity))
         self.to_dformat(dformat)
 
         output_file_format = "{}_{}_{}_{{}}.json".format(self.prefix, dformat, granularity)
@@ -154,6 +156,7 @@ class DataPreparer:
         self.cur_dformat = "annos"
 
     def prepareGT(self):
+      print("\tGenerating ground-truth pickle...")
       if self.cur_dformat != "relst":
         print("Warning! prepareGT requires relst format (I'll convert it, but maybe you want to prepareGT later or sooner than now)")
         if not osp.exists(save_dir):
@@ -271,6 +274,7 @@ class VRDPrep(DataPreparer):
         # TODO: Additionally handle files like {test,train}_image_metadata.json
 
     def load_vrd(self):
+        print("\tLoad VRD data...")
         # LOAD DATA
         annotations_train = self.readjson("annotations_train.json")
         annotations_test  = self.readjson("annotations_test.json")
@@ -345,6 +349,7 @@ class VRDPrep(DataPreparer):
             This function loads the {train,test}.pkl which contains the original format of the data
             from the vrd-dsr repo, and converts it to the relst format.
         """
+        print("\tLoad dsr VRD data...")
 
         vrd_data = {}
         for (stage, src_data) in [("train", self.train_dsr),("test", self.test_dsr)]:
@@ -500,6 +505,7 @@ class VGPrep(DataPreparer):
     def __init__(self, subset, multi_label=True, generate_emb=None):
         super(VGPrep, self).__init__(multi_label=multi_label, generate_emb=generate_emb)
 
+        print("\tLoad VRD data...")
         num_objects, num_attributes, num_predicates = subset
         self.dir = osp.join("genome", "{}-{}-{}".format(num_objects, num_attributes, num_predicates))
 
@@ -637,15 +643,10 @@ if __name__ == '__main__':
     data_preparer_vrd = VRDPrep(multi_label=multi_label, generate_emb = w2v_model)
     #print("\tPreparing evaluation data from Language Priors...")
     #data_preparer_vrd.prepareEvalFromLP()
-    print("\tLoad VRD data...")
     data_preparer_vrd.load_vrd()
-    print("\tGenerating data in relst format...")
     data_preparer_vrd.save_data("relst")
-    #print("\tGenerating ground truth data...")
     #data_preparer_vrd.prepareGT()
-    print("\tGenerating data in relst format at relationship level...")
     data_preparer_vrd.save_data("relst", "rel")
-    print("\tGenerating data in annos format...")
     data_preparer_vrd.save_data("annos")
     """
 
@@ -658,17 +659,13 @@ if __name__ == '__main__':
     data_preparer_vrd.save_data("annos")
     """
     #"""
-    # TODO: test to see if VG preparation is valid
     # TODO: allow multi-word vocabs, so that we can load 1600-400-20_bottomup
     print("Preparing data for VG...")
-    data_preparer_vg = VGPrep((150, 50, 50), multi_label=multi_label, generate_emb=w2v_model)
-    # data_preparer_vg  = VGPrep((1600, 400, 20), multi_label=multi_label, generate_emb = w2v_model)
-    print("\tGenerating relst data with granularity img...")
+    #subset = (150, 50, 50)
+    subset = (1600, 400, 20)
+    data_preparer_vg = VGPrep(subset, multi_label=multi_label, generate_emb=w2v_model)
     data_preparer_vg.save_data("relst")
-    print("\tGenerating ground-truth pickle...")
     data_preparer_vg.prepareGT()
-    print("\tGenerating relst data with granularity rel...")
     data_preparer_vg.save_data("relst", "rel")
-    print("\tGenerating annos data...")
     data_preparer_vg.save_data("annos")
     #"""
