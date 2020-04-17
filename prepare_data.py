@@ -631,16 +631,18 @@ if __name__ == '__main__':
     # TODO: filter out relationships between the same object?
 
     multi_label = False
-    generate_embeddings = False
+    generate_embeddings = True # False
 
     w2v_model = None
     if generate_embeddings:
+        print("Loading w2v model...")
         # w2v_model = KeyedVectors.load_word2vec_format(osp.join(globals.data_dir, globals.w2v_model_path), binary=True)
         w2v_model = Word2Vec.load(globals.w2v_model_path)
 
-    """
+    #"""
     print("Preparing data for VRD!")
     data_preparer_vrd = VRDPrep(multi_label=multi_label, generate_emb = w2v_model)
+    """
     #print("\tPreparing evaluation data from Language Priors...")
     #data_preparer_vrd.prepareEvalFromLP()
     data_preparer_vrd.load_vrd()
@@ -648,7 +650,7 @@ if __name__ == '__main__':
     #data_preparer_vrd.prepareGT()
     data_preparer_vrd.save_data("relst", "rel")
     data_preparer_vrd.save_data("annos")
-    """
+    #"""
 
     """
     # Generate the data in relst format using the {train,test}.pkl files provided by DSR
@@ -658,14 +660,16 @@ if __name__ == '__main__':
     data_preparer_vrd.save_data("relst", "rel")
     data_preparer_vrd.save_data("annos")
     """
-    #"""
+    
+    """
     # TODO: allow multi-word vocabs, so that we can load 1600-400-20_bottomup
     print("Preparing data for VG...")
-    #subset = (150, 50, 50)
-    subset = (1600, 400, 20)
+    subset = (150, 50, 50)
+    #subset = (1600, 400, 20)
     data_preparer_vg = VGPrep(subset, multi_label=multi_label, generate_emb=w2v_model)
-    data_preparer_vg.save_data("relst")
-    data_preparer_vg.prepareGT()
-    data_preparer_vg.save_data("relst", "rel")
-    data_preparer_vg.save_data("annos")
+    #data_preparer_vg.save_data("relst")
+    #data_preparer_vg.prepareGT()
+    #data_preparer_vg.save_data("relst", "rel")
+    #data_preparer_vg.save_data("annos")
     #"""
+    
