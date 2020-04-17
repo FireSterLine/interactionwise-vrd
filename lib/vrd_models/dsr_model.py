@@ -175,7 +175,7 @@ class DSRModel(nn.Module):
           )
         else:
           self.fc_fusion = FC(self.total_fus_neurons, self.args.n_pred, relu = ((mode//2)%2))
-        
+
         self.fc_rel    = FC(self.args.n_pred, self.args.n_pred, relu = False, bias = ((mode//4)%2))
         with torch.no_grad():
           self.fc_rel.fc.weight.data.copy_(pred2pred_sim)
@@ -317,7 +317,7 @@ class DSRModel(nn.Module):
     x_fused = self.fc_fusion(x_fused)
     rel_scores = self.fc_rel(x_fused)
 
-    return obj_scores, rel_scores
+    return obj_scores, rel_scores, x_fused
 
   def load_pretrained_conv(self, file_path, fix_layers=True):
     """ Load the weights for the initial convolutional layers and fully connecteda layers """

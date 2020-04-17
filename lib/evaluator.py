@@ -133,7 +133,7 @@ class VRDEvaluator():
         sub_bboxes_im  = np.zeros((N, 4), dtype = np.float) # Subj bboxes
         obj_bboxes_im  = np.zeros((N, 4), dtype = np.float) # Obj bboxes
 
-        _, rel_scores = vrd_model(*net_input)
+        _, rel_scores, _ = vrd_model(*net_input)
 
         # TODO: fix when batch_size>1
         idx_s           = deepcopy(idx_s[0])
@@ -222,7 +222,7 @@ class VRDEvaluator():
         (det_obj_classes, det_obj_boxes, det_obj_confs) = det_obj
 
         net_input = net_input_to(net_input, utils.device)
-        obj_score, rel_score = vrd_model(*net_input)
+        obj_score, rel_score, _ = vrd_model(*net_input)
 
         # TODO: remove and fix everyhing else to allow batching
         # obj_score = obj_score[0]
