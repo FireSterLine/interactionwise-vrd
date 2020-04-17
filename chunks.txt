@@ -131,6 +131,7 @@ import pickle
 with open("output/vgg16/vrd_test/faster_rcnn_10/proposal_faster_rcnn.pkl", 'rb') as f:
   propnew = pickle.load(f, encoding="latin1")
 
+import pickle
 with open("data/vrd/eval/det_res.pkl", 'rb') as f:
   propold = pickle.load(f, encoding="latin1")
 
@@ -317,3 +318,98 @@ with open(filename, 'r') as f:
 pred_emb =np.array(pred_emb)
 cosine_similarity(pred_emb, pred_emb)
 [[scipy.spatial.distance.cosine(u, v) for v in d2] for u in d2]
+
+
+import pickle
+with open("data/genome/150-50-50/eval/det_res.pkl", 'rb') as f:
+  vg_det_res = pickle.load(f, encoding="latin1")
+
+import pickle
+with open("data/vrd/eval/det_res.pkl", 'rb') as f:
+  vrd_det_res = pickle.load(f, encoding="latin1")
+
+import numpy as np
+(vg_det_res["boxes"][0][0]).shape
+vrd_det_res["boxes"][0][0].shape
+
+(vg_det_res["cls"][0]).shape
+vrd_det_res["cls"][0].shape
+
+(vg_det_res["confs"][0][0]).shape
+vrd_det_res["confs"][0][0].shape
+
+(vg_det_res["boxes"][0][0]).dtype
+vrd_det_res["boxes"][0][0].dtype
+
+(vg_det_res["cls"][0]).dtype
+vrd_det_res["cls"][0].dtype
+
+(vg_det_res["confs"][0][0]).dtype
+vrd_det_res["confs"][0][0].dtype
+
+
+import os.path as osp
+import pickle
+ds_name = 'vrd'
+gt_path = osp.join("data", "{}", "eval", "from-language-priors/gt.pkl").format(ds_name)
+with open(gt_path, 'rb') as fid:
+  gt_vrdlp = pickle.load(fid, encoding="latin1")
+
+import os.path as osp
+import pickle
+ds_name = 'vrd'
+gt_path = osp.join("data", "{}", "eval", "gt.pkl").format(ds_name)
+with open(gt_path, 'rb') as fid:
+  gt_vrd = pickle.load(fid, encoding="latin1")
+
+import os.path as osp
+import pickle
+ds_name = 'genome/150-50-50'
+gt_path = osp.join("data", "{}", "eval", "gt.pkl").format(ds_name)
+with open(gt_path, 'rb') as fid:
+  gt_vg = pickle.load(fid, encoding="latin1")
+
+
+import numpy as np
+type(gt_vrd["tuple_label"][0][0])
+type(gt_vg["tuple_label"][0][0])
+
+type(gt_vrd["sub_bboxes"][0])
+type(gt_vg["sub_bboxes"][0])
+
+type(gt_vrd["obj_bboxes"][0])
+type(gt_vg["obj_bboxes"][0])
+
+gt_vrd["tuple_label"][0][0].shape
+gt_vg["tuple_label"][0][0].shape
+
+gt_vrd["sub_bboxes"][0].shape
+gt_vg["sub_bboxes"][0].shape
+
+gt_vrd["obj_bboxes"][0].shape
+gt_vg["obj_bboxes"][0].shape
+
+gt_vrd["tuple_label"][0][0].dtype
+gt_vg["tuple_label"][0][0].dtype
+
+gt_vrd["sub_bboxes"][0].dtype
+gt_vg["sub_bboxes"][0].dtype
+
+gt_vrd["obj_bboxes"][0].dtype
+gt_vg["obj_bboxes"][0].dtype
+
+
+np.array(gt_vg["tuple_label"][0], dtype=np.uint8)
+np.array(from dict to np array gt_vg["sub_bboxes"][0], , dtype=np.uint16)
+np.array(from dict to np array gt_vg["obj_bboxes"][0], , dtype=np.uint16)
+
+
+SESSION=1
+EPOCH=5
+CHECKPOINT=47969
+#CUT_AT=gt
+CUT_AT=7
+python gen_obj_det.py --dataset vg --net res101 \
+                   --cut_predictions_at $CUT_AT \
+                   --checksession $SESSION --checkepoch $EPOCH --checkpoint $CHECKPOINT \
+                   --cuda --vis
