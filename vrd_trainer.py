@@ -380,14 +380,6 @@ if __name__ == "__main__":
   #trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : test_type}}, profile = "cfgs/vg.yml")
   #trainer.train()
 
-  trainer = vrd_trainer("test-no_vis", {"training" : {"num_epochs" : 4}, "model" : {"use_vis" : False}})
-  trainer.train()
-  trainer = vrd_trainer("test-no_spat", {"training" : {"num_epochs" : 4}, "model" : {"use_spat" : 0}})
-  trainer.train()
-  trainer = vrd_trainer("test-no_sem", {"training" : {"num_epochs" : 4}, "model" : {"use_sem" : False}})
-  trainer.train()
-  trainer = vrd_trainer("test-no_so", {"training" : {"num_epochs" : 4}, "model" : {"use_so" : False}})
-  trainer.train()
 
   # Scan (rotating parameters)
   for lr in [0.00001,0.0001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
@@ -419,4 +411,13 @@ if __name__ == "__main__":
               }, profile = profile)
             trainer.train()
 
+  trainer = vrd_trainer("test-no_vis", {"training" : {"num_epochs" : 4}, "model" : {"use_vis" : False, "use_so" : False}})
+  trainer.train()
+  trainer = vrd_trainer("test-no_spat", {"training" : {"num_epochs" : 4}, "model" : {"use_spat" : 0}})
+  trainer.train()
+  trainer = vrd_trainer("test-no_sem", {"training" : {"num_epochs" : 4}, "model" : {"use_sem" : False}})
+  trainer.train()
+  trainer = vrd_trainer("test-no_so", {"training" : {"num_epochs" : 4}, "model" : {"use_so" : False}})
+  trainer.train()
+  
   sys.exit(0)

@@ -10,7 +10,7 @@ import os.path as osp
 from lib.network import FC, Conv2d, ROIPool, SemSim
 from lib.network import batched_index_select, set_trainability
 from easydict import EasyDict
-import utils
+import utils, globals
 
 class DSRModel(nn.Module):
   def __init__(self, args):
@@ -26,12 +26,12 @@ class DSRModel(nn.Module):
     if not hasattr(self.args, "n_pred"):
       raise ValueError("Can't build vrd model without knowing n_pred")
 
-    # This decides whether, in addition to the visual features of union box,
-    #  those of subject and object individually are used or not
-    self.args.use_so        = self.args.get("use_so",        True)
-
     # Use visual features
     self.args.use_vis       = self.args.get("use_vis",       True)
+
+    # This decides whether, in addition to the visual features of union box,
+    #  those of subject and object individually are used or not
+    self.args.use_so        = self.args.get("use_so",        self.args.use_vis)
 
     # Use semantic features (TODO: this becomes the size of the semantic features)
     self.args.use_sem       = self.args.get("use_sem",       True)
@@ -50,7 +50,9 @@ class DSRModel(nn.Module):
     # Use batch normalization or not
     self.args.use_bn        = self.args.get("use_bn",        False)
 
-
+    if not self.args.use_vis and self.args.use_so:
+      raise ValueError("Can't use so features without visual features flag true") # TODO: fix
+    
     self.total_fus_neurons = 0
 
 
@@ -118,16 +120,16 @@ class DSRModel(nn.Module):
       self.total_fus_neurons += self.args.n_fus_neurons
 
     if(self.args.use_sem):
-      # self.fc_semantic = FC(2*300, self.args.n_fus_neurons)
+      # self.fc_semantic = FC(2*globals.emb_size, self.args.n_fus_neurons)
       # self.total_fus_neurons += self.args.n_fus_neurons
-      self.emb = nn.Embedding(self.args.n_obj, 300)
+      self.emb = nn.Embedding(self.args.n_obj, globals.emb_size)
       set_trainability(self.emb, requires_grad=False)
-      self.fc_semantic = FC(300*2, self.args.n_fus_neurons)
+      self.fc_semantic = FC(globals.emb_size*2, self.args.n_fus_neurons)
       self.total_fus_neurons += self.args.n_fus_neurons
 
-      # self.emb = nn.Embedding(self.n_obj, 300)
+      # self.emb = nn.Embedding(self.n_obj, globals.emb_size)
       # set_trainability(self.emb, requires_grad=False)
-      # self.fc_so_emb = FC(300*2, 256)
+      # self.fc_so_emb = FC(globals.emb_size*2, 256)
 
 
     if not self.args.use_pred_sem:
@@ -147,13 +149,13 @@ class DSRModel(nn.Module):
         # 2 Fully-Connected layers: 1024 -> 512 -> 300
         self.fc_fusion = FC(self.total_fus_neurons, 512)
         self.fc_rel    = nn.Sequential(
-          FC(512, 300, relu = False),
+          FC(512, globals.emb_size, relu = False),
           SemSim(self.args.pred_emb, mode = mode),
         )
       elif mode < 16:
         mode = mode - 8
         # 1 Fully-Connected layers: 1024 -> 300
-        self.fc_fusion = FC(self.total_fus_neurons, 300, relu = False)
+        self.fc_fusion = FC(self.total_fus_neurons, globals.emb_size, relu = False)
         self.fc_rel    = SemSim(self.args.pred_emb, mode = mode)
       else:
         mode = mode - 16
@@ -386,9 +388,10 @@ class DSRModel(nn.Module):
 
     # opt_params = list(self.parameters())
     opt_params = [
-      {'params': self.fc8.parameters(),       'lr': lr*10},
       {'params': self.fc_fusion.parameters(), 'lr': lr*lr_fus_ratio},
     ]
+    if self.args.use_vis:
+      opt_params.append({'params': self.fc8.parameters(),       'lr': lr*10})
     if(not hasattr(self, "fc_rel_not_trainable") or not self.fc_rel_not_trainable):
       opt_params.append({'params': self.fc_rel.parameters(),       'lr': lr*lr_rel_ratio})
     if(self.args.use_so):
