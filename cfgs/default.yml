@@ -20,7 +20,7 @@ model:
   # Three types of spatial feature: # - : no spatial info
   # - : 8-way relative location vector
   # - : dual mask # TODO
-  use_spat: 0
+  use_spat: 1
   # Use or not predicate semantics
   use_pred_sem: False
   # Size of the representation for each modality when fusing features
