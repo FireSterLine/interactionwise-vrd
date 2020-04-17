@@ -260,7 +260,7 @@ class VRDDataLayer(data.Dataset):
     else:
 
       # Semantic vector for the predicate
-      gt_pred_sem = np.zeros((n_rels, 300))
+      gt_pred_sem = np.zeros((n_rels, globals.emb_size))
 
       # Target output for the network
       # TODO: reshape like mlab_target = np.zeros((n_rels, self.n_pred))

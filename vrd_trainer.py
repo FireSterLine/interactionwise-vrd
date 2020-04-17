@@ -380,13 +380,13 @@ if __name__ == "__main__":
   #trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : test_type}}, profile = "cfgs/vg.yml")
   #trainer.train()
 
-  trainer = vrd_trainer("test-no_vis", {"training" : {"num_epochs" : 4}, "model" : {"use_vis" : False})
+  trainer = vrd_trainer("test-no_vis", {"training" : {"num_epochs" : 4}, "model" : {"use_vis" : False}})
   trainer.train()
-  trainer = vrd_trainer("test-no_spat", {"training" : {"num_epochs" : 4}, "model" : {"use_spat" : False})
+  trainer = vrd_trainer("test-no_spat", {"training" : {"num_epochs" : 4}, "model" : {"use_spat" : 0}})
   trainer.train()
-  trainer = vrd_trainer("test-no_sem", {"training" : {"num_epochs" : 4}, "model" : {"use_sem" : False})
+  trainer = vrd_trainer("test-no_sem", {"training" : {"num_epochs" : 4}, "model" : {"use_sem" : False}})
   trainer.train()
-  trainer = vrd_trainer("test-no_so", {"training" : {"num_epochs" : 4}, "model" : {"use_so" : False})
+  trainer = vrd_trainer("test-no_so", {"training" : {"num_epochs" : 4}, "model" : {"use_so" : False}})
   trainer.train()
 
   # Scan (rotating parameters)
@@ -409,7 +409,7 @@ if __name__ == "__main__":
                 # "data" : {"justafew" : True}, "training" : {"num_epochs" : 2, "test_freq" : 0},
                 "training" : {"num_epochs" : 4, "test_freq" : [1,2,3]},
                 "model" : {"use_pred_sem" : pred_sem_mode},
-                "eval" : {"test_pre" : test_type} # , "test_rel" : test_type},
+                "eval" : {"test_pre" : test_type}, # "test_rel" : test_type},
                 "opt": {
                   "lr": lr,
                   "weight_decay" : weight_decay,
