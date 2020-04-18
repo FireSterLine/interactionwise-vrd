@@ -194,33 +194,68 @@ class DataPreparer:
       gt_pkl["sub_bboxes"]  = []
       gt_pkl["obj_bboxes"]  = []
 
-      for img_path in self.splits['test']:
+      # TODO: zeroshot: count all the different triples in the train set, and filter out the ones in the test set that are also in the train set
+      gt_zs_pkl = {}
+      gt_zs_pkl["tuple_label"] = []
+      gt_zs_pkl["sub_bboxes"]  = []
+      gt_zs_pkl["obj_bboxes"]  = []
+      train_tuple_label = []
+
+      for img_path in self.splits["train"]:
+        _, relst = self.get_vrd_data_pair(img_path)
+        if relst is not None:
+          for i_rel, rel in enumerate(relst):
+            for id in rel["predicate"]["id"]:
+              train_tuple_label.append([rel["subject"]["id"], id, rel["object"]["id"]])
+
+      for img_path in self.splits["test"]:
         _, relst = self.get_vrd_data_pair(img_path)
 
-        tuple_label = []
-        sub_bboxes  = []
-        obj_bboxes  = []
+        tuple_labels = []
+        sub_bboxes   = []
+        obj_bboxes   = []
+
+        zs_tuple_labels = []
+        zs_sub_bboxes   = []
+        zs_obj_bboxes   = []
 
         if relst is not None:
           for i_rel, rel in enumerate(relst):
             # multi_label (namely multi-predicate relationships) are not allowed in ground-truth pickles
             for id in rel["predicate"]["id"]:
-              tuple_label.append([rel["subject"]["id"], id, rel["object"]["id"]])
-              sub_bboxes.append(utils.bboxDictToNumpy(rel["subject"]["bbox"]))
-              obj_bboxes.append(utils.bboxDictToNumpy(rel["object"]["bbox"]))
+              tuple_label = [rel["subject"]["id"], id, rel["object"]["id"]]
+              sub_bbox = utils.bboxDictToNumpy(rel["subject"]["bbox"])
+              obj_bbox = utils.bboxDictToNumpy(rel["object"]["bbox"])
 
-        tuple_label = np.array(tuple_label, dtype=np.uint8)
-        sub_bboxes  = np.array(sub_bboxes,  dtype=np.uint16)
-        obj_bboxes  = np.array(obj_bboxes,  dtype=np.uint16)
+              tuple_labels.append(tuple_label)
+              sub_bboxes.append(sub_bbox)
+              obj_bboxes.append(obj_bbox)
+              if not tuple_label in train_tuple_label:
+                zs_tuple_labels.append(tuple_label)
+                zs_sub_bboxes.append(sub_bbox)
+                zs_obj_bboxes.append(obj_bbox)
 
-        gt_pkl["tuple_label"].append(np.array(tuple_label))
-        gt_pkl["sub_bboxes"].append(np.array(sub_bboxes))
-        gt_pkl["obj_bboxes"].append(np.array(obj_bboxes))
+        tuple_labels = np.array(tuple_labels, dtype = np.uint8)
+        sub_bboxes   = np.array(sub_bboxes,   dtype = np.uint16)
+        obj_bboxes   = np.array(obj_bboxes,   dtype = np.uint16)
+
+        zs_tuple_labels = np.array(zs_tuple_labels, dtype = np.uint8)
+        zs_sub_bboxes   = np.array(zs_sub_bboxes,   dtype = np.uint16)
+        zs_obj_bboxes   = np.array(zs_obj_bboxes,   dtype = np.uint16)
+
+        gt_pkl["tuple_label"].append(tuple_labels)
+        gt_pkl["sub_bboxes"].append(sub_bboxes)
+        gt_pkl["obj_bboxes"].append(obj_bboxes)
+
+        zs_gt_pkl["tuple_label"].append(zs_tuple_labels)
+        zs_gt_pkl["sub_bboxes"].append(zs_sub_bboxes)
+        zs_gt_pkl["obj_bboxes"].append(zs_obj_bboxes)
+
+      gt_pkl    = np.array(gt_pkl)
+      zs_gt_pkl = np.array(zs_gt_pkl)
 
       self.writepickle(gt_pkl, gt_output_path)
-
-      # TODO: zeroshot: count all the different triples in the train set, and filter out the ones in the test set that are also in the train set
-      # self.writepickle(gt_zs_pkl, gt_zs_output_path)
+      self.writepickle(gt_zs_pkl, gt_zs_output_path)
 
 
     # def annos2relst(self):
@@ -543,7 +578,7 @@ class VGPrep(DataPreparer):
         self.img_metadata_file_format = osp.join(self.data_format, "{{}}.{}".format(self.data_format))
         # if the path to metadata files does not exist, generate those files using VGCleaner
         if osp.exists(self.fullpath(self.data_format)) is False:
-            assert DRY_RUN == False, "Can't perform dry run when I need to run VGCleaner()" 
+            assert DRY_RUN == False, "Can't perform dry run when I need to run VGCleaner()"
             print("Generating {} files for VG relationships...".format(self.data_format))
             cleaner = VGCleaner(num_objects, num_attributes, num_predicates, self.data_format)
             cleaner.build_vocabs_and_json()
@@ -660,7 +695,7 @@ class EpochLogger(CallbackAny2Vec):
 if __name__ == '__main__':
 
     # TODO: filter out relationships between the same object?
-    
+
     multi_label = False
     generate_embeddings = True # False
 
