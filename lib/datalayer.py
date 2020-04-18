@@ -7,7 +7,6 @@ import pickle
 from lib.blob import prep_im_for_blob
 from lib.dataset import VRDDataset
 import torch
-import warnings
 
 import utils, globals
 from copy import copy, deepcopy
@@ -121,7 +120,7 @@ class VRDDataLayer(data.Dataset):
         else:
           return False, False, False, False
       elif self.stage == "train":
-        warnings.warn("Warning: I'm about to return None values during training. That's not good, probably batching will fail", UserWarning)
+        print("Warning! I'm about to return None values during training. That's not good, batching will probably fail")
         return False, False, False, False
 
     (img_path, annos) = self.vrd_data[index]
@@ -330,12 +329,14 @@ class VRDDataLayer(data.Dataset):
         return net_input, gt_obj, det_obj, gt_soP_prior
 
     elif self.stage == "train":
-      gt_pred_sem      = torch.as_tensor(gt_pred_sem,     dtype=torch.long)
+      gt_pred_sem      = torch.as_tensor(gt_pred_sem,    dtype=torch.long)
       mlab_target      = torch.as_tensor(mlab_target,    dtype=torch.long)
       return net_input,       \
               gt_soP_prior,   \
               gt_pred_sem,    \
               mlab_target
+
+
 
 # Move the net input to the GPU
 def net_input_to(net_input, device):

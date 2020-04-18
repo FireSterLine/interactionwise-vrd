@@ -27,7 +27,8 @@ from lib.evaluator import VRDEvaluator
 # Test if code compiles
 TEST_DEBUGGING = False # True # False # True # True # False
 # Test if a newly-introduced change affects the validity of the code
-TEST_VALIDITY = False # False # True # False #  True # True
+TEST_TRAIN_VALIDITY = False # False # True # False #  True # True
+TEST_EVAL_VALIDITY = False # False # True # False #  True # True
 # Try overfitting to a single element
 TEST_OVERFIT = False #True # False # True
 
@@ -40,11 +41,11 @@ class vrd_trainer():
   def __init__(self, session_name, args = {}, profile = None, checkpoint = False):
 
     # Load arguments cascade from profiles
-    def_args = utils.cfg_from_file("cfgs/default.yml")
+    def_args = utils.load_cfg_profile("default")
     if profile is not None:
       profile = utils.listify(profile)
       for p in profile:
-        def_args = utils.dict_patch(utils.cfg_from_file(p), def_args)
+        def_args = utils.dict_patch(utils.load_cfg_profile(p), def_args)
     args = utils.dict_patch(args, def_args)
 
     #print("Arguments:\n", yaml.dump(args, default_flow_style=False))
@@ -112,15 +113,14 @@ class vrd_trainer():
       print("Random initialization...")
       # Random initialization
       utils.weights_normal_init(self.model, dev=0.01)
-      # Load VGG layers
-      self.model.load_pretrained_conv(osp.join(globals.data_dir, "VGG_imagenet.npy"), fix_layers=True)
       # Load existing embeddings
       if self.model.args.use_sem != False:
         try:
           # obj_emb = torch.from_numpy(self.dataset.readPKL("params_emb.pkl"))
           obj_emb = torch.from_numpy(np.array(self.dataset.readJSON("objects-emb.json")))
         except FileNotFoundError:
-          print("Warning: Initialization weights for emb.weight layer not found! Weights are initialized randomly")
+          print("Warning! Initialization weights for emb.weight layer not found! Weights are initialized randomly")
+          input()
           # set_trainability(self.model.emb, requires_grad=True)
         self.model.state_dict()["emb.weight"].copy_(obj_emb)
 
@@ -156,8 +156,8 @@ class vrd_trainer():
     if "optimizer_state_dict" in self.state:
       print("Loading optimizer state_dict...")
       self.optimizer.load_state_dict(self.state["optimizer_state_dict"])
-    else: # TODO remove
-      print("Optimizer state_dict not found!")
+    elif isinstance(self.checkpoint, str):
+      print("Warning! Optimizer state_dict not found!")
 
   # Perform the complete training process
   def train(self):
@@ -166,8 +166,8 @@ class vrd_trainer():
     # Prepare result table
     res_headers = ["Epoch"]
     self.args.eval.rec = sorted(self.args.eval.rec, reverse=True)
-    if self.args.eval.test_pre: res_headers += self.gt_headers(self.args.eval.test_pre, "Pre")
-    if self.args.eval.test_rel: res_headers += self.gt_headers(self.args.eval.test_rel, "Rel")
+    if self.args.eval.test_pre: res_headers += self.gt_headers(self.args.eval.test_pre, "Pre") + ["Avg"]
+    if self.args.eval.test_rel: res_headers += self.gt_headers(self.args.eval.test_rel, "Rel") + ["Avg"]
 
     res = []
 
@@ -229,10 +229,10 @@ class vrd_trainer():
     res_row = [self.state["epoch"]+1]
     if self.args.eval.test_pre:
       recalls, dtime = self.test_pre()
-      res_row += recalls
+      res_row += recalls + [sum(recalls)/len(recalls)]
     if self.args.eval.test_rel:
       recalls, dtime = self.test_rel()
-      res_row += recalls
+      res_row += recalls + [sum(recalls)/len(recalls)]
     res.append(res_row)
     with open(osp.join(globals.models_dir, "{}.txt".format(self.session_name)), 'w') as f:
       f.write(tabulate(res, res_headers))
@@ -349,56 +349,58 @@ if __name__ == "__main__":
     trainer.train()
 
 
-  # TEST_VALIDITY: Test if a newly-introduced change affects the validity of the code
-  if TEST_VALIDITY:
+  # TEST_TRAIN_VALIDITY or TEST_EVAL_VALIDITY:
+  #  Test if a newly-introduced change affects the validity of the evaluation (or evaluation+training)
+  if TEST_TRAIN_VALIDITY or TEST_EVAL_VALIDITY:
     print("########################### TEST_VALIDITY ###########################")
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
-    #trainer = vrd_trainer("original-checkpoint", {"training" : {"num_epochs" : 1, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd/dsr"}}, profile = ["cfgs/pred_sem.yml"], checkpoint="epoch_4_checkpoint.pth.tar")
-    #trainer.train()
-    trainer = vrd_trainer("original-checkpoint", {"training" : {"num_epochs" : 1, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd"}}, checkpoint="epoch_4_checkpoint.pth.tar")
-    trainer.train()
-    if TEST_VALIDITY > 1:
-      trainer = vrd_trainer("original", {"training" : {"num_epochs" : 5, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd"}})
+    dataset_name = "vrd/dsr"
+    if TEST_EVAL_VALIDITY:
+      trainer = vrd_trainer("original-checkpoint", {"training" : {"num_epochs" : 1, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : dataset_name}}, checkpoint="epoch_4_checkpoint.pth.tar")
+      trainer.train()
+    if TEST_TRAIN_VALIDITY:
+      trainer = vrd_trainer("original", {"training" : {"num_epochs" : 5, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : dataset_name}})
       trainer.train()
 
   trainer = vrd_trainer("original", {"training" : {"num_epochs" : 5, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd"}})
   trainer.train()
+
   # TEST_OVERFIT: Try overfitting the network to a single batch
-  if TEST_OVERFIT:
-    print("########################### TEST_OVERFIT ###########################")
-    justafew = 3
-    torch.backends.cudnn.deterministic = False
-    torch.backends.cudnn.benchmark = True
-    random.seed(datetime.now())
-    np.random.seed(datetime.now())
-    torch.manual_seed(datetime.now())
-    args = {"training" : {"num_epochs" : 6}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type, "justafew" : justafew},  "data" : {"justafew" : justafew}}
-    #args = {"model" : {"use_pred_sem" : ...}, "num_epochs" : 5, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}}
-    trainer = vrd_trainer("test-overfit", args = args, profile = ["cfgs/vg.yml", "cfgs/pred_sem.yml"])
-    trainer.train()
+      if TEST_OVERFIT:
+        print("########################### TEST_OVERFIT ###########################")
+        justafew = 3
+        torch.backends.cudnn.deterministic = False
+        torch.backends.cudnn.benchmark = True
+        random.seed(datetime.now())
+        np.random.seed(datetime.now())
+        torch.manual_seed(datetime.now())
+        args = {"training" : {"num_epochs" : 6}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type, "justafew" : justafew},  "data" : {"justafew" : justafew}}
+        #args = {"model" : {"use_pred_sem" : ...}, "num_epochs" : 5, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}}
+        trainer = vrd_trainer("test-overfit", args = args, profile = ["vg", "pred_sem"])
+        trainer.train()
 
-  # Test VG
-  # trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : False, "test_rel" : test_type}}, profile = "cfgs/vg.yml")
-  #trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : test_type}}, profile = "cfgs/vg.yml")
-  #trainer.train()
+      # Test VG
+      # trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : False, "test_rel" : test_type}}, profile = "vg")
+      #trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : test_type}}, profile = "vg")
+      #trainer.train()
 
 
-  # Scan (rotating parameters)
-  for lr in [0.0001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
-    for weight_decay in [0.0005, 0.0001, 0.00005]:
-      for lr_fus_ratio in [1, 10]:
-        for lr_rel_ratio in [1, 10]:
-         for pred_sem_mode in [-1, 16+0]: # [1,8+1,16+0,16+4]: # , 16+0,16+1,16+2, 16+8+0, 16+8+4+0, 16+16+0]:
-          for dataset in ["vrd"]: # , "vg"]:
-            # session_id = "pred-sem-scan-v6-vg-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode)
-            # profile = ["cfgs/vg.yml", "cfgs/pred_sem.yml"]
-            pred_sem_mode = pred_sem_mode+1
-            session_id = "pred-sem-scan-v9-{}-{}-{}-{}-{}-{}".format(lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode, dataset)
-            profile = ["cfgs/pred_sem.yml"]
+      # Scan (rotating parameters)
+      for lr in [0.0001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
+        for weight_decay in [0.0005, 0.0001, 0.00005]:
+          for lr_fus_ratio in [1, 10]:
+            for lr_rel_ratio in [1, 10]:
+             for pred_sem_mode in [-1, 16+0]: # [1,8+1,16+0,16+4]: # , 16+0,16+1,16+2, 16+8+0, 16+8+4+0, 16+16+0]:
+              for dataset in ["vrd"]: # , "vg"]:
+                # session_id = "pred-sem-scan-v6-vg-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode)
+                # profile = ["vg", "pred_sem"]
+                pred_sem_mode = pred_sem_mode+1
+                session_id = "pred-sem-scan-v9-{}-{}-{}-{}-{}-{}".format(lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode, dataset)
+                profile = ["pred_sem"]
             training = {"num_epochs" : 4, "test_freq" : [1,2,3]}
             if dataset == "vg":
-              profile.append("cfgs/vg.yml")
+              profile.append("vg")
               training = {"num_epochs" : 2, "test_freq" : [1,2]}
             test_type = True # 0.5
 
