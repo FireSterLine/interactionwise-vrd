@@ -376,11 +376,6 @@ if __name__ == "__main__":
     trainer = vrd_trainer("test-overfit", args = args, profile = ["cfgs/vg.yml", "cfgs/pred_sem.yml"])
     trainer.train()
 
-  trainer = vrd_trainer("test-no_sem", {"training" : {"num_epochs" : 4}, "model" : {"use_sem" : False}})
-  trainer.train()
-  trainer = vrd_trainer("test-no_so", {"training" : {"num_epochs" : 4}, "model" : {"use_so" : False}})
-  trainer.train()
-  sys.exit()
   # Test VG
   # trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : False, "test_rel" : test_type}}, profile = "cfgs/vg.yml")
   #trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : test_type}}, profile = "cfgs/vg.yml")
@@ -389,23 +384,25 @@ if __name__ == "__main__":
 
   # Scan (rotating parameters)
   for lr in [0.0001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
-    for weight_decay in [0.0005, 0.0001, 0.00001]:
+    for weight_decay in [0.0005, 0.0001, 0.00005]:
       for lr_fus_ratio in [1, 10]:
         for lr_rel_ratio in [1, 10]:
          for pred_sem_mode in [-1, 16+0]: # [1,8+1,16+0,16+4]: # , 16+0,16+1,16+2, 16+8+0, 16+8+4+0, 16+16+0]:
-          for dataset in ["vrd", "vg"]:
+          for dataset in ["vrd"]: # , "vg"]:
             # session_id = "pred-sem-scan-v6-vg-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode)
             # profile = ["cfgs/vg.yml", "cfgs/pred_sem.yml"]
             pred_sem_mode = pred_sem_mode+1
             session_id = "pred-sem-scan-v8-{}-{}-{}-{}-{}-{}".format(lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode, dataset)
             profile = ["cfgs/pred_sem.yml"]
+            training = {"num_epochs" : 4, "test_freq" : [1,2,3]}
             if dataset == "vg":
               profile.append("cfgs/vg.yml")
+              training = {"num_epochs" : 2, "test_freq" : [1,2]}
             test_type = True # 0.5
 
             trainer = vrd_trainer(session_id, {
                 # "data" : {"justafew" : True}, "training" : {"num_epochs" : 2, "test_freq" : 0},
-                "training" : {"num_epochs" : 4, "test_freq" : [1,2,3]},
+                "training" : training,
                 "model" : {"use_pred_sem" : pred_sem_mode},
                 "eval" : {"test_pre" : test_type}, # "test_rel" : test_type},
                 "opt": {
@@ -417,9 +414,9 @@ if __name__ == "__main__":
               }, profile = profile)
             trainer.train()
 
-  trainer = vrd_trainer("test-no_vis", {"training" : {"num_epochs" : 4}, "model" : {"use_vis" : False, "use_so" : False}})
+  trainer = vrd_trainer("test-only_sem", {"training" : {"num_epochs" : 4}, "model" : {"use_vis" : False, "use_so" : False, "use_spat" : 0}})
   trainer.train()
-  trainer = vrd_trainer("test-no_spat", {"training" : {"num_epochs" : 4}, "model" : {"use_spat" : 0}})
+  trainer = vrd_trainer("test-only_spat", {"training" : {"num_epochs" : 4}, "model" : {"use_vis" : False, "use_so" : False, "use_sem" : 0}})
   trainer.train()
 
   sys.exit(0)
