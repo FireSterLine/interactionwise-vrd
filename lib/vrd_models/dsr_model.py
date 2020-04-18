@@ -190,6 +190,14 @@ class DSRModel(nn.Module):
   def forward(self, vis_features, obj_classes, obj_boxes, u_boxes, idx_s, idx_o, spat_features):
 
     n_batches = vis_features.size()[0]
+    
+    # turn our (batch_size×n×5) ROI into just (n×5)
+    obj_boxes = obj_boxes.view(-1, obj_boxes.size()[2])
+    u_boxes   =   u_boxes.view(-1,   u_boxes.size()[2])
+    # reset ROI image-ID to align with the 0-indexed minibatch
+    obj_boxes[:, 0] = obj_boxes[:, 0] - obj_boxes[0, 0]
+    u_boxes[:, 0]   =   u_boxes[:, 0]  -  u_boxes[0, 0]
+    
     n_objs = obj_boxes.size()[0]
     n_rels = u_boxes.size()[0]
 
@@ -206,12 +214,6 @@ class DSRModel(nn.Module):
       # x_so = [self.roi_pool(x_img, obj_boxes[0])]
       # x_so = torch.tensor(x_so).to(utils.device)
 
-      # turn our (batch_size×n×5) ROI into just (n×5)
-      obj_boxes = obj_boxes.view(-1, obj_boxes.size()[2])
-      u_boxes   =   u_boxes.view(-1,   u_boxes.size()[2])
-      # reset ROI image-ID to align with the 0-indexed minibatch
-      obj_boxes[:, 0] = obj_boxes[:, 0] - obj_boxes[0, 0]
-      u_boxes[:, 0]   =   u_boxes[:, 0]  -  u_boxes[0, 0]
 
       # Visual features from the whole image
       # print("vis_features", vis_features.shape)
@@ -380,9 +382,7 @@ class DSRModel(nn.Module):
       state_dict[key].copy_(param)
 
       if fix_layers:
-        # TODO: check that this throws warning
-        set_trainability(source_layer[key], requires_grad=False)
-        set_trainability(state_dict[key], requires_grad=False)
+        set_trainability(getattr(self, source_layer), requires_grad=False)
 
   def OriginalAdamOptimizer(self,
       lr = 0.00001,

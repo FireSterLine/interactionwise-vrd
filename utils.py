@@ -286,9 +286,9 @@ def load_cfg_profile(profile):
     from yaml import CLoader as Loader, CDumper as Dumper
   except ImportError:
     from yaml import Loader, Dumper
-  if not profile.endswith(".yml")
-    profile = osp.join("cfgs", profile, ".yml")
-  with open(filename, 'r') as f:
+  if not profile.endswith(".yml"):
+    profile = osp.join("cfgs", profile + ".yml")
+  with open(profile, 'r') as f:
     yaml_cfg = (yaml.load(f, Loader = Loader))
 
   return yaml_cfg

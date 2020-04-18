@@ -715,12 +715,12 @@ if __name__ == '__main__':
     w2v_model = None
     if generate_embeddings:
         print("Loading w2v model...")
-        # w2v_model = KeyedVectors.load_word2vec_format(osp.join(globals.data_dir, globals.w2v_model_path), binary=True)
-        w2v_model = Word2Vec.load(globals.w2v_model_path)
+        w2v_model = KeyedVectors.load_word2vec_format(osp.join(globals.data_dir, globals.w2v_model_path), binary=True)
+        #w2v_model = Word2Vec.load(globals.w2v_model_path)
 
     #"""
     print("Preparing data for VRD!")
-    data_preparer_vrd = VRDPrep(use_cleaning_map = False, multi_label=multi_label, generate_emb = w2v_model)
+    data_preparer_vrd = VRDPrep(use_cleaning_map = True, multi_label=multi_label, generate_emb = w2v_model)
     #"""
     #print("\tPreparing evaluation data from Language Priors...")
     #data_preparer_vrd.prepareEvalFromLP()

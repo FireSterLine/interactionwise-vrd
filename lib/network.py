@@ -137,7 +137,7 @@ def set_trainability(model_or_params, requires_grad):
     params = model_or_params
 
   for param in params:
-    if not hasattr(param "requires_grad"):
+    if not hasattr(param, "requires_grad"):
       print("Warning! Setting requires_grad to an object of type '{}'".format(type(param)))
     param.requires_grad = requires_grad
 

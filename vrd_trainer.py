@@ -27,8 +27,8 @@ from lib.evaluator import VRDEvaluator
 # Test if code compiles
 TEST_DEBUGGING = False # True # False # True # True # False
 # Test if a newly-introduced change affects the validity of the code
-TEST_TRAIN_VALIDITY = False # False # True # False #  True # True
 TEST_EVAL_VALIDITY = False # False # True # False #  True # True
+TEST_TRAIN_VALIDITY = False # False # True # False #  True # True
 # Try overfitting to a single element
 TEST_OVERFIT = False #True # False # True
 
@@ -229,10 +229,10 @@ class vrd_trainer():
     res_row = [self.state["epoch"]+1]
     if self.args.eval.test_pre:
       recalls, dtime = self.test_pre()
-      res_row += recalls + [sum(recalls)/len(recalls)]
+      res_row += recalls + (sum(recalls)/len(recalls),)
     if self.args.eval.test_rel:
       recalls, dtime = self.test_rel()
-      res_row += recalls + [sum(recalls)/len(recalls)]
+      res_row += recalls + (sum(recalls)/len(recalls),)
     res.append(res_row)
     with open(osp.join(globals.models_dir, "{}.txt".format(self.session_name)), 'w') as f:
       f.write(tabulate(res, res_headers))
@@ -357,17 +357,14 @@ if __name__ == "__main__":
     torch.backends.cudnn.benchmark = False
     dataset_name = "vrd/dsr"
     if TEST_EVAL_VALIDITY:
-      trainer = vrd_trainer("original-checkpoint", {"training" : {"num_epochs" : 1, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : dataset_name}}, checkpoint="epoch_4_checkpoint.pth.tar")
+      trainer = vrd_trainer("original-checkpoint", {"training" : {"num_epochs" : 1, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : dataset_name}, "model" : {"use_spat" : 0}}, checkpoint="epoch_4_checkpoint.pth.tar")
       trainer.train()
     if TEST_TRAIN_VALIDITY:
       trainer = vrd_trainer("original", {"training" : {"num_epochs" : 5, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : dataset_name}})
       trainer.train()
 
-  trainer = vrd_trainer("original", {"training" : {"num_epochs" : 5, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd"}})
-  trainer.train()
-
   # TEST_OVERFIT: Try overfitting the network to a single batch
-      if TEST_OVERFIT:
+  if TEST_OVERFIT:
         print("########################### TEST_OVERFIT ###########################")
         justafew = 3
         torch.backends.cudnn.deterministic = False
@@ -387,8 +384,8 @@ if __name__ == "__main__":
 
 
       # Scan (rotating parameters)
-      for lr in [0.0001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
-        for weight_decay in [0.0005, 0.0001, 0.00005]:
+  for lr in [0.0001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
+    for weight_decay in [0.0005, 0.0001, 0.00005]:
           for lr_fus_ratio in [1, 10]:
             for lr_rel_ratio in [1, 10]:
              for pred_sem_mode in [-1, 16+0]: # [1,8+1,16+0,16+4]: # , 16+0,16+1,16+2, 16+8+0, 16+8+4+0, 16+16+0]:
@@ -398,13 +395,13 @@ if __name__ == "__main__":
                 pred_sem_mode = pred_sem_mode+1
                 session_id = "pred-sem-scan-v9-{}-{}-{}-{}-{}-{}".format(lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode, dataset)
                 profile = ["pred_sem"]
-            training = {"num_epochs" : 4, "test_freq" : [1,2,3]}
-            if dataset == "vg":
-              profile.append("vg")
-              training = {"num_epochs" : 2, "test_freq" : [1,2]}
-            test_type = True # 0.5
+                training = {"num_epochs" : 4, "test_freq" : [1,2,3]}
+                if dataset == "vg":
+                  profile.append("vg")
+                  training = {"num_epochs" : 2, "test_freq" : [1,2]}
+                test_type = True # 0.5
 
-            trainer = vrd_trainer(session_id, {
+                trainer = vrd_trainer(session_id, {
                 # "data" : {"justafew" : True}, "training" : {"num_epochs" : 2, "test_freq" : 0},
                 "training" : training,
                 "model" : {"use_pred_sem" : pred_sem_mode},
@@ -414,9 +411,9 @@ if __name__ == "__main__":
                   "weight_decay" : weight_decay,
                   "lr_fus_ratio" : lr_fus_ratio,
                   "lr_rel_ratio" : lr_rel_ratio,
-                }
-              }, profile = profile)
-            trainer.train()
+                  }
+                }, profile = profile)
+              trainer.train()
 
   trainer = vrd_trainer("test-only_sem", {"training" : {"num_epochs" : 4}, "model" : {"use_vis" : False, "use_so" : False, "use_spat" : 0}})
   trainer.train()
