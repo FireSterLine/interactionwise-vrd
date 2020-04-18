@@ -20,8 +20,8 @@ from copy import deepcopy
 
 from data.genome.clean_vg import VGCleaner
 
-
-DRY_RUN = True
+# Prepare the data without saving anything at all 
+DRY_RUN = False
 
 """
 This script prepares the data from the input format to the one we want.
@@ -69,11 +69,16 @@ class DataPreparer:
         if use_cleaning_map is not False:
           cleaning_map = self.readjson("cleaning_map.json")
           def cleaned_vocab(cls_vocab, cl_map):
-            new_vocab = [cls for cls in cls_vocab if not cls in cl_map]
+            new_vocab = []
             cls_map = {}
+            for i_old_cls,cls in enumerate(cls_vocab):
+              if not cls in cl_map:
+                new_vocab.append(cls)
+                cls_map[i_old_cls] = len(new_vocab)-1
             for cls,to_cls in cl_map.items():
-              i_cls = new_vocab.index(cls)
-              cls_map[i_cls] = new_vocab.index(to_cls)
+              i_to_cls = new_vocab.index(to_cls)
+              i_cls = cls_vocab.index(cls)
+              cls_map[i_cls] = i_to_cls
             return new_vocab, cls_map
           obj_vocab,  obj_cls_map  = cleaned_vocab(obj_vocab,  cleaning_map["obj"])
           pred_vocab, pred_cls_map = cleaned_vocab(pred_vocab, cleaning_map["pred"])
@@ -298,8 +303,10 @@ class VRDPrep(DataPreparer):
 
         # TODO: Additionally handle files like {test,train}_image_metadata.json
 
-    def get_clean_obj_cls(self,  cls): if hasattr(self, "cleaning_map") self.cleaning_map["obj"][cls]  return cls
-    def get_clean_pred_cls(self, cls): if hasattr(self, "cleaning_map") self.cleaning_map["pred"][cls] return cls
+    def get_clean_obj_cls(self,  cls):
+      return cls if not hasattr(self, "cleaning_map") else self.cleaning_map["obj"][cls]
+    def get_clean_pred_cls(self, cls):
+      return cls if not hasattr(self, "cleaning_map") else self.cleaning_map["pred"][cls]
 
     def load_vrd(self):
         print("\tLoad VRD data...")
@@ -662,7 +669,7 @@ if __name__ == '__main__':
     # TODO: filter out relationships between the same object?
     
     multi_label = False
-    generate_embeddings = True # False
+    generate_embeddings = False # True # False
 
     w2v_model = None
     if generate_embeddings:
