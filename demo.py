@@ -93,7 +93,7 @@ class vr_detector():
       # the dimension 8 here is the size of the spatial feature vector, containing the relative location and log-distance
       spatial_features = np.zeros((n_rel, 8))
       # the dimension 8 here is the size of the spatial feature vector, containing the relative location and log-distance
-      semantic_features = np.zeros((n_rel, 2*300))
+      semantic_features = np.zeros((n_rel, 2*utils.emb_size))
       # this will contain the probability distribution of each subject-object pair ID over all 70 predicates
       rel_soP_prior = np.zeros((n_rel, self.dataset.n_pred))
 
@@ -110,7 +110,7 @@ class vr_detector():
 
         # semantic features of obj and subj
         semantic_features[i_rel] = utils.getSemanticVector(rel['subject']['name'], rel['object']['name'], self.w2v_model)
-        # semantic_features[i_rel] = np.zeros(600)
+        # semantic_features[i_rel] = np.zeros(2*utils.emb_size)
 
         # store the probability distribution of this subject-object pair from the soP_prior
         if self.soP_prior != None:
