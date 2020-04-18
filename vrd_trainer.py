@@ -27,7 +27,8 @@ from lib.evaluator import VRDEvaluator
 # Test if code compiles
 TEST_DEBUGGING = True #  False # True # False # True # True # False
 # Test if a newly-introduced change affects the validity of the code
-TEST_VALIDITY = False # False # True # False #  True # True
+TEST_TRAIN_VALIDITY = False # False # True # False #  True # True
+TEST_EVAL_VALIDITY = False # False # True # False #  True # True
 # Try overfitting to a single element
 TEST_OVERFIT = False #True # False # True
 
@@ -349,17 +350,18 @@ if __name__ == "__main__":
     trainer.train()
 
 
-  # TEST_VALIDITY: Test if a newly-introduced change affects the validity of the code
-  if TEST_VALIDITY:
+  # TEST_TRAIN_VALIDITY or TEST_EVAL_VALIDITY:
+  #  Test if a newly-introduced change affects the validity of the evaluation (or evaluation+training)
+  if TEST_TRAIN_VALIDITY or TEST_EVAL_VALIDITY:
     print("########################### TEST_VALIDITY ###########################")
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
-    #trainer = vrd_trainer("original-checkpoint", {"training" : {"num_epochs" : 1, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd/dsr"}}, profile = ["cfgs/pred_sem.yml"], checkpoint="epoch_4_checkpoint.pth.tar")
-    #trainer.train()
-    trainer = vrd_trainer("original-checkpoint", {"training" : {"num_epochs" : 1, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd"}}, checkpoint="epoch_4_checkpoint.pth.tar")
-    trainer.train()
-    if TEST_VALIDITY > 1:
-      trainer = vrd_trainer("original", {"training" : {"num_epochs" : 5, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd"}})
+    dataset_name = "vrd/dsr"
+    if TEST_EVAL_VALIDITY:
+      trainer = vrd_trainer("original-checkpoint", {"training" : {"num_epochs" : 1, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : dataset_name}}, checkpoint="epoch_4_checkpoint.pth.tar")
+      trainer.train()
+    if TEST_TRAIN_VALIDITY:
+      trainer = vrd_trainer("original", {"training" : {"num_epochs" : 5, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : dataset_name}})
       trainer.train()
 
   trainer = vrd_trainer("original", {"training" : {"num_epochs" : 5, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd"}})
