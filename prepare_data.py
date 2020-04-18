@@ -78,8 +78,8 @@ class DataPreparer:
 
         self.writejson(obj_vocab,  self.objects_vocab_file)
         self.writejson(pred_vocab, self.predicates_vocab_file)
-        self.obj_vocab  = self.readjson(self.objects_vocab_file)
-        self.pred_vocab = self.readjson(self.predicates_vocab_file)
+        self.obj_vocab  = obj_vocab
+        self.pred_vocab = pred_vocab
 
         if self.generate_emb is not None:
             obj_emb = [ utils.getEmbedding(obj_label,  self.generate_emb).astype(float).tolist() for  obj_label in self.obj_vocab]
@@ -245,32 +245,35 @@ class DataPreparer:
 
     # INPUT/OUTPUT Helpers
     def fullpath(self, filename):
-        return osp.join(globals.data_dir, self.dir, filename)
+      return osp.join(globals.data_dir, self.dir, filename)
 
     # plain files
     def readfile(self, filename):
-        return open(self.fullpath(filename), 'r')
+      return open(self.fullpath(filename), 'r')
 
     def writefile(self, filename):
-        return open(self.fullpath(filename), 'w')
+      if DRY_RUN: return
+      return open(self.fullpath(filename), 'w')
 
     # json files
     def readjson(self, filename):
-        with self.readfile(filename) as rfile:
-            return json.load(rfile)
+      with self.readfile(filename) as rfile:
+        return json.load(rfile)
 
     def writejson(self, obj, filename):
-        with self.writefile(filename) as f:
-            json.dump(obj, f)
+      if DRY_RUN: return
+      with self.writefile(filename) as f:
+        json.dump(obj, f)
 
     # pickle files
     def readpickle(self, filename):
-        with open(self.fullpath(filename), 'rb') as f:
-            return pickle.load(f, encoding="latin1")
+      with open(self.fullpath(filename), 'rb') as f:
+        return pickle.load(f, encoding="latin1")
 
     def writepickle(self, obj, filename):
-        with open(self.fullpath(filename), 'wb') as f:
-            pickle.dump(obj, f)
+      if DRY_RUN: return
+      with open(self.fullpath(filename), 'wb') as f:
+        pickle.dump(obj, f)
 
     # matlab files
     def readmat(self, filename): return sio.loadmat(self.fullpath(filename))
