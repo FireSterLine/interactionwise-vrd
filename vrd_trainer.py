@@ -167,8 +167,8 @@ class vrd_trainer():
     # Prepare result table
     res_headers = ["Epoch"]
     self.args.eval.rec = sorted(self.args.eval.rec, reverse=True)
-    if self.args.eval.test_pre: res_headers += self.gt_headers(self.args.eval.test_pre, "Pre")
-    if self.args.eval.test_rel: res_headers += self.gt_headers(self.args.eval.test_rel, "Rel")
+    if self.args.eval.test_pre: res_headers += self.gt_headers(self.args.eval.test_pre, "Pre") + ["Sum"]
+    if self.args.eval.test_rel: res_headers += self.gt_headers(self.args.eval.test_rel, "Rel") + ["Sum"]
 
     res = []
 
@@ -230,10 +230,10 @@ class vrd_trainer():
     res_row = [self.state["epoch"]+1]
     if self.args.eval.test_pre:
       recalls, dtime = self.test_pre()
-      res_row += recalls
+      res_row += recalls + [sum(recalls)]
     if self.args.eval.test_rel:
       recalls, dtime = self.test_rel()
-      res_row += recalls
+      res_row += recalls + [sum(recalls)]
     res.append(res_row)
     with open(osp.join(globals.models_dir, "{}.txt".format(self.session_name)), 'w') as f:
       f.write(tabulate(res, res_headers))
@@ -366,6 +366,7 @@ if __name__ == "__main__":
 
   trainer = vrd_trainer("original", {"training" : {"num_epochs" : 5, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd"}})
   trainer.train()
+
   # TEST_OVERFIT: Try overfitting the network to a single batch
   if TEST_OVERFIT:
     print("########################### TEST_OVERFIT ###########################")
