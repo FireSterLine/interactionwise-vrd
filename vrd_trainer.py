@@ -41,11 +41,11 @@ class vrd_trainer():
   def __init__(self, session_name, args = {}, profile = None, checkpoint = False):
 
     # Load arguments cascade from profiles
-    def_args = utils.cfg_from_file("cfgs/default.yml")
+    def_args = utils.load_cfg_profile("default")
     if profile is not None:
       profile = utils.listify(profile)
       for p in profile:
-        def_args = utils.dict_patch(utils.cfg_from_file(p), def_args)
+        def_args = utils.dict_patch(utils.load_cfg_profile(p), def_args)
     args = utils.dict_patch(args, def_args)
 
     #print("Arguments:\n", yaml.dump(args, default_flow_style=False))
@@ -167,8 +167,8 @@ class vrd_trainer():
     # Prepare result table
     res_headers = ["Epoch"]
     self.args.eval.rec = sorted(self.args.eval.rec, reverse=True)
-    if self.args.eval.test_pre: res_headers += self.gt_headers(self.args.eval.test_pre, "Pre") + ["Sum"]
-    if self.args.eval.test_rel: res_headers += self.gt_headers(self.args.eval.test_rel, "Rel") + ["Sum"]
+    if self.args.eval.test_pre: res_headers += self.gt_headers(self.args.eval.test_pre, "Pre") + ["Avg"]
+    if self.args.eval.test_rel: res_headers += self.gt_headers(self.args.eval.test_rel, "Rel") + ["Avg"]
 
     res = []
 
@@ -230,10 +230,10 @@ class vrd_trainer():
     res_row = [self.state["epoch"]+1]
     if self.args.eval.test_pre:
       recalls, dtime = self.test_pre()
-      res_row += recalls + [sum(recalls)]
+      res_row += recalls + [sum(recalls)/len(recalls)]
     if self.args.eval.test_rel:
       recalls, dtime = self.test_rel()
-      res_row += recalls + [sum(recalls)]
+      res_row += recalls + [sum(recalls)/len(recalls)]
     res.append(res_row)
     with open(osp.join(globals.models_dir, "{}.txt".format(self.session_name)), 'w') as f:
       f.write(tabulate(res, res_headers))
@@ -378,12 +378,12 @@ if __name__ == "__main__":
     torch.manual_seed(datetime.now())
     args = {"training" : {"num_epochs" : 6}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type, "justafew" : justafew},  "data" : {"justafew" : justafew}}
     #args = {"model" : {"use_pred_sem" : ...}, "num_epochs" : 5, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}}
-    trainer = vrd_trainer("test-overfit", args = args, profile = ["cfgs/vg.yml", "cfgs/pred_sem.yml"])
+    trainer = vrd_trainer("test-overfit", args = args, profile = ["vg", "pred_sem"])
     trainer.train()
 
   # Test VG
-  # trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : False, "test_rel" : test_type}}, profile = "cfgs/vg.yml")
-  #trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : test_type}}, profile = "cfgs/vg.yml")
+  # trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : False, "test_rel" : test_type}}, profile = "vg")
+  #trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : test_type}}, profile = "vg")
   #trainer.train()
 
 
@@ -395,13 +395,13 @@ if __name__ == "__main__":
          for pred_sem_mode in [-1, 16+0]: # [1,8+1,16+0,16+4]: # , 16+0,16+1,16+2, 16+8+0, 16+8+4+0, 16+16+0]:
           for dataset in ["vrd"]: # , "vg"]:
             # session_id = "pred-sem-scan-v6-vg-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode)
-            # profile = ["cfgs/vg.yml", "cfgs/pred_sem.yml"]
+            # profile = ["vg", "pred_sem"]
             pred_sem_mode = pred_sem_mode+1
             session_id = "pred-sem-scan-v8-{}-{}-{}-{}-{}-{}".format(lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode, dataset)
-            profile = ["cfgs/pred_sem.yml"]
+            profile = ["pred_sem"]
             training = {"num_epochs" : 4, "test_freq" : [1,2,3]}
             if dataset == "vg":
-              profile.append("cfgs/vg.yml")
+              profile.append("vg")
               training = {"num_epochs" : 2, "test_freq" : [1,2]}
             test_type = True # 0.5
 

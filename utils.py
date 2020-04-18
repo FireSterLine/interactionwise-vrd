@@ -1,4 +1,5 @@
 import os
+import os.path as osp
 import cv2
 import json
 import numpy as np
@@ -278,14 +279,15 @@ def invert_dict(d):
 
 # Config File
 
-def cfg_from_file(filename):
+def load_cfg_profile(profile):
   """Load a config file and merge it into the default options."""
   import yaml
   try:
     from yaml import CLoader as Loader, CDumper as Dumper
   except ImportError:
     from yaml import Loader, Dumper
-
+  if not profile.endswith(".yml")
+    profile = osp.join("cfgs", profile, ".yml")
   with open(filename, 'r') as f:
     yaml_cfg = (yaml.load(f, Loader = Loader))
 
