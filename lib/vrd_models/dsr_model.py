@@ -58,35 +58,35 @@ class DSRModel(nn.Module):
 
     self.total_fus_neurons = 0
 
+    if self.args.use_vis:
+      if self.args.apply_vgg:
+        self.conv1 = nn.Sequential(Conv2d(  3,  64, 3, same_padding=True, bn=self.args.use_bn),
+                                   Conv2d( 64,  64, 3, same_padding=True, bn=self.args.use_bn),
+                                   nn.MaxPool2d(2))
+        self.conv2 = nn.Sequential(Conv2d( 64, 128, 3, same_padding=True, bn=self.args.use_bn),
+                                   Conv2d(128, 128, 3, same_padding=True, bn=self.args.use_bn),
+                                   nn.MaxPool2d(2))
+        self.conv3 = nn.Sequential(Conv2d(128, 256, 3, same_padding=True, bn=self.args.use_bn),
+                                   Conv2d(256, 256, 3, same_padding=True, bn=self.args.use_bn),
+                                   Conv2d(256, 256, 3, same_padding=True, bn=self.args.use_bn),
+                                   nn.MaxPool2d(2))
+        self.conv4 = nn.Sequential(Conv2d(256, 512, 3, same_padding=True, bn=self.args.use_bn),
+                                   Conv2d(512, 512, 3, same_padding=True, bn=self.args.use_bn),
+                                   Conv2d(512, 512, 3, same_padding=True, bn=self.args.use_bn),
+                                   nn.MaxPool2d(2))
+        self.conv5 = nn.Sequential(Conv2d(512, 512, 3, same_padding=True, bn=self.args.use_bn),
+                                   Conv2d(512, 512, 3, same_padding=True, bn=self.args.use_bn),
+                                   Conv2d(512, 512, 3, same_padding=True, bn=self.args.use_bn))
 
-    if self.args.apply_vgg:
-      self.conv1 = nn.Sequential(Conv2d(  3,  64, 3, same_padding=True, bn=self.args.use_bn),
-                                 Conv2d( 64,  64, 3, same_padding=True, bn=self.args.use_bn),
-                                 nn.MaxPool2d(2))
-      self.conv2 = nn.Sequential(Conv2d( 64, 128, 3, same_padding=True, bn=self.args.use_bn),
-                                 Conv2d(128, 128, 3, same_padding=True, bn=self.args.use_bn),
-                                 nn.MaxPool2d(2))
-      self.conv3 = nn.Sequential(Conv2d(128, 256, 3, same_padding=True, bn=self.args.use_bn),
-                                 Conv2d(256, 256, 3, same_padding=True, bn=self.args.use_bn),
-                                 Conv2d(256, 256, 3, same_padding=True, bn=self.args.use_bn),
-                                 nn.MaxPool2d(2))
-      self.conv4 = nn.Sequential(Conv2d(256, 512, 3, same_padding=True, bn=self.args.use_bn),
-                                 Conv2d(512, 512, 3, same_padding=True, bn=self.args.use_bn),
-                                 Conv2d(512, 512, 3, same_padding=True, bn=self.args.use_bn),
-                                 nn.MaxPool2d(2))
-      self.conv5 = nn.Sequential(Conv2d(512, 512, 3, same_padding=True, bn=self.args.use_bn),
-                                 Conv2d(512, 512, 3, same_padding=True, bn=self.args.use_bn),
-                                 Conv2d(512, 512, 3, same_padding=True, bn=self.args.use_bn))
+      self.dropout0 = nn.Dropout()
 
-    self.dropout0 = nn.Dropout()
+      self.fc6    = FC(512 * 7 * 7, 4096)
+      self.fc7    = FC(4096, 4096)
+      self.fc_obj = FC(4096, self.args.n_obj, relu = False)
+      set_trainability(self.fc_obj, requires_grad=False)
 
-    self.fc6    = FC(512 * 7 * 7, 4096)
-    self.fc7    = FC(4096, 4096)
-    self.fc_obj = FC(4096, self.args.n_obj, relu = False)
-    set_trainability(self.fc_obj, requires_grad=False)
-
-    # Load VGG layers: conv*, fc6, fc7
-    self.load_pretrained_conv(osp.join(globals.data_dir, "VGG_imagenet.npy"), fix_layers=True)
+      # Load VGG layers: conv*, fc6, fc7
+      self.load_pretrained_conv(osp.join(globals.data_dir, "VGG_imagenet.npy"), fix_layers=True)
 
     # Guide for jwyang's ROI Pooling Layers:
     #  https://medium.com/@andrewjong/how-to-use-roi-pool-and-roi-align-in-your-neural-networks-pytorch-1-0-b43e3d22d073
@@ -190,13 +190,28 @@ class DSRModel(nn.Module):
   def forward(self, vis_features, obj_classes, obj_boxes, u_boxes, idx_s, idx_o, spat_features):
 
     n_batches = vis_features.size()[0]
+    n_objs = obj_boxes.size()[0]
+    n_rels = u_boxes.size()[0]
 
     # Mmmm u_boxes.size()[1]
-    x_fused = torch.empty((n_batches, u_boxes.size()[0], 0), device=utils.device)
+    x_fused = torch.empty((n_batches, n_rels, 0), device=utils.device)
 
     # print("u_boxes: ", u_boxes.shape)
 
     if(self.args.use_vis):
+
+      # ROI pooling for combined subjects' and objects' boxes
+
+      # x_so = [self.roi_pool(x_img, obj_boxes[0]) for i in range(n_batches)]
+      # x_so = [self.roi_pool(x_img, obj_boxes[0])]
+      # x_so = torch.tensor(x_so).to(utils.device)
+
+      # turn our (batch_size×n×5) ROI into just (n×5)
+      obj_boxes = obj_boxes.view(-1, obj_boxes.size()[2])
+      u_boxes   =   u_boxes.view(-1,   u_boxes.size()[2])
+      # reset ROI image-ID to align with the 0-indexed minibatch
+      obj_boxes[:, 0] = obj_boxes[:, 0] - obj_boxes[0, 0]
+      u_boxes[:, 0]   =   u_boxes[:, 0]  -  u_boxes[0, 0]
 
       # Visual features from the whole image
       # print("vis_features", vis_features.shape)
@@ -212,18 +227,6 @@ class DSRModel(nn.Module):
       # print("x_img.shape: ", x_img.shape)
       # print("obj_boxes.shape: ", obj_boxes.shape)
 
-      # ROI pooling for combined subjects' and objects' boxes
-
-      # x_so = [self.roi_pool(x_img, obj_boxes[0]) for i in range(n_batches)]
-      # x_so = [self.roi_pool(x_img, obj_boxes[0])]
-      # x_so = torch.tensor(x_so).to(utils.device)
-
-      # turn our (batch_size×n×5) ROI into just (n×5)
-      obj_boxes = obj_boxes.view(-1, obj_boxes.size()[2])
-      u_boxes   =   u_boxes.view(-1,   u_boxes.size()[2])
-      # reset ROI image-ID to align with the 0-indexed minibatch
-      obj_boxes[:, 0] = obj_boxes[:, 0] - obj_boxes[0, 0]
-      u_boxes[:, 0]   =   u_boxes[:, 0]  -  u_boxes[0, 0]
       # Warning: this is a critical point for batching with batchsize>1. Maybe this will cause trouble, together with the index_select down below
       x_so = self.roi_pool(x_img, obj_boxes) # .unsqueeze(0) ?
 
@@ -278,6 +281,9 @@ class DSRModel(nn.Module):
         # print("x_subobj: ", x_subobj.shape)
         # print()
         x_fused = torch.cat((x_fused, x_subobj), 2)
+    else:
+      # TODO: fix
+      obj_scores = torch.zeros((n_batches, n_objs, self.args.n_obj), device=utils.device)
 
     if(self.args.use_spat == 1):
       x_spat = self.fc_spatial(spat_features)
@@ -324,14 +330,14 @@ class DSRModel(nn.Module):
   def load_pretrained_conv(self, file_path, fix_layers=True):
     """ Load the weights for the initial convolutional layers and fully connecteda layers """
 
-    params = np.load(file_path, allow_pickle=True, encoding="latin1").item()
+    vgg16_params = np.load(file_path, allow_pickle=True, encoding="latin1").item()
     # vgg16
-    vgg16_dict = self.state_dict()
-    # print(vgg16_dict)
+    state_dict = self.state_dict()
+    # print(state_dict)
     # print(params)
 
     if self.args.apply_vgg:
-      for params_name, val in vgg16_dict.items():
+      for params_name, val in state_dict.items():
         if params_name.find("bn.") >= 0 or not "conv" in params_name or "spat" in params_name:
           continue
         # print(params_name, val)
@@ -340,7 +346,7 @@ class DSRModel(nn.Module):
         ptype = "weights" if params_name[-1] == "t" else "biases"
         key = "conv{}_{}".format(i, j)
         # print(ptype, key)
-        param = torch.from_numpy(params[key][ptype])
+        param = torch.from_numpy(vgg16_params[key][ptype])
         # print(params[key][ptype])
 
         if ptype == "weights":
@@ -364,18 +370,19 @@ class DSRModel(nn.Module):
     for dest_layer, source_layer in pairs.items():
       # print(k,v)
       key = "{}.weight".format(dest_layer)
-      # print(params[v]["weights"])
-      param = torch.from_numpy(params[source_layer]["weights"]).permute(1, 0)
-      self.state_dict()[key].copy_(param)
+      # print(vgg16_params[v]["weights"])
+      param = torch.from_numpy(vgg16_params[source_layer]["weights"]).permute(1, 0)
+      state_dict[key].copy_(param)
 
       key = "{}.bias".format(dest_layer)
-      # print(params[v]["biases"])
-      param = torch.from_numpy(params[source_layer]["biases"])
-      self.state_dict()[key].copy_(param)
+      # print(vgg16_params[v]["biases"])
+      param = torch.from_numpy(vgg16_params[source_layer]["biases"])
+      state_dict[key].copy_(param)
 
       if fix_layers:
+        # TODO: check that this throws warning
         set_trainability(source_layer[key], requires_grad=False)
-        set_trainability(self.state_dict()[key], requires_grad=False)
+        set_trainability(state_dict[key], requires_grad=False)
 
   def OriginalAdamOptimizer(self,
       lr = 0.00001,
