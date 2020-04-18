@@ -387,12 +387,12 @@ if __name__ == "__main__":
 
 
   # Scan (rotating parameters)
-  for lr in [0.00001,0.0001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
-    for weight_decay in [0.0005, 0.005]:
-      for lr_fus_ratio in [10,100]: #
-        for lr_rel_ratio in [10,100]: #
+  for lr in [0.0001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
+    for weight_decay in [0.0005, 0.0001, 0.00001]:
+      for lr_fus_ratio in [1, 10]:
+        for lr_rel_ratio in [1, 10]:
          for pred_sem_mode in [-1, 16+0]: # [1,8+1,16+0,16+4]: # , 16+0,16+1,16+2, 16+8+0, 16+8+4+0, 16+16+0]:
-          for dataset in ["vrd"]: # , "vg"]:
+          for dataset in ["vrd", "vg"]:
             # session_id = "pred-sem-scan-v6-vg-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode)
             # profile = ["cfgs/vg.yml", "cfgs/pred_sem.yml"]
             pred_sem_mode = pred_sem_mode+1
@@ -420,5 +420,5 @@ if __name__ == "__main__":
   trainer.train()
   trainer = vrd_trainer("test-no_spat", {"training" : {"num_epochs" : 4}, "model" : {"use_spat" : 0}})
   trainer.train()
-  
+
   sys.exit(0)

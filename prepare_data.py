@@ -181,7 +181,7 @@ class DataPreparer:
         tuple_label = []
         sub_bboxes  = []
         obj_bboxes  = []
-        
+
         if relst is not None:
           for i_rel, rel in enumerate(relst):
             # multi_label (namely multi-predicate relationships) are not allowed in ground-truth pickles
@@ -189,11 +189,11 @@ class DataPreparer:
               tuple_label.append([rel["subject"]["id"], id, rel["object"]["id"]])
               sub_bboxes.append(utils.bboxDictToNumpy(rel["subject"]["bbox"]))
               obj_bboxes.append(utils.bboxDictToNumpy(rel["object"]["bbox"]))
-          
+
         tuple_label = np.array(tuple_label, dtype=np.uint8)
         sub_bboxes  = np.array(sub_bboxes,  dtype=np.uint16)
         obj_bboxes  = np.array(obj_bboxes,  dtype=np.uint16)
-        
+
         gt_pkl["tuple_label"].append(np.array(tuple_label))
         gt_pkl["sub_bboxes"].append(np.array(sub_bboxes))
         gt_pkl["obj_bboxes"].append(np.array(obj_bboxes))
@@ -382,20 +382,21 @@ class VRDPrep(DataPreparer):
                         'xmax': int(bounding_boxes[objects[index]][2])
                     }
 
+                    # TODO: remove code duplication
                     if not self.multi_label:
                       for predicate_id in relations[index]:
                         predicate_label = self.pred_vocab[predicate_id]
 
                         rel_data = defaultdict(lambda: dict())
-                        rel_data['subject']['id'] = int(subject_id)
+                        rel_data['subject']['id']   = int(subject_id)
                         rel_data['subject']['name'] = subject_label
                         rel_data['subject']['bbox'] = subject_bbox
 
-                        rel_data['object']['id'] = int(object_id)
+                        rel_data['object']['id']   = int(object_id)
                         rel_data['object']['name'] = object_label
                         rel_data['object']['bbox'] = object_bbox
 
-                        rel_data['predicate']['id'] = int(predicate_id)
+                        rel_data['predicate']['id']   = [int(predicate_id)]
                         rel_data['predicate']['name'] = predicate_label
 
                         relationships.append(dict(rel_data))
@@ -416,7 +417,7 @@ class VRDPrep(DataPreparer):
                       rel_data['predicate']['id']   = predicate_id
                       rel_data['predicate']['name'] = predicate_label
 
-                    relationships.append(dict(rel_data))
+                      relationships.append(dict(rel_data))
 
                 vrd_data[img_path] = relationships
                 if len(relationships) == 0:
@@ -524,7 +525,7 @@ class VGPrep(DataPreparer):
         self.predicates_label_to_id_mapping = utils.invert_dict(self.pred_vocab)
         # print(self.predicates_label_to_id_mapping)
         # print(self.objects_label_to_id_mapping)
-        
+
         self.splits = {
             "train" : [line.split(" ")[0] for line in utils.load_txt_list(self.fullpath("../train.txt"))],
             "test"  : [line.split(" ")[0] for line in utils.load_txt_list(self.fullpath("../val.txt"))],
@@ -534,16 +535,16 @@ class VGPrep(DataPreparer):
         vrd_data = {}
         n_not_found = []
         for ix, img_path in enumerate(needed_idxs):
-            
+
             filepath = self.img_metadata_file_format.format(osp.splitext(osp.basename(img_path))[0])
             try:
               relst = self._generate_relst(self.readjson(filepath))
             except FileNotFoundError:
               relst = None
               n_not_found.append(filepath)
-            
+
             vrd_data[img_path] = relst
-        
+
         if len(n_not_found) > 0:
           print("Warning! Couldn't find metadata for {}/{} images. (e.g '{}')".format(len(n_not_found), len(needed_idxs), n_not_found[0]))
 
@@ -660,7 +661,7 @@ if __name__ == '__main__':
     data_preparer_vrd.save_data("relst", "rel")
     data_preparer_vrd.save_data("annos")
     """
-    
+
     """
     # TODO: allow multi-word vocabs, so that we can load 1600-400-20_bottomup
     print("Preparing data for VG...")
@@ -672,4 +673,3 @@ if __name__ == '__main__':
     #data_preparer_vg.save_data("relst", "rel")
     #data_preparer_vg.save_data("annos")
     #"""
-    
