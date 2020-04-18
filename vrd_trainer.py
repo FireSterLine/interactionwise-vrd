@@ -115,13 +115,14 @@ class vrd_trainer():
       # Load VGG layers
       self.model.load_pretrained_conv(osp.join(globals.data_dir, "VGG_imagenet.npy"), fix_layers=True)
       # Load existing embeddings
-      try:
-        # obj_emb = torch.from_numpy(self.dataset.readPKL("params_emb.pkl"))
-        obj_emb = torch.from_numpy(np.array(self.dataset.readJSON("objects-emb.json")))
-      except FileNotFoundError:
-        print("Warning: Initialization weights for emb.weight layer not found! Weights are initialized randomly")
-        # set_trainability(self.model.emb, requires_grad=True)
-      self.model.state_dict()["emb.weight"].copy_(obj_emb)
+      if self.model.args.use_sem != False:
+        try:
+          # obj_emb = torch.from_numpy(self.dataset.readPKL("params_emb.pkl"))
+          obj_emb = torch.from_numpy(np.array(self.dataset.readJSON("objects-emb.json")))
+        except FileNotFoundError:
+          print("Warning: Initialization weights for emb.weight layer not found! Weights are initialized randomly")
+          # set_trainability(self.model.emb, requires_grad=True)
+        self.model.state_dict()["emb.weight"].copy_(obj_emb)
 
     # DataLoader
     # TODO? VRDDataLayer has to know what to yield (DRS -> img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
@@ -375,6 +376,10 @@ if __name__ == "__main__":
     trainer = vrd_trainer("test-overfit", args = args, profile = ["cfgs/vg.yml", "cfgs/pred_sem.yml"])
     trainer.train()
 
+  trainer = vrd_trainer("test-no_sem", {"training" : {"num_epochs" : 4}, "model" : {"use_sem" : False}})
+  trainer.train()
+  trainer = vrd_trainer("test-no_so", {"training" : {"num_epochs" : 4}, "model" : {"use_so" : False}})
+  trainer.train()
   # Test VG
   # trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : False, "test_rel" : test_type}}, profile = "cfgs/vg.yml")
   #trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : test_type}}, profile = "cfgs/vg.yml")
@@ -414,10 +419,6 @@ if __name__ == "__main__":
   trainer = vrd_trainer("test-no_vis", {"training" : {"num_epochs" : 4}, "model" : {"use_vis" : False, "use_so" : False}})
   trainer.train()
   trainer = vrd_trainer("test-no_spat", {"training" : {"num_epochs" : 4}, "model" : {"use_spat" : 0}})
-  trainer.train()
-  trainer = vrd_trainer("test-no_sem", {"training" : {"num_epochs" : 4}, "model" : {"use_sem" : False}})
-  trainer.train()
-  trainer = vrd_trainer("test-no_so", {"training" : {"num_epochs" : 4}, "model" : {"use_so" : False}})
   trainer.train()
   
   sys.exit(0)
