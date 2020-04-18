@@ -192,7 +192,10 @@ class DataPreparer:
         os.mkdir(self.fullpath("eval"))
       gt_output_path         = osp.join("eval", "gt.pkl")
       # TODO: zeroshot
-      # gt_zs_output_path      = osp.join("eval", "gt_zs.pkl")
+      gt_zs_output_path      = osp.join("eval", "gt_zs.pkl")
+      
+      os.remove(gt_output_path)
+      os.remove(gt_zs_output_path)
 
       gt_pkl = {}
       gt_pkl["tuple_label"] = []
@@ -668,8 +671,8 @@ if __name__ == '__main__':
 
     # TODO: filter out relationships between the same object?
     
-    multi_label = False
-    generate_embeddings = False # True # False
+    multi_label = True # False
+    generate_embeddings = True # False # True # False
 
     w2v_model = None
     if generate_embeddings:
@@ -685,7 +688,7 @@ if __name__ == '__main__':
     #data_preparer_vrd.prepareEvalFromLP()
     data_preparer_vrd.load_vrd()
     data_preparer_vrd.save_data("relst")
-    #data_preparer_vrd.prepareGT()
+    data_preparer_vrd.prepareGT()
     data_preparer_vrd.save_data("relst", "rel")
     data_preparer_vrd.save_data("annos")
     #"""
