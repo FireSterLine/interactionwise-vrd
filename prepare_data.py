@@ -80,6 +80,7 @@ class DataPreparer:
               i_cls = cls_vocab.index(cls)
               cls_map[i_cls] = i_to_cls
             return new_vocab, cls_map
+          assert cleaning_map["obj"] == {}, "NotImplemented: A cleaning map for objects requires some preprocessing to the object_detections as well, if not a re-train of the object detection model. Better not touch these things."
           obj_vocab,  obj_cls_map  = cleaned_vocab(obj_vocab,  cleaning_map["obj"])
           pred_vocab, pred_cls_map = cleaned_vocab(pred_vocab, cleaning_map["pred"])
           self.cleaning_map = {"obj" : obj_cls_map, "pred" : pred_cls_map}
@@ -719,13 +720,13 @@ if __name__ == '__main__':
 
     #"""
     print("Preparing data for VRD!")
-    data_preparer_vrd = VRDPrep(use_cleaning_map = True, multi_label=multi_label, generate_emb = w2v_model)
+    data_preparer_vrd = VRDPrep(use_cleaning_map = False, multi_label=multi_label, generate_emb = w2v_model)
     #"""
     #print("\tPreparing evaluation data from Language Priors...")
     #data_preparer_vrd.prepareEvalFromLP()
     data_preparer_vrd.load_vrd()
-    #data_preparer_vrd.save_data("relst")
     data_preparer_vrd.prepareGT()
+    #data_preparer_vrd.save_data("relst")
     #data_preparer_vrd.save_data("relst", "rel")
     data_preparer_vrd.save_data("annos")
     #"""

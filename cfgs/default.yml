@@ -51,7 +51,7 @@ training:
   #lr_decay_gamma: .1
   use_shuffle: True
   num_epochs: 6
-  checkpoint_freq: .5
+  checkpoint_freq: 0
   # Number of lines printed with loss ...TODO explain smart freq
   print_freq: 0.1
   # TODO

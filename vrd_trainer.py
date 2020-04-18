@@ -25,7 +25,7 @@ from lib.datalayer import VRDDataLayer, net_input_to
 from lib.evaluator import VRDEvaluator
 
 # Test if code compiles
-TEST_DEBUGGING = True #  False # True # False # True # True # False
+TEST_DEBUGGING = False # True # False # True # True # False
 # Test if a newly-introduced change affects the validity of the code
 TEST_VALIDITY = False # False # True # False #  True # True
 # Try overfitting to a single element
@@ -394,7 +394,7 @@ if __name__ == "__main__":
             # session_id = "pred-sem-scan-v6-vg-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode)
             # profile = ["cfgs/vg.yml", "cfgs/pred_sem.yml"]
             pred_sem_mode = pred_sem_mode+1
-            session_id = "pred-sem-scan-v8-{}-{}-{}-{}-{}-{}".format(lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode, dataset)
+            session_id = "pred-sem-scan-v9-{}-{}-{}-{}-{}-{}".format(lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode, dataset)
             profile = ["cfgs/pred_sem.yml"]
             training = {"num_epochs" : 4, "test_freq" : [1,2,3]}
             if dataset == "vg":
