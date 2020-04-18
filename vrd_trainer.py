@@ -113,15 +113,14 @@ class vrd_trainer():
       print("Random initialization...")
       # Random initialization
       utils.weights_normal_init(self.model, dev=0.01)
-      # Load VGG layers
-      self.model.load_pretrained_conv(osp.join(globals.data_dir, "VGG_imagenet.npy"), fix_layers=True)
       # Load existing embeddings
       if self.model.args.use_sem != False:
         try:
           # obj_emb = torch.from_numpy(self.dataset.readPKL("params_emb.pkl"))
           obj_emb = torch.from_numpy(np.array(self.dataset.readJSON("objects-emb.json")))
         except FileNotFoundError:
-          print("Warning: Initialization weights for emb.weight layer not found! Weights are initialized randomly")
+          print("Warning! Initialization weights for emb.weight layer not found! Weights are initialized randomly")
+          input()
           # set_trainability(self.model.emb, requires_grad=True)
         self.model.state_dict()["emb.weight"].copy_(obj_emb)
 
@@ -157,8 +156,8 @@ class vrd_trainer():
     if "optimizer_state_dict" in self.state:
       print("Loading optimizer state_dict...")
       self.optimizer.load_state_dict(self.state["optimizer_state_dict"])
-    else: # TODO remove
-      print("Optimizer state_dict not found!")
+    elif isinstance(self.checkpoint, str):
+      print("Warning! Optimizer state_dict not found!")
 
   # Perform the complete training process
   def train(self):
