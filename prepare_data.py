@@ -194,8 +194,10 @@ class DataPreparer:
       # TODO: zeroshot
       gt_zs_output_path      = osp.join("eval", "gt_zs.pkl")
       
-      os.remove(gt_output_path)
-      os.remove(gt_zs_output_path)
+      if os.path.exists(gt_output_path):
+        os.remove(gt_output_path)
+      if os.path.exists(gt_zs_output_path):
+        os.remove(gt_zs_output_path)
 
       gt_pkl = {}
       gt_pkl["tuple_label"] = []
@@ -255,12 +257,12 @@ class DataPreparer:
         gt_pkl["sub_bboxes"].append(sub_bboxes)
         gt_pkl["obj_bboxes"].append(obj_bboxes)
 
-        zs_gt_pkl["tuple_label"].append(zs_tuple_labels)
-        zs_gt_pkl["sub_bboxes"].append(zs_sub_bboxes)
-        zs_gt_pkl["obj_bboxes"].append(zs_obj_bboxes)
+        gt_zs_pkl["tuple_label"].append(zs_tuple_labels)
+        gt_zs_pkl["sub_bboxes"].append(zs_sub_bboxes)
+        gt_zs_pkl["obj_bboxes"].append(zs_obj_bboxes)
 
-      gt_pkl    = np.array(gt_pkl)
-      zs_gt_pkl = np.array(zs_gt_pkl)
+      #gt_pkl    = np.array(gt_pkl)
+      #gt_zs_pkl = np.array(gt_zs_pkl)
 
       self.writepickle(gt_pkl, gt_output_path)
       self.writepickle(gt_zs_pkl, gt_zs_output_path)
@@ -707,7 +709,7 @@ if __name__ == '__main__':
     # TODO: filter out relationships between the same object?
     
     multi_label = True # False
-    generate_embeddings = True # False # True # False
+    generate_embeddings = True # False # True # False # True # False
 
     w2v_model = None
     if generate_embeddings:
@@ -722,9 +724,9 @@ if __name__ == '__main__':
     #print("\tPreparing evaluation data from Language Priors...")
     #data_preparer_vrd.prepareEvalFromLP()
     data_preparer_vrd.load_vrd()
-    data_preparer_vrd.save_data("relst")
+    #data_preparer_vrd.save_data("relst")
     data_preparer_vrd.prepareGT()
-    data_preparer_vrd.save_data("relst", "rel")
+    #data_preparer_vrd.save_data("relst", "rel")
     data_preparer_vrd.save_data("annos")
     #"""
 
@@ -732,8 +734,8 @@ if __name__ == '__main__':
     # Generate the data in relst format using the {train,test}.pkl files provided by DSR
     print("Generating data in DSR format...")
     data_preparer_vrd.load_dsr()
-    data_preparer_vrd.save_data("relst")
-    data_preparer_vrd.save_data("relst", "rel")
+    #data_preparer_vrd.save_data("relst")
+    #data_preparer_vrd.save_data("relst", "rel")
     data_preparer_vrd.save_data("annos")
     """
 
@@ -744,7 +746,7 @@ if __name__ == '__main__':
     #subset = (1600, 400, 20)
     data_preparer_vg = VGPrep(subset, multi_label=multi_label, generate_emb=w2v_model)
     #data_preparer_vg.save_data("relst")
-    #data_preparer_vg.prepareGT()
+    data_preparer_vg.prepareGT()
     #data_preparer_vg.save_data("relst", "rel")
     #data_preparer_vg.save_data("annos")
     #"""

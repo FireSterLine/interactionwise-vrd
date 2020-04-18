@@ -25,9 +25,9 @@ from lib.datalayer import VRDDataLayer, net_input_to
 from lib.evaluator import VRDEvaluator
 
 # Test if code compiles
-TEST_DEBUGGING = False # True # False # True # True # False
+TEST_DEBUGGING = True #  False # True # False # True # True # False
 # Test if a newly-introduced change affects the validity of the code
-TEST_VALIDITY = False # True # False #  True # True
+TEST_VALIDITY = False # False # True # False #  True # True
 # Try overfitting to a single element
 TEST_OVERFIT = False #True # False # True
 
@@ -345,7 +345,7 @@ if __name__ == "__main__":
     torch.backends.cudnn.benchmark = False
     trainer = vrd_trainer("test", {"training" : {"num_epochs" : 1, "test_first" : True},
         "eval" : {"test_pre" : test_type,  "test_rel" : test_type},
-        "data" : {"justafew" : True}}, checkpoint="epoch_4_checkpoint.pth.tar")
+        "data" : {"justafew" : True}}) #, checkpoint="epoch_4_checkpoint.pth.tar")
     trainer.train()
 
 
@@ -362,6 +362,8 @@ if __name__ == "__main__":
       trainer = vrd_trainer("original", {"training" : {"num_epochs" : 5, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd"}})
       trainer.train()
 
+  trainer = vrd_trainer("original", {"training" : {"num_epochs" : 5, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd"}})
+  trainer.train()
   # TEST_OVERFIT: Try overfitting the network to a single batch
   if TEST_OVERFIT:
     print("########################### TEST_OVERFIT ###########################")
