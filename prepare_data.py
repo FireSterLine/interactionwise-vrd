@@ -20,6 +20,9 @@ from copy import deepcopy
 
 from data.genome.clean_vg import VGCleaner
 
+
+DRY_RUN = True
+
 """
 This script prepares the data from the input format to the one we want.
 Each dataset has potentially a different format, so we use an abstract class DataPreparer
@@ -513,6 +516,7 @@ class VGPrep(DataPreparer):
         self.img_metadata_file_format = osp.join(self.data_format, "{{}}.{}".format(self.data_format))
         # if the path to metadata files does not exist, generate those files using VGCleaner
         if osp.exists(self.fullpath(self.data_format)) is False:
+            assert DRY_RUN == False, "Can't perform dry run when I need to run VGCleaner()" 
             print("Generating {} files for VG relationships...".format(self.data_format))
             cleaner = VGCleaner(num_objects, num_attributes, num_predicates, self.data_format)
             cleaner.build_vocabs_and_json()
@@ -629,7 +633,7 @@ class EpochLogger(CallbackAny2Vec):
 if __name__ == '__main__':
 
     # TODO: filter out relationships between the same object?
-
+    
     multi_label = False
     generate_embeddings = True # False
 

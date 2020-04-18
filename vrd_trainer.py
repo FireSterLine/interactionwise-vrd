@@ -380,6 +380,7 @@ if __name__ == "__main__":
   trainer.train()
   trainer = vrd_trainer("test-no_so", {"training" : {"num_epochs" : 4}, "model" : {"use_so" : False}})
   trainer.train()
+  sys.exit()
   # Test VG
   # trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : False, "test_rel" : test_type}}, profile = "cfgs/vg.yml")
   #trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : test_type}}, profile = "cfgs/vg.yml")
