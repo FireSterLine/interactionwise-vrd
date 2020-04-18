@@ -115,7 +115,7 @@ def getEmbedding(word, emb_model, depth=0):
         for fallback_word in fallback_words:
           if isinstance(fallback_word, str):
             embedding = getEmbedding(fallback_word, emb_model, depth+1)
-            if np.all(embedding != np.zeros(globals.emb_size)):
+            if np.all(embedding != np.zeros(globals.emb_size)) and fallback_word != "_".join(word.split(" ")):
               print("{}'{}' mapped to '{}'".format("  " * depth, word, fallback_word))
               break
           elif isinstance(fallback_word, list):
