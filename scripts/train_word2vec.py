@@ -176,19 +176,25 @@ class MakeIter(object):
 
 
 class EpochSaver(CallbackAny2Vec):
-    def __init__(self, path_prefix):
+    def __init__(self, path_prefix, dim):
         self.path_prefix = path_prefix
+        self.dim = dim
         self.epoch = 0
 
     def on_epoch_end(self, model):
         print("Saving checkpoint {}".format(self.epoch))
-        output_path = get_tmpfile("{}epoch_{}.model".format(self.path_prefix, self.epoch))
+        output_path = get_tmpfile("{}epoch_{}_dim_{}.model".format(self.path_prefix, self.epoch, self.dim))
         model.save(output_path)
         # remove previously saved checkpoint for storage purposes
-        prev_checkpoint = "{}epoch_{}.model".format(self.path_prefix, self.epoch - 1)
+        prev_checkpoint = "{}epoch_{}_dim_{}.model".format(self.path_prefix, self.epoch - 1, self.dim)
+        prev_checkpoint_vectors = "{}epoch_{}_dim_{}.model.wv.vectors.npy".format(self.path_prefix, self.epoch - 1, self.dim)
+        prev_checkpoint_trainable = "{}epoch_4.model_dim_{}.trainables.syn1neg.npy".format(self.path_prefix,
+                                                                                           self.epoch - 1, self.dim)
         if os.path.exists(prev_checkpoint):
             print("Removing previous checkpoint...")
             os.remove(prev_checkpoint)
+            os.remove(prev_checkpoint_vectors)
+            os.remove(prev_checkpoint_trainable)
         self.epoch += 1
 
 
@@ -208,6 +214,7 @@ class EpochLogger(CallbackAny2Vec):
 if __name__ == '__main__':
     server_local = sys.argv[1]
     num_cores = int(sys.argv[2])
+    dim = int(sys.argv[3])
     server_flag = False
     serialize = False
 
@@ -250,11 +257,11 @@ if __name__ == '__main__':
     wiki_iterator = MakeIter(wiki)
 
     epoch_logger = EpochLogger()
-    epoch_saver = EpochSaver(path_prefix=path_prefix)
+    epoch_saver = EpochSaver(path_prefix=path_prefix, dim=dim)
 
-    print("Training Word2Vec...")
+    print("Training Word2Vec with dimensionality {}...".format(dim))
     start = time.time()
-    model = Word2Vec(wiki_iterator, workers=num_cores, min_count=1, callbacks=[epoch_logger, epoch_saver])
+    model = Word2Vec(wiki_iterator, size=dim, workers=num_cores, min_count=1, callbacks=[epoch_logger, epoch_saver])
     end = time.time()
     print("Time taken to train the model: {}".format(end-start))
 
