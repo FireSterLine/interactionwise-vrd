@@ -285,8 +285,7 @@ class DSRModel(nn.Module):
         x_fused = torch.cat((x_fused, x_subobj), 2)
     else:
       # TODO: fix
-      obj_scores = torch.zeros((n_batches, n_objs, self.args.n_obj), device=utils.device)
-
+      obj_scores = torch.zeros((n_objs, self.args.n_obj), device=utils.device)
     if(self.args.use_spat == 1):
       x_spat = self.fc_spatial(spat_features)
       x_fused = torch.cat((x_fused, x_spat), 2)

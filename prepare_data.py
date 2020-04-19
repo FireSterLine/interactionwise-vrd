@@ -740,7 +740,7 @@ if __name__ == '__main__':
     data_preparer_vrd.save_data("annos")
     """
 
-    """
+    #"""
     # TODO: allow multi-word vocabs, so that we can load 1600-400-20_bottomup
     print("Preparing data for VG...")
     subset = (150, 50, 50)
@@ -749,5 +749,5 @@ if __name__ == '__main__':
     #data_preparer_vg.save_data("relst")
     data_preparer_vg.prepareGT()
     #data_preparer_vg.save_data("relst", "rel")
-    #data_preparer_vg.save_data("annos")
+    data_preparer_vg.save_data("annos")
     #"""

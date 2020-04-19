@@ -159,13 +159,14 @@ class vrd_trainer():
     elif isinstance(self.checkpoint, str):
       print("Warning! Optimizer state_dict not found!")
 
+    self.args.eval.rec = sorted(self.args.eval.rec, reverse=True)
+  
   # Perform the complete training process
   def train(self):
     print("train()")
 
     # Prepare result table
     res_headers = ["Epoch"]
-    self.args.eval.rec = sorted(self.args.eval.rec, reverse=True)
     if self.args.eval.test_pre: res_headers += self.gt_headers(self.args.eval.test_pre, "Pre") + ["Avg"]
     if self.args.eval.test_rel: res_headers += self.gt_headers(self.args.eval.test_rel, "Rel") + ["Avg"]
 
@@ -382,6 +383,12 @@ if __name__ == "__main__":
       #trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : test_type}}, profile = "vg")
       #trainer.train()
 
+  #trainer = vrd_trainer("test-only_sem", {"training" : {"num_epochs" : 4}, "model" : {"use_spat" : 0}})
+  #trainer.train()
+  trainer = vrd_trainer("test-only_sem", {"training" : {"num_epochs" : 4}, "model" : {"use_vis" : False, "use_so" : False, "use_spat" : 0}})
+  trainer.train()
+  trainer = vrd_trainer("test-only_spat", {"training" : {"num_epochs" : 4}, "model" : {"use_vis" : False, "use_so" : False, "use_sem" : 0}})
+  trainer.train()
 
       # Scan (rotating parameters)
   for lr in [0.0001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
@@ -389,7 +396,7 @@ if __name__ == "__main__":
           for lr_fus_ratio in [1, 10]:
             for lr_rel_ratio in [1, 10]:
              for pred_sem_mode in [-1, 16+0]: # [1,8+1,16+0,16+4]: # , 16+0,16+1,16+2, 16+8+0, 16+8+4+0, 16+16+0]:
-              for dataset in ["vrd"]: # , "vg"]:
+              for dataset in ["vg"]: # , "vg"]:
                 # session_id = "pred-sem-scan-v6-vg-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode)
                 # profile = ["vg", "pred_sem"]
                 pred_sem_mode = pred_sem_mode+1
@@ -405,7 +412,7 @@ if __name__ == "__main__":
                 # "data" : {"justafew" : True}, "training" : {"num_epochs" : 2, "test_freq" : 0},
                 "training" : training,
                 "model" : {"use_pred_sem" : pred_sem_mode},
-                "eval" : {"test_pre" : test_type}, # "test_rel" : test_type},
+                "eval" : {"rec" : [50, 30], "test_pre" : test_type}, # "test_rel" : test_type},
                 "opt": {
                   "lr": lr,
                   "weight_decay" : weight_decay,
@@ -415,9 +422,5 @@ if __name__ == "__main__":
                 }, profile = profile)
               trainer.train()
 
-  trainer = vrd_trainer("test-only_sem", {"training" : {"num_epochs" : 4}, "model" : {"use_vis" : False, "use_so" : False, "use_spat" : 0}})
-  trainer.train()
-  trainer = vrd_trainer("test-only_spat", {"training" : {"num_epochs" : 4}, "model" : {"use_vis" : False, "use_so" : False, "use_sem" : 0}})
-  trainer.train()
 
   sys.exit(0)
