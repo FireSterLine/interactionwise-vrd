@@ -144,13 +144,14 @@ class vrd_trainer():
     print("Initializing training...")
     self.optimizer = self.model.OriginalAdamOptimizer(**self.args.opt)
 
-    if self.args.training.loss == "mlab":
-      self.criterion = torch.nn.MultiLabelMarginLoss(reduction="sum").to(device=utils.device)
-    elif self.args.training.loss == "cross-entropy":
-      self.criterion = torch.nn.CrossEntropyLoss(reduction="sum").to(device=utils.device)
-    elif self.args.training.loss == "mse":
-      self.criterion = torch.nn.MSELoss(reduction="sum").to(device=utils.device)
-    else:
+    self.criterions = {}
+    if "mlab" in self.args.training.loss:
+      self.criterions["mlab"] = torch.nn.MultiLabelMarginLoss(reduction="sum").to(device=utils.device)
+    if "mse" in self.args.training.loss:
+      self.criterions["mse"] = torch.nn.MSELoss(reduction="sum").to(device=utils.device)
+    if "cross-entropy" in self.args.training.loss:
+      self.criterions["cross-entropy"] = torch.nn.CrossEntropyLoss(reduction="sum").to(device=utils.device)
+    if not len(self.criterions):
       raise ValueError("Unknown loss specified: '{}'".format(self.args.training.loss))
 
     if "optimizer_state_dict" in self.state:
@@ -160,7 +161,7 @@ class vrd_trainer():
       print("Warning! Optimizer state_dict not found!")
 
     self.args.eval.rec = sorted(self.args.eval.rec, reverse=True)
-  
+
   # Perform the complete training process
   def train(self):
     print("train()")
@@ -264,22 +265,25 @@ class vrd_trainer():
       self.optimizer.zero_grad()
       model_output = self.model(*net_input)
 
-      # Note that maybe introducing no_predicate may be better:
-      #  After all, there may not be a relationship between two objects...
-      #  And this would avoid dirtying up the predictions?
-      # TODO: change some constant to the gt_soP_prior before factoring it into the loss
-      gt_soP_prior = -0.5 * ( gt_soP_prior + (1.0 / self.dataset.n_pred))
 
-      # DSR:
-      # TODO: fix this weird-shaped mlab_target in datalayer and remove this view thingy
-      if self.args.training.loss == "mlab":
-        _, rel_scores, _ = model_output
-        loss = self.criterion((gt_soP_prior + rel_scores).view(batch_size, -1), mlab_target)
-        # loss = self.criterion((rel_scores).view(batch_size, -1), mlab_target)
-      elif self.args.training.loss == "mse":
-        _, rel_scores, pred_sem = model_output
+      _, rel_scores, pred_sem = model_output
+
+      loss = 0
+      if "mlab" in self.args.training.loss:
+        # DSR:
+        # TODO: fix this weird-shaped mlab_target in datalayer and remove this view thingy
+        if not "mlab_no_prior" in self.args.training.loss:
+          # Note that maybe introducing no_predicate may be better:
+          #  After all, there may not be a relationship between two objects...
+          #  And this would avoid dirtying up the predictions?
+          # TODO: change some constant to the gt_soP_prior before factoring it into the loss
+          gt_soP_prior = -0.5 * ( gt_soP_prior + (1.0 / self.dataset.n_pred))
+          loss += self.criterions["mlab"]((gt_soP_prior + rel_scores).view(batch_size, -1), mlab_target)
+        else:
+          loss += self.criterions["mlab"]((rel_scores).view(batch_size, -1), mlab_target)
+      if "mse" in self.args.training.loss:
         # TODO use the weighted embeddings of gt_soP_prior ?
-        loss = self.criterion(pred_sem, gt_pred_sem)
+        loss += self.criterions["mse"](pred_sem, gt_pred_sem)
 
       loss.backward()
       self.optimizer.step()
@@ -383,24 +387,27 @@ if __name__ == "__main__":
       #trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : test_type}}, profile = "vg")
       #trainer.train()
 
-  #trainer = vrd_trainer("test-only_sem", {"training" : {"num_epochs" : 4}, "model" : {"use_spat" : 0}})
-  #trainer.train()
-  trainer = vrd_trainer("test-only_sem", {"training" : {"num_epochs" : 4}, "model" : {"use_vis" : False, "use_so" : False, "use_spat" : 0}})
+  trainer = vrd_trainer("test-no_prior-only_vis",  {"training" : {"num_epochs" : 4, "loss" : "mlab_no_prior"}, "model" : {"use_sem" : 0, "use_spat" : 0}})
   trainer.train()
-  trainer = vrd_trainer("test-only_spat", {"training" : {"num_epochs" : 4}, "model" : {"use_vis" : False, "use_so" : False, "use_sem" : 0}})
+  trainer = vrd_trainer("test-no_prior-only_sem",  {"training" : {"num_epochs" : 4, "loss" : "mlab_no_prior"}, "model" : {"use_vis" : False, "use_so" : False, "use_spat" : 0}})
+  trainer.train()
+  trainer = vrd_trainer("test-no_prior-only_spat", {"training" : {"num_epochs" : 4, "loss" : "mlab_no_prior"}, "model" : {"use_vis" : False, "use_so" : False, "use_sem" : 0}})
   trainer.train()
 
       # Scan (rotating parameters)
   for lr in [0.0001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
-    for weight_decay in [0.0005, 0.0001, 0.00005]:
-          for lr_fus_ratio in [1, 10]:
-            for lr_rel_ratio in [1, 10]:
-             for pred_sem_mode in [-1, 16+0]: # [1,8+1,16+0,16+4]: # , 16+0,16+1,16+2, 16+8+0, 16+8+4+0, 16+16+0]:
-              for dataset in ["vg"]: # , "vg"]:
+    for weight_decay in [0.0001, 0.00005]:
+      for lr_fus_ratio in [10]:
+        for lr_rel_ratio in [10]:
+         for pred_sem_mode in [-1, 8, 8+1]: # 16+0 [1,8+1,16+0,16+4]: # , 16+0,16+1,16+2, 16+8+0, 16+8+4+0, 16+16+0]:
+           for loss in ["mlab", "mlab_mse"]:
+              for dataset in ["vrd"]: # , "vg"]:
+                if loss == "mlab_mse" and pred_sem_mode != -1:
+                  continue
                 # session_id = "pred-sem-scan-v6-vg-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode)
                 # profile = ["vg", "pred_sem"]
                 pred_sem_mode = pred_sem_mode+1
-                session_id = "pred-sem-scan-v9-{}-{}-{}-{}-{}-{}".format(lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode, dataset)
+                session_id = "mse-loss-{}-{}-{}-{}-{}-{}".format(lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode, dataset)
                 profile = ["pred_sem"]
                 training = {"num_epochs" : 4, "test_freq" : [1,2,3]}
                 if dataset == "vg":
