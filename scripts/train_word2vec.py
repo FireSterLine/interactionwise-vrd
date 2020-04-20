@@ -55,8 +55,8 @@ class VRDEmbedding:
             wiki.fname = os.path.join(path_prefix, "enwiki-latest-pages-articles.xml.bz2")
         else:
             print("Creating datapath...")
-            path_to_wiki_dump = datapath("enwiki-latest-pages-articles1.xml-p000000010p000030302-shortened.bz2")
-            # path_to_wiki_dump = datapath(os.path.join(path_prefix, "enwiki-latest-pages-articles.xml.bz2"))
+            # path_to_wiki_dump = datapath("enwiki-latest-pages-articles1.xml-p000000010p000030302-shortened.bz2")
+            path_to_wiki_dump = datapath(os.path.join(path_prefix, "enwiki-latest-pages-articles.xml.bz2"))
 
             print("Initializing corpus...")
             start = time.time()
@@ -65,7 +65,7 @@ class VRDEmbedding:
             end = time.time()
             print("Time taken to initialize corpus: {}".format(end - start))
             print("Dumping wiki to disk...")
-            # pickle.dump(wiki, open(os.path.join(path_prefix, "wiki.pkl"), 'w'))
+            pickle.dump(wiki, open(os.path.join(path_prefix, "wiki.pkl"), 'w'))
 
             if serialize is True:
                 print("Creating corpus path...")
