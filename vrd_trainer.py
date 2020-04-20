@@ -389,7 +389,13 @@ if __name__ == "__main__":
       #trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : test_type}}, profile = "vg")
       #trainer.train()
 
-  trainer = vrd_trainer("test-nothing",  {"training" : {"num_epochs" : 4, "loss" : "mlab"}, "model" : {"use_vis" : False, "use_so" : False, "use_sem" : 0, "use_spat" : 0}})
+  trainer = vrd_trainer("test-no-features",  {"training" : {"num_epochs" : 4, "loss" : "mlab"}, "model" : {"use_vis" : False, "use_so" : False, "use_sem" : 0, "use_spat" : 0}})
+  trainer.train()
+
+  trainer = vrd_trainer("test-original", {"training" : {"num_epochs" : 5}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd"}})
+  trainer.train()
+
+  trainer = vrd_trainer("test-original-no_prior", {"training" : {"num_epochs" : 5}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd"}})
   trainer.train()
 
   #trainer = vrd_trainer("test-no_prior-only_vis",  {"training" : {"num_epochs" : 4, "loss" : "mlab_no_prior"}, "model" : {"use_sem" : 0, "use_spat" : 0}})
@@ -401,16 +407,14 @@ if __name__ == "__main__":
 
   # Scan (rotating parameters)
   for lr in [0.0001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
-    for weight_decay in [0.0001, 0.00005]:
+    for weight_decay in [0.0001]: # , 0.00005]:
       for lr_fus_ratio in [10]:
         for lr_rel_ratio in [10]:
-         for pred_sem_mode_1 in [-1, 8, 8+1]: # 16+0 [1,8+1,16+0,16+4]: # , 16+0,16+1,16+2, 16+8+0, 16+8+4+0, 16+16+0]:
-           for loss in ["mlab", "mlab_mse"]:
+          for pred_sem_mode_1 in [8, 8+1]: # 16+0 [1,8+1,16+0,16+4]: # , 16+0,16+1,16+2, 16+8+0, 16+8+4+0, 16+16+0]:
+            for loss in ["mlab", "mlab_mse", "mse"]:
               for dataset in ["vrd"]: # , "vg"]:
-                if loss == "mlab_mse" and pred_sem_mode_1 == -1:
+                if pred_sem_mode_1 == -1 and "mse" in loss:
                   continue
-                # session_id = "pred-sem-scan-v6-vg-{}-{}-{}-{}".format(lr, weight_decay, lr_rel_fus_ratio, pred_sem_mode)
-                # profile = ["vg", "pred_sem"]
                 pred_sem_mode = pred_sem_mode_1+1
                 session_id = "mse-loss-{}-{}-{}-{}-{}-{}-{}".format(lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode, dataset, loss)
                 profile = ["pred_sem"]
@@ -421,17 +425,17 @@ if __name__ == "__main__":
                 test_type = True # 0.5
 
                 trainer = vrd_trainer(session_id, {
-                # "data" : {"justafew" : True}, "training" : {"num_epochs" : 2, "test_freq" : 0},
-                "training" : training,
-                "model" : {"use_pred_sem" : pred_sem_mode},
-                "eval" : {"rec" : [50, 30], "test_pre" : test_type}, # "test_rel" : test_type},
-                "opt": {
-                  "lr": lr,
-                  "weight_decay" : weight_decay,
-                  "lr_fus_ratio" : lr_fus_ratio,
-                  "lr_rel_ratio" : lr_rel_ratio,
-                  }
-                }, profile = profile)
+                  # "data" : {"justafew" : True}, "training" : {"num_epochs" : 2, "test_freq" : 0},
+                  "training" : training,
+                  "model" : {"use_pred_sem" : pred_sem_mode},
+                  "eval" : {"rec" : [50, 30], "test_pre" : test_type}, # "test_rel" : test_type},
+                  "opt": {
+                    "lr": lr,
+                    "weight_decay" : weight_decay,
+                    "lr_fus_ratio" : lr_fus_ratio,
+                    "lr_rel_ratio" : lr_rel_ratio,
+                    }
+                  }, profile = profile)
                 trainer.train()
 
 

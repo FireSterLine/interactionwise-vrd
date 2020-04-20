@@ -178,7 +178,7 @@ class VRDDataset():
     pp_counts = np.zeros((self.n_pred, self.n_pred))
 
     sop_counts = self._get_sop_counts(relst)
-    raise NotImplemented
+    raise NotImplementedError
 
     # Divide each line by # of counts
     for pred1_idx in range(self.n_pred):
