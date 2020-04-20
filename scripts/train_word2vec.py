@@ -9,19 +9,13 @@ from gensim.models.callbacks import CallbackAny2Vec
 from gensim.test.utils import datapath, get_tmpfile
 from gensim.corpora import WikiCorpus, MmCorpus
 
-# TODO: avoid this global_vrdembedding crapery by making vrd_tokenize a method instead of a public function using global_vrdembedding
-global_vrdembedding = None
-
-def vrd_tokenize(content, token_min_len=2, token_max_len=15, lowercase=True):
-        for word in global_vrdembedding.multi_word_phrases:
-            content = re.sub(r'\b%s\b' % word, '_'.join(word.split()), content)
-        return [
-            token for token in global_vrdembedding._tokenize(content, lowercase=lowercase)
-            if token_min_len <= len(token) <= token_max_len and not token.startswith('_')
-        ]
+# TODO: avoid this global vrd_tokenize crapery
+vrd_tokenize = None 
 
 class VRDEmbedding:
     def __init__(self, path_prefix, dim):
+        global vrd_tokenize
+        vrd_tokenize = self.vrd_tokenize
         self.PAT_ALPHABETIC = re.compile(r'(((?![\d])\w)+)', re.UNICODE)
         self.TOKEN_MIN_LEN = 2
         self.TOKEN_MAX_LEN = 15
@@ -49,6 +43,13 @@ class VRDEmbedding:
         result = ''.join(ch for ch in norm if unicodedata.category(ch) != 'Mn')
         return unicodedata.normalize("NFC", result)
 
+    def vrd_tokenize(self, content, token_min_len=2, token_max_len=15, lowercase=True):
+        for word in self.multi_word_phrases:
+            content = re.sub(r'\b%s\b' % word, '_'.join(word.split()), content)
+        return [
+            token for token in self._tokenize(content, lowercase=lowercase)
+            if token_min_len <= len(token) <= token_max_len and not token.startswith('_')
+        ]
 
     def train_model(self, num_cores, serialize=False):
         wiki_path = os.path.join(self.path_prefix, "wiki.pkl")
@@ -64,7 +65,7 @@ class VRDEmbedding:
             print("Initializing corpus...")
             start = time.time()
             wiki = WikiCorpus(path_to_wiki_dump,
-                              tokenizer_func=vrd_tokenize)  # create word->word_id mapping, ~8h on full wiki
+                              tokenizer_func=self.vrd_tokenize)  # create word->word_id mapping, ~8h on full wiki
             end = time.time()
             print("Time taken to initialize corpus: {}".format(end - start))
             print("Dumping wiki to disk...")
@@ -163,7 +164,6 @@ if __name__ == '__main__':
         path_prefix = "/media/azfar/New Volume/WikiDump/"
 
     vrd_embedder = VRDEmbedding(path_prefix, dim)
-    global_vrdembedding = vrd_embedder
     model = vrd_embedder.train_model(num_cores=num_cores, serialize=False)
 
     #model = VRDEmbedding.load_model(os.path.join(path_prefix, "epoch_4_dim_50.model"))
