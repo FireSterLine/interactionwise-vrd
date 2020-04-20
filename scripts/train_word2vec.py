@@ -188,7 +188,7 @@ class EpochSaver(CallbackAny2Vec):
         # remove previously saved checkpoint for storage purposes
         prev_checkpoint = "{}epoch_{}_dim_{}.model".format(self.path_prefix, self.epoch - 1, self.dim)
         prev_checkpoint_vectors = "{}epoch_{}_dim_{}.model.wv.vectors.npy".format(self.path_prefix, self.epoch - 1, self.dim)
-        prev_checkpoint_trainable = "{}epoch_4.model_dim_{}.trainables.syn1neg.npy".format(self.path_prefix,
+        prev_checkpoint_trainable = "{}epoch_{}.model_dim_{}.trainables.syn1neg.npy".format(self.path_prefix,
                                                                                            self.epoch - 1, self.dim)
         if os.path.exists(prev_checkpoint):
             print("Removing previous checkpoint...")
