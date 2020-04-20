@@ -133,6 +133,8 @@ class DSRModel(nn.Module):
       # set_trainability(self.emb, requires_grad=False)
       # self.fc_so_emb = FC(globals.emb_size*2, 256)
 
+    if self.total_fus_neurons == 0:
+      self.total_fus_neurons = 1
 
     if not self.args.use_pred_sem:
       # Final layers
@@ -287,8 +289,8 @@ class DSRModel(nn.Module):
         # print()
         x_fused = torch.cat((x_fused, x_subobj), 2)
     else:
-      # TODO: fix
       obj_scores = torch.zeros((n_objs, self.args.n_obj), device=utils.device)
+
     if(self.args.use_spat == 1):
       x_spat = self.fc_spatial(spat_features)
       x_fused = torch.cat((x_fused, x_spat), 2)
@@ -321,10 +323,8 @@ class DSRModel(nn.Module):
       x_fused = torch.cat((x_fused, emb), dim=2)
       # print("x_fused.shape: ", x_fused.shape)
 
-
-
-
-
+    if self.total_fus_neurons == 1:
+      x_fused = torch.zeros((n_batches, n_rels, 1), device=utils.device)
 
     x_fused = self.fc_fusion(x_fused)
     rel_scores = self.fc_rel(x_fused)
