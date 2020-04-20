@@ -162,7 +162,10 @@ class DSRModel(nn.Module):
       else:
         mode = mode - 16
         from sklearn.metrics.pairwise import cosine_similarity
+
         pred2pred_sim = cosine_similarity(self.args.pred_emb, self.args.pred_emb)
+        # pred2pred_sim = self.args.pP_prior
+        # pred2pred_sim = cosine_similarity(self.args.pred_emb, self.args.pred_emb) + self.args.pP_prior
 
         print("Mode {} = {}{}{}{}{}".format(mode, mode%2, (mode//2)%2, (mode//4)%2, (mode//8)%2, (mode//16)%2))
 
@@ -190,14 +193,14 @@ class DSRModel(nn.Module):
   def forward(self, vis_features, obj_classes, obj_boxes, u_boxes, idx_s, idx_o, spat_features):
 
     n_batches = vis_features.size()[0]
-    
+
     # turn our (batch_size×n×5) ROI into just (n×5)
     obj_boxes = obj_boxes.view(-1, obj_boxes.size()[2])
     u_boxes   =   u_boxes.view(-1,   u_boxes.size()[2])
     # reset ROI image-ID to align with the 0-indexed minibatch
     obj_boxes[:, 0] = obj_boxes[:, 0] - obj_boxes[0, 0]
     u_boxes[:, 0]   =   u_boxes[:, 0]  -  u_boxes[0, 0]
-    
+
     n_objs = obj_boxes.size()[0]
     n_rels = u_boxes.size()[0]
 

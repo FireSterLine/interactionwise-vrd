@@ -117,37 +117,40 @@ class VRDDataset():
   def getDistribution(self, type, stage = "train"):
     """ Computes and returns some distributional data """
 
-    if stage == "test":
+    if stage != "train":
       raise ValueError("Can't compute distribution on \"{}\" split".format(stage))
 
     if not (type, stage) in self._distr_cache:
       distribution_pkl_path = osp.join(self.metadata_dir, "{}.pkl".format(type))
+      dont_pkl = False
       distribution = None
 
-      if type == "soP":
-        assert stage == "train", "Wait a second, why do you want the soP for the train split?"
-        if self.subset == "dsr":
-            distribution_pkl_path = osp.join(self.metadata_dir, "so_prior.pkl")
-        try:
-          with open(distribution_pkl_path, 'rb') as fid:
-            print("Distribution {} found!".format(type))
-            distribution = pickle.load(fid, encoding='latin1')
-        except FileNotFoundError:
-          print("Distribution {} not found: {}. Generating...".format(type, distribution_pkl_path))
+      if type == "soP" and self.subset == "dsr":
+        distribution_pkl_path = osp.join(self.metadata_dir, "so_prior.pkl")
+        dont_pkl = True
+
+      try:
+        with open(distribution_pkl_path, 'rb') as fid:
+          print("Distribution {} found!".format(type))
+          distribution = pickle.load(fid, encoding='latin1')
+      except FileNotFoundError:
+        print("Distribution {} not found: {}. Generating...".format(type, distribution_pkl_path))
+        if type == "soP":
           distribution = self._generate_soP_distr(self.getData("relst", stage))
-          if self.subset != "dsr":
-            pickle.dump(distribution, open(distribution_pkl_path, 'wb'))
-      else:
-        raise Exception("Unknown distribution requested: {}".format(type))
+        elif type == "pP":
+          distribution = self._generate_pP_distr(self.getData("relst", stage))
+        else:
+          raise Exception("Unknown distribution requested: {}".format(type))
+
+      if not dont_pkl:
+        pickle.dump(distribution, open(distribution_pkl_path, 'wb'))
       self._distr_cache[(type, stage)] = distribution
 
     return self._distr_cache[(type, stage)]
 
-  def _generate_soP_distr(self, relst):
-
+  # Count sop-triples occurrences
+  def _get_sop_counts(self, relst):
     sop_counts = np.zeros((self.n_obj, self.n_obj, self.n_pred))
-
-    # Count sop occurrences
     for img_path,rels in relst:
       if img_path == None:
         continue
@@ -158,6 +161,8 @@ class VRDDataset():
 
         sop_counts[subject_label][object_label][predicate_labels] += 1
 
+  def _generate_soP_distr(self, relst):
+    sop_counts = self._get_sop_counts(relst)
     # Divide each line by # of counts
     for sub_idx in range(self.n_obj):
       for obj_idx in range(self.n_obj):
@@ -167,6 +172,23 @@ class VRDDataset():
         sop_counts[sub_idx][obj_idx] /= float(total_count)
 
     return sop_counts
+
+
+  def _generate_pP_distr(self, relst):
+    pp_counts = np.zeros((self.n_pred, self.n_pred))
+
+    sop_counts = self._get_sop_counts(relst)
+    raise NotImplemented
+
+    # Divide each line by # of counts
+    for pred1_idx in range(self.n_pred):
+      for pred2_idx in range(self.n_pred):
+        total_count = pp_counts[pred1_idx][pred2_idx].sum()
+        if total_count == 0:
+          continue
+        pp_counts[pred1_idx][pred2_idx] /= float(total_count)
+
+    return pp_counts
 
   # Read json datafile
   def readJSON(self, filename):

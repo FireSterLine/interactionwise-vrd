@@ -104,6 +104,8 @@ class vrd_trainer():
     self.args.model.n_pred = self.dataset.n_pred
     if self.args.model.use_pred_sem:
       self.args.model.pred_emb = np.array(self.dataset.readJSON("predicates-emb.json"))
+    # ... if self.args.model.use_pred_sem:
+    #   self.args.pP_prior = self.dataset.getDistribution("pP")
     print("Initializing VRD Model: ", self.args.model)
     self.model = VRDModel(self.args.model).to(utils.device)
     if "model_state_dict" in self.state:
