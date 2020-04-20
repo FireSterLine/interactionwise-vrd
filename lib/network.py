@@ -46,7 +46,7 @@ class SemSim(nn.Module):
 
   def __init__(self, emb, mode = 0):
     super(SemSim, self).__init__()
-    print("SenSim with mode {}".format(mode))
+    print("SemSim with mode {}".format(mode))
     self.emb = torch.as_tensor(emb).to("cuda:0") # TODO fix
     self.mode = mode
     self.tanh = nn.Tanh()

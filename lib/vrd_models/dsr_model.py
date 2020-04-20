@@ -184,7 +184,7 @@ class DSRModel(nn.Module):
         else:
           self.fc_fusion = FC(self.total_fus_neurons, self.args.n_pred, relu = ((mode//2)%2))
 
-        self.fc_rel    = FC(self.args.n_pred, self.args.n_pred, relu = False, bias = ((mode//4)%2))
+        self.fc_rel    = FC(self.args.n_pred, self.args.n_pred, relu = False, bias = False) # ((mode//4)%2))
         with torch.no_grad():
           self.fc_rel.fc.weight.data.copy_(pred2pred_sim)
         if ((mode//8)%2):

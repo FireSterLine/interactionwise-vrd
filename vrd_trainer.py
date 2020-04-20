@@ -410,8 +410,8 @@ if __name__ == "__main__":
     for weight_decay in [0.0001]: # , 0.00005]:
       for lr_fus_ratio in [10]:
         for lr_rel_ratio in [10]:
-          for pred_sem_mode_1 in [8, 8+1]: # 16+0 [1,8+1,16+0,16+4]: # , 16+0,16+1,16+2, 16+8+0, 16+8+4+0, 16+16+0]:
-            for loss in ["mlab", "mlab_mse", "mse"]:
+          for pred_sem_mode_1 in [-1, 16, 17, 18, 19, 24, 25, 26, 27]: # 16+0 [1,8+1,16+0,16+4]: # , 16+0,16+1,16+2, 16+8+0, 16+8+4+0, 16+16+0]:
+            for loss in ["mlab"]: # , "mlab_mse", "mse"]:
               for dataset in ["vrd"]: # , "vg"]:
                 if pred_sem_mode_1 == -1 and "mse" in loss:
                   continue
