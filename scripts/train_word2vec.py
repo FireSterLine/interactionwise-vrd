@@ -12,6 +12,7 @@ from gensim.corpora import WikiCorpus, MmCorpus
 # TODO: avoid this global vrd_tokenize crapery
 vrd_tokenize = None 
 
+
 class VRDEmbedding:
     def __init__(self, path_prefix, dim):
         global vrd_tokenize
@@ -106,6 +107,7 @@ class VRDEmbedding:
         def __iter__(self):
             return self.wiki.get_texts()
 
+
 class EpochSaver(CallbackAny2Vec):
         """
             This is a class for saving the model checkpoint on each epoch, and deleting the previous checkpoint.
@@ -131,6 +133,7 @@ class EpochSaver(CallbackAny2Vec):
                 if os.path.exists(prev_checkpoint_trainable):
                     os.remove(prev_checkpoint_trainable)
             self.epoch += 1
+
 
 class EpochLogger(CallbackAny2Vec):
         """
