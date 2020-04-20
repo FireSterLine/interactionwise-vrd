@@ -389,7 +389,7 @@ if __name__ == "__main__":
       #trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : test_type}}, profile = "vg")
       #trainer.train()
 
-  trainer = vrd_trainer("test-no-features",  {"training" : {"num_epochs" : 4, "loss" : "mlab"}, "model" : {"use_vis" : False, "use_so" : False, "use_sem" : 0, "use_spat" : 0}})
+  trainer = vrd_trainer("test-no-features",  {"training" : {"num_epochs" : 4, "test_first" : True, "loss" : "mlab_no_prior"}, "model" : {"use_vis" : False, "use_so" : False, "use_sem" : 0, "use_spat" : 0}})
   trainer.train()
 
   trainer = vrd_trainer("test-original", {"training" : {"num_epochs" : 5}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd"}})

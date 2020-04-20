@@ -122,8 +122,6 @@ class DSRModel(nn.Module):
       self.total_fus_neurons += self.args.n_fus_neurons
 
     if(self.args.use_sem):
-      # self.fc_semantic = FC(2*globals.emb_size, self.args.n_fus_neurons)
-      # self.total_fus_neurons += self.args.n_fus_neurons
       self.emb = nn.Embedding(self.args.n_obj, globals.emb_size)
       set_trainability(self.emb, requires_grad=False)
       self.fc_semantic = FC(globals.emb_size*2, self.args.n_fus_neurons)
@@ -134,6 +132,7 @@ class DSRModel(nn.Module):
       # self.fc_so_emb = FC(globals.emb_size*2, 256)
 
     if self.total_fus_neurons == 0:
+      print("Warning! Using no features. The model is not expected to learn")
       self.total_fus_neurons = 1
 
     if not self.args.use_pred_sem:
@@ -324,6 +323,7 @@ class DSRModel(nn.Module):
       # print("x_fused.shape: ", x_fused.shape)
 
     if self.total_fus_neurons == 1:
+      # print("Warning! Using no features. The model is not expected to learn")
       x_fused = torch.zeros((n_batches, n_rels, 1), device=utils.device)
 
     x_fused = self.fc_fusion(x_fused)
