@@ -116,7 +116,7 @@ class DSRModel(nn.Module):
     if self.total_fus_neurons == 0:
       print("Warning! Using no features. The model is not expected to learn")
       self.total_fus_neurons = 1
-    
+
     if self.args.n_pred >= 256:
       print("Warning! Perhaps this model has to be expanded for n_predicates > 256, to avoid 'information bottlenecks'")
 
@@ -176,6 +176,7 @@ class DSRModel(nn.Module):
         with torch.no_grad():
           self.fc_rel.fc.weight.data.copy_(pred2pred_sim)
         if ((mode//8)%2):
+          print("Warning! Fixing last layer. This might not be optimal")
           self.fc_rel_not_trainable = True # TODO fix
           set_trainability(self.fc_rel, requires_grad = False)
 

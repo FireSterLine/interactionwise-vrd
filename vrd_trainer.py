@@ -361,7 +361,7 @@ if __name__ == "__main__":
     print("########################### TEST_DEBUGGING ###########################")
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
-    trainer = vrd_trainer("test", {"training" : {"num_epochs" : 1, "test_first" : True},
+    trainer = vrd_trainer("test", {"training" : {"num_epochs" : 1, "test_first" : True, "loss" : "bcel_mlab"},
         "eval" : {"test_pre" : test_type,  "test_rel" : test_type},
         "data" : {"justafew" : True}}) #, checkpoint="epoch_4_checkpoint.pth.tar")
     trainer.train()
@@ -414,14 +414,14 @@ if __name__ == "__main__":
   for lr in [0.0001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
     for weight_decay in [0.0001]: # , 0.00005]:
       for lr_fus_ratio in [10]:
-        for lr_rel_ratio in [10]:
-          for pred_sem_mode_1 in [-1, 16, 17, 18, 19, 24, 25, 26, 27]: # 16+0 [1,8+1,16+0,16+4]: # , 16+0,16+1,16+2, 16+8+0, 16+8+4+0, 16+16+0]:
-            for loss in ["mlab"]: # , "mlab_mse", "mse"]:
+        for lr_rel_ratio in [10, 100]:
+          for pred_sem_mode_1 in [-1, 8, 9, 16, 17, 18, 19]:
+            for loss in ["mlab", "mlab_mse", "bcel"]:
               for dataset in ["vrd"]: # , "vg"]:
                 if pred_sem_mode_1 == -1 and "mse" in loss:
                   continue
                 pred_sem_mode = pred_sem_mode_1+1
-                session_id = "scan-no-feat-{}-{}-{}-{}-{}-{}-{}".format(lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode, dataset, loss)
+                session_id = "scan-no-feat-{}-{}-{}-{}-{}-{},{0:b}-{}-{}".format(lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode, pred_sem_mode, dataset, loss)
                 profile = ["pred_sem", "no-feat"]
                 training = {"num_epochs" : 4, "test_freq" : [1,2,3]}
                 if dataset == "vg":
