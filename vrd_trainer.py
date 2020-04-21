@@ -239,6 +239,7 @@ class vrd_trainer():
   def do_test(self, res, res_headers, force_epoch = None):
     epoch = self.state["epoch"]+1
     if force_epoch is not None: epoch = force_epoch
+    res_row = [epoch]
     if self.args.eval.test_pre:
       recalls, dtime = self.test_pre()
       res_row += recalls + (sum(recalls)/len(recalls),)

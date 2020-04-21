@@ -16,6 +16,7 @@ import json
 import pickle
 import globals
 import utils
+import random
 from copy import deepcopy
 
 from data.genome.clean_vg import VGCleaner
@@ -284,6 +285,7 @@ class DataPreparer:
         return (None, None)
 
     def randomize_split(self):
+      print("Randomizing splits...")
       indices = self.splits["train"] + self.splits["test"]
       random.shuffle(indices)
       len_train = len(self.splits["train"])
@@ -730,7 +732,7 @@ if __name__ == '__main__':
     #print("\tPreparing evaluation data from Language Priors...")
     #data_preparer_vrd.prepareEvalFromLP()
     data_preparer_vrd.load_vrd()
-    data_preparer_vrd.randomize_split()
+    #data_preparer_vrd.randomize_split()
     data_preparer_vrd.prepareGT()
     #data_preparer_vrd.save_data("relst")
     #data_preparer_vrd.save_data("relst", "rel")

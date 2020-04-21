@@ -116,6 +116,9 @@ class DSRModel(nn.Module):
     if self.total_fus_neurons == 0:
       print("Warning! Using no features. The model is not expected to learn")
       self.total_fus_neurons = 1
+    
+    if self.args.n_pred >= 256:
+      print("Warning! Perhaps this model has to be expanded for n_predicates > 256, to avoid 'information bottlenecks'")
 
     ######################################
     ######### PREDICATE SEMANTICS ########
