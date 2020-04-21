@@ -20,7 +20,7 @@ from copy import deepcopy
 
 from data.genome.clean_vg import VGCleaner
 
-# Prepare the data without saving anything at all 
+# Prepare the data without saving anything at all
 DRY_RUN = False
 
 """
@@ -194,7 +194,7 @@ class DataPreparer:
       gt_output_path         = osp.join("eval", "gt.pkl")
       # TODO: zeroshot
       gt_zs_output_path      = osp.join("eval", "gt_zs.pkl")
-      
+
       if os.path.exists(gt_output_path):
         os.remove(gt_output_path)
       if os.path.exists(gt_zs_output_path):
@@ -283,6 +283,11 @@ class DataPreparer:
           print("Image '{}' not found in train vrd_data (e.g {})".format(k, next(iter(self.vrd_data))))
         return (None, None)
 
+    def randomize_split(self):
+      indices = self.splits["train"] + self.splits["test"]
+      random.shuffle(indices)
+      len_train = len(self.splits["train"])
+      self.splits = {"train" : indices[:len_train], "test" : indices[len_train:]}
 
     def readbbox_arr(self, bbox, margin=0):
         return {
@@ -708,9 +713,9 @@ class EpochLogger(CallbackAny2Vec):
 if __name__ == '__main__':
 
     # TODO: filter out relationships between the same object?
-    
+
     multi_label = True # False
-    generate_embeddings = True # False # True # False # True # False
+    generate_embeddings = False # False # True # False # True # False
 
     w2v_model = None
     if generate_embeddings:
@@ -725,6 +730,7 @@ if __name__ == '__main__':
     #print("\tPreparing evaluation data from Language Priors...")
     #data_preparer_vrd.prepareEvalFromLP()
     data_preparer_vrd.load_vrd()
+    data_preparer_vrd.randomize_split()
     data_preparer_vrd.prepareGT()
     #data_preparer_vrd.save_data("relst")
     #data_preparer_vrd.save_data("relst", "rel")
@@ -740,7 +746,7 @@ if __name__ == '__main__':
     data_preparer_vrd.save_data("annos")
     """
 
-    #"""
+    """
     # TODO: allow multi-word vocabs, so that we can load 1600-400-20_bottomup
     print("Preparing data for VG...")
     subset = (150, 50, 50)
