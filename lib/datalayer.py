@@ -262,7 +262,7 @@ class VRDDataLayer(data.Dataset):
       # Semantic vector for the predicate
       gt_pred_sem = np.zeros((n_rels, globals.emb_size))
 
-      # Target output for the network
+      # Targets (ground-truth input to the losses)
       if "mlab" in self.y_cols:
         # TODO: reshape like mlab_target = np.zeros((n_rels, self.n_pred))
         mlab_target = -1 * np.ones((self.dataset.n_pred * n_rels))
@@ -352,7 +352,7 @@ class VRDDataLayer(data.Dataset):
 
 # Move the net input to device
 def loss_targets_to(loss_targets, device):
-  for name,loss_target in loss_targets.item():
+  for name,loss_target in loss_targets.items():
     loss_targets[name] = loss_target.to(device = device)
   return loss_targets
 

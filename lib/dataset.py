@@ -108,7 +108,7 @@ class VRDDataset():
           data = data[:2000]
 
       if self.justafew == True:
-          data = data[:100]
+          data = data[:10]
       elif self.justafew != False and isinstance(self.justafew, int):
           data = data[self.justafew:self.justafew+1]
       self._vrd_data_cache[(format, stage, granularity)] = data
@@ -160,6 +160,8 @@ class VRDDataset():
         predicate_labels = elem["predicate"]["id"]
 
         sop_counts[subject_label][object_label][predicate_labels] += 1
+
+    return sop_counts
 
   def _generate_soP_distr(self, relst):
     sop_counts = self._get_sop_counts(relst)

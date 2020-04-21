@@ -23,7 +23,7 @@ model:
     # - False: no spatial info
     # - dsr_spat_vec : 8-way relative location vector
     # - dsr_spat_mat : dual mask # TODO
-    spat: dsr_spat_mat
+    spat: dsr_spat_vec
   # Use or not predicate semantics
   use_pred_sem: False
 
