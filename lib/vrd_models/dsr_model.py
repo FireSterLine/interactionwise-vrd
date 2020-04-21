@@ -34,7 +34,7 @@ class DSRModel(nn.Module):
     self.args.use_bn        = self.args.get("use_bn",        False)
 
     # Apply VGG net or directly receive the visual feature vector
-    self.args.apply_vgg     = self.args.get("apply_vgg",     False)
+    self.args.apply_vgg     = self.args.get("apply_vgg",     True) 
 
     if not self.args.feat_used.vis and self.args.feat_used.vis_so:
       raise ValueError("Can't use so features without visual features flag true") # TODO: fix
@@ -94,9 +94,9 @@ class DSRModel(nn.Module):
       self.total_fus_neurons += self.args.n_fus_neurons
     # using type 2 of spatial features
     elif self.args.feat_used.spat == "dsr_spat_mat": # TODO: test
-      self.conv_spatial = nn.Sequential(Conv2d(2, 96, 5, same_padding=True, stride=2, bn=bn),
-                                 Conv2d(96, 128, 5, same_padding=True, stride=2, bn=bn),
-                                 Conv2d(128, 64, 8, same_padding=False, bn=bn))
+      self.conv_spatial = nn.Sequential(Conv2d(2, 96, 5, same_padding=True, stride=2, bn=self.args.use_bn),
+                                 Conv2d(96, 128, 5, same_padding=True, stride=2, bn=self.args.use_bn),
+                                 Conv2d(128, 64, 8, same_padding=False, bn=self.args.use_bn))
       self.fc_spatial = FC(64, self.args.n_fus_neurons)
       self.total_fus_neurons += self.args.n_fus_neurons
 

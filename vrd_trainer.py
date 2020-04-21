@@ -25,9 +25,9 @@ from lib.datalayer import VRDDataLayer, net_input_to, loss_targets_to
 from lib.evaluator import VRDEvaluator
 
 # Test if code compiles
-TEST_DEBUGGING = True # True # False # True # True # False
+TEST_DEBUGGING = False # True # True # False
 # Test if a newly-introduced change affects the validity of the code
-TEST_EVAL_VALIDITY = True # False # True # False #  True # True
+TEST_EVAL_VALIDITY = False # True # False # True # False #  True # True
 TEST_TRAIN_VALIDITY = True # False # True # False #  True # True
 # Try overfitting to a single element
 TEST_OVERFIT = False #True # False # True
@@ -271,7 +271,7 @@ class vrd_trainer():
       # change this as_tensor
       gt_pred_sem  = torch.as_tensor(gt_pred_sem,    dtype=torch.long,     device = utils.device)
 
-      batch_size = gt_soP_prior[0].size()[0]
+      batch_size = loss_targets[next(iter(loss_targets))].size()[0]
 
       # Forward pass & Backpropagation step
       self.optimizer.zero_grad()
@@ -373,7 +373,7 @@ if __name__ == "__main__":
     print("########################### TEST_VALIDITY ###########################")
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
-    dataset_name = "vrd/dsr"
+    dataset_name = "vrd" # /dsr"
     if TEST_EVAL_VALIDITY:
       trainer = vrd_trainer("original-checkpoint", {"training" : {"num_epochs" : 1, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : dataset_name}, "model" : {"feat_used" : {"spat" : 0}}}, checkpoint="epoch_4_checkpoint.pth.tar")
       trainer.train()
@@ -400,7 +400,7 @@ if __name__ == "__main__":
       #trainer.train()
 
   if FEATURES_SCAN:
-    trainer = vrd_trainer("test-no-features",  {"eval" : {"test_rel":False}, "training" : {"num_epochs" : 4, "test_first" : True, "loss" : "mlab_no_prior"}, "model" : {"feat_used" : {"vis" : False, "vis_so" : False, "sem" : 0, "spat" : 0}}})
+    trainer = vrd_trainer("test-no-features",  {"eval" : {"test_rel":False}, "training" : {"num_epochs" : 4, "test_first" : True, "loss" : "mlab_no_prior"}}, profile = "no-feat")
     trainer.train()
 
     #trainer = vrd_trainer("test-no_prior-only_vis",  {"training" : {"num_epochs" : 4, "loss" : "mlab_no_prior"}, "model" : {"feat_used" : {"sem" : 0, "spat" : 0}}})
@@ -421,8 +421,8 @@ if __name__ == "__main__":
                 if pred_sem_mode_1 == -1 and "mse" in loss:
                   continue
                 pred_sem_mode = pred_sem_mode_1+1
-                session_id = "scan-v10-{}-{}-{}-{}-{}-{}-{}".format(lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode, dataset, loss)
-                profile = ["pred_sem"]
+                session_id = "scan-no-feat-{}-{}-{}-{}-{}-{}-{}".format(lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode, dataset, loss)
+                profile = ["pred_sem", "no-feat"]
                 training = {"num_epochs" : 4, "test_freq" : [1,2,3]}
                 if dataset == "vg":
                   profile.append("vg")

@@ -20,7 +20,7 @@ class VRDEvaluator():
   def __init__(self, dataset, args, x_cols):
     self.dataset     = dataset
     self.args        = args
-    self.x_cols  = x_cols
+    self.x_cols      = x_cols
 
     # Default args
     self.args.test_pre      = self.args.get("test_pre", True)

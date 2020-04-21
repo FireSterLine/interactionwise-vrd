@@ -61,6 +61,8 @@ class DataPreparer:
         self.cur_dformat = None
         self.splits = None
         self.prefix = "data"
+        
+        self.to_delete = ["soP.pkl", "pP.pkl"]
 
     # This function reads the dataset's vocab txt files and loads them
     def prepare_vocabs(self, obj_vocab_file, pred_vocab_file, use_cleaning_map = False):
@@ -107,6 +109,10 @@ class DataPreparer:
         print("\tGenerating '{}' data with '{}' granularity...".format(dformat, granularity))
         self.to_dformat(dformat)
 
+        for to_delete in self.to_delete:
+          if os.path.exists(self.fullpath(to_delete)):
+            os.remove(self.fullpath(to_delete))
+        
         output_file_format = "{}_{}_{}_{{}}.json".format(self.prefix, dformat, granularity)
 
         vrd_data_train = []
@@ -196,10 +202,10 @@ class DataPreparer:
       # TODO: zeroshot
       gt_zs_output_path      = osp.join("eval", "gt_zs.pkl")
 
-      if os.path.exists(gt_output_path):
-        os.remove(gt_output_path)
-      if os.path.exists(gt_zs_output_path):
-        os.remove(gt_zs_output_path)
+      if os.path.exists(self.fullpath(gt_output_path)):
+        os.remove(self.fullpath(gt_output_path))
+      if os.path.exists(self.fullpath(gt_zs_output_path)):
+        os.remove(self.fullpath(gt_zs_output_path))
 
       gt_pkl = {}
       gt_pkl["tuple_label"] = []
@@ -361,7 +367,7 @@ class VRDPrep(DataPreparer):
         # LOAD DATA
         annotations_train = self.readjson("annotations_train.json")
         annotations_test  = self.readjson("annotations_test.json")
-
+        
         # Transform img file names to img subpaths
         annotations = {}
         for img_file,anns in annotations_train.items():
@@ -597,7 +603,7 @@ class VGPrep(DataPreparer):
         self.data_format = "json"
         self.img_metadata_file_format = osp.join(self.data_format, "{{}}.{}".format(self.data_format))
         # if the path to metadata files does not exist, generate those files using VGCleaner
-        if osp.exists(self.fullpath(self.data_format)) is False:
+        if not osp.exists(self.fullpath(self.data_format)):
             assert DRY_RUN == False, "Can't perform dry run when I need to run VGCleaner()"
             print("Generating {} files for VG relationships...".format(self.data_format))
             cleaner = VGCleaner(num_objects, num_attributes, num_predicates, self.data_format)
@@ -734,7 +740,7 @@ if __name__ == '__main__':
     data_preparer_vrd.load_vrd()
     #data_preparer_vrd.randomize_split()
     data_preparer_vrd.prepareGT()
-    #data_preparer_vrd.save_data("relst")
+    data_preparer_vrd.save_data("relst")
     #data_preparer_vrd.save_data("relst", "rel")
     data_preparer_vrd.save_data("annos")
     #"""
@@ -743,7 +749,7 @@ if __name__ == '__main__':
     # Generate the data in relst format using the {train,test}.pkl files provided by DSR
     print("Generating data in DSR format...")
     data_preparer_vrd.load_dsr()
-    #data_preparer_vrd.save_data("relst")
+    data_preparer_vrd.save_data("relst")
     #data_preparer_vrd.save_data("relst", "rel")
     data_preparer_vrd.save_data("annos")
     """
@@ -754,7 +760,7 @@ if __name__ == '__main__':
     subset = (150, 50, 50)
     #subset = (1600, 400, 20)
     data_preparer_vg = VGPrep(subset, multi_label=multi_label, generate_emb=w2v_model)
-    #data_preparer_vg.save_data("relst")
+    data_preparer_vg.save_data("relst")
     data_preparer_vg.prepareGT()
     #data_preparer_vg.save_data("relst", "rel")
     data_preparer_vg.save_data("annos")
