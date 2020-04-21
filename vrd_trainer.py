@@ -302,7 +302,7 @@ class vrd_trainer():
         # TODO use the weighted embeddings of gt_soP_prior ?
         loss += self.criterions["mse"](pred_sem, gt_pred_sem)
       
-      loss /= len(num_losses)
+      loss /= num_losses
 
       loss.backward()
       self.optimizer.step()
