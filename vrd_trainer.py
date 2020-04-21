@@ -176,7 +176,7 @@ class vrd_trainer():
     res = []
 
     if self.args.training.test_first:
-      self.do_test(res, res_headers)
+      self.do_test(res, res_headers, self.state["epoch"])
 
     end_epoch = self.state["epoch"] + self.args.training.num_epochs
     while self.state["epoch"] < end_epoch:
@@ -229,8 +229,9 @@ class vrd_trainer():
       self.state["epoch"] += 1
 
 
-  def do_test(self, res, res_headers):
-    res_row = [self.state["epoch"]+1]
+  def do_test(self, res, res_headers, force_epoch = None):
+    epoch = self.state["epoch"]+1
+    if force_epoch is not None: epoch = force_epoch
     if self.args.eval.test_pre:
       recalls, dtime = self.test_pre()
       res_row += recalls + (sum(recalls)/len(recalls),)
@@ -389,14 +390,22 @@ if __name__ == "__main__":
       #trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : test_type}}, profile = "vg")
       #trainer.train()
 
-  trainer = vrd_trainer("test-no-features",  {"training" : {"num_epochs" : 4, "test_first" : True, "loss" : "mlab_no_prior"}, "model" : {"use_vis" : False, "use_so" : False, "use_sem" : 0, "use_spat" : 0}})
+  #trainer = vrd_trainer("test-no-features",  {"data" : {"justafew" : 3}, "eval" : {"justafew" : 3, "test_rel":False}, "training" : {"num_epochs" : 4, "test_first" : True, "loss" : "mlab_no_prior"}, "model" : {"use_vis" : False, "use_so" : False, "use_sem" : 0, "use_spat" : 0}})
+  trainer = vrd_trainer("test-no-features",  {"eval" : {"test_rel":False}, "training" : {"num_epochs" : 4, "test_first" : True, "loss" : "mlab_no_prior"}, "model" : {"use_vis" : False, "use_so" : False, "use_sem" : 0, "use_spat" : 0}})
   trainer.train()
+  sys.exit(0)
 
-  trainer = vrd_trainer("test-original", {"training" : {"num_epochs" : 5}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd"}})
-  trainer.train()
+  #trainer = vrd_trainer("test-original", {"training" : {"num_epochs" : 5}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd"}})
+  #trainer.train()
 
-  trainer = vrd_trainer("test-original-no_prior", {"training" : {"num_epochs" : 5}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd"}})
   trainer.train()
+  sys.exit(0)
+
+  #trainer = vrd_trainer("test-original", {"training" : {"num_epochs" : 5}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd"}})
+  #trainer.train()
+
+  #trainer = vrd_trainer("test-original-no_prior", {"training" : {"num_epochs" : 5}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd"}})
+  #trainer.train()
 
   #trainer = vrd_trainer("test-no_prior-only_vis",  {"training" : {"num_epochs" : 4, "loss" : "mlab_no_prior"}, "model" : {"use_sem" : 0, "use_spat" : 0}})
   #trainer.train()
@@ -416,7 +425,7 @@ if __name__ == "__main__":
                 if pred_sem_mode_1 == -1 and "mse" in loss:
                   continue
                 pred_sem_mode = pred_sem_mode_1+1
-                session_id = "mse-loss-{}-{}-{}-{}-{}-{}-{}".format(lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode, dataset, loss)
+                session_id = "scan-v10-{}-{}-{}-{}-{}-{}-{}".format(lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode, dataset, loss)
                 profile = ["pred_sem"]
                 training = {"num_epochs" : 4, "test_freq" : [1,2,3]}
                 if dataset == "vg":

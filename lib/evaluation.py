@@ -89,7 +89,12 @@ def eval_per_image(i, gt, pred, use_rel, gt_thr = 0.5, return_match = False):
 # Recall quantifies the number of positive class predictions
 #   made out of all positive examples in the dataset.
 def eval_recall_at_N(res, gts, Ns = [100, 50, 4.], num_imgs = None, use_rel = True):
-
+  #print()
+  #print("RES: ", res)
+  #print("GT: ", gts[0]["tuple_label"], gts[0]["obj_bboxes"], gts[0]["sub_bboxes"])
+  ##print("GT: ", gts[0]["tuple_label"][:5], gts[0]["obj_bboxes"][:5], gts[0]["sub_bboxes"][:5])
+  #print()
+  #input()
   # If not specified, num_imgs is the length of the ground truth
   valid_gts = [gt for gt in gts if gt is not None]
   if len(valid_gts) == 0:
