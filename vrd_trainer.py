@@ -28,7 +28,7 @@ from lib.evaluator import VRDEvaluator
 TEST_DEBUGGING = False # True # True # False
 # Test if a newly-introduced change affects the validity of the code
 TEST_EVAL_VALIDITY = False # True # False # True # False #  True # True
-TEST_TRAIN_VALIDITY = True # False # True # False #  True # True
+TEST_TRAIN_VALIDITY = False # True # False #  True # True
 # Try overfitting to a single element
 TEST_OVERFIT = False #True # False # True
 
@@ -280,7 +280,9 @@ class vrd_trainer():
       _, rel_scores, pred_sem = model_output
 
       loss = 0
+      num_losses = 0
       if "mlab" in self.args.training.loss:
+        num_losses += 1
         # DSR:
         # TODO: fix the weird-shaped mlab_target in datalayer and remove this view thingy
         if not "mlab_no_prior" in self.args.training.loss:
@@ -293,10 +295,14 @@ class vrd_trainer():
         else:
           loss += self.criterions["mlab"]((rel_scores).view(batch_size, -1), loss_targets["mlab"])
       if "bcel" in self.args.training.loss:
-        loss += self.criterions["bcel"]((rel_scores).view(batch_size, -1), loss_targets["1-hots"])
+        num_losses += 1
+        loss += self.criterions["bcel"]((rel_scores).view(batch_size, -1), loss_targets["1-hots"].view(batch_size, -1))
       if "mse" in self.args.training.loss:
+        num_losses += 1
         # TODO use the weighted embeddings of gt_soP_prior ?
         loss += self.criterions["mse"](pred_sem, gt_pred_sem)
+      
+      loss /= len(num_losses)
 
       loss.backward()
       self.optimizer.step()
@@ -361,7 +367,7 @@ if __name__ == "__main__":
     print("########################### TEST_DEBUGGING ###########################")
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
-    trainer = vrd_trainer("test", {"training" : {"num_epochs" : 1, "test_first" : True, "loss" : "bcel_mlab"},
+    trainer = vrd_trainer("test", {"training" : {"num_epochs" : 1, "test_first" : True}, # , "loss" : "mlab_bcel"},
         "eval" : {"test_pre" : test_type,  "test_rel" : test_type},
         "data" : {"justafew" : True}}) #, checkpoint="epoch_4_checkpoint.pth.tar")
     trainer.train()
@@ -418,10 +424,10 @@ if __name__ == "__main__":
           for pred_sem_mode_1 in [-1, 8, 9, 16, 17, 18, 19]:
             for loss in ["mlab", "mlab_mse", "bcel"]:
               for dataset in ["vrd"]: # , "vg"]:
-                if pred_sem_mode_1 == -1 and "mse" in loss:
+                if "mse" in loss and (pred_sem_mode_1 == -1 or pred_sem_mode_1>=16):
                   continue
                 pred_sem_mode = pred_sem_mode_1+1
-                session_id = "scan-no-feat-{}-{}-{}-{}-{}-{},{0:b}-{}-{}".format(lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode, pred_sem_mode, dataset, loss)
+                session_id = "scan-v11-no-feat-{}-{}-{}-{}-{},{:b}-{}-{}".format(lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode, pred_sem_mode, dataset, loss)
                 profile = ["pred_sem", "no-feat"]
                 training = {"num_epochs" : 4, "test_freq" : [1,2,3]}
                 if dataset == "vg":
