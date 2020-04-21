@@ -352,14 +352,12 @@ class VRDDataLayer(data.Dataset):
 
 # Move the net input to device
 def loss_targets_to(loss_targets, device):
-  loss_targets = deepcopy(loss_targets)
   for name,loss_target in loss_targets.item():
     loss_targets[name] = loss_target.to(device = device)
   return loss_targets
 
 # Move the net input to device
 def net_input_to(net_input, device):
-  # Move to GPU
   if net_input is not False: # not (isinstance(net_input, torch.Tensor) and net_input.size() == (1,)):
     (img_blob,
              obj_classes,
