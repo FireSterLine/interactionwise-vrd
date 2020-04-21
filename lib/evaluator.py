@@ -147,14 +147,14 @@ class VRDEvaluator():
         #print(obj_boxes.shape)
         #print(idx_s)
         #print(idx_o)
-        rel_prob = rel_scores.data.cpu().numpy() # Is this the correct way?
-        rel_res = np.dstack(np.unravel_index(np.argsort(-rel_prob.ravel()), rel_prob.shape))[0][:N] # TODO: remove this :N to allow R@4x for num rels > 100/4=25
+        rel_probs = rel_scores.data.cpu().numpy() # Is this the correct way?
+        rel_res = np.dstack(np.unravel_index(np.argsort(-rel_probs.ravel()), rel_probs.shape))[0][:N] # TODO: remove this :N to allow R@4x for num rels > 100/4=25
 
         for ii in range(rel_res.shape[0]):
           rel = rel_res[ii, 1]
           tuple_idx = rel_res[ii, 0]
 
-          conf = rel_prob[tuple_idx, rel]
+          conf = rel_probs[tuple_idx, rel]
           tuple_confs_im[ii] = conf
           rlp_labels_im[ii] = [gt_obj_classes[idx_s[tuple_idx]], rel, gt_obj_classes[idx_o[tuple_idx]]]
           sub_bboxes_im[ii] = gt_obj_boxes[idx_s[tuple_idx]]
@@ -222,11 +222,11 @@ class VRDEvaluator():
         (det_obj_classes, det_obj_boxes, det_obj_confs) = det_obj
 
         net_input = net_input_to(net_input, utils.device)
-        obj_score, rel_score, _ = vrd_model(*net_input)
+        obj_score, rel_scores, _ = vrd_model(*net_input)
 
         # TODO: remove and fix everyhing else to allow batching
         # obj_score = obj_score[0]
-        #rel_score = rel_score[0]
+        #rel_scores = rel_scores[0]
 
         img_blob, obj_classes, obj_boxes, u_boxes, idx_s, idx_o, spatial_features = net_input
 
@@ -245,15 +245,15 @@ class VRDEvaluator():
         det_obj_confs   = det_obj_confs[0]
         det_obj_boxes   = det_obj_boxes[0]
         det_obj_classes = det_obj_classes[0]
-        rel_score       = rel_score[0]
+        rel_scores       = rel_scores[0]
         gt_soP_prior    = gt_soP_prior[0]
 
         gt_obj_boxes   = gt_obj_boxes.data.cpu().numpy().astype(np.float32)
         gt_obj_classes = gt_obj_classes.data.cpu().numpy().astype(np.float32)
 
-        rel_prob     = rel_score.data.cpu().numpy()
+        rel_probs     = rel_scores.data.cpu().numpy()
         gt_soP_prior = gt_soP_prior.data.cpu().numpy() # TODO remove? or try doing it on the GPU
-        rel_prob += np.log(0.5*(gt_soP_prior+1.0 / self.any_datalayer.n_pred))
+        rel_probs += np.log(0.5*(gt_soP_prior+1.0 / self.any_datalayer.n_pred))
 
         if self.args.eval_obj:
           _, obj_pred = obj_score[:, 1::].data.topk(1, 1, True, True)
@@ -264,32 +264,32 @@ class VRDEvaluator():
           loc_num += loc_num_img
           gt_num  += gt_obj_boxes.shape[0]
 
-        tuple_confs_im = np.zeros((rel_prob.shape[0]*rel_prob.shape[1],  ), dtype = np.float) # Confidence
-        rlp_labels_im  = np.zeros((rel_prob.shape[0]*rel_prob.shape[1], 3), dtype = np.float) # Rel triples
-        sub_bboxes_im  = np.zeros((rel_prob.shape[0]*rel_prob.shape[1], 4), dtype = np.float) # Subj bboxes
-        obj_bboxes_im  = np.zeros((rel_prob.shape[0]*rel_prob.shape[1], 4), dtype = np.float) # Obj bboxes
+        tuple_confs_im = np.zeros((rel_probs.shape[0]*rel_probs.shape[1],  ), dtype = np.float) # Confidence
+        rlp_labels_im  = np.zeros((rel_probs.shape[0]*rel_probs.shape[1], 3), dtype = np.float) # Rel triples
+        sub_bboxes_im  = np.zeros((rel_probs.shape[0]*rel_probs.shape[1], 4), dtype = np.float) # Subj bboxes
+        obj_bboxes_im  = np.zeros((rel_probs.shape[0]*rel_probs.shape[1], 4), dtype = np.float) # Obj bboxes
         n_idx = 0
 
         # print("det_res['confs'].shape: ", det_obj_confs.shape)
-        # print("rel_prob.shape: ", rel_prob.shape)
+        # print("rel_probs.shape: ", rel_probs.shape)
 
-        for tuple_idx in range(rel_prob.shape[0]):
-          for rel in range(rel_prob.shape[1]):
+        for tuple_idx in range(rel_probs.shape[0]):
+          for rel in range(rel_probs.shape[1]):
             # print((tuple_idx, rel))
             # print("np.log(det_res['confs']).shape: ", np.log(det_obj_confs).shape)
             # print("np.log(det_res['confs'][idx_s[tuple_idx]]).shape: ", np.log(det_obj_confs[idx_s[tuple_idx]]).shape)
             # print("det_res['confs'].shape: ", det_obj_confs.shape)
             # print("det_res['confs'][idx_s[tuple_idx]].shape: ", det_obj_confs[idx_s[tuple_idx]].shape)
-            # print("rel_prob[tuple_idx].shape: ", rel_prob[tuple_idx].shape)
-            # print("rel_prob[tuple_idx, rel].shape: ", rel_prob[tuple_idx, rel].shape)
+            # print("rel_probs[tuple_idx].shape: ", rel_probs[tuple_idx].shape)
+            # print("rel_probs[tuple_idx, rel].shape: ", rel_probs[tuple_idx, rel].shape)
             if(self.args.use_obj_prior):
               if(det_obj_confs.ndim == 1):
-                # Maybe we never reach this point? Or maybe it accounts for batching?
-                conf = np.log(det_obj_confs[idx_s[tuple_idx]]) + np.log(det_obj_confs[idx_o[tuple_idx]]) + rel_prob[tuple_idx, rel]
+                # Maybe we never reach this point?
+                conf = np.log(det_obj_confs[idx_s[tuple_idx]]) + np.log(det_obj_confs[idx_o[tuple_idx]]) + rel_probs[tuple_idx, rel]
               else:
-                conf = np.log(det_obj_confs[idx_s[tuple_idx], 0]) + np.log(det_obj_confs[idx_o[tuple_idx], 0]) + rel_prob[tuple_idx, rel]
+                conf = np.log(det_obj_confs[idx_s[tuple_idx], 0]) + np.log(det_obj_confs[idx_o[tuple_idx], 0]) + rel_probs[tuple_idx, rel]
             else:
-              conf = rel_prob[tuple_idx, rel]
+              conf = rel_probs[tuple_idx, rel]
             tuple_confs_im[n_idx] = conf
             rlp_labels_im[n_idx]  = [det_obj_classes[idx_s[tuple_idx]], rel, det_obj_classes[idx_o[tuple_idx]]]
             sub_bboxes_im[n_idx]  = det_obj_boxes[idx_s[tuple_idx]]
