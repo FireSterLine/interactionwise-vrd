@@ -21,16 +21,18 @@ import globals, utils
 
 from lib.vrd_models import VRDModel
 from lib.dataset import VRDDataset
-from lib.datalayer import VRDDataLayer, net_input_to
+from lib.datalayer import VRDDataLayer, net_input_to, loss_targets_to
 from lib.evaluator import VRDEvaluator
 
 # Test if code compiles
-TEST_DEBUGGING = False # True # False # True # True # False
+TEST_DEBUGGING = True # True # False # True # True # False
 # Test if a newly-introduced change affects the validity of the code
-TEST_EVAL_VALIDITY = False # False # True # False #  True # True
-TEST_TRAIN_VALIDITY = False # False # True # False #  True # True
+TEST_EVAL_VALIDITY = True # False # True # False #  True # True
+TEST_TRAIN_VALIDITY = True # False # True # False #  True # True
 # Try overfitting to a single element
 TEST_OVERFIT = False #True # False # True
+
+FEATURES_SCAN = False
 
 if utils.device == torch.device("cpu"):
   DEBUGGING = True
@@ -116,7 +118,7 @@ class vrd_trainer():
       # Random initialization
       utils.weights_normal_init(self.model, dev=0.01)
       # Load existing embeddings
-      if self.model.args.use_sem != False:
+      if self.model.args.feat_used.sem:
         try:
           # obj_emb = torch.from_numpy(self.dataset.readPKL("params_emb.pkl"))
           obj_emb = torch.from_numpy(np.array(self.dataset.readJSON("objects-emb.json")))
@@ -126,29 +128,18 @@ class vrd_trainer():
           # set_trainability(self.model.emb, requires_grad=True)
         self.model.state_dict()["emb.weight"].copy_(obj_emb)
 
-    # DataLoader
-    # TODO? VRDDataLayer has to know what to yield (DRS -> img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
-    self.datalayer = VRDDataLayer(self.dataset, "train", use_preload = self.args.training.use_preload, cols = self.model.input_cols)
-    self.dataloader = torch.utils.data.DataLoader(
-      dataset = self.datalayer,
-      batch_size = 1, # self.args.training.batch_size,
-      # sampler= Random ...,
-      num_workers = 4, # num_workers=self.num_workers
-      pin_memory = True,
-      shuffle = self.args.training.use_shuffle,
-    )
-
-    # Evaluation
-    print("Initializing evaluator...")
-    self.eval = VRDEvaluator(self.dataset, self.args.eval, input_cols = self.model.input_cols)
-
     # Training
     print("Initializing training...")
     self.optimizer = self.model.OriginalAdamOptimizer(**self.args.opt)
 
     self.criterions = {}
+    y_cols = []
     if "mlab" in self.args.training.loss:
+      y_cols.append("mlab")
       self.criterions["mlab"] = torch.nn.MultiLabelMarginLoss(reduction="sum").to(device=utils.device)
+    if "bcel" in self.args.training.loss:
+      y_cols.append("1-hots")
+      self.criterions["bcel"] = torch.nn.BCEWithLogitsLoss(reduction="sum").to(device=utils.device)
     if "mse" in self.args.training.loss:
       self.criterions["mse"] = torch.nn.MSELoss(reduction="sum").to(device=utils.device)
     if "cross-entropy" in self.args.training.loss:
@@ -162,7 +153,23 @@ class vrd_trainer():
     elif isinstance(self.checkpoint, str):
       print("Warning! Optimizer state_dict not found!")
 
+    # DataLoader
+    # TODO? VRDDataLayer has to know what to yield (DRS -> img_blob, obj_boxes, u_boxes, idx_s, idx_o, spatial_features, obj_classes)
+    self.datalayer = VRDDataLayer(self.dataset, "train", use_preload = self.args.training.use_preload, x_cols = self.model.x_cols, y_cols = y_cols)
+    self.dataloader = torch.utils.data.DataLoader(
+      dataset = self.datalayer,
+      batch_size = 1, # self.args.training.batch_size,
+      # sampler= Random ...,
+      num_workers = 4, # num_workers=self.num_workers
+      pin_memory = True,
+      shuffle = self.args.training.use_shuffle,
+    )
+
+    # Evaluation
+    print("Initializing evaluator...")
     self.args.eval.rec = sorted(self.args.eval.rec, reverse=True)
+    self.eval = VRDEvaluator(self.dataset, self.args.eval, x_cols = self.model.x_cols)
+
 
   # Perform the complete training process
   def train(self):
@@ -252,38 +259,40 @@ class vrd_trainer():
     # Iterate over the dataset
     n_iter = len(self.dataloader)
 
-    for i_iter,(net_input, gt_soP_prior, gt_pred_sem, mlab_target) in enumerate(self.dataloader):
+    for i_iter,(net_input, gt_soP_prior, gt_pred_sem, loss_targets) in enumerate(self.dataloader):
 
       if utils.smart_frequency_check(i_iter, n_iter, self.args.training.print_freq):
         print("\t{:4d}/{:<4d}: ".format(i_iter, n_iter), end="")
 
       net_input    = net_input_to(net_input, utils.device)
+      loss_targets = loss_targets_to(loss_targets, utils.device)
       gt_soP_prior = gt_soP_prior.to(utils.device)
+      # change this as_tensor
       gt_pred_sem  = torch.as_tensor(gt_pred_sem,    dtype=torch.long,     device = utils.device)
-      mlab_target  = torch.as_tensor(mlab_target,    dtype=torch.long,     device = utils.device)
 
-      batch_size = mlab_target.size()[0]
+      batch_size = gt_soP_prior[0].size()[0]
 
       # Forward pass & Backpropagation step
       self.optimizer.zero_grad()
       model_output = self.model(*net_input)
-
 
       _, rel_scores, pred_sem = model_output
 
       loss = 0
       if "mlab" in self.args.training.loss:
         # DSR:
-        # TODO: fix this weird-shaped mlab_target in datalayer and remove this view thingy
+        # TODO: fix the weird-shaped mlab_target in datalayer and remove this view thingy
         if not "mlab_no_prior" in self.args.training.loss:
           # Note that maybe introducing no_predicate may be better:
           #  After all, there may not be a relationship between two objects...
           #  And this would avoid dirtying up the predictions?
           # TODO: change some constant to the gt_soP_prior before factoring it into the loss
           gt_soP_prior = -0.5 * ( gt_soP_prior + (1.0 / self.dataset.n_pred))
-          loss += self.criterions["mlab"]((gt_soP_prior + rel_scores).view(batch_size, -1), mlab_target)
+          loss += self.criterions["mlab"]((gt_soP_prior + rel_scores).view(batch_size, -1), loss_targets["mlab"])
         else:
-          loss += self.criterions["mlab"]((rel_scores).view(batch_size, -1), mlab_target)
+          loss += self.criterions["mlab"]((rel_scores).view(batch_size, -1), loss_targets["mlab"])
+      if "bcel" in self.args.training.loss:
+        loss += self.criterions["bcel"]((rel_scores).view(batch_size, -1), loss_targets["1-hots"])
       if "mse" in self.args.training.loss:
         # TODO use the weighted embeddings of gt_soP_prior ?
         loss += self.criterions["mse"](pred_sem, gt_pred_sem)
@@ -365,7 +374,7 @@ if __name__ == "__main__":
     torch.backends.cudnn.benchmark = False
     dataset_name = "vrd/dsr"
     if TEST_EVAL_VALIDITY:
-      trainer = vrd_trainer("original-checkpoint", {"training" : {"num_epochs" : 1, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : dataset_name}, "model" : {"use_spat" : 0}}, checkpoint="epoch_4_checkpoint.pth.tar")
+      trainer = vrd_trainer("original-checkpoint", {"training" : {"num_epochs" : 1, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : dataset_name}, "model" : {"feat_used" : {"spat" : 0}}}, checkpoint="epoch_4_checkpoint.pth.tar")
       trainer.train()
     if TEST_TRAIN_VALIDITY:
       trainer = vrd_trainer("original", {"training" : {"num_epochs" : 5, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : dataset_name}})
@@ -381,7 +390,6 @@ if __name__ == "__main__":
         np.random.seed(datetime.now())
         torch.manual_seed(datetime.now())
         args = {"training" : {"num_epochs" : 6}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type, "justafew" : justafew},  "data" : {"justafew" : justafew}}
-        #args = {"model" : {"use_pred_sem" : ...}, "num_epochs" : 5, "opt": {"lr": lr, "weight_decay" : weight_decay, "lr_fus_ratio" : lr_rel_fus_ratio, "lr_rel_ratio" : lr_rel_fus_ratio}}}
         trainer = vrd_trainer("test-overfit", args = args, profile = ["vg", "pred_sem"])
         trainer.train()
 
@@ -390,29 +398,16 @@ if __name__ == "__main__":
       #trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : test_type}}, profile = "vg")
       #trainer.train()
 
-  #trainer = vrd_trainer("test-no-features",  {"data" : {"justafew" : 3}, "eval" : {"justafew" : 3, "test_rel":False}, "training" : {"num_epochs" : 4, "test_first" : True, "loss" : "mlab_no_prior"}, "model" : {"use_vis" : False, "use_so" : False, "use_sem" : 0, "use_spat" : 0}})
-  trainer = vrd_trainer("test-no-features",  {"eval" : {"test_rel":False}, "training" : {"num_epochs" : 4, "test_first" : True, "loss" : "mlab_no_prior"}, "model" : {"use_vis" : False, "use_so" : False, "use_sem" : 0, "use_spat" : 0}})
-  trainer.train()
-  sys.exit(0)
+  if FEATURES_SCAN:
+    trainer = vrd_trainer("test-no-features",  {"eval" : {"test_rel":False}, "training" : {"num_epochs" : 4, "test_first" : True, "loss" : "mlab_no_prior"}, "model" : {"feat_used" : {"vis" : False, "vis_so" : False, "sem" : 0, "spat" : 0}}})
+    trainer.train()
 
-  #trainer = vrd_trainer("test-original", {"training" : {"num_epochs" : 5}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd"}})
-  #trainer.train()
-
-  trainer.train()
-  sys.exit(0)
-
-  #trainer = vrd_trainer("test-original", {"training" : {"num_epochs" : 5}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd"}})
-  #trainer.train()
-
-  #trainer = vrd_trainer("test-original-no_prior", {"training" : {"num_epochs" : 5}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : "vrd"}})
-  #trainer.train()
-
-  #trainer = vrd_trainer("test-no_prior-only_vis",  {"training" : {"num_epochs" : 4, "loss" : "mlab_no_prior"}, "model" : {"use_sem" : 0, "use_spat" : 0}})
-  #trainer.train()
-  #trainer = vrd_trainer("test-no_prior-only_sem",  {"training" : {"num_epochs" : 4, "loss" : "mlab_no_prior"}, "model" : {"use_vis" : False, "use_so" : False, "use_spat" : 0}})
-  #trainer.train()
-  #trainer = vrd_trainer("test-no_prior-only_spat", {"training" : {"num_epochs" : 4, "loss" : "mlab_no_prior"}, "model" : {"use_vis" : False, "use_so" : False, "use_sem" : 0}})
-  #trainer.train()
+    #trainer = vrd_trainer("test-no_prior-only_vis",  {"training" : {"num_epochs" : 4, "loss" : "mlab_no_prior"}, "model" : {"feat_used" : {"sem" : 0, "spat" : 0}}})
+    #trainer.train()
+    #trainer = vrd_trainer("test-no_prior-only_sem",  {"training" : {"num_epochs" : 4, "loss" : "mlab_no_prior"}, "model" : {"feat_used" : {"vis" : False, "so" : False, "spat" : 0}}})
+    #trainer.train()
+    #trainer = vrd_trainer("test-no_prior-only_spat", {"training" : {"num_epochs" : 4, "loss" : "mlab_no_prior"}, "model" : {"feat_used" : {"vis" : False, "so" : False, "sem" : 0}}})
+    #trainer.train()
 
   # Scan (rotating parameters)
   for lr in [0.0001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:

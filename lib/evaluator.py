@@ -17,10 +17,10 @@ deepcopy = lambda x: x
 class VRDEvaluator():
   """ Evaluator for Predicate Prediction and Relationship Prediction """
 
-  def __init__(self, dataset, args, input_cols):
+  def __init__(self, dataset, args, x_cols):
     self.dataset     = dataset
     self.args        = args
-    self.input_cols  = input_cols
+    self.x_cols  = x_cols
 
     # Default args
     self.args.test_pre      = self.args.get("test_pre", True)
@@ -30,12 +30,12 @@ class VRDEvaluator():
 
     # Setup PREDICATE PREDICTION Data Layer
     if self.args.test_pre:
-      self.datalayer_pre  = VRDDataLayer(self.dataset, "test", use_preload = self.args.use_preload, cols = self.input_cols)
+      self.datalayer_pre  = VRDDataLayer(self.dataset, "test", use_preload = self.args.use_preload, x_cols = self.x_cols)
       self.dataloader_pre = torch.utils.data.DataLoader(dataset = self.datalayer_pre, **self.kwargs_dataloader)
 
     # Setup RELATIONSHIP DETECTION Data Layer
     if self.args.test_rel:
-      self.datalayer_rel  = VRDDataLayer(self.dataset, "test", use_preload = self.args.use_preload, use_proposals = True, cols = self.input_cols)
+      self.datalayer_rel  = VRDDataLayer(self.dataset, "test", use_preload = self.args.use_preload, use_proposals = True, x_cols = self.x_cols)
       self.dataloader_rel = torch.utils.data.DataLoader(dataset = self.datalayer_rel, **self.kwargs_dataloader)
 
     #self.datalayer  = VRDDataLayer(self.dataset, "test", use_preload = self.args.use_preload, use_proposals = self.args.test_rel)

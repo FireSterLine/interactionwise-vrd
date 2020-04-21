@@ -15,7 +15,7 @@ from torch.utils import data
 class VRDDataLayer(data.Dataset):
   """ Iterate through the dataset and yield the input and target for the network """
 
-  def __init__(self, dataset, stage, use_proposals = False, use_preload = False, cols = []):
+  def __init__(self, dataset, stage, use_proposals = False, use_preload = False, x_cols = [], y_cols = []):
     super(VRDDataLayer, self).__init__()
 
     self.dataset = dataset
@@ -26,7 +26,8 @@ class VRDDataLayer(data.Dataset):
     self.granularity = "img"
 
 
-    self.cols = cols
+    self.x_cols = x_cols
+    self.y_cols = y_cols
 
     # TODO: remove these two?
     self.n_obj   = self.dataset.n_obj
@@ -204,10 +205,10 @@ class VRDDataLayer(data.Dataset):
 
     # Semantic features
     obj_spat_feat = np.zeros(1) # Dummy
-    if "dsr_spat_vec" in self.cols:
+    if "dsr_spat_vec" in self.x_cols:
       # Spatial vector containing the relative location and log-distance
       obj_spat_feat = np.zeros((n_rels, 8))
-    elif "dsr_spat_mat" in self.cols:
+    elif "dsr_spat_mat" in self.x_cols:
       # Binary matrix displaying the relative location
       obj_spat_feat = np.zeros((n_rels, 2, 32, 32))
 
@@ -236,9 +237,9 @@ class VRDDataLayer(data.Dataset):
       u_boxes[i_rel] = np.array(rBBox) * im_scale
 
       # store the scaled dimensions of the union bounding box here, with the id i_rel
-      if "dsr_spat_vec" in self.cols:
+      if "dsr_spat_vec" in self.x_cols:
         obj_spat_feat[i_rel] = utils.getRelativeLoc(sBBox, oBBox)
-      elif "dsr_spat_mat" in self.cols:
+      elif "dsr_spat_mat" in self.x_cols:
         obj_spat_feat[i_rel] = [utils.getDualMask(ih, iw, sBBox),
                                 utils.getDualMask(ih, iw, oBBox)]
 
@@ -262,9 +263,13 @@ class VRDDataLayer(data.Dataset):
       gt_pred_sem = np.zeros((n_rels, globals.emb_size))
 
       # Target output for the network
-      # TODO: reshape like mlab_target = np.zeros((n_rels, self.n_pred))
-      mlab_target = -1 * np.ones((self.dataset.n_pred * n_rels))
-      pos_idx = 0
+      if "mlab" in self.y_cols:
+        # TODO: reshape like mlab_target = np.zeros((n_rels, self.n_pred))
+        mlab_target = -1 * np.ones((self.dataset.n_pred * n_rels))
+        pos_idx = 0
+
+      if "1-hots" in self.y_cols:
+        onehots_target = torch.zeros(n_rels, self.dataset.n_pred)
 
       for i_rel, rel in enumerate(rels):
         addRel(i_rel,
@@ -281,9 +286,12 @@ class VRDDataLayer(data.Dataset):
         # TODO: this is no good way of accounting for multi-label.
         gt_pred_sem[i_rel] = np.mean([self.emb["pred"][pred_cls] for pred_cls in pred_clss], axis=0)
 
-        for pred_cls in pred_clss:
-          mlab_target[pos_idx] = i_rel * self.dataset.n_pred + pred_cls
-          pos_idx += 1
+        if "mlab" in self.y_cols:
+          for pred_cls in pred_clss:
+            mlab_target[pos_idx] = i_rel * self.dataset.n_pred + pred_cls
+            pos_idx += 1
+        if "1-hots" in self.y_cols:
+          onehots_target[i_rel].scatter_(0, torch.tensor(pred_clss), 1.)
 
     if self.objdet_res is not None:
       obj_classes  = det_obj_classes
@@ -330,15 +338,26 @@ class VRDDataLayer(data.Dataset):
 
     elif self.stage == "train":
       gt_pred_sem      = torch.as_tensor(gt_pred_sem,    dtype=torch.long)
-      mlab_target      = torch.as_tensor(mlab_target,    dtype=torch.long)
+      loss_targets = {}
+      if "mlab" in self.y_cols:
+        loss_targets["mlab"]   = torch.as_tensor(mlab_target,    dtype=torch.long)
+      if "1-hots" in self.y_cols:
+        loss_targets["1-hots"] = torch.as_tensor(onehots_target, dtype=torch.float)
       return net_input,       \
               gt_soP_prior,   \
               gt_pred_sem,    \
-              mlab_target
+              loss_targets
 
 
 
-# Move the net input to the GPU
+# Move the net input to device
+def loss_targets_to(loss_targets, device):
+  loss_targets = deepcopy(loss_targets)
+  for name,loss_target in loss_targets.item():
+    loss_targets[name] = loss_target.to(device = device)
+  return loss_targets
+
+# Move the net input to device
 def net_input_to(net_input, device):
   # Move to GPU
   if net_input is not False: # not (isinstance(net_input, torch.Tensor) and net_input.size() == (1,)):

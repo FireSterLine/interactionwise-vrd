@@ -10,19 +10,23 @@ data:
 model:
   # Constructor
   type: DSRModel
-  # In addition to the visual features of the union box
-  #  use those of subject and object individually?
-  use_so: True
-  # Use visual features
-  use_vis: True
-  # Use semantic features (TOD: this becomes the size of the semantic features)
-  use_sem: True
-  # Three types of spatial feature: # - : no spatial info
-  # - : 8-way relative location vector
-  # - : dual mask # TODO
-  use_spat: 1
+  # Modalities (features) used by the model
+  feat_used:
+    # Use visual features
+    vis: True
+    # In addition to the visual features of the union box
+    #  use those of subject and object individually?
+    vis_so: True
+    # Use semantic features (TOD: this becomes the size of the semantic features)
+    sem: True
+    # Three types of spatial feature:
+    # - False: no spatial info
+    # - dsr_spat_vec : 8-way relative location vector
+    # - dsr_spat_mat : dual mask # TODO
+    spat: dsr_spat_mat
   # Use or not predicate semantics
   use_pred_sem: False
+
   # Size of the representation for each modality when fusing features
   n_fus_neurons: 256
   # Use batch normalization or not

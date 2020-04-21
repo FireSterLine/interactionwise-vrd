@@ -19,7 +19,7 @@ class DSRModel(nn.Module):
     self.args = args
 
     # TODO: fix this cols thing, maybe rename it and also expand it
-    self.input_cols = []
+    self.x_cols = [self.args.feat_used.spat]
 
     if not hasattr(self.args, "n_obj"):
       raise ValueError("Can't build vrd model without knowing n_obj")
@@ -30,35 +30,21 @@ class DSRModel(nn.Module):
     # Size of the representation for each modality when fusing features
     self.args.n_fus_neurons = self.args.get("n_fus_neurons", 256)
 
-    # Use visual features
-    self.args.use_vis       = self.args.get("use_vis",       True)
-
-    self.args.apply_vgg     = self.args.get("apply_vgg",     self.args.use_vis)
-
-    # This decides whether, in addition to the visual features of union box,
-    #  those of subject and object individually are used or not
-    self.args.use_so        = self.args.get("use_so",        self.args.use_vis)
-
-    # Use semantic features (TODO: this becomes the size of the semantic features)
-    self.args.use_sem       = self.args.get("use_sem",       True)
-
-    # Three types of spatial features:
-    # - 0: no spatial info
-    # - 1: 8-way relative location vector
-    # - 2: dual mask
-    self.args.use_spat      = self.args.get("use_spat",      1)
-
-    self.args.use_pred_sem  = self.args.get("use_pred_sem",  False)
-
     # Use batch normalization or not
     self.args.use_bn        = self.args.get("use_bn",        False)
 
-    if not self.args.use_vis and self.args.use_so:
+    # Apply VGG net or directly receive the visual feature vector
+    self.args.apply_vgg     = self.args.get("apply_vgg",     False)
+
+    if not self.args.feat_used.vis and self.args.feat_used.vis_so:
       raise ValueError("Can't use so features without visual features flag true") # TODO: fix
 
     self.total_fus_neurons = 0
 
-    if self.args.use_vis:
+    ###################
+    # VISUAL FEATURES
+    ###################
+    if self.args.feat_used.vis:
       if self.args.apply_vgg:
         self.conv1 = nn.Sequential(Conv2d(  3,  64, 3, same_padding=True, bn=self.args.use_bn),
                                    Conv2d( 64,  64, 3, same_padding=True, bn=self.args.use_bn),
@@ -88,40 +74,36 @@ class DSRModel(nn.Module):
       # Load VGG layers: conv*, fc6, fc7
       self.load_pretrained_conv(osp.join(globals.data_dir, "VGG_imagenet.npy"), fix_layers=True)
 
-    # Guide for jwyang's ROI Pooling Layers:
-    #  https://medium.com/@andrewjong/how-to-use-roi-pool-and-roi-align-in-your-neural-networks-pytorch-1-0-b43e3d22d073
-    self.roi_pool = ROIPool((7, 7), 1.0/16)
+      # Guide for jwyang's ROI Pooling Layers:
+      #  https://medium.com/@andrewjong/how-to-use-roi-pool-and-roi-align-in-your-neural-networks-pytorch-1-0-b43e3d22d073
+      self.roi_pool = ROIPool((7, 7), 1.0/16)
 
-
-
-
-
-
-    if(self.args.use_vis):
       self.fc8   = FC(4096, self.args.n_fus_neurons)
       self.total_fus_neurons += self.args.n_fus_neurons
 
       # using visual features of subject and object individually too
-      if(self.args.use_so):
+      if self.args.feat_used.vis_so:
         self.fc_so = FC(self.args.n_fus_neurons*2, self.args.n_fus_neurons)
         self.total_fus_neurons += self.args.n_fus_neurons
 
-
-    # using type 1 of spatial features
-    if(self.args.use_spat == 1):
-      self.input_cols.append("dsr_spat_vec")
+    ###################
+    # SPATIAL FEATURES
+    ###################
+    if self.args.feat_used.spat == "dsr_spat_vec":
       self.fc_spatial  = FC(8, self.args.n_fus_neurons)
       self.total_fus_neurons += self.args.n_fus_neurons
     # using type 2 of spatial features
-    elif(self.args.use_spat == 2): # TODO: test
-      self.input_cols.append("dsr_spat_mat")
+    elif self.args.feat_used.spat == "dsr_spat_mat": # TODO: test
       self.conv_spatial = nn.Sequential(Conv2d(2, 96, 5, same_padding=True, stride=2, bn=bn),
                                  Conv2d(96, 128, 5, same_padding=True, stride=2, bn=bn),
                                  Conv2d(128, 64, 8, same_padding=False, bn=bn))
       self.fc_spatial = FC(64, self.args.n_fus_neurons)
       self.total_fus_neurons += self.args.n_fus_neurons
 
-    if(self.args.use_sem):
+    ###################
+    # SEMANTIC FEATURES
+    ###################
+    if self.args.feat_used.sem:
       self.emb = nn.Embedding(self.args.n_obj, globals.emb_size)
       set_trainability(self.emb, requires_grad=False)
       self.fc_semantic = FC(globals.emb_size*2, self.args.n_fus_neurons)
@@ -135,6 +117,9 @@ class DSRModel(nn.Module):
       print("Warning! Using no features. The model is not expected to learn")
       self.total_fus_neurons = 1
 
+    ######################################
+    ######### PREDICATE SEMANTICS ########
+    ######################################
     if not self.args.use_pred_sem:
       # Final layers
       self.fc_fusion = FC(self.total_fus_neurons, 256)
@@ -210,7 +195,8 @@ class DSRModel(nn.Module):
 
     # print("u_boxes: ", u_boxes.shape)
 
-    if(self.args.use_vis):
+    # VISUAL FEATURES
+    if self.args.feat_used.vis:
 
       # ROI pooling for combined subjects' and objects' boxes
 
@@ -267,7 +253,7 @@ class DSRModel(nn.Module):
       # print("x_fused++: ", x_fused.shape)
 
       # using visual features of subject and object individually too
-      if(self.args.use_so):
+      if self.args.feat_used.vis_so:
         x_so = self.fc8(x_so)
         # print(x_so)
         # print(idx_s)
@@ -290,17 +276,19 @@ class DSRModel(nn.Module):
     else:
       obj_scores = torch.zeros((n_objs, self.args.n_obj), device=utils.device)
 
-    if(self.args.use_spat == 1):
+    # SPATIAL FEATURES
+    if self.args.feat_used.spat == "dsr_spat_vec":
       x_spat = self.fc_spatial(spat_features)
       x_fused = torch.cat((x_fused, x_spat), 2)
-    elif(self.args.use_spat == 2):
+    elif self.args.feat_used.spat == "dsr_spat_mat":
       x_spat = self.conv_spatial(spat_features)
       x_spat = x_spat.view(n_batches, x_spat.size()[0], -1)
       # TODO: maybe this is actually the correct one: x_spat = x_spat.view(x_spat.size()[0], -1)
       x_spat = self.fc_spatial(x_spat)
       x_fused = torch.cat((x_fused, x_spat), 2)
 
-    if(self.args.use_sem):
+    # SEMANTIC FEATURES
+    if self.args.feat_used.sem:
       # x_sem  = self.fc_semantic(semantic_features)
       # x_fused = torch.cat((x_fused, x_sem), 2)
 
@@ -322,6 +310,8 @@ class DSRModel(nn.Module):
       x_fused = torch.cat((x_fused, emb), dim=2)
       # print("x_fused.shape: ", x_fused.shape)
 
+
+    # FUSION
     if self.total_fus_neurons == 1:
       # print("Warning! Using no features. The model is not expected to learn")
       x_fused = torch.zeros((n_batches, n_rels, 1), device=utils.device)
@@ -330,6 +320,7 @@ class DSRModel(nn.Module):
     rel_scores = self.fc_rel(x_fused)
 
     return obj_scores, rel_scores, x_fused
+
 
   def load_pretrained_conv(self, file_path, fix_layers=True):
     """ Load the weights for the initial convolutional layers and fully connecteda layers """
@@ -386,6 +377,7 @@ class DSRModel(nn.Module):
       if fix_layers:
         set_trainability(getattr(self, source_layer), requires_grad=False)
 
+
   def OriginalAdamOptimizer(self,
       lr = 0.00001,
       # momentum = 0.9,
@@ -398,19 +390,20 @@ class DSRModel(nn.Module):
     opt_params = [
       {'params': self.fc_fusion.parameters(), 'lr': lr*lr_fus_ratio},
     ]
-    if self.args.use_vis:
-      opt_params.append({'params': self.fc8.parameters(),       'lr': lr*10})
-    if(not hasattr(self, "fc_rel_not_trainable") or not self.fc_rel_not_trainable):
-      opt_params.append({'params': self.fc_rel.parameters(),       'lr': lr*lr_rel_ratio})
-    if(self.args.use_so):
-      opt_params.append({'params': self.fc_so.parameters(),        'lr': lr*10})
-    if(self.args.use_spat == 1):
+    if self.args.feat_used.vis:
+      opt_params.append({'params': self.fc8.parameters(),          'lr': lr*10})
+      if self.args.feat_used.vis_so:
+        opt_params.append({'params': self.fc_so.parameters(),      'lr': lr*10})
+    if self.args.feat_used.spat == "dsr_spat_vec":
       opt_params.append({'params': self.fc_spatial.parameters(),   'lr': lr*10})
-    elif(self.args.use_spat == 2):
+    elif self.args.feat_used.spat == "dsr_spat_mat":
       opt_params.append({'params': self.conv_spatial.parameters(), 'lr': lr*10})
       opt_params.append({'params': self.fc_spatial.parameters(),   'lr': lr*10})
-    if(self.args.use_sem):
-      opt_params.append({'params': self.fc_semantic.parameters(), 'lr': lr*10})
+    if self.args.feat_used.sem:
+      opt_params.append({'params': self.fc_semantic.parameters(),  'lr': lr*10})
+
+    if not hasattr(self, "fc_rel_not_trainable") or not self.fc_rel_not_trainable:
+      opt_params.append({'params': self.fc_rel.parameters(),       'lr': lr*lr_rel_ratio})
 
     return torch.optim.Adam(opt_params,
             lr = lr,
