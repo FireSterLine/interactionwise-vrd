@@ -25,7 +25,7 @@ from lib.datalayer import VRDDataLayer, net_input_to, loss_targets_to
 from lib.evaluator import VRDEvaluator
 
 # Test if code compiles
-TEST_DEBUGGING = False # True # True # False
+TEST_DEBUGGING = True # False
 # Test if a newly-introduced change affects the validity of the code
 TEST_EVAL_VALIDITY = False # True # False # True # False #  True # True
 TEST_TRAIN_VALIDITY = False # True # False #  True # True
@@ -301,7 +301,7 @@ class vrd_trainer():
         num_losses += 1
         # TODO use the weighted embeddings of gt_soP_prior ?
         loss += self.criterions["mse"](pred_sem, gt_pred_sem)
-      
+
       loss /= num_losses
 
       loss.backward()
@@ -427,7 +427,7 @@ if __name__ == "__main__":
                 if "mse" in loss and (pred_sem_mode_1 == -1 or pred_sem_mode_1>=16):
                   continue
                 pred_sem_mode = pred_sem_mode_1+1
-                session_id = "scan-v11-no-feat-{}-{}-{}-{}-{},{:b}-{}-{}".format(lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode, pred_sem_mode, dataset, loss)
+                session_id = "scan-v12-only_spat-{}-{}-{}-{}-{},{:b}-{}-{}".format(lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode, pred_sem_mode, dataset, loss)
                 profile = ["pred_sem", "no-feat"]
                 training = {"num_epochs" : 4, "test_freq" : [1,2,3]}
                 if dataset == "vg":

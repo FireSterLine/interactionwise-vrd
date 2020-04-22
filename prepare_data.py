@@ -45,22 +45,22 @@ Notes:
 """
 
 class DataPreparer:
-    def __init__(self, multi_label=True, generate_emb=None):
-        self.objects_vocab_file = "objects.json"
+    def __init__(self, multi_label = True, generate_emb = None):
+        self.objects_vocab_file    = "objects.json"
         self.predicates_vocab_file = "predicates.json"
 
-        self.obj_vocab = None
-        self.pred_vocab = None
+        self.obj_vocab    = None
+        self.pred_vocab   = None
 
-        self.multi_label = multi_label
+        self.multi_label  = multi_label
 
         self.generate_emb = generate_emb
 
-        self.dir = None
-        self.vrd_data = None
+        self.dir         = None
+        self.vrd_data    = None
         self.cur_dformat = None
-        self.splits = None
-        self.prefix = "data"
+        self.splits      = None
+        self.prefix      = "data"
 
         self.to_delete = ["soP.pkl", "pP.pkl"]
 
@@ -101,8 +101,8 @@ class DataPreparer:
 
 
     # This function converts to relst
-    def _generate_relst(self, anns): pass
-    def _generate_annos(self, anns): pass
+    def _generate_relst(self, anns): raise NotImplementedError
+    def _generate_annos(self, anns): raise NotImplementedError
 
     # Save data
     def save_data(self, dformat, granularity = "img"):
@@ -117,9 +117,9 @@ class DataPreparer:
 
         vrd_data_train = []
         vrd_data_test = []
-        for img_path in self.splits['train']:
+        for img_path in self.splits["train"]:
           vrd_data_train.append(self.get_vrd_data_pair(img_path))
-        for img_path in self.splits['test']:
+        for img_path in self.splits["test"]:
           vrd_data_test.append(self.get_vrd_data_pair(img_path))
 
         if granularity == "rel":
@@ -145,47 +145,47 @@ class DataPreparer:
 
     # transform vrd_data to the desired format
     def to_dformat(self, to_dformat):
-        if to_dformat == self.cur_dformat:
-            return
-        elif self.cur_dformat == "relst" and to_dformat == "annos":
-            self.relst2annos()
-        elif self.cur_dformat == "annos" and to_dformat == "relst":
-            self.annos2relst()
-        else:
-            raise NotImplementedError("Unknown format conversion: {} -> {}".format(self.cur_dformat, to_dformat))
+      if to_dformat == self.cur_dformat:
+        return
+      elif self.cur_dformat == "relst" and to_dformat == "annos":
+        self.relst2annos()
+      elif self.cur_dformat == "annos" and to_dformat == "relst":
+        self.annos2relst()
+      else:
+        raise NotImplementedError("Unknown format conversion: {} -> {}".format(self.cur_dformat, to_dformat))
 
     # "annos" format separates objects and relatinoships
     def relst2annos(self):
-        new_vrd_data = {}
-        for img_path, relst in self.vrd_data.items():
-            if relst is None:
-                new_vrd_data[img_path] = None
-                continue
-            objects  = []
-            rels     = []
-            def add_object(obj):
-                for i_obj,any_obj in enumerate(objects):
-                    if any_obj["cls"] == obj["id"] and \
-                       np.all(any_obj["bbox"] == utils.bboxDictToList(obj["bbox"])):
-                       return i_obj
-                i_obj = len(objects)
-                objects.append({"cls" : obj["id"], "bbox" : utils.bboxDictToList(obj["bbox"])})
-                return i_obj
+      new_vrd_data = {}
+      for img_path, relst in self.vrd_data.items():
+        if relst is None:
+          new_vrd_data[img_path] = None
+          continue
+        objects  = []
+        rels     = []
+        def add_object(obj):
+          for i_obj,any_obj in enumerate(objects):
+            if any_obj["cls"] == obj["id"] and \
+              np.all(any_obj["bbox"] == utils.bboxDictToList(obj["bbox"])):
+              return i_obj
+          i_obj = len(objects)
+          objects.append({"cls" : obj["id"], "bbox" : utils.bboxDictToList(obj["bbox"])})
+          return i_obj
 
-            for i_rel, rel in enumerate(relst):
-                new_rel = {}
-                new_rel["sub"] = add_object(rel["subject"])
-                new_rel["obj"] = add_object(rel["object"])
-                new_rel["pred"] = rel["predicate"]["id"]
-                rels.append(new_rel)
+        for i_rel, rel in enumerate(relst):
+          new_rel = {}
+          new_rel["sub"] = add_object(rel["subject"])
+          new_rel["obj"] = add_object(rel["object"])
+          new_rel["pred"] = rel["predicate"]["id"]
+          rels.append(new_rel)
 
-            new_vrd_data[img_path] = {
-                "objs" : objects,
-                "rels" : rels
-            }
+        new_vrd_data[img_path] = {
+          "objs" : objects,
+          "rels" : rels
+        }
 
-        self.vrd_data = new_vrd_data
-        self.cur_dformat = "annos"
+      self.vrd_data = new_vrd_data
+      self.cur_dformat = "annos"
 
     def prepareGT(self):
       print("\tGenerating ground-truth pickle...")
@@ -298,12 +298,12 @@ class DataPreparer:
       self.splits = {"train" : indices[:len_train], "test" : indices[len_train:]}
 
     def readbbox_arr(self, bbox, margin=0):
-        return {
-            'ymin': (bbox[0]-margin),
-            'ymax': (bbox[1]-margin),
-            'xmin': (bbox[2]-margin),
-            'xmax': (bbox[3]-margin)
-        }
+      return {
+        'ymin': (bbox[0]-margin),
+        'ymax': (bbox[1]-margin),
+        'xmin': (bbox[2]-margin),
+        'xmax': (bbox[3]-margin)
+      }
 
     # INPUT/OUTPUT Helpers
     def fullpath(self, filename):
@@ -343,19 +343,19 @@ class DataPreparer:
 
 class VRDPrep(DataPreparer):
     def __init__(self, multi_label = True, generate_emb = None, use_cleaning_map = False):
-        super(VRDPrep, self).__init__(multi_label = multi_label, generate_emb = generate_emb)
+      super(VRDPrep, self).__init__(multi_label = multi_label, generate_emb = generate_emb)
 
-        print("\tVRDPrep(multi-label : {}, use_cleaning_map : {})...".format(multi_label, use_cleaning_map))
+      print("\tVRDPrep(multi-label : {}, use_cleaning_map : {})...".format(multi_label, use_cleaning_map))
 
-        self.dir = "vrd"
-        self.use_cleaning_map = use_cleaning_map
+      self.dir = "vrd"
+      self.use_cleaning_map = use_cleaning_map
 
-        self.train_dsr = self.readpickle("train.pkl")
-        self.test_dsr  = self.readpickle("test.pkl")
+      self.train_dsr = self.readpickle("train.pkl")
+      self.test_dsr  = self.readpickle("test.pkl")
 
-        self.prepare_vocabs("obj.txt", "rel.txt", use_cleaning_map = self.use_cleaning_map)
+      self.prepare_vocabs("obj.txt", "rel.txt", use_cleaning_map = self.use_cleaning_map)
 
-        # TODO: Additionally handle files like {test,train}_image_metadata.json
+      # TODO: Additionally handle files like {test,train}_image_metadata.json
 
     def get_clean_obj_cls(self,  cls):
       return cls # if not (hasattr(self, "cleaning_map") and hasattr(self.cleaning_map, "obj")) else self.cleaning_map["obj"][cls]
@@ -366,29 +366,29 @@ class VRDPrep(DataPreparer):
         return cls
 
     def load_vrd(self):
-        print("\tLoad VRD data...")
-        # LOAD DATA
-        annotations_train = self.readjson("annotations_train.json")
-        annotations_test  = self.readjson("annotations_test.json")
+      print("\tLoad VRD data...")
+      # LOAD DATA
+      annotations_train = self.readjson("annotations_train.json")
+      annotations_test  = self.readjson("annotations_test.json")
 
-        # Transform img file names to img subpaths
-        annotations = {}
-        for img_file,anns in annotations_train.items():
-            annotations[osp.join("sg_train_images", img_file)] = anns
-        for img_file,anns in annotations_test.items():
-            annotations[osp.join("sg_test_images", img_file)] = anns
+      # Transform img file names to img subpaths
+      annotations = {}
+      for img_file,anns in annotations_train.items():
+        annotations[osp.join("sg_train_images", img_file)] = anns
+      for img_file,anns in annotations_test.items():
+        annotations[osp.join("sg_test_images", img_file)] = anns
 
-        vrd_data = {}
-        for img_path, anns in annotations.items():
-            vrd_data[img_path] = self._generate_relst(anns)
+      vrd_data = {}
+      for img_path, anns in annotations.items():
+          vrd_data[img_path] = self._generate_relst(anns)
 
-        self.vrd_data = vrd_data
-        self.cur_dformat = "relst"
+      self.vrd_data = vrd_data
+      self.cur_dformat = "relst"
 
-        self.splits = {
-            "train" : [osp.join(*x["img_path"].split("/")[-2:]) if x is not None else None for x in self.train_dsr],
-            "test"  : [osp.join(*x["img_path"].split("/")[-2:]) if x is not None else None for x in self.test_dsr],
-        }
+      self.splits = {
+        "train" : [osp.join(*x["img_path"].split("/")[-2:]) if x is not None else None for x in self.train_dsr],
+        "test"  : [osp.join(*x["img_path"].split("/")[-2:]) if x is not None else None for x in self.test_dsr],
+      }
 
     def _generate_relst(self, anns):
         relst = []
