@@ -25,9 +25,9 @@ from lib.datalayer import VRDDataLayer, net_input_to, loss_targets_to
 from lib.evaluator import VRDEvaluator
 
 # Test if code compiles
-TEST_DEBUGGING = True # False
+TEST_DEBUGGING = False # True # False
 # Test if a newly-introduced change affects the validity of the code
-TEST_EVAL_VALIDITY = False # True # False # True # False #  True # True
+TEST_EVAL_VALIDITY = False # True # False # True # False # True # False #  True # True
 TEST_TRAIN_VALIDITY = False # True # False #  True # True
 # Try overfitting to a single element
 TEST_OVERFIT = False #True # False # True
@@ -179,9 +179,14 @@ class vrd_trainer():
     res_headers = ["Epoch"]
     if self.args.eval.test_pre: res_headers += self.gt_headers(self.args.eval.test_pre, "Pre") + ["Avg"]
     if self.args.eval.test_rel: res_headers += self.gt_headers(self.args.eval.test_rel, "Rel") + ["Avg"]
-    if self.args.eval.by_predicates:
-      if self.args.eval.test_pre: res_headers += [x for i,x in enumerate(self.dataset.pred_classes) if i else "Pre "+x]
-      if self.args.eval.test_rel: res_headers += [x for i,x in enumerate(self.dataset.pred_classes) if i else "Rel "+x]
+    if self.args.eval.by_predicates: # TODO: fix the two (gt+gt_zs)
+      if self.args.eval.test_pre:
+        for i in range(len(self.args.eval.rec)*2):
+          res_headers += [x if i else "Pre "+x for i,x in enumerate(self.dataset.pred_classes)]
+      if self.args.eval.test_rel:
+        for i in range(len(self.args.eval.rec)*2):
+          res_headers += [x if i else "Rel "+x for i,x in enumerate(self.dataset.pred_classes)]
+          ior i in len(self.args.eval.rec)*2:
 
     res = []
 
@@ -340,10 +345,14 @@ class vrd_trainer():
 
   def test_pre(self):
     recalls, dtime = self.eval.test_pre(self.model, self.args.eval.rec, by_predicates = (False if not self.args.eval.by_predicates else self.dataset.n_pred))
+    #print(recalls)
     if self.args.eval.by_predicates:
-      recall_by_pred = [recall for i,recall in enumerate(recalls) if i%2]
-      recalls        = [recall for i,recall in enumerate(recalls) if not i%2]
+      #print("recalls")
+      recall_by_pred = tuple([r for recall in recalls for r in recall[1]])
+      recalls        = tuple([recall[0] for recall in recalls])
     print("PRED TEST:")
+    #print(self.get_format_str(self.gt_headers(self.args.eval.test_pre)))
+    #print(recalls)
     print(self.get_format_str(self.gt_headers(self.args.eval.test_pre)).format(*recalls))
     print("TEST Time: {}".format(utils.time_diff_str(dtime)))
     if self.args.eval.by_predicates:
@@ -354,8 +363,8 @@ class vrd_trainer():
   def test_rel(self):
     recalls, (pos_num, loc_num, gt_num), dtime = self.eval.test_rel(self.model, self.args.eval.rec, by_predicates = (False if not self.args.eval.by_predicates else self.dataset.n_pred))
     if self.args.eval.by_predicates:
-      recall_by_pred = [recall for i,recall in enumerate(recalls) if i%2]
-      recalls        = [recall for i,recall in enumerate(recalls) if not i%2]
+      recall_by_pred = tuple([r for recall in recalls for r in recall[1]])
+      recalls        = tuple([recall[0] for recall in recalls])
     print("REL TEST:")
     print(self.get_format_str(self.gt_headers(self.args.eval.test_rel)).format(*recalls))
     if self.args.eval.eval_obj:
@@ -396,7 +405,7 @@ if __name__ == "__main__":
     torch.backends.cudnn.benchmark = False
     trainer = vrd_trainer("test", {"training" : {"num_epochs" : 1, "test_first" : True}, # , "loss" : "mlab_bcel"},
         "eval" : {"test_pre" : test_type,  "test_rel" : test_type},
-        "data" : {"justafew" : True}}) #, checkpoint="epoch_4_checkpoint.pth.tar")
+        "data" : {"justafew" : True}}, profile="by_pred") #, checkpoint="epoch_4_checkpoint.pth.tar")
     trainer.train()
 
 
@@ -455,7 +464,7 @@ if __name__ == "__main__":
                   continue
                 pred_sem_mode = pred_sem_mode_1+1
                 session_id = "scan-v12-only_spat-{}-{}-{}-{}-{},{:b}-{}-{}".format(lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode, pred_sem_mode, dataset, loss)
-                profile = ["pred_sem", "no-feat"]
+                profile = ["pred_sem", "no-feat", "by_pred"]
                 training = {"num_epochs" : 4, "test_freq" : [1,2,3]}
                 if dataset == "vg":
                   profile.append("vg")

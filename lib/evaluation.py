@@ -16,7 +16,11 @@ this_dir = osp.dirname(osp.realpath(__file__))
 def eval_per_image(i, gt, pred, use_rel, gt_thr = 0.5, return_preds = False): # , return_match = False
   gt_tupLabel = gt["tuple_label"][i].astype(np.float32)
   num_gt_tuple = gt_tupLabel.shape[0]
-  if num_gt_tuple == 0 or pred["tuple_confs"][i] is None: return 0, 0
+  if num_gt_tuple == 0 or pred["tuple_confs"][i] is None:
+    if return_preds:
+      return 0,0,[],[]
+    else:
+      return 0, 0
 
   if not use_rel:
     raise NotImplementedError("use_rel has to be True for eval_per_image to work with by_predicate flag")
@@ -31,7 +35,7 @@ def eval_per_image(i, gt, pred, use_rel, gt_thr = 0.5, return_preds = False): # 
   num_tuple = labels.shape[0]
 
   if return_preds:
-    gt_preds  = [tup[1] for tup in gt_tupLabel]
+    gt_preds  = [int(tup[1]) for tup in gt_tupLabel]
     tp_preds = []
 
   # tp = np.zeros((num_tuple,1))
@@ -79,7 +83,7 @@ def eval_per_image(i, gt, pred, use_rel, gt_thr = 0.5, return_preds = False): # 
       # tp[j] = 1;
       gt_detected[kmax] = 1;
       if return_preds:
-        tp_preds.append(gt_tupLabel[kmax,1])
+        tp_preds.append(int(gt_tupLabel[kmax,1]))
     # else:
     #   fp[j] = 1;
   # if return_match: return tp
