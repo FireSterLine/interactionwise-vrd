@@ -730,7 +730,7 @@ if __name__ == '__main__':
     # TODO: filter out relationships between the same object?
 
     multi_label = True # False
-    generate_embeddings = False # False # True # False # True # False
+    generate_embeddings = True # False # False # True # False # True # False
 
     w2v_model = None
     if generate_embeddings:
