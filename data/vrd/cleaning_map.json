@@ -1,6 +1,6 @@
 {
-  "__comment__" : "This map defines some predicates and object classes that would preferably be removed and transformed into other classes.",
-  "pred" : {
+  "__comment__" : "This map defines how the dataset is cleaned. Some predicates classes that would preferably be removed and transformed into other classes, and other that we want to filter out.",
+  "pred_map" : {
     "sleep next to" : "next to",
     "sit next to"   : "next to",
     "stand next to" : "next to",
@@ -13,7 +13,40 @@
     "sit under"     : "under",
     "walk beside"   : "beside",
     "park on"       : "on",
-    "sleep on"      : "on"
+    "sleep on"      : "on",
+    "lean on"       : "on",
+    "lying on"      : "on",
+    "rest on"       : "on",
+    "skate on"      : "on",
+    "stand on"      : "on"
   },
-  "obj" : {}
+  "pred_subset" : [],
+  "inactive_pred_subset" : [
+      "on",
+      "next to",
+      "sleep next to",
+      "sit next to",
+      "stand next to",
+      "park next",
+      "walk next to",
+      "above",
+      "behind",
+      "in the front of",
+      "under",
+      "near",
+      "in",
+      "below",
+      "beside",
+      "by",
+      "beneath",
+      "on the top of",
+      "on the left of",
+      "on the right of",
+      "against",
+      "inside",
+      "adjacent to",
+      "across",
+      "contain",
+      "outside of"
+    ]
 }

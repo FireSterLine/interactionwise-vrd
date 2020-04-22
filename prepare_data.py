@@ -61,7 +61,7 @@ class DataPreparer:
         self.cur_dformat = None
         self.splits = None
         self.prefix = "data"
-        
+
         self.to_delete = ["soP.pkl", "pP.pkl"]
 
     # This function reads the dataset's vocab txt files and loads them
@@ -71,22 +71,22 @@ class DataPreparer:
 
         if use_cleaning_map is not False:
           cleaning_map = self.readjson("cleaning_map.json")
-          def cleaned_vocab(cls_vocab, cl_map):
+          def cleaned_vocab(cls_vocab, cl_map, cl_subset):
             new_vocab = []
             cls_map = {}
+            # MAP
             for i_old_cls,cls in enumerate(cls_vocab):
-              if not cls in cl_map:
+              if (len(cl_subset) == 0 or cls in cl_subset) and not cls in cl_map:
                 new_vocab.append(cls)
                 cls_map[i_old_cls] = len(new_vocab)-1
             for cls,to_cls in cl_map.items():
-              i_to_cls = new_vocab.index(to_cls)
-              i_cls = cls_vocab.index(cls)
-              cls_map[i_cls] = i_to_cls
+              if (len(cl_subset) == 0 or to_cls in cl_subset)
+                cls_map[cls_vocab.index(cls)] = new_vocab.index(to_cls)
             return new_vocab, cls_map
-          assert cleaning_map["obj"] == {}, "NotImplemented: A cleaning map for objects requires some preprocessing to the object_detections as well, if not a re-train of the object detection model. Better not touch these things."
-          obj_vocab,  obj_cls_map  = cleaned_vocab(obj_vocab,  cleaning_map["obj"])
-          pred_vocab, pred_cls_map = cleaned_vocab(pred_vocab, cleaning_map["pred"])
-          self.cleaning_map = {"obj" : obj_cls_map, "pred" : pred_cls_map}
+          # assert cleaning_map["obj_map"] == {}, "NotImplemented: A cleaning map for objects requires some preprocessing to the object_detections as well, if not a re-train of the object detection model. Better not touch these things."
+          # obj_vocab,  obj_cls_map  = cleaned_vocab(obj_vocab,  cleaning_map["obj_map"])
+          pred_vocab, pred_cls_map = cleaned_vocab(pred_vocab, cleaning_map["pred_map"], cleaning_map["pred_subset"])
+          self.cleaning_map = {"pred" : pred_cls_map}
 
         self.writejson(obj_vocab,  self.objects_vocab_file)
         self.writejson(pred_vocab, self.predicates_vocab_file)
@@ -112,7 +112,7 @@ class DataPreparer:
         for to_delete in self.to_delete:
           if os.path.exists(self.fullpath(to_delete)):
             os.remove(self.fullpath(to_delete))
-        
+
         output_file_format = "{}_{}_{}_{{}}.json".format(self.prefix, dformat, granularity)
 
         vrd_data_train = []
@@ -358,16 +358,19 @@ class VRDPrep(DataPreparer):
         # TODO: Additionally handle files like {test,train}_image_metadata.json
 
     def get_clean_obj_cls(self,  cls):
-      return cls if not hasattr(self, "cleaning_map") else self.cleaning_map["obj"][cls]
+      return cls # if not (hasattr(self, "cleaning_map") and hasattr(self.cleaning_map, "obj")) else self.cleaning_map["obj"][cls]
     def get_clean_pred_cls(self, cls):
-      return cls if not hasattr(self, "cleaning_map") else self.cleaning_map["pred"][cls]
+      if (hasattr(self, "cleaning_map") and hasattr(self.cleaning_map, "pred")):
+        return self.cleaning_map["pred"].get(cls, None)
+      else:
+        return cls
 
     def load_vrd(self):
         print("\tLoad VRD data...")
         # LOAD DATA
         annotations_train = self.readjson("annotations_train.json")
         annotations_test  = self.readjson("annotations_test.json")
-        
+
         # Transform img file names to img subpaths
         annotations = {}
         for img_file,anns in annotations_train.items():
@@ -400,6 +403,7 @@ class VRDPrep(DataPreparer):
             object_bbox = self.readbbox_arr(ann['object']['bbox'], 1)
 
             predicate_id = self.get_clean_pred_cls(ann['predicate'])
+            if predicate_id is None: continue
             predicate_label = self.pred_vocab[predicate_id]
 
             rel_data = defaultdict(lambda: dict())
@@ -486,14 +490,17 @@ class VRDPrep(DataPreparer):
                         rel_data['object']['name'] = object_label
                         rel_data['object']['bbox'] = object_bbox
 
-                        rel_data['predicate']['id']   = [self.get_clean_pred_cls(int(predicate_id))]
+                        predicate_id = self.get_clean_pred_cls(int(predicate_id))
+                        if predicate_id is None: continue
+                        rel_data['predicate']['id']   = [predicate_id]
                         rel_data['predicate']['name'] = predicate_label
 
                         relationships.append(dict(rel_data))
                     else:
-                      pred_ids = relations[index]
-                      predicate_id    = [self.get_clean_pred_cls(int(id)) for id in pred_ids]
-                      predicate_label = [self.pred_vocab[id] for id in pred_ids]
+                      predicate_id    = [self.get_clean_pred_cls(int(id)) for id in relations[index]]
+                      predicate_id    = [id for id in predicate_id if id is not None]
+                      if len(predicate_id) == 0: continue
+                      predicate_label = [self.pred_vocab[id] for id in predicate_id]
 
                       rel_data = defaultdict(lambda: dict())
                       rel_data['subject']['id']   = subject_id

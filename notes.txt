@@ -29,14 +29,28 @@ https://sagivtech.com/2017/09/19/optimizing-pytorch-training-code/
 New idea:
  look for "Let’s build a proper (yet simple" here: https://towardsdatascience.com/understanding-pytorch-with-an-example-a-step-by-step-tutorial-81fc5f8c4e8e
  They have single parameters. Well, implement the linear projection for a predicate there. Beforee that, check if it's already there somewhere int he code.
- They claim it is, in the paper.
+ Do they claim it is already there, in the paper?
 
+ We discovered that our model already gives good answers if we train it with outputs only, namely without inputs.
+ (What probably happens is, the network learns to give high scores to popular predicates.)
+ So we believe that the metrics are weak in this sense.
 
+ To give example numbers, the model learns to give a 80% R@100 score without any input,
+  and multi-modality only helps bringing it up to 93-95%. Also, it looks like one modality (vis, sem, spat)
+  does most of the work, while the others do not help so much.
+ Now, we implemented two ways of using the embeddings to improve the results,
+  but we saw no improvement when used with all the modalities together.
+  So right now we thought we could try introducing our predicate semantics ideas without using multi-modal features.
+  For instance, with no input.
 
-# TODO: use sampler in evaluation instead of subsampling with the index thing: torch.utils.data.Subset(dataset, indices)
+ We also identified a different problem that has to do with antonyms.
+ Semantic embeddings give high similarity scores to antonyms, because indeed, antonyms refer to the same "semantic area"
+ But we would like an embedding model where antonyms have cosine similarity -1. Do you know where to find it?
 
+ Ideas for inspecting where our ideas might fail:
+ - Find out which are the problematic predicates (write evaluation "by_predicate")
+ -
 
-cache datalayer output to file and load like with torch.load('data/' + ID + '.pt')
 
 
 criterion = nn.CrossEntropyLoss()
