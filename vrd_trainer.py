@@ -452,11 +452,11 @@ if __name__ == "__main__":
     #trainer.train()
 
   # Scan (rotating parameters)
-  for lr in [0.0001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
+  for lr in [0.0001, 0.00001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
     for weight_decay in [0.0001]: # , 0.00005]:
       for lr_fus_ratio in [10]:
-        for lr_rel_ratio in [10, 100]:
-          for pred_sem_mode_1 in [-1, 8, 9, 16, 17, 18, 19]:
+        for lr_rel_ratio in [10]: #, 100]:
+          for pred_sem_mode_1 in [-1, 8, 9, 10, 11, 16, 17, 18, 19]:
             for loss in ["mlab", "mlab_mse", "bcel"]:
               for dataset in ["vrd"]: # , "vg"]:
                 if "mse" in loss and (pred_sem_mode_1 == -1 or pred_sem_mode_1>=16):

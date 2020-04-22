@@ -147,7 +147,11 @@ class DSRModel(nn.Module):
         mode = mode - 8
         # 1 Fully-Connected layers: 1024 -> 300
         self.fc_fusion = FC(self.total_fus_neurons, globals.emb_size, relu = False)
-        self.fc_rel    = SemSim(self.args.pred_emb, mode = mode)
+        if mode < 10:
+          self.fc_rel    = SemSim(self.args.pred_emb, mode = mode)
+        else:
+          self.fc_rel    = nn.Sequential(SemSim(self.args.pred_emb, mode = mode),
+                  FC(self.args.n_pred, self.args.n_pred, relu = False),)
       else:
         mode = mode - 16
         from sklearn.metrics.pairwise import cosine_similarity
