@@ -22,10 +22,12 @@ class VRDEvaluator():
     self.args        = args
     self.x_cols      = x_cols
 
+
     # Default args
     self.args.test_pre      = self.args.get("test_pre", True)
     self.args.test_rel      = self.args.get("test_rel", True)
     self.args.use_obj_prior = self.args.get("use_obj_prior", True)
+
     self.kwargs_dataloader  = { "batch_size" : 1, "shuffle" : False, "pin_memory" : True }
 
     # Setup PREDICATE PREDICTION Data Layer
@@ -84,7 +86,7 @@ class VRDEvaluator():
       self.num_imgs = None
       # TODO: self.num_imgs = 8995
 
-  def test_pre(self, vrd_model, Ns = [100, 50]):
+  def test_pre(self, vrd_model, Ns = [100, 50], by_predicates = False):
     """ Test model on Predicate Prediction """
     if self.gt is None:
       return np.nan, np.nan, np.nan, np.nan, 0.1
@@ -162,13 +164,13 @@ class VRDEvaluator():
 
         self._append_res(res, (tuple_confs_im, rlp_labels_im, sub_bboxes_im, obj_bboxes_im))
 
-      recalls = eval_recall_at_N(res, gts = [gt, gt_zs], Ns = Ns, num_imgs = self.num_imgs)
+      recalls = eval_recall_at_N(res, gts = [gt, gt_zs], Ns = Ns, num_imgs = self.num_imgs, by_predicates = by_predicates)
       time2 = time.time()
 
       return recalls, (time2-time1)
 
   # Relationship Prediction
-  def test_rel(self, vrd_model, Ns = [100, 50]):
+  def test_rel(self, vrd_model, Ns = [100, 50], by_predicates = False):
     """ Test model on Relationship Prediction """
     if self.gt is None:
       return np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, np.nan, 0.1
@@ -307,7 +309,7 @@ class VRDEvaluator():
       # if len(len(dataloader_rel)) != len(res["obj_bboxes_ours"]):
       #   print("Warning! Rel test results and gt do not have the same length: rel test performance might be off! {} != {}".format(len(len(dataloader_rel)), len(res["obj_bboxes_ours"])))
 
-      recalls = eval_recall_at_N(res, gts = [gt, gt_zs], Ns = Ns, num_imgs = self.num_imgs)
+      recalls = eval_recall_at_N(res, gts = [gt, gt_zs], Ns = Ns, num_imgs = self.num_imgs, by_predicates = by_predicates)
       time2 = time.time()
 
       return recalls, (pos_num, loc_num, gt_num), (time2 - time1)

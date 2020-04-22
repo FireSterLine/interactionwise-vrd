@@ -179,6 +179,9 @@ class vrd_trainer():
     res_headers = ["Epoch"]
     if self.args.eval.test_pre: res_headers += self.gt_headers(self.args.eval.test_pre, "Pre") + ["Avg"]
     if self.args.eval.test_rel: res_headers += self.gt_headers(self.args.eval.test_rel, "Rel") + ["Avg"]
+    if self.args.eval.by_predicates:
+      if self.args.eval.test_pre: res_headers += [x for i,x in enumerate(self.dataset.pred_classes) if i else "Pre "+x]
+      if self.args.eval.test_rel: res_headers += [x for i,x in enumerate(self.dataset.pred_classes) if i else "Rel "+x]
 
     res = []
 
@@ -240,13 +243,24 @@ class vrd_trainer():
     epoch = self.state["epoch"]+1
     if force_epoch is not None: epoch = force_epoch
     res_row = [epoch]
+    append_at_end = []
+    # TODO make for with zip((,))
     if self.args.eval.test_pre:
-      recalls, dtime = self.test_pre()
+      if not self.args.eval.by_predicates:
+        recalls, dtime = self.test_pre()
+      else:
+        recalls, recalls_by_preds, dtime = self.test_pre()
+        append_at_end += recalls_by_preds
       res_row += recalls + (sum(recalls)/len(recalls),)
     if self.args.eval.test_rel:
-      recalls, dtime = self.test_rel()
+      if not self.args.eval.by_predicates:
+        recalls, dtime = self.test_rel()
+      else:
+        recalls, recalls_by_preds, dtime = self.test_rel()
+        append_at_end += recalls_by_preds
       res_row += recalls + (sum(recalls)/len(recalls),)
-    res.append(res_row)
+
+    res.append(res_row + append_at_end)
     with open(osp.join(globals.models_dir, "{}.txt".format(self.session_name)), 'w') as f:
       f.write(tabulate(res, res_headers))
 
@@ -325,19 +339,32 @@ class vrd_trainer():
     """
 
   def test_pre(self):
-    recalls, dtime = self.eval.test_pre(self.model, self.args.eval.rec)
+    recalls, dtime = self.eval.test_pre(self.model, self.args.eval.rec, by_predicates = (False if not self.args.eval.by_predicates else self.dataset.n_pred))
+    if self.args.eval.by_predicates:
+      recall_by_pred = [recall for i,recall in enumerate(recalls) if i%2]
+      recalls        = [recall for i,recall in enumerate(recalls) if not i%2]
     print("PRED TEST:")
     print(self.get_format_str(self.gt_headers(self.args.eval.test_pre)).format(*recalls))
     print("TEST Time: {}".format(utils.time_diff_str(dtime)))
-    return recalls, dtime
+    if self.args.eval.by_predicates:
+      return recalls, recall_by_pred, dtime
+    else:
+      return recalls, dtime
 
   def test_rel(self):
-    recalls, (pos_num, loc_num, gt_num), dtime = self.eval.test_rel(self.model, self.args.eval.rec)
+    recalls, (pos_num, loc_num, gt_num), dtime = self.eval.test_rel(self.model, self.args.eval.rec, by_predicates = (False if not self.args.eval.by_predicates else self.dataset.n_pred))
+    if self.args.eval.by_predicates:
+      recall_by_pred = [recall for i,recall in enumerate(recalls) if i%2]
+      recalls        = [recall for i,recall in enumerate(recalls) if not i%2]
     print("REL TEST:")
     print(self.get_format_str(self.gt_headers(self.args.eval.test_rel)).format(*recalls))
-    # print("OBJ TEST: POS: {: 6.3f}, LOC: {: 6.3f}, GT: {: 6.3f}, Precision: {: 6.3f}, Recall: {: 6.3f}".format(pos_num, loc_num, gt_num, np.float64(pos_num)/(pos_num+loc_num), np.float64(pos_num)/gt_num))
+    if self.args.eval.eval_obj:
+      print("OBJ TEST: POS: {: 6.3f}, LOC: {: 6.3f}, GT: {: 6.3f}, Precision: {: 6.3f}, Recall: {: 6.3f}".format(pos_num, loc_num, gt_num, np.float64(pos_num)/(pos_num+loc_num), np.float64(pos_num)/gt_num))
     print("TEST Time: {}".format(utils.time_diff_str(dtime)))
-    return recalls, dtime
+    if self.args.eval.by_predicates:
+      return recalls, recall_by_pred, dtime
+    else:
+      return recalls, dtime
 
   def get_format_str(self, gt_headers):
     return "".join(["\t{}: {{: 6.3f}}".format(x) if i % 2 == 0 else "\t{}: {{: 6.3f}}\n".format(x) for i,x in enumerate(gt_headers)])

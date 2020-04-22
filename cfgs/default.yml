@@ -40,6 +40,7 @@ eval:
   use_obj_prior: True
   use_preload: False
   eval_obj: True
+  by_predicates : False
   # R@x metrics
   rec: [100, 50]
 

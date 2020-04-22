@@ -13,20 +13,13 @@ import os.path as osp
 this_dir = osp.dirname(osp.realpath(__file__))
 # print this_dir
 
-def eval_per_image(i, gt, pred, use_rel, gt_thr = 0.5, return_match = False):
+def eval_per_image(i, gt, pred, use_rel, gt_thr = 0.5, return_preds = False): # , return_match = False
   gt_tupLabel = gt["tuple_label"][i].astype(np.float32)
   num_gt_tuple = gt_tupLabel.shape[0]
-  #print("gt_tuples: ")
-  #for tup in gt_tupLabel:
-  #  print(tup)
-  #print("pred_tuples: ")
-  #for tup in pred["tuple_label"]:
-  #  print(tup)
-  #print(gt_tupLabel.shape)
-  if num_gt_tuple == 0 or pred["tuple_confs"][i] is None:
-    #print(num_gt_tuple, len(pred["tuple_confs"][i]))
-    return 0, 0
+  if num_gt_tuple == 0 or pred["tuple_confs"][i] is None: return 0, 0
+
   if not use_rel:
+    raise NotImplementedError("use_rel has to be True for eval_per_image to work with by_predicate flag")
     gt_tupLabel = gt_tupLabel[:, (0,2)]
   gt_objBox = gt["obj_bboxes"][i].astype(np.float32)
   gt_subBox = gt["sub_bboxes"][i].astype(np.float32)
@@ -37,8 +30,13 @@ def eval_per_image(i, gt, pred, use_rel, gt_thr = 0.5, return_match = False):
   boxObj = pred["obj_bboxes"][i].astype(np.float32)
   num_tuple = labels.shape[0]
 
-  tp = np.zeros((num_tuple,1))
-  fp = np.zeros((num_tuple,1))
+  if return_preds:
+    gt_preds  = [tup[1] for tup in gt_tupLabel]
+    tp_preds = []
+
+  # tp = np.zeros((num_tuple,1))
+  # fp = np.zeros((num_tuple,1))
+
   for j in range(num_tuple):
     bbO = boxObj[j,:]
     bbS = boxSub[j,:]
@@ -78,17 +76,21 @@ def eval_per_image(i, gt, pred, use_rel, gt_thr = 0.5, return_match = False):
           ovmax=ov;
           kmax=k;
     if kmax > -1:
-      tp[j] = 1;
+      # tp[j] = 1;
       gt_detected[kmax] = 1;
-    else:
-      fp[j] = 1;
-  if return_match:
-    return tp
-  return tp.sum(), num_gt_tuple
+      if return_preds:
+        tp_preds.append(gt_tupLabel[kmax,1])
+    # else:
+    #   fp[j] = 1;
+  # if return_match: return tp
+  if return_preds:
+    return gt_detected.sum(), num_gt_tuple, tp_preds, gt_preds
+  else:
+    return gt_detected.sum(), num_gt_tuple
 
 # Recall quantifies the number of positive class predictions
 #   made out of all positive examples in the dataset.
-def eval_recall_at_N(res, gts, Ns = [100, 50, 4.], num_imgs = None, use_rel = True):
+def eval_recall_at_N(res, gts, Ns = [100, 50, 4.], num_imgs = None, use_rel = True, by_predicates = False):
   #print()
   #print("RES: ", res)
   #print("GT: ", gts[0]["tuple_label"], gts[0]["obj_bboxes"], gts[0]["sub_bboxes"])
@@ -141,13 +143,22 @@ def eval_recall_at_N(res, gts, Ns = [100, 50, 4.], num_imgs = None, use_rel = Tr
 
   def get_recall(pred, this_gt):
     # Evaluate each image
-    tp_num = 0
-    num_pos_tuple = 0
+    num_tp, num_gt = 0, 0
+    if by_predicates:
+      num_tp_by_pred, num_gt_by_pred = np.zeros(by_predicates), np.zeros(by_predicates)
     for i in range(test_set_size):
-      img_tp, img_gt = eval_per_image(i, this_gt, pred, use_rel, gt_thr = 0.5)
-      tp_num += img_tp
-      num_pos_tuple += img_gt
-    return (np.float64(tp_num)/num_pos_tuple)*100
+      if by_predicates:
+        img_tp, img_gt, img_tp_preds, img_gt_preds = eval_per_image(i, this_gt, pred, use_rel, return_preds = by_predicates, gt_thr = 0.5)
+        num_tp_by_pred[img_tp_preds] += 1
+        num_gt_by_pred[img_gt_preds] += 1
+      else:
+        img_tp, img_gt = eval_per_image(i, this_gt, pred, use_rel, return_preds = by_predicates, gt_thr = 0.5)
+      num_tp += img_tp
+      num_gt += img_gt
+    if by_predicates:
+      return (np.float64(num_tp)/num_gt)*100, (np.float64(num_tp_by_pred)/num_gt_by_pred)*100
+    else:
+      return (np.float64(num_tp)/num_gt)*100
 
   recalls = []
 
