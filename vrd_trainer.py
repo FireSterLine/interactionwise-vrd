@@ -186,7 +186,6 @@ class vrd_trainer():
       if self.args.eval.test_rel:
         for i in range(len(self.args.eval.rec)*2):
           res_headers += [x if i else "Rel "+x for i,x in enumerate(self.dataset.pred_classes)]
-          ior i in len(self.args.eval.rec)*2:
 
     res = []
 
