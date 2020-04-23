@@ -416,7 +416,7 @@ if __name__ == "__main__":
     torch.backends.cudnn.benchmark = False
     dataset_name = "vrd" # /dsr"
     if TEST_EVAL_VALIDITY:
-      trainer = vrd_trainer("original-checkpoint", {"training" : {"num_epochs" : 1, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : dataset_name}, "model" : {"feat_used" : {"spat" : 0}}}, checkpoint="epoch_4_checkpoint.pth.tar")
+      trainer = vrd_trainer("original-checkpoint", {"training" : {"num_epochs" : 1, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : dataset_name}, "model" : {"feat_used" : {"spat" : False}}}, checkpoint="epoch_4_checkpoint.pth.tar")
       trainer.train()
     if TEST_TRAIN_VALIDITY:
       trainer = vrd_trainer("original", {"training" : {"num_epochs" : 5, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : False}, "data" : {"name" : dataset_name}})
@@ -442,9 +442,11 @@ if __name__ == "__main__":
 
   if FEATURES_SCAN:
     profile = ["pred_sem", "by_pred"]
-    trainer = vrd_trainer("test-no-features",  {"training" : {"test_first" : True, "loss" : "mlab_no_prior"}}, profile = profile + ["no-feat"])
+    trainer = vrd_trainer("test-no_prior-no-features",  {"training" : {"test_first" : True, "loss" : "mlab_no_prior"}}, profile = profile + ["no-feat"])
     trainer.train()
 
+    trainer = vrd_trainer("test-no-features",  {"training" : {"test_first" : True, "loss" : "mlab"}}, profile = profile + ["no-feat"])
+    trainer.train()
     #trainer = vrd_trainer("test-no_prior-only_vis",  {"training" : {"num_epochs" : 4, "loss" : "mlab_no_prior"}, "model" : {"feat_used" : {"sem" : 0, "spat" : 0}}})
     #trainer.train()
     #trainer = vrd_trainer("test-no_prior-only_sem",  {"training" : {"num_epochs" : 4, "loss" : "mlab_no_prior"}, "model" : {"feat_used" : {"vis" : False, "so" : False, "spat" : 0}}})
@@ -456,11 +458,11 @@ if __name__ == "__main__":
 
   # Scan (rotating parameters)
   for lr in [0.0001, 0.00001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
-    for weight_decay in [0.0001]: # , 0.00005]:
+    for weight_decay in [0.0001, 0.00005]:
       for lr_fus_ratio in [10]:
         for lr_rel_ratio in [10]: #, 100]:
-          for pred_sem_mode_1 in [-1, 9, 11, 16, 17, 18, 19]:
-            for loss in ["mlab", "bcel"]: # mlab_mse
+          for pred_sem_mode_1 in [16+4+1, -1, 9, 11, 16+4+1, 16, 16+2, 16+4, 16+4+1, 16+16, 16+16+2, 16+16+4, 16+16+4+2]:
+            for loss in ["mlab"]: # , "mlab_mse"]: # , "bcel"]: # mlab_mse
               for dataset in ["vrd"]: # , "vg"]:
                 if "mse" in loss and (pred_sem_mode_1 == -1 or pred_sem_mode_1>=16):
                   continue

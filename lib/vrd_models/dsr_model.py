@@ -89,17 +89,20 @@ class DSRModel(nn.Module):
     ###################
     # SPATIAL FEATURES
     ###################
-    if self.args.feat_used.spat == "dsr_spat_vec":
-      self.fc_spatial  = FC(8, self.args.n_fus_neurons)
-      self.total_fus_neurons += self.args.n_fus_neurons
-    # using type 2 of spatial features
-    elif self.args.feat_used.spat == "dsr_spat_mat": # TODO: test
-      self.conv_spatial = nn.Sequential(Conv2d(2, 96, 5, same_padding=True, stride=2, bn=self.args.use_bn),
+    if self.args.feat_used.spat:
+      if self.args.feat_used.spat == "dsr_spat_vec":
+        self.fc_spatial  = FC(8, self.args.n_fus_neurons)
+        self.total_fus_neurons += self.args.n_fus_neurons
+      # using type 2 of spatial features
+      elif self.args.feat_used.spat == "dsr_spat_mat": # TODO: test
+        self.conv_spatial = nn.Sequential(Conv2d(2, 96, 5, same_padding=True, stride=2, bn=self.args.use_bn),
                                  Conv2d(96, 128, 5, same_padding=True, stride=2, bn=self.args.use_bn),
                                  Conv2d(128, 64, 8, same_padding=False, bn=self.args.use_bn))
-      self.fc_spatial = FC(64, self.args.n_fus_neurons)
-      self.total_fus_neurons += self.args.n_fus_neurons
-
+        self.fc_spatial = FC(64, self.args.n_fus_neurons)
+        self.total_fus_neurons += self.args.n_fus_neurons
+      else:
+        raise ValueError("Unknown spatial feature type: {}".format(self.args.feat_used.spat))
+    
     ###################
     # SEMANTIC FEATURES
     ###################
@@ -152,7 +155,7 @@ class DSRModel(nn.Module):
         else:
           self.fc_rel    = nn.Sequential(SemSim(self.args.pred_emb, mode = mode),
                   FC(self.args.n_pred, self.args.n_pred, relu = False))
-      else:
+      elif mode < 16+32:
         mode = mode - 16
         from sklearn.metrics.pairwise import cosine_similarity
 
@@ -169,6 +172,7 @@ class DSRModel(nn.Module):
           diag_1s = np.zeros((self.args.n_pred,self.args.n_pred), dtype=np.float)
           np.fill_diagonal(diag_1s,1.)
           pred2pred_sim += diag_1s
+          pred2pred_sim /= 2
 
         pred2pred_sim = torch.from_numpy(pred2pred_sim).to("cuda:0") # TODO fix
 
@@ -190,7 +194,9 @@ class DSRModel(nn.Module):
           print("Warning! Fixing last layer. This might not be optimal")
           self.fc_rel_not_trainable = True # TODO fix
           set_trainability(self.fc_rel, requires_grad = False)
-
+      else:
+        raise ValueError("Unknown pred_sem mode: {}".format(self.args.use_pred_sem))
+  
   def forward(self, vis_features, obj_classes, obj_boxes, u_boxes, idx_s, idx_o, spat_features):
 
     n_batches = vis_features.size()[0]
