@@ -80,7 +80,7 @@ class DataPreparer:
                 new_vocab.append(cls)
                 cls_map[i_old_cls] = len(new_vocab)-1
             for cls,to_cls in cl_map.items():
-              if (len(cl_subset) == 0 or to_cls in cl_subset)
+              if (len(cl_subset) == 0 or to_cls in cl_subset):
                 cls_map[cls_vocab.index(cls)] = new_vocab.index(to_cls)
             return new_vocab, cls_map
           # assert cleaning_map["obj_map"] == {}, "NotImplemented: A cleaning map for objects requires some preprocessing to the object_detections as well, if not a re-train of the object detection model. Better not touch these things."
@@ -358,9 +358,10 @@ class VRDPrep(DataPreparer):
       # TODO: Additionally handle files like {test,train}_image_metadata.json
 
     def get_clean_obj_cls(self,  cls):
-      return cls # if not (hasattr(self, "cleaning_map") and hasattr(self.cleaning_map, "obj")) else self.cleaning_map["obj"][cls]
+      return cls # if not (hasattr(self, "cleaning_map") and "obj" in self.cleaning_map) else self.cleaning_map["obj"][cls]
     def get_clean_pred_cls(self, cls):
-      if (hasattr(self, "cleaning_map") and hasattr(self.cleaning_map, "pred")):
+      if (hasattr(self, "cleaning_map") and "pred" in self.cleaning_map):
+        # print(self.cleaning_map["pred"])
         return self.cleaning_map["pred"].get(cls, None)
       else:
         return cls
@@ -404,6 +405,8 @@ class VRDPrep(DataPreparer):
 
             predicate_id = self.get_clean_pred_cls(ann['predicate'])
             if predicate_id is None: continue
+            #print(self.pred_vocab)
+            #print(predicate_id)
             predicate_label = self.pred_vocab[predicate_id]
 
             rel_data = defaultdict(lambda: dict())
@@ -730,13 +733,15 @@ if __name__ == '__main__':
     # TODO: filter out relationships between the same object?
 
     multi_label = True # False
-    generate_embeddings = True # False # False # True # False # True # False
+    generate_embeddings =False #  True # False # False # True # False # True # False
 
     w2v_model = None
     if generate_embeddings:
-        print("Loading w2v model...")
-        w2v_model = KeyedVectors.load_word2vec_format(osp.join(globals.data_dir, globals.w2v_model_path), binary=True)
-        #w2v_model = Word2Vec.load(globals.w2v_model_path)
+      print("Loading w2v model '{}'...".format(globals.embedding_model))
+      if globals.embedding_model is "gnews":
+        w2v_model = KeyedVectors.load_word2vec_format(globals.w2v_model_path, binary=True)
+      elif globals.embedding_model in ["50", "100"]:
+        w2v_model = Word2Vec.load(globals.w2v_model_path)
 
     #"""
     print("Preparing data for VRD!")
