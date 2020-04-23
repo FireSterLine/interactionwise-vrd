@@ -34,7 +34,7 @@ class DSRModel(nn.Module):
     self.args.use_bn        = self.args.get("use_bn",        False)
 
     # Apply VGG net or directly receive the visual feature vector
-    self.args.apply_vgg     = self.args.get("apply_vgg",     True) 
+    self.args.apply_vgg     = self.args.get("apply_vgg",     True)
 
     if not self.args.feat_used.vis and self.args.feat_used.vis_so:
       raise ValueError("Can't use so features without visual features flag true") # TODO: fix
@@ -151,7 +151,7 @@ class DSRModel(nn.Module):
           self.fc_rel    = SemSim(self.args.pred_emb, mode = mode)
         else:
           self.fc_rel    = nn.Sequential(SemSim(self.args.pred_emb, mode = mode),
-                  FC(self.args.n_pred, self.args.n_pred, relu = False),)
+                  FC(self.args.n_pred, self.args.n_pred, relu = False))
       else:
         mode = mode - 16
         from sklearn.metrics.pairwise import cosine_similarity
@@ -165,20 +165,27 @@ class DSRModel(nn.Module):
         if mode % 2:
           pred2pred_sim = pred2pred_sim / np.linalg.norm(pred2pred_sim,axis=0)
 
+        if (mode//4)%2:
+          diag_1s = np.zeros((self.args.n_pred,self.args.n_pred), dtype=np.float)
+          np.fill_diagonal(diag_1s,1.)
+          pred2pred_sim += diag_1s
+
         pred2pred_sim = torch.from_numpy(pred2pred_sim).to("cuda:0") # TODO fix
 
+        rescoring_layer = FC(self.args.n_pred, self.args.n_pred, relu = False, bias = False)
         # 1 Fully-Connected layers: 1024 -> 300
         if ((mode//16) % 2):
           self.fc_fusion = nn.Sequential(
-            FC(self.total_fus_neurons, 256),
-            FC(256, self.args.n_pred, relu = ((mode//2) % 2))
+            FC(self.total_fus_neurons, self.args.n_pred, relu = ((mode//2) % 2)),
+            rescoring_layer
           )
+          self.fc_rel    = FC(self.args.n_pred, self.args.n_pred, relu = False, bias = False)
         else:
           self.fc_fusion = FC(self.total_fus_neurons, self.args.n_pred, relu = ((mode//2)%2))
+          self.fc_rel    = rescoring_layer
 
-        self.fc_rel    = FC(self.args.n_pred, self.args.n_pred, relu = False, bias = False) # ((mode//4)%2))
         with torch.no_grad():
-          self.fc_rel.fc.weight.data.copy_(pred2pred_sim)
+          rescoring_layer.fc.weight.data.copy_(pred2pred_sim)
         if ((mode//8)%2):
           print("Warning! Fixing last layer. This might not be optimal")
           self.fc_rel_not_trainable = True # TODO fix
