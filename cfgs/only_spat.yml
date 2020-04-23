@@ -1,0 +1,6 @@
+model:
+  feat_used:
+      vis: False
+      so : False
+      sem: 0
+      spat: 1

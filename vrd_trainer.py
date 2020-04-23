@@ -28,7 +28,7 @@ from lib.evaluator import VRDEvaluator
 TEST_DEBUGGING = False # True # False
 # Test if a newly-introduced change affects the validity of the code
 TEST_EVAL_VALIDITY = False # True # False # True # False # True # False #  True # True
-TEST_TRAIN_VALIDITY = False # True # False #  True # True
+TEST_TRAIN_VALIDITY = False #  True # True
 # Try overfitting to a single element
 TEST_OVERFIT = False #True # False # True
 
@@ -419,7 +419,7 @@ if __name__ == "__main__":
       trainer = vrd_trainer("original-checkpoint", {"training" : {"num_epochs" : 1, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : dataset_name}, "model" : {"feat_used" : {"spat" : 0}}}, checkpoint="epoch_4_checkpoint.pth.tar")
       trainer.train()
     if TEST_TRAIN_VALIDITY:
-      trainer = vrd_trainer("original", {"training" : {"num_epochs" : 5, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : test_type},  "data" : {"name" : dataset_name}})
+      trainer = vrd_trainer("original", {"training" : {"num_epochs" : 5, "test_first" : True}, "eval" : {"test_pre" : test_type,  "test_rel" : False}, "data" : {"name" : dataset_name}})
       trainer.train()
 
   # TEST_OVERFIT: Try overfitting the network to a single batch
@@ -441,40 +441,42 @@ if __name__ == "__main__":
       #trainer.train()
 
   if FEATURES_SCAN:
-    trainer = vrd_trainer("test-no-features",  {"eval" : {"test_rel":False}, "training" : {"num_epochs" : 4, "test_first" : True, "loss" : "mlab_no_prior"}}, profile = "no-feat")
+    profile = ["pred_sem", "by_pred"]
+    trainer = vrd_trainer("test-no-features",  {"training" : {"test_first" : True, "loss" : "mlab_no_prior"}}, profile = profile + ["no-feat"])
     trainer.train()
 
     #trainer = vrd_trainer("test-no_prior-only_vis",  {"training" : {"num_epochs" : 4, "loss" : "mlab_no_prior"}, "model" : {"feat_used" : {"sem" : 0, "spat" : 0}}})
     #trainer.train()
     #trainer = vrd_trainer("test-no_prior-only_sem",  {"training" : {"num_epochs" : 4, "loss" : "mlab_no_prior"}, "model" : {"feat_used" : {"vis" : False, "so" : False, "spat" : 0}}})
     #trainer.train()
-    #trainer = vrd_trainer("test-no_prior-only_spat", {"training" : {"num_epochs" : 4, "loss" : "mlab_no_prior"}, "model" : {"feat_used" : {"vis" : False, "so" : False, "sem" : 0}}})
-    #trainer.train()
+    trainer = vrd_trainer("test-no_prior-only_spat",  {"training" : {"loss" : "mlab_no_prior"}}, profile = profile + ["only_spat"])
+    trainer.train()
+    trainer = vrd_trainer("test-only_spat", {}, profile = profile + ["only_spat"])
+    trainer.train()
 
   # Scan (rotating parameters)
   for lr in [0.0001, 0.00001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
     for weight_decay in [0.0001]: # , 0.00005]:
       for lr_fus_ratio in [10]:
         for lr_rel_ratio in [10]: #, 100]:
-          for pred_sem_mode_1 in [-1, 8, 9, 10, 11, 16, 17, 18, 19]:
-            for loss in ["mlab", "mlab_mse", "bcel"]:
+          for pred_sem_mode_1 in [-1, 9, 11, 16, 17, 18, 19]:
+            for loss in ["mlab", "bcel"]: # mlab_mse
               for dataset in ["vrd"]: # , "vg"]:
                 if "mse" in loss and (pred_sem_mode_1 == -1 or pred_sem_mode_1>=16):
                   continue
                 pred_sem_mode = pred_sem_mode_1+1
                 session_id = "scan-v12-only_spat-{}-{}-{}-{}-{},{:b}-{}-{}".format(lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode, pred_sem_mode, dataset, loss)
-                profile = ["pred_sem", "no-feat", "by_pred"]
-                training = {"num_epochs" : 4, "test_freq" : [1,2,3]}
+                profile = ["pred_sem", "by_pred", "only_spat"]
+                training = {}
                 if dataset == "vg":
                   profile.append("vg")
                   training = {"num_epochs" : 2, "test_freq" : [1,2]}
                 test_type = True # 0.5
 
                 trainer = vrd_trainer(session_id, {
-                  # "data" : {"justafew" : True}, "training" : {"num_epochs" : 2, "test_freq" : 0},
                   "training" : training,
                   "model" : {"use_pred_sem" : pred_sem_mode},
-                  "eval" : {"rec" : [50, 30], "test_pre" : test_type}, # "test_rel" : test_type},
+                  "eval" : {"test_pre" : test_type}, # "test_rel" : test_type},
                   "opt": {
                     "lr": lr,
                     "weight_decay" : weight_decay,

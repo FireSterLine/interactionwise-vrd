@@ -5,19 +5,16 @@ data:
 # Architecture (or model) type
 model:
   use_pred_sem: True
-  n_fus_neurons: 256
 
 # Evaluation Arguments
 eval:
-  use_preload: False
   eval_obj: False
   test_rel: False
+  rec: [50, 30]
 
 # Training parameters
 training:
   num_epochs: 4
   checkpoint_freq: 0
   loss: mlab
-  # loss: mse
-  use_preload: False
-  test_freq: 2
+  test_freq: [1,2,3]
