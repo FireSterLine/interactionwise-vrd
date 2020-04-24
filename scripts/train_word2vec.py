@@ -93,15 +93,20 @@ class VRDEmbedding:
         print("Time taken to train the model: {}".format(end - start))
         return model
 
-    def train_model_coco(self, model_path, tokenized_captions, num_epochs):
+    def train_model_coco(self, path_to_model, tokenized_captions, num_epochs):
         # create a copy of the existing model before starting training - this is so that the original model doesn't
         # get deleted by the EpochSaver
-        # backup_model = model_path.split('.mode')[0] + "_backup" + ".model"
-        # copyfile(model_path, backup_model)
+        # backup_model = path_to_model.split('.mode')[0] + "_backup" + ".model"
+        # copyfile(path_to_model, backup_model)
 
-        model = self.load_model(model_path)
+        model = self.load_model(path_to_model)
         # model.callbacks[1] is the EpochSaver object
         if 'coco' not in model.callbacks[1].path_prefix:
+            # we save the COCO models in a subdirectory called "coco". If this subdirectory doesn't exist, create it
+            model_dir = os.path.dirname(path_to_model)
+            coco_path = os.path.join(model_dir, 'coco')
+            if not os.path.exists(coco_path):
+                os.mkdir(coco_path)
             model.callbacks[1].path_prefix = os.path.join(model.callbacks[1].path_prefix, "coco/")
             print(model.callbacks[1].path_prefix)
 
