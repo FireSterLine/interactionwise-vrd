@@ -440,8 +440,7 @@ if __name__ == "__main__":
       #trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : test_type}}, profile = "vg")
       #trainer.train()
 
-  trainer = vrd_trainer("test-only_sem",  {"training" : {"num_epochs" : 4}, "model" : {"feat_used" : {"vis" : False, "vis_so" : False, "spat" : 0}}})
-  trainer.train()
+
   if FEATURES_SCAN:
     profile = ["pred_sem", "by_pred"]
     trainer = vrd_trainer("test-no_prior-no-features",  {"training" : {"test_first" : True, "loss" : "mlab_no_prior"}}, profile = profile + ["no-feat"])
@@ -458,18 +457,21 @@ if __name__ == "__main__":
     trainer = vrd_trainer("test-only_spat", {}, profile = profile + ["only_spat"])
     trainer.train()
 
+  trainer = vrd_trainer("test-only_sem-{}".format(globals.embedding_model),  {"training" : {"num_epochs" : 4}}, profile = ["pred_sem", "by_pred", "only_sem"])
+  trainer.train()
+  
   # Scan (rotating parameters)
-  for lr in [0.0001, 0.00001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
-    for weight_decay in [0.0001, 0.00005]:
+  for lr in [0.0001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
+    for weight_decay in [0.0001]:
       for lr_fus_ratio in [10]:
         for lr_rel_ratio in [10]: #, 100]:
-          for pred_sem_mode_1 in [-1, 11, 16+4+1, 16, 16+2, 16+4, 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
+          for pred_sem_mode_1 in [-1, 11, 16, 16+2, 16+4, 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
             for loss in ["mlab"]: # , "mlab_mse"]: # , "bcel"]: # mlab_mse
               for dataset in ["vrd"]: # , "vg"]:
                 if "mse" in loss and (pred_sem_mode_1 == -1 or pred_sem_mode_1>=16):
                   continue
                 pred_sem_mode = pred_sem_mode_1+1
-                session_id = "scan-v12-300-only_spat-{}-{}-{}-{}-{},{:b}-{}-{}".format(lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode, pred_sem_mode, dataset, loss)
+                session_id = "scan-v13-only_spat-{}-{}-{}-{}-{},{:b}-{}-{}".format(globals.embedding_model, lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode, pred_sem_mode, dataset, loss)
                 profile = ["pred_sem", "by_pred", "only_spat"]
                 training = {}
                 if dataset == "vg":
