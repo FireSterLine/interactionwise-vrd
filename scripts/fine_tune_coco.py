@@ -94,6 +94,7 @@ if __name__ == '__main__':
     tokenize_regex = re.compile(r'(((?![\d])\w)+)', re.UNICODE)
     server_local = sys.argv[1]
     model_name = sys.argv[2]
+    num_epochs = int(sys.argv[3])
     server_flag = False
 
     if server_local.lower().strip() == 'server':
@@ -180,4 +181,5 @@ if __name__ == '__main__':
     for k, v in vrd_elem_counts.items():
         print("{}: {}".format(k, v))
 
-    model = finetune_embeddings_coco(path_prefix, model_name, tokenized_captions, num_epochs=5)
+    print("Finetuning model on COCO...")
+    model = finetune_embeddings_coco(path_prefix, model_name, tokenized_captions, num_epochs=num_epochs)
