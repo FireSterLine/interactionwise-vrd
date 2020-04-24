@@ -7,8 +7,8 @@ data_dir   = "data"
 faster_rcnn_dir = "faster-rcnn"
 faster_rcnn_models_dir = join(faster_rcnn_dir, "models")
 
-#embedding_model = "gnews"
-embedding_model = "50"
+embedding_model = "gnews"
+#embedding_model = "50"
 #embedding_model = "100"
 
 if embedding_model == "gnews":

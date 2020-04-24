@@ -32,7 +32,7 @@ TEST_TRAIN_VALIDITY = False #  True # True
 # Try overfitting to a single element
 TEST_OVERFIT = False #True # False # True
 
-FEATURES_SCAN = False
+FEATURES_SCAN = True # False
 
 if utils.device == torch.device("cpu"):
   DEBUGGING = True
@@ -440,6 +440,8 @@ if __name__ == "__main__":
       #trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : test_type}}, profile = "vg")
       #trainer.train()
 
+  trainer = vrd_trainer("test-only_sem",  {"training" : {"num_epochs" : 4}, "model" : {"feat_used" : {"vis" : False, "vis_so" : False, "spat" : 0}}})
+  trainer.train()
   if FEATURES_SCAN:
     profile = ["pred_sem", "by_pred"]
     trainer = vrd_trainer("test-no_prior-no-features",  {"training" : {"test_first" : True, "loss" : "mlab_no_prior"}}, profile = profile + ["no-feat"])
@@ -449,7 +451,7 @@ if __name__ == "__main__":
     trainer.train()
     #trainer = vrd_trainer("test-no_prior-only_vis",  {"training" : {"num_epochs" : 4, "loss" : "mlab_no_prior"}, "model" : {"feat_used" : {"sem" : 0, "spat" : 0}}})
     #trainer.train()
-    #trainer = vrd_trainer("test-no_prior-only_sem",  {"training" : {"num_epochs" : 4, "loss" : "mlab_no_prior"}, "model" : {"feat_used" : {"vis" : False, "so" : False, "spat" : 0}}})
+    #trainer = vrd_trainer("test-no_prior-only_sem",  {"training" : {"num_epochs" : 4, "loss" : "mlab_no_prior"}, "model" : {"feat_used" : {"vis" : False, "vis_so" : False, "spat" : 0}}})
     #trainer.train()
     trainer = vrd_trainer("test-no_prior-only_spat",  {"training" : {"loss" : "mlab_no_prior"}}, profile = profile + ["only_spat"])
     trainer.train()
@@ -467,7 +469,7 @@ if __name__ == "__main__":
                 if "mse" in loss and (pred_sem_mode_1 == -1 or pred_sem_mode_1>=16):
                   continue
                 pred_sem_mode = pred_sem_mode_1+1
-                session_id = "scan-v12-only_spat-{}-{}-{}-{}-{},{:b}-{}-{}".format(lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode, pred_sem_mode, dataset, loss)
+                session_id = "scan-v12-300-only_spat-{}-{}-{}-{}-{},{:b}-{}-{}".format(lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode, pred_sem_mode, dataset, loss)
                 profile = ["pred_sem", "by_pred", "only_spat"]
                 training = {}
                 if dataset == "vg":
