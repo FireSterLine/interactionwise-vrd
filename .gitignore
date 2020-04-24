@@ -4,8 +4,8 @@ tmp*
 __pycache__
 other
 iwenv*
-models/*
-!models/*.txt
+models/**/*.pth.tar
+#!models/*.txt
 
 images
 images_det
