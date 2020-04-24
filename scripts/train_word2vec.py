@@ -4,6 +4,7 @@ import sys
 import time
 import pickle
 import unicodedata
+from shutil import copyfile
 from gensim.models import Word2Vec
 from gensim.models.callbacks import CallbackAny2Vec
 from gensim.test.utils import datapath, get_tmpfile
@@ -60,8 +61,8 @@ class VRDEmbedding:
             wiki.fname = os.path.join(path_prefix, "enwiki-latest-pages-articles.xml.bz2")
         else:
             print("Creating datapath...")
-            # path_to_wiki_dump = datapath("enwiki-latest-pages-articles1.xml-p000000010p000030302-shortened.bz2")
-            path_to_wiki_dump = datapath(os.path.join(path_prefix, "enwiki-latest-pages-articles.xml.bz2"))
+            path_to_wiki_dump = datapath("enwiki-latest-pages-articles1.xml-p000000010p000030302-shortened.bz2")
+            # path_to_wiki_dump = datapath(os.path.join(path_prefix, "enwiki-latest-pages-articles.xml.bz2"))
 
             print("Initializing corpus...")
             start = time.time()
@@ -70,7 +71,7 @@ class VRDEmbedding:
             end = time.time()
             print("Time taken to initialize corpus: {}".format(end - start))
             print("Dumping wiki to disk...")
-            pickle.dump(wiki, open(os.path.join(path_prefix, "wiki.pkl"), 'w'))
+            # pickle.dump(wiki, open(os.path.join(path_prefix, "wiki.pkl"), 'wb'))
 
             if serialize is True:
                 print("Creating corpus path...")
@@ -90,6 +91,28 @@ class VRDEmbedding:
             self.epoch_logger, self.epoch_saver])
         end = time.time()
         print("Time taken to train the model: {}".format(end - start))
+        return model
+
+    def train_model_coco(self, model_path, tokenized_captions, num_epochs):
+        # create a copy of the existing model before starting training - this is so that the original model doesn't
+        # get deleted by the EpochSaver
+        # backup_model = model_path.split('.mode')[0] + "_backup" + ".model"
+        # copyfile(model_path, backup_model)
+
+        model = self.load_model(model_path)
+        # model.callbacks[1] is the EpochSaver object
+        if 'coco' not in model.callbacks[1].path_prefix:
+            model.callbacks[1].path_prefix = os.path.join(model.callbacks[1].path_prefix, "coco/")
+            print(model.callbacks[1].path_prefix)
+
+        # Increase the epoch number of both EpochLogger and EpochSaver by 1, otherwise one epoch gets miscounted
+        # For example, if Wiki model was trained for 5 epochs, fine-tuning over COCO starts with epoch 6, not 5
+        # for index in range(len(model.callbacks)):
+        #     model.callbacks[index].epoch += 1
+        model.callbacks[1].epoch += 1
+        model.train(tokenized_captions, total_examples=len(tokenized_captions), epochs=num_epochs)
+        # rename the backup model back to original model name
+        # os.rename(backup_model, model_path)
         return model
 
     @staticmethod
@@ -115,10 +138,11 @@ class EpochSaver(CallbackAny2Vec):
         def __init__(self, path_prefix, dim):
             self.path_prefix = path_prefix
             self.dim = dim
-            self.epoch = 0
+            self.epoch = 1
 
         def on_epoch_end(self, model):
             print("Saving checkpoint {}".format(self.epoch))
+            print(self.path_prefix)
             output_path = get_tmpfile(os.path.join(self.path_prefix, "epoch_{}_dim_{}.model".format(self.epoch, self.dim)))
             model.save(output_path)
             # remove previously saved checkpoint for storage saving purposes
@@ -140,7 +164,7 @@ class EpochLogger(CallbackAny2Vec):
             This is a class for printing the start and end of each epoch, to monitor the model's training progress.
         """
         def __init__(self):
-            self.epoch = 0
+            self.epoch = 1
 
         def on_epoch_begin(self, model):
             print("Starting epoch # {}".format(self.epoch))
