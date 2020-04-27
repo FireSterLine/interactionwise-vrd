@@ -77,16 +77,11 @@ def explore_captions_data(tok_captions, obj_filename, pred_filename):
     return obj_pred_count
 
 
-def finetune_embeddings_coco(path_to_model, model_name, tokenized_captions, num_epochs):
+def fine_tune_embeddings_coco(path_to_model, model_name, tokenized_captions, num_epochs):
     vrd_embedder = VRDEmbedding(path_to_model, dim=100)
     # model = vrd_embedder.load_model(os.path.join(path_to_model, "epoch_4.model"))
     print("Training model over COCO...")
-    model = vrd_embedder.train_model_coco(os.path.join(path_to_model, model_name), tokenized_captions, num_epochs)
-    # print("Building vocabulary over COCO...")
-    # model.build_vocab(tokenized_captions)
-    # print("Saving model...")
-    # model_name = "coco_epoch_{}_dim_100.model".format(num_epochs - 1)
-    # model.save("/media/azfar/New Volume/WikiDump/{}".format(model_name))
+    model = vrd_embedder.fine_tune_model_coco(os.path.join(path_to_model, model_name), tokenized_captions, num_epochs)
     return model
 
 
@@ -183,4 +178,4 @@ if __name__ == '__main__':
         print("{}: {}".format(k, v))
 
     print("Finetuning model on COCO...")
-    model = finetune_embeddings_coco(path_prefix, model_name, tokenized_captions, num_epochs=num_epochs)
+    model = fine_tune_embeddings_coco(path_prefix, model_name, tokenized_captions, num_epochs=num_epochs)

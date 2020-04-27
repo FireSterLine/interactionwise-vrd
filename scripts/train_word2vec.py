@@ -4,6 +4,7 @@ import sys
 import time
 import pickle
 import unicodedata
+from glob import glob
 from gensim.models import Word2Vec
 from gensim.models.callbacks import CallbackAny2Vec
 from gensim.test.utils import datapath, get_tmpfile
@@ -112,11 +113,9 @@ class VRDEmbedding:
         print("Time taken to train the model: {}".format(end - start))
         return model
 
-    def train_model_coco(self, path_to_model, tokenized_captions, num_epochs):
-        # create a copy of the existing model before starting training - this is so that the original model doesn't
-        # get deleted by the EpochSaver
-        # backup_model = path_to_model.split('.mode')[0] + "_backup" + ".model"
-        # copyfile(path_to_model, backup_model)
+    def fine_tune_model_coco(self, path_to_model, tokenized_captions, num_epochs):
+        # rename all model files which were trained for lesser epochs than num_epochs so they don't get overwritten
+        models_renamed_flag = self._rename_existing_models(path_to_model, num_epochs, revert=False)
 
         model = self.load_model(path_to_model)
         # model.callbacks[1] is the EpochSaver object
@@ -127,7 +126,6 @@ class VRDEmbedding:
             if not os.path.exists(coco_path):
                 os.mkdir(coco_path)
             model.callbacks[1].path_prefix = os.path.join(model.callbacks[1].path_prefix, "coco/")
-            print(model.callbacks[1].path_prefix)
 
         # Increase the epoch number of both EpochLogger and EpochSaver by 1, otherwise one epoch gets miscounted
         # For example, if Wiki model was trained for 5 epochs, fine-tuning over COCO starts with epoch 6, not 5
@@ -135,9 +133,64 @@ class VRDEmbedding:
         #     model.callbacks[index].epoch += 1
         model.callbacks[1].epoch += 1
         model.train(tokenized_captions, total_examples=len(tokenized_captions), epochs=num_epochs)
-        # rename the backup model back to original model name
-        # os.rename(backup_model, model_path)
+
+        # if any model files were renamed before fine-tuning, rename them back to their original names
+        if models_renamed_flag is True:
+            self._rename_existing_models(path_to_model, num_epochs, revert=True)
         return model
+
+    def _rename_existing_models(self, path_to_model, num_epochs, revert=False):
+        """
+            Before fine-tuning a model on COCO over num_epochs iterations, we need to check and see if any models
+            already exist in the given directory which have been trained over lesser number of epochs. If so, we need
+            to rename them first before initiating the fine-tuning, so that they don't get overwritten by the
+            EpochSaver. Likewise, we need to rename back to their original names after the current model has completed
+            fine-tuning.
+
+            If the `revert` flag is False, we rename every existing model file which has been trained for epochs less
+            than num_epochs to backup names.
+            If the `revert` flag is True, we rename every model that was renamed earlier back to its original name.
+
+            TODO: Technically, this function should also be called when training a Word2Vec model from scratch.
+              However, we don't need to train a Word2Vec of the same dimension size over different number of epochs, so
+              perhaps it is not required at the moment.
+        """
+
+        # this flag lets us know if any models were renamed, so that we can later know if this function needs to be
+        #   called again with revert=True
+        models_renamed = False
+        dir_name = os.path.dirname(path_to_model)
+        # if revert is True, get all model files that were renamed to backup files
+        if revert is True:
+            model_names = glob(os.path.join(dir_name, "*.model_backup"))
+        # if revert is False, get all model files
+        else:
+            model_names = glob(os.path.join(dir_name, "*.model"))
+
+        for mdl_name in model_names:
+            # this regex gets the number of epochs the current model was trained on
+            m = re.search(r'(?<=epoch_)\d+', mdl_name).group(0)
+            if m:
+                mdl_epoch = int(m.group(0))
+                if mdl_epoch <= num_epochs:
+                    backup_mdl_name = mdl_name + "_backup"
+                    vec_name = mdl_name + ".wv.vectors.npy"
+                    backup_vec_name = vec_name + "_backup"
+                    trainables_name = mdl_name + ".trainables.syn1neg.npy"
+                    backup_trainables_name = trainables_name + "_backup"
+                    # if revert is True, rename backup model files to original model files
+                    if revert is True:
+                        os.rename(backup_mdl_name, mdl_name)
+                        os.rename(backup_vec_name, vec_name)
+                        os.rename(backup_trainables_name, trainables_name)
+                    # if revert is False, rename original model files to backup model files
+                    else:
+                        os.rename(mdl_name, backup_mdl_name)
+                        os.rename(vec_name, backup_vec_name)
+                        os.rename(trainables_name, backup_trainables_name)
+                    models_renamed = True
+
+        return models_renamed
 
     @staticmethod
     def load_model(model_path):
