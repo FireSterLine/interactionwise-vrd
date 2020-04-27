@@ -445,22 +445,20 @@ if __name__ == "__main__":
 
   if FEATURES_SCAN:
     profile = ["pred_sem", "by_pred"]
-    trainer = vrd_trainer("test-no_prior-no-features",  {"training" : {"test_first" : True, "loss" : "mlab_no_prior"}}, profile = profile + ["no-feat"])
-    trainer.train()
-
-    trainer = vrd_trainer("test-no-features",  {"training" : {"test_first" : True, "loss" : "mlab"}}, profile = profile + ["no-feat"])
-    trainer.train()
+    #trainer = vrd_trainer("test-no_prior-no-features",  {"training" : {"test_first" : True, "loss" : "mlab_no_prior"}}, profile = profile + ["no-feat"])
+    #trainer.train()
     #trainer = vrd_trainer("test-no_prior-only_vis",  {"training" : {"num_epochs" : 4, "loss" : "mlab_no_prior"}, "model" : {"feat_used" : {"sem" : 0, "spat" : 0}}})
     #trainer.train()
     #trainer = vrd_trainer("test-no_prior-only_sem",  {"training" : {"num_epochs" : 4, "loss" : "mlab_no_prior"}, "model" : {"feat_used" : {"vis" : False, "vis_so" : False, "spat" : 0}}})
     #trainer.train()
     #trainer = vrd_trainer("test-no_prior-only_spat",  {"training" : {"loss" : "mlab_no_prior"}}, profile = profile + ["only_spat"])
     #trainer.train()
-    #trainer = vrd_trainer("test-only_spat", {}, profile = profile + ["only_spat"])
-    #trainer.train()
-
-  #trainer = vrd_trainer("test-only_sem-{}".format(globals.embedding_model),  {"training" : {"num_epochs" : 4}}, profile = ["pred_sem", "by_pred", "only_sem"])
-  #trainer.train()
+    trainer = vrd_trainer("test-no-features-{}".format(globals.embedding_model),  {}, profile = profile + ["no-feat"])
+    trainer.train()
+    trainer = vrd_trainer("test-only_spat-{}".format(globals.embedding_model), {}, profile = profile + ["only_spat"])
+    trainer.train()
+    trainer = vrd_trainer("test-only_sem-{}".format(globals.embedding_model),  {}, profile = profile + ["only_sem"])
+    trainer.train()
 
   # Scan (rotating parameters)
   if PARAMS_SCAN:
@@ -468,10 +466,10 @@ if __name__ == "__main__":
     for weight_decay in [0.0001]:
       for lr_fus_ratio in [10]:
         for lr_rel_ratio in [10]: #, 100]:
-          for pred_sem_mode_1 in [-1, 11, 16]: #, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
-            for loss in ["bcel"]: # mlab_mse
+          for pred_sem_mode_1 in [-1, 11, 16]: # 11 #, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
+              for loss in ["mlab"]: # "bcel"]: # mlab_mse
              for dataset in ["vrd"]: # , "vg"]:
-              for prof in ["only_spat", "only_sem"]: # , "spat_sem"]: # , "vg"]:
+              for prof in ["only_sem", "only_spat"]: # , "spat_sem"]: # , "vg"]:
                 if "mse" in loss and (pred_sem_mode_1 == -1 or pred_sem_mode_1>=16):
                   continue
                 pred_sem_mode = pred_sem_mode_1+1

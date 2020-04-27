@@ -20,8 +20,7 @@
     "skate on"      : "on",
     "stand on"      : "on"
   },
-  "pred_subset" : [],
-  "inactive_pred_subset" : [
+  "pred_subset" : [
       "on",
       "next to",
       "sleep next to",
