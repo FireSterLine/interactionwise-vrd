@@ -467,7 +467,7 @@ if __name__ == "__main__":
       for lr_fus_ratio in [10]:
         for lr_rel_ratio in [10]: #, 100]:
           for pred_sem_mode_1 in [-1, 11, 16]: # 11 #, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
-              for loss in ["mlab"]: # "bcel"]: # mlab_mse
+            for loss in ["mlab"]: # "bcel"]: # mlab_mse
              for dataset in ["vrd"]: # , "vg"]:
               for prof in ["only_sem", "only_spat"]: # , "spat_sem"]: # , "vg"]:
                 if "mse" in loss and (pred_sem_mode_1 == -1 or pred_sem_mode_1>=16):
