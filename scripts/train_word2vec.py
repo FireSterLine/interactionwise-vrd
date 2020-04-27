@@ -114,9 +114,6 @@ class VRDEmbedding:
         return model
 
     def fine_tune_model_coco(self, path_to_model, tokenized_captions, num_epochs):
-        # rename all model files which were trained for lesser epochs than num_epochs so they don't get overwritten
-        models_renamed_flag = self._rename_existing_models(path_to_model, num_epochs, revert=False)
-
         model = self.load_model(path_to_model)
         # model.callbacks[1] is the EpochSaver object
         if 'coco' not in model.callbacks[1].path_prefix:
@@ -127,6 +124,9 @@ class VRDEmbedding:
                 os.mkdir(coco_path)
             model.callbacks[1].path_prefix = os.path.join(model.callbacks[1].path_prefix, "coco/")
 
+        # rename all model files which were trained for lesser epochs than num_epochs so they don't get overwritten
+        models_renamed_flag = self._rename_existing_models(model.callbacks[1].path_prefix, num_epochs, revert=False)
+
         # Increase the epoch number of both EpochLogger and EpochSaver by 1, otherwise one epoch gets miscounted
         # For example, if Wiki model was trained for 5 epochs, fine-tuning over COCO starts with epoch 6, not 5
         # for index in range(len(model.callbacks)):
@@ -136,7 +136,7 @@ class VRDEmbedding:
 
         # if any model files were renamed before fine-tuning, rename them back to their original names
         if models_renamed_flag is True:
-            self._rename_existing_models(path_to_model, num_epochs, revert=True)
+            self._rename_existing_models(model.callbacks[1].path_prefix, num_epochs, revert=True)
         return model
 
     def _rename_existing_models(self, path_to_model, num_epochs, revert=False):
