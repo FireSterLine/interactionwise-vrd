@@ -220,7 +220,6 @@ class EpochSaver(CallbackAny2Vec):
         self.epoch = 1
 
     def on_epoch_end(self, model):
-        print("Saving checkpoint {}".format(self.epoch))
         # remove previously saved checkpoint for storage saving purposes
         prev_checkpoint = os.path.join(self.path_prefix, "epoch_{}_dim_{}.model".format(self.epoch - 1, self.dim))
         prev_checkpoint_vectors = os.path.join(self.path_prefix,
@@ -237,6 +236,7 @@ class EpochSaver(CallbackAny2Vec):
                 os.remove(prev_checkpoint_trainable)
 
         # save current epoch checkpoint to disk
+        print("Saving checkpoint {}".format(self.epoch))
         output_path = get_tmpfile(os.path.join(self.path_prefix, "epoch_{}_dim_{}.model".format(self.epoch, self.dim)))
         model.save(output_path)
         self.epoch += 1
