@@ -9,8 +9,6 @@ import scipy.io as sio
 
 from gensim.models import KeyedVectors
 from gensim.models import Word2Vec
-from gensim.models.callbacks import CallbackAny2Vec
-from gensim.test.utils import get_tmpfile
 
 import json
 import pickle
@@ -20,6 +18,7 @@ import random
 from copy import deepcopy
 
 from data.genome.clean_vg import VGCleaner
+from scripts.train_word2vec import VRDEmbedding, EpochLogger, EpochSaver
 
 # Prepare the data without saving anything at all
 DRY_RUN = False
@@ -652,7 +651,6 @@ class VGPrep(DataPreparer):
         self.vrd_data = vrd_data
         self.cur_dformat = "relst"
 
-
     def _generate_relst(self, data):
         objects_info = {}
         for obj in data['objects']:
@@ -698,36 +696,6 @@ class VGPrep(DataPreparer):
         return relst
 
 
-class EpochSaver(CallbackAny2Vec):
-    def __init__(self, path_prefix):
-        self.path_prefix = path_prefix
-        self.epoch = 0
-
-    def on_epoch_end(self, model):
-        print("Saving checkpoint {}".format(self.epoch))
-        output_path = get_tmpfile("{}epoch_{}.model".format(self.path_prefix, self.epoch))
-        model.save(output_path)
-        # remove previously saved checkpoint for storage purposes
-        prev_checkpoint = "{}epoch_{}.model".format(self.path_prefix, self.epoch - 1)
-        if os.path.exists(prev_checkpoint):
-            print("Removing previous checkpoint...")
-            os.remove(prev_checkpoint)
-        self.epoch += 1
-
-
-class EpochLogger(CallbackAny2Vec):
-    def __init__(self):
-        self.epoch = 0
-
-    def on_epoch_begin(self, model):
-        print("Starting epoch # {}".format(self.epoch))
-
-    def on_epoch_end(self, model):
-        print("Ending epoch {}".format(self.epoch))
-        print("----------------------")
-        self.epoch += 1
-
-
 if __name__ == '__main__':
 
     # TODO: filter out relationships between the same object?
@@ -737,15 +705,17 @@ if __name__ == '__main__':
 
     w2v_model = None
     if generate_embeddings:
-      print("Loading w2v model '{}'...".format(globals.embedding_model))
-      if globals.embedding_model is "gnews":
-        w2v_model = KeyedVectors.load_word2vec_format(globals.w2v_model_path, binary=True)
-      elif globals.embedding_model in ["50", "100"]:
-        w2v_model = Word2Vec.load(globals.w2v_model_path)
+        print("Loading w2v model '{}'...".format(globals.embedding_model))
+        if globals.embedding_model is "gnews":
+            w2v_model = KeyedVectors.load_word2vec_format(globals.w2v_model_path, binary=True)
+        # elif globals.embedding_model in ["50", "100"]:
+        else:
+            # w2v_model = Word2Vec.load(globals.w2v_model_path)
+            w2v_model = VRDEmbedding.load_model(globals.w2v_model_path)
 
     #"""
     print("Preparing data for VRD!")
-    data_preparer_vrd = VRDPrep(use_cleaning_map = True, multi_label=multi_label, generate_emb = w2v_model)
+    data_preparer_vrd = VRDPrep(use_cleaning_map=True, multi_label=multi_label, generate_emb=w2v_model)
     #"""
     #print("\tPreparing evaluation data from Language Priors...")
     #data_preparer_vrd.prepareEvalFromLP()
