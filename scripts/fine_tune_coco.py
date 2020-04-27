@@ -164,6 +164,11 @@ if __name__ == '__main__':
         with open(tokenized_captions_pickle, 'wb') as wfile:
             pickle.dump(tokenized_captions, wfile)
 
+        print("Exploring data...")
+        vrd_elem_counts = explore_captions_data(tokenized_captions, vrd_objects_filename, vrd_predicates_filename)
+        for k, v in vrd_elem_counts.items():
+          print("{}: {}".format(k, v))
+
         with open(tokenized_captions_txt, 'w') as wfile:
             for tok_caption in tokenized_captions:
                 wfile.write(' '.join(tok_caption))
@@ -171,11 +176,6 @@ if __name__ == '__main__':
     else:
         print("Tokenized captions have already been generated!")
         tokenized_captions = pickle.load(open(tokenized_captions_pickle, 'rb'))
-
-    print("Exploring data...")
-    vrd_elem_counts = explore_captions_data(tokenized_captions, vrd_objects_filename, vrd_predicates_filename)
-    for k, v in vrd_elem_counts.items():
-        print("{}: {}".format(k, v))
 
     print("Finetuning model on COCO...")
     model = fine_tune_embeddings_coco(path_prefix, model_name, tokenized_captions, num_epochs=num_epochs)
