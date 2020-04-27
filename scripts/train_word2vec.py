@@ -169,7 +169,7 @@ class VRDEmbedding:
 
         for mdl_name in model_names:
             # this regex gets the number of epochs the current model was trained on
-            m = re.search(r'(?<=epoch_)\d+', mdl_name).group(0)
+            m = re.search(r'(?<=epoch_)\d+', mdl_name)
             if m:
                 mdl_epoch = int(m.group(0))
                 if mdl_epoch <= num_epochs:
