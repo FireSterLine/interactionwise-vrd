@@ -3,4 +3,4 @@ model:
       vis: False
       vis_so : False
       sem: concat
-      spat: 0
+      spat: dsr_spat_vec

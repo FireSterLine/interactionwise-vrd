@@ -183,10 +183,10 @@ class vrd_trainer():
     if self.args.eval.test_rel: res_headers += self.gt_headers(self.args.eval.test_rel, "Rel") + ["Avg"]
     if self.args.eval.by_predicates: # TODO: fix the two (gt+gt_zs)
       if self.args.eval.test_pre:
-        for i in range(len(self.args.eval.rec)*2):
+        for i in range( 1 + len(self.args.eval.rec)*((self.eval.self.gt    is not None) + (self.eval.self.gt    is not None))):
           res_headers += [x if i else "Pre "+x for i,x in enumerate(self.dataset.pred_classes)]
       if self.args.eval.test_rel:
-        for i in range(len(self.args.eval.rec)*2):
+        for i in range( 1 + len(self.args.eval.rec)*((self.eval.self.gt_zs is not None) + (self.eval.self.gt_zs is not None))):
           res_headers += [x if i else "Rel "+x for i,x in enumerate(self.dataset.pred_classes)]
 
     res = []
@@ -249,24 +249,23 @@ class vrd_trainer():
     epoch = self.state["epoch"]+1
     if force_epoch is not None: epoch = force_epoch
     res_row = [epoch]
-    append_at_end = []
-    # TODO make for with zip((,))
-    if self.args.eval.test_pre:
-      if not self.args.eval.by_predicates:
-        recalls, dtime = self.test_pre()
-      else:
-        recalls, recalls_by_preds, dtime = self.test_pre()
-        append_at_end += recalls_by_preds
-      res_row += recalls + (sum(recalls)/len(recalls),)
-    if self.args.eval.test_rel:
-      if not self.args.eval.by_predicates:
-        recalls, dtime = self.test_rel()
-      else:
-        recalls, recalls_by_preds, dtime = self.test_rel()
-        append_at_end += recalls_by_preds
-      res_row += recalls + (sum(recalls)/len(recalls),)
+    res_row_end = []
+    res_row_end_end = []
+    for do_test,f_test in zip([self.args.eval.test_pre, self.args.eval.test_rel], [self.test_pre, self.test_rel]):
+      if do_test:
+        if not self.args.eval.by_predicates:
+          recalls, dtime = f_test()
+        else:
+          recalls, recalls_by_preds, dtime = f_test()
+          res_row_end += recalls_by_preds
+          # Avg. by-predicate scores
+          recalls_by_preds_avg = np.zeros(self.dataset.n_pred)
+          for rec_score in range(len(recalls)):  # e.g 4
+            recalls_by_preds_avg += np.array(recalls_by_preds[rec_score*self.dataset.n_pred:(rec_score+1)*self.dataset.n_pred])
+          res_row_end_end += list(recalls_by_preds_avg)
+        res_row += recalls + (sum(recalls)/len(recalls),)
 
-    res.append(res_row + append_at_end)
+    res.append(res_row + res_row_end + res_row_end_end)
     with open(osp.join(globals.models_dir, "{}.txt".format(self.session_name)), 'w') as f:
       f.write(tabulate(res, res_headers))
 
@@ -466,10 +465,10 @@ if __name__ == "__main__":
     for weight_decay in [0.0001]:
       for lr_fus_ratio in [10]:
         for lr_rel_ratio in [10]: #, 100]:
-          for pred_sem_mode_1 in [-1, 11, 16]: # 11 #, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
-            for loss in ["mlab"]: # "bcel"]: # mlab_mse
-             for dataset in ["vrd"]: # , "vg"]:
-              for prof in ["only_sem", "only_spat"]: # , "spat_sem"]: # , "vg"]:
+         for pred_sem_mode_1 in [-1, 11, 16]: # 11 #, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
+          for loss in ["mlab"]: # "bcel"]: # mlab_mse
+           for dataset in ["vrd"]: # , "vg"]:
+            for prof in ["only_sem", "only_sem_diff", "only_sem_mul", "only_sem_dot", "only_spat", "spat_sem"]: # , "vg"]:
                 if "mse" in loss and (pred_sem_mode_1 == -1 or pred_sem_mode_1>=16):
                   continue
                 pred_sem_mode = pred_sem_mode_1+1

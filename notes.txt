@@ -1,39 +1,63 @@
-One direct way to dealwith incomplete predicate annotation is to take the unla-
-beled relationships as negative samples and solve the rela
-tionship detection problem using a multi-label classification
-framework based on cross-entropy loss
+Maybe, title: Class Semantic Awareness for Visual Relationship Detection
 
-In this paper, we propose a deep neural network frame-work with structural ranking loss to tackle the visual rela-tionship detection problem
+- Make it extra clear what parts are your own contributions and what parts come from the original approach by Liang.
+- (The main exception seems to be the zero-shot results for the model with spatial features. Any idea why the scores drop in this cases?)
+- I think the the first and third explanations you propose are sensible. (I'm not sure I understand the second explanation.)
+  But couldn't you try to carry out some sort of error analysis to investigate to what extent these explanations hold? Right now, these explanations build on nothing but your hunches.
+- Work on expanding it following your comment about formalization.
 
-Moreover, we integrate the structural losswith the probability of the predicates conditioned on its sub-ject and object to further reduce the impact of incompleteannotations
+- MAKE SURE:
+  - that the metrics are weak (the network learns to give high scores to popular predicates.)
+     So we believe that the metrics are weak in this sense.
+  - antonyms refer to the same "semantic area"
+- Also try using MSE instead of cosine_similarity
 
-The VGG16 comes from (Simonyanand Zisserman 2014)
-
-MultiLabelMarginLoss: multi-label ranking loss
-
-Long-tail Classification (e.g read a little bit of https://arxiv.org/pdf/2004.00436.pdf)
-
-
-
-IDEAS:
-
-Also try using MSE instead of cosine_similarity
-
-Introduce a new metric (inspired from https://arxiv.org/pdf/2004.00436.pdf),
-consisting of a variation of R@50 and R@100 where the semantics of the predicates is taken into account.
-Some cosine distance-based metric.
+- Introduce a new metric (inspired from https://arxiv.org/pdf/2004.00436.pdf),
+  consisting of a variation of R@50 and R@100 where the semantics of the predicates is taken into account.
+  Some cosine distance-based metric.
 
 
-https://sagivtech.com/2017/09/19/optimizing-pytorch-training-code/
+- create the matrix manually?
+	"on", "above", "on the top of",
+	"next to", "beside", "near", "by", "adjacent to", "against",
+	"in", "inside", "beneath",
+	"under", "below",
+	"contain", "outside of"
+	"behind",
+	"in the front of",
+	"on the left of",
+	"on the right of",
+	"across"
+	Then try to fuse these and create matrix manually?
+
+- Then I thought, I can use this value to rescale all of the scores:
+		if the value is high (it is likely that the pair is in a relationship),
+		all of the scores for this object pair are going to be boosted,
+		if the value is low (it is unlikely that the object pair is interacting in any way),
+		they are going to be low.
+
+
+DSR:
+  One direct way to dealwith incomplete predicate annotation is to take the unla-
+  beled relationships as negative samples and solve the rela
+  tionship detection problem using a multi-label classification
+  framework based on cross-entropy loss
+
+  In this paper, we propose a deep neural network frame-work with structural ranking loss to tackle the visual rela-tionship detection problem
+
+  Moreover, we integrate the structural losswith the probability of the predicates conditioned on its sub-
+  ject and object to further reduce the impact of incompleteannotations
+
+  MultiLabelMarginLoss: multi-label ranking loss
+
+  Long-tail Classification (e.g read a little bit of https://arxiv.org/pdf/2004.00436.pdf)
+
+
 
 New idea:
  look for "Let’s build a proper (yet simple" here: https://towardsdatascience.com/understanding-pytorch-with-an-example-a-step-by-step-tutorial-81fc5f8c4e8e
  They have single parameters. Well, implement the linear projection for a predicate there. Beforee that, check if it's already there somewhere int he code.
  Do they claim it is already there, in the paper?
-
- We discovered that our model already gives good answers if we train it with outputs only, namely without inputs.
- (What probably happens is, the network learns to give high scores to popular predicates.)
- So we believe that the metrics are weak in this sense.
 
  To give example numbers, the model learns to give a 80% R@100 score without any input,
   and multi-modality only helps bringing it up to 93-95%. Also, it looks like one modality (vis, sem, spat)
@@ -42,16 +66,10 @@ New idea:
   but we saw no improvement when used with all the modalities together.
   So right now we thought we could try introducing our predicate semantics ideas without using multi-modal features.
   For instance, with no input.
-
- We also identified a different problem that has to do with antonyms.
- Semantic embeddings give high similarity scores to antonyms, because indeed, antonyms refer to the same "semantic area"
  But we would like an embedding model where antonyms have cosine similarity -1. Do you know where to find it?
 
- Ideas for inspecting where our ideas might fail:
- - Find out which are the problematic predicates (write evaluation "by_predicate")
- -
 
-
+https://sagivtech.com/2017/09/19/optimizing-pytorch-training-code/
 
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)

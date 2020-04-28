@@ -91,13 +91,15 @@ def getDualMask(ih, iw, bb):
   assert(mask.sum() == (y2 - y1) * (x2 - x1))
   return mask
 
-# Get word embedding of subject and object label and concatenate them
-def getSemanticVector(subject_label, object_label, emb_model):
-  subject_vector = emb_model[subject_label]
-  object_vector  = emb_model[object_label]
-  return np.concatenate((subject_vector, object_vector), axis=0)
-
-
+# # Get word embedding of subject and object label and concatenate them
+# def getSemanticVector(subject_label, object_label, emb_model, type):
+#   subject_vector = emb_model[subject_label]
+#   object_vector  = emb_model[object_label]
+#   if type == "concat":
+#     vec = np.concatenate((subject_vector, object_vector), axis=0)
+#   else:
+#     raise ValueError("Unknown semantic vector type: '{}'".format(type))
+#   return vec
 
 def getEmbedding(word, emb_model, depth=0):
     if not hasattr(getEmbedding, "fallback_emb_map"):

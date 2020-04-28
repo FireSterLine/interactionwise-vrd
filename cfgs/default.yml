@@ -18,7 +18,7 @@ model:
     #  use those of subject and object individually?
     vis_so: True
     # Use semantic features (TOD: this becomes the size of the semantic features)
-    sem: True
+    sem: concat
     # Three types of spatial feature:
     # - False: no spatial info
     # - dsr_spat_vec : 8-way relative location vector

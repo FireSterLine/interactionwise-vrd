@@ -315,12 +315,19 @@ filename = "data/vrd/predicates-emb.json"
 with open(filename, 'r') as f:
   pred_emb = json.load(f)
 
+pred_emb =np.array(pred_emb)
+cosine_similarity(pred_emb)
+
+from sklearn.metrics.pairwise import cosine_similarity
+a = [[1],[-1]]
+cosine_similarity(a)
+
 filename = "data/vrd/objects-emb.json"
 with open(filename, 'r') as f:
   pred_emb = json.load(f)
 
 pred_emb =np.array(pred_emb)
-cosine_similarity(pred_emb, pred_emb)
+cosine_similarity(pred_emb)
 [[scipy.spatial.distance.cosine(u, v) for v in d2] for u in d2]
 
 

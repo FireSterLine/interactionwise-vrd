@@ -203,10 +203,10 @@ class VRDDataLayer(data.Dataset):
     # Union bounding boxes
     u_boxes = np.zeros((n_rels, 4))
 
-    # Semantic features
+    # Spatial features
     obj_spat_feat = np.zeros(1) # Dummy
     if "dsr_spat_vec" in self.x_cols:
-      # Spatial vector containing the relative location and log-distance
+      # 8-dim vector containing the relative location and log-distance
       obj_spat_feat = np.zeros((n_rels, 8))
     elif "dsr_spat_mat" in self.x_cols:
       # Binary matrix displaying the relative location

@@ -102,15 +102,24 @@ class DSRModel(nn.Module):
         self.total_fus_neurons += self.args.n_fus_neurons
       else:
         raise ValueError("Unknown spatial feature type: {}".format(self.args.feat_used.spat))
-    
+
     ###################
     # SEMANTIC FEATURES
     ###################
     if self.args.feat_used.sem:
       self.emb = nn.Embedding(self.args.n_obj, globals.emb_size)
       set_trainability(self.emb, requires_grad=False)
-      self.fc_semantic = FC(globals.emb_size*2, self.args.n_fus_neurons)
       self.total_fus_neurons += self.args.n_fus_neurons
+      if self.args.feat_used.sem == "concat":
+        self.fc_semantic = FC(globals.emb_size*2, self.args.n_fus_neurons)
+      elif self.args.feat_used.sem == "diff":
+        self.fc_semantic = FC(globals.emb_size, self.args.n_fus_neurons)
+      elif self.args.feat_used.sem == "mul":
+        self.fc_semantic = FC(globals.emb_size, self.args.n_fus_neurons)
+      elif self.args.feat_used.sem == "dot":
+        self.fc_semantic = FC(1, self.args.n_fus_neurons)
+      else:
+        raise ValueError("Unknown semantic feature type: {}".format(self.args.feat_used.sem))
 
       # self.emb = nn.Embedding(self.n_obj, globals.emb_size)
       # set_trainability(self.emb, requires_grad=False)
@@ -196,7 +205,7 @@ class DSRModel(nn.Module):
           set_trainability(self.fc_rel, requires_grad = False)
       else:
         raise ValueError("Unknown pred_sem mode: {}".format(self.args.use_pred_sem))
-  
+
   def forward(self, vis_features, obj_classes, obj_boxes, u_boxes, idx_s, idx_o, spat_features):
 
     n_batches = vis_features.size()[0]
@@ -324,7 +333,16 @@ class DSRModel(nn.Module):
       emb_subject = torch.index_select(emb, 0, idx_s[0]).unsqueeze(0) # TODO: warning, use batched_index_select otherwise this won't work
       emb_object  = torch.index_select(emb, 0, idx_o[0]).unsqueeze(0) # TODO: warning, use batched_index_select otherwise this won't work
       # print("emb_subject.shape: ", emb_subject.shape)
-      emb_s_o = torch.cat((emb_subject, emb_object), dim=2)
+
+      if self.args.feat_used.sem == "concat":
+        emb_s_o = torch.cat((emb_subject, emb_object), dim=2)
+      elif self.args.feat_used.sem == "diff":
+        emb_s_o = emb_subject - emb_object
+      elif self.args.feat_used.sem == "mul":
+        emb_s_o = torch.mul(emb_subject, emb_object)
+      elif self.args.feat_used.sem == "dot":
+        emb_s_o = torch.mm(emb_subject,emb_object)
+
       # print("emb_s_o.shape: ", emb_s_o.shape)
       emb = self.fc_semantic(emb_s_o)
       # print("emb.shape: ", emb.shape)

@@ -2,5 +2,5 @@ model:
   feat_used:
       vis: False
       vis_so : False
-      sem: concat
+      sem: mul
       spat: 0
