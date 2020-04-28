@@ -114,6 +114,8 @@ class VRDEmbedding:
         return model
 
     def fine_tune_model_coco(self, path_to_model, tokenized_captions, num_epochs):
+        # TODO: Maybe reset epoch counter in EpochLogger and EpochSaver?
+
         model = self.load_model(path_to_model)
         # model.callbacks[1] is the EpochSaver object
         if 'coco' not in model.callbacks[1].path_prefix:
@@ -173,21 +175,29 @@ class VRDEmbedding:
             if m:
                 mdl_epoch = int(m.group(0))
                 if mdl_epoch <= num_epochs:
-                    backup_mdl_name = mdl_name + "_backup"
-                    vec_name = mdl_name + ".wv.vectors.npy"
-                    backup_vec_name = vec_name + "_backup"
-                    trainables_name = mdl_name + ".trainables.syn1neg.npy"
-                    backup_trainables_name = trainables_name + "_backup"
-                    # if revert is True, rename backup model files to original model files
                     if revert is True:
-                        os.rename(backup_mdl_name, mdl_name)
-                        os.rename(backup_vec_name, vec_name)
-                        os.rename(backup_trainables_name, trainables_name)
-                    # if revert is False, rename original model files to backup model files
+                        # source model files will contain '_backup', destination model files will not
+                        current_mdl_name = mdl_name.rsplit('_backup')[0]
+                        src_mdl_name = mdl_name
+                        dest_mdl_name = current_mdl_name
+                        src_vec_name = current_mdl_name + ".wv.vectors.npy" + "_backup"
+                        dest_vec_name = current_mdl_name + ".wv.vectors.npy"
+                        src_trainables_name = current_mdl_name + ".trainables.syn1neg.npy" + "_backup"
+                        dest_trainables_name = current_mdl_name + ".trainables.syn1neg.npy"
                     else:
-                        os.rename(mdl_name, backup_mdl_name)
-                        os.rename(vec_name, backup_vec_name)
-                        os.rename(trainables_name, backup_trainables_name)
+                        # source model files will not contain '_backup', destination model files will
+                        current_mdl_name = mdl_name
+                        src_mdl_name = current_mdl_name
+                        dest_mdl_name = current_mdl_name + "_backup"
+                        src_vec_name = current_mdl_name + ".wv.vectors.npy"
+                        dest_vec_name = current_mdl_name + ".wv.vectors.npy" + "_backup"
+                        src_trainables_name = current_mdl_name + ".trainables.syn1neg.npy"
+                        dest_trainables_name = current_mdl_name + ".trainables.syn1neg.npy" + "_backup"
+
+                    os.rename(src_mdl_name, dest_mdl_name)
+                    os.rename(src_vec_name, dest_vec_name)
+                    os.rename(src_trainables_name, dest_trainables_name)
+
                     models_renamed = True
 
         return models_renamed
