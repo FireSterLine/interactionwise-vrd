@@ -126,22 +126,28 @@ class VRDEmbedding:
                 os.mkdir(coco_path)
             model.callbacks[1].path_prefix = os.path.join(model.callbacks[1].path_prefix, "coco/")
 
+        model.callbacks[0].epoch = 1
+        model.callbacks[1].epoch = 1
+
         # rename all model files which were trained for lesser epochs than num_epochs so they don't get overwritten
-        models_renamed_flag = self._rename_existing_models(model.callbacks[1].path_prefix, num_epochs, revert=False)
+        # get dimension from path_to_model
+        dim = re.search(r'(?<=_dim_)\d+', path_to_model).group(0)
+        models_renamed_flag = self._rename_existing_models(model.callbacks[1].path_prefix, num_epochs, dim,
+                                                           revert=False)
 
         # Increase the epoch number of both EpochLogger and EpochSaver by 1, otherwise one epoch gets miscounted
         # For example, if Wiki model was trained for 5 epochs, fine-tuning over COCO starts with epoch 6, not 5
         # for index in range(len(model.callbacks)):
         #     model.callbacks[index].epoch += 1
-        model.callbacks[1].epoch += 1
+        # model.callbacks[1].epoch += 1
         model.train(tokenized_captions, total_examples=len(tokenized_captions), epochs=num_epochs)
 
         # if any model files were renamed before fine-tuning, rename them back to their original names
         if models_renamed_flag is True:
-            self._rename_existing_models(model.callbacks[1].path_prefix, num_epochs, revert=True)
+            self._rename_existing_models(model.callbacks[1].path_prefix, num_epochs, dim, revert=True)
         return model
 
-    def _rename_existing_models(self, path_to_model, num_epochs, revert=False):
+    def _rename_existing_models(self, path_to_model, num_epochs, dim, revert=False):
         """
             Before fine-tuning a model on COCO over num_epochs iterations, we need to check and see if any models
             already exist in the given directory which have been trained over lesser number of epochs. If so, we need
@@ -170,11 +176,11 @@ class VRDEmbedding:
             model_names = glob(os.path.join(dir_name, "*.model"))
 
         for mdl_name in model_names:
-            # this regex gets the number of epochs the current model was trained on
-            m = re.search(r'(?<=epoch_)\d+', mdl_name)
+            # this regex gets the number of epochs the current model was trained on. Note that the dimension must match
+            m = re.search(r'(?<=epoch_)\d+(?=_dim_{})'.format(dim), mdl_name)
             if m:
                 mdl_epoch = int(m.group(0))
-                if mdl_epoch <= num_epochs:
+                if mdl_epoch < num_epochs:
                     if revert is True:
                         # source model files will contain '_backup', destination model files will not
                         current_mdl_name = mdl_name.rsplit('_backup')[0]
@@ -195,8 +201,10 @@ class VRDEmbedding:
                         dest_trainables_name = current_mdl_name + ".trainables.syn1neg.npy" + "_backup"
 
                     os.rename(src_mdl_name, dest_mdl_name)
-                    os.rename(src_vec_name, dest_vec_name)
-                    os.rename(src_trainables_name, dest_trainables_name)
+                    if os.path.exists(src_vec_name):
+                        os.rename(src_vec_name, dest_vec_name)
+                    if os.path.exists(src_trainables_name):
+                        os.rename(src_trainables_name, dest_trainables_name)
 
                     models_renamed = True
 

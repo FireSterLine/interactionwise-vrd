@@ -78,6 +78,7 @@ def explore_captions_data(tok_captions, obj_filename, pred_filename):
 
 
 def fine_tune_embeddings_coco(path_to_model, model_name, tokenized_captions, num_epochs):
+    # the dim here does not matter, since we will ultimately load the model specified in `path_to_model` for fine-tuning
     vrd_embedder = VRDEmbedding(path_to_model, dim=100)
     # model = vrd_embedder.load_model(os.path.join(path_to_model, "epoch_4.model"))
     print("Training model over COCO...")
