@@ -1,4 +1,5 @@
 import os
+import sys
 import os.path as osp
 from glob import glob
 
@@ -711,7 +712,13 @@ if __name__ == '__main__':
         # elif globals.embedding_model in ["50", "100"]:
         else:
             # w2v_model = Word2Vec.load(globals.w2v_model_path)
-            w2v_model = VRDEmbedding.load_model(globals.w2v_model_path)
+            try:
+                w2v_model = VRDEmbedding.load_model(globals.w2v_model_path)
+            except ModuleNotFoundError:
+                # this happens in the case of COCO finetuned models because they were dumped from outside the
+                # train_word2vec script, so the train_word2vec module needs to be in the path for them to load
+                sys.path.append('./scripts')
+                w2v_model = VRDEmbedding.load_model(globals.w2v_model_path)
 
     #"""
     print("Preparing data for VRD!")
