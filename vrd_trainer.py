@@ -25,14 +25,14 @@ from lib.datalayer import VRDDataLayer, net_input_to, loss_targets_to
 from lib.evaluator import VRDEvaluator
 
 # Test if code compiles
-TEST_DEBUGGING = True # False
+TEST_DEBUGGING = False
 # Test if a newly-introduced change affects the validity of the code
 TEST_EVAL_VALIDITY = False # True # False # True # False #  True # True
-TEST_TRAIN_VALIDITY = True #  True # True
+TEST_TRAIN_VALIDITY = False # True # True
 # Try overfitting to a single element
 TEST_OVERFIT = False #True # False # True
 
-FEATURES_SCAN = True # False
+FEATURES_SCAN =False
 
 PARAMS_SCAN = True # False
 
