@@ -8,7 +8,6 @@ import time
 from copy import deepcopy
 import torch
 import warnings
-import globals
 import munch
 import math
 
@@ -100,46 +99,6 @@ def getDualMask(ih, iw, bb):
 #   else:
 #     raise ValueError("Unknown semantic vector type: '{}'".format(type))
 #   return vec
-
-def getEmbedding(word, emb_model, depth=0):
-    if not hasattr(getEmbedding, "fallback_emb_map"):
-        # This map defines the fall-back words of words that do not exist in the embedding model
-        with open(os.path.join(globals.data_dir, "embeddings", "fallback-v1.json"), 'r') as rfile:
-            getEmbedding.fallback_emb_map = json.load(rfile)
-    try:
-        embedding = emb_model[word]
-    except KeyError:
-        embedding = np.zeros(globals.emb_size)
-        fallback_words = []
-        if word in getEmbedding.fallback_emb_map:
-          fallback_words = getEmbedding.fallback_emb_map[word]
-        if " " in word:
-          fallback_words = ["_".join(word.split(" "))] + fallback_words + [word.split(" ")]
-
-        for fallback_word in fallback_words:
-          if isinstance(fallback_word, str):
-            embedding = getEmbedding(fallback_word, emb_model, depth+1)
-            if np.all(embedding != np.zeros(globals.emb_size)):
-              if fallback_word != "_".join(word.split(" ")):
-                print("{}'{}' mapped to '{}'".format("  " * depth, word, fallback_word))
-              break
-          elif isinstance(fallback_word, list):
-            fallback_vec = [getEmbedding(fb_sw, emb_model, depth+1) for fb_sw in fallback_word]
-            filtered_wv = [(w,v) for w,v in zip(fallback_word,fallback_vec) if not np.all(v == np.zeros(globals.emb_size))]
-            fallback_w,fallback_v = [],[]
-            if len(filtered_wv) > 0:
-              fallback_w,fallback_v = zip(*filtered_wv)
-              embedding = np.mean(fallback_v, axis=0)
-            if np.all(embedding != np.zeros(globals.emb_size)):
-              print("{}'{}' mapped to the average of {}".format("  " * depth, word, fallback_w))
-              break
-          else:
-              raise ValueError("Error fallback word is of type {}: {}".format(fallback_word, type(fallback_word)))
-    if np.all(embedding == np.zeros(globals.emb_size)):
-      print("{}Warning! Couldn't find semantic vector for '{}'".format("  " * depth, word))
-      return embedding
-    return embedding / np.linalg.norm(embedding)
-
 
 
 

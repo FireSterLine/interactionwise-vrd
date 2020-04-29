@@ -107,23 +107,23 @@ class DSRModel(nn.Module):
     # SEMANTIC FEATURES
     ###################
     if self.args.feat_used.sem:
-      self.emb = nn.Embedding(self.args.n_obj, globals.emb_size)
+      self.emb = nn.Embedding(self.args.n_obj, self.emb_size)
       set_trainability(self.emb, requires_grad=False)
       self.total_fus_neurons += self.args.n_fus_neurons
       if self.args.feat_used.sem == "concat":
-        self.fc_semantic = FC(globals.emb_size*2, self.args.n_fus_neurons)
+        self.fc_semantic = FC(self.emb_size*2, self.args.n_fus_neurons)
       elif self.args.feat_used.sem == "diff":
-        self.fc_semantic = FC(globals.emb_size, self.args.n_fus_neurons)
+        self.fc_semantic = FC(self.emb_size, self.args.n_fus_neurons)
       elif self.args.feat_used.sem == "mul":
-        self.fc_semantic = FC(globals.emb_size, self.args.n_fus_neurons)
+        self.fc_semantic = FC(self.emb_size, self.args.n_fus_neurons)
       elif self.args.feat_used.sem == "dot":
         self.fc_semantic = FC(1, self.args.n_fus_neurons)
       else:
         raise ValueError("Unknown semantic feature type: {}".format(self.args.feat_used.sem))
 
-      # self.emb = nn.Embedding(self.n_obj, globals.emb_size)
+      # self.emb = nn.Embedding(self.n_obj, self.emb_size)
       # set_trainability(self.emb, requires_grad=False)
-      # self.fc_so_emb = FC(globals.emb_size*2, 256)
+      # self.fc_so_emb = FC(self.emb_size*2, 256)
 
     if self.total_fus_neurons == 0:
       print("Warning! Using no features. The model is not expected to learn")
@@ -152,13 +152,13 @@ class DSRModel(nn.Module):
         # 2 Fully-Connected layers: 1024 -> 512 -> 300
         self.fc_fusion = FC(self.total_fus_neurons, 512)
         self.fc_rel    = nn.Sequential(
-          FC(512, globals.emb_size, relu = False),
+          FC(512, self.emb_size, relu = False),
           SemSim(self.args.pred_emb, mode = mode),
         )
       elif mode < 16:
         mode = mode - 8
         # 1 Fully-Connected layers: 1024 -> 300
-        self.fc_fusion = FC(self.total_fus_neurons, globals.emb_size, relu = False)
+        self.fc_fusion = FC(self.total_fus_neurons, self.emb_size, relu = False)
         if mode < 10:
           self.fc_rel    = SemSim(self.args.pred_emb, mode = mode)
         else:

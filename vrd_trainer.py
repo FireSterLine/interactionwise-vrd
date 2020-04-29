@@ -25,10 +25,10 @@ from lib.datalayer import VRDDataLayer, net_input_to, loss_targets_to
 from lib.evaluator import VRDEvaluator
 
 # Test if code compiles
-TEST_DEBUGGING = False # True # False
+TEST_DEBUGGING = True # True # False
 # Test if a newly-introduced change affects the validity of the code
-TEST_EVAL_VALIDITY = False # True # False # True # False # True # False #  True # True
-TEST_TRAIN_VALIDITY = False #  True # True
+TEST_EVAL_VALIDITY = True # True # False # True # False # True # False #  True # True
+TEST_TRAIN_VALIDITY = True #  True # True
 # Try overfitting to a single element
 TEST_OVERFIT = False #True # False # True
 
@@ -104,10 +104,11 @@ class vrd_trainer():
     self.dataset = VRDDataset(**self.args.data)
 
     # Model
-    self.args.model.n_obj  = self.dataset.n_obj
-    self.args.model.n_pred = self.dataset.n_pred
+    self.args.model.n_obj     = self.dataset.n_obj
+    self.args.model.n_pred    = self.dataset.n_pred
+    self.args.model.emb_size  = globals.emb_model_size(self.dataset.emb_model)
     if self.args.model.use_pred_sem:
-      self.args.model.pred_emb = np.array(self.dataset.readJSON("predicates-emb.json"))
+      self.args.model.pred_emb = self.dataset.getEmb("predicates")
     # ... if self.args.model.use_pred_sem:
     #   self.args.pP_prior = self.dataset.getDistribution("pP")
     print("Initializing VRD Model: ", self.args.model)
@@ -123,7 +124,7 @@ class vrd_trainer():
       if self.model.args.feat_used.sem:
         try:
           # obj_emb = torch.from_numpy(self.dataset.readPKL("params_emb.pkl"))
-          obj_emb = torch.from_numpy(np.array(self.dataset.readJSON("objects-emb.json")))
+          obj_emb = torch.from_numpy(self.dataset.getEmb("objects"))
         except FileNotFoundError:
           print("Warning! Initialization weights for emb.weight layer not found! Weights are initialized randomly")
           input()
@@ -441,57 +442,59 @@ if __name__ == "__main__":
       #trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : test_type}}, profile = "vg")
       #trainer.train()
 
+  for emb_model in ["gnews"]: # ["gnews", "50", "100", "300", "coco-70-50"]:
+    base_profile = ["pred_sem", "by_pred"]
+    if FEATURES_SCAN:
+      #trainer = vrd_trainer("test-no_prior-no-features",  {"training" : {"test_first" : True, "loss" : "mlab_no_prior"}}, profile = base_profile + ["no-feat"])
+      #trainer.train()
+      #trainer = vrd_trainer("test-no_prior-only_vis",  {"training" : {"num_epochs" : 4, "loss" : "mlab_no_prior"}, "model" : {"feat_used" : {"sem" : 0, "spat" : 0}}})
+      #trainer.train()
+      #trainer = vrd_trainer("test-no_prior-only_sem",  {"training" : {"num_epochs" : 4, "loss" : "mlab_no_prior"}, "model" : {"feat_used" : {"vis" : False, "vis_so" : False, "spat" : 0}}})
+      #trainer.train()
+      #trainer = vrd_trainer("test-no_prior-only_spat",  {"training" : {"loss" : "mlab_no_prior"}}, profile = base_profile + ["only_spat"])
+      #trainer.train()
+      trainer = vrd_trainer("test-no-features-{}".format(emb_model),  {}, profile = base_profile + ["no-feat"])
+      trainer.train()
+      trainer = vrd_trainer("test-only_spat-{}".format(emb_model), {}, profile = base_profile + ["only_spat"])
+      trainer.train()
+      trainer = vrd_trainer("test-only_sem-{}".format(emb_model),  {}, profile = base_profile + ["only_sem"])
+      trainer.train()
 
-  if FEATURES_SCAN:
-    profile = ["pred_sem", "by_pred"]
-    #trainer = vrd_trainer("test-no_prior-no-features",  {"training" : {"test_first" : True, "loss" : "mlab_no_prior"}}, profile = profile + ["no-feat"])
-    #trainer.train()
-    #trainer = vrd_trainer("test-no_prior-only_vis",  {"training" : {"num_epochs" : 4, "loss" : "mlab_no_prior"}, "model" : {"feat_used" : {"sem" : 0, "spat" : 0}}})
-    #trainer.train()
-    #trainer = vrd_trainer("test-no_prior-only_sem",  {"training" : {"num_epochs" : 4, "loss" : "mlab_no_prior"}, "model" : {"feat_used" : {"vis" : False, "vis_so" : False, "spat" : 0}}})
-    #trainer.train()
-    #trainer = vrd_trainer("test-no_prior-only_spat",  {"training" : {"loss" : "mlab_no_prior"}}, profile = profile + ["only_spat"])
-    #trainer.train()
-    trainer = vrd_trainer("test-no-features-{}".format(globals.embedding_model),  {}, profile = profile + ["no-feat"])
-    trainer.train()
-    trainer = vrd_trainer("test-only_spat-{}".format(globals.embedding_model), {}, profile = profile + ["only_spat"])
-    trainer.train()
-    trainer = vrd_trainer("test-only_sem-{}".format(globals.embedding_model),  {}, profile = profile + ["only_sem"])
-    trainer.train()
+    # Scan (rotating parameters)
+    if PARAMS_SCAN:
+      print("PARAMS_SCAN")
+      for lr in [0.0001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
+        for weight_decay in [0.0001]:
+          for lr_fus_ratio in [10]:
+            for lr_rel_ratio in [10]: #, 100]:
+              for pred_sem_mode_1 in [-1, 11, 16]: # 11 #, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
+                for loss in ["mlab"]: # "bcel"]: # mlab_mse
+                  for dataset in ["vrd"]: # , "vg"]:
+                    for prof in ["only_sem", "only_sem_diff", "only_sem_mul", "only_sem_dot", "only_spat", "spat_sem"]: # , "vg"]:
+                      if "mse" in loss and (pred_sem_mode_1 == -1 or pred_sem_mode_1>=16):
+                        continue
+                      pred_sem_mode = pred_sem_mode_1+1
+                      session_id = "scan-v14-{}-{}-{}-{}-{}-{}-{},{:b}-{}-{}".format(emb_model, prof, lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode, pred_sem_mode, dataset, loss)
+                      profile = base_profile + [prof]
+                      training = {}
+                      if dataset == "vg":
+                        profile.append("vg")
+                        training = {"num_epochs" : 2, "test_freq" : [1,2]}
+                      test_type = True # 0.5
 
-  # Scan (rotating parameters)
-  if PARAMS_SCAN:
-   for lr in [0.0001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
-    for weight_decay in [0.0001]:
-      for lr_fus_ratio in [10]:
-        for lr_rel_ratio in [10]: #, 100]:
-         for pred_sem_mode_1 in [-1, 11, 16]: # 11 #, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
-          for loss in ["mlab"]: # "bcel"]: # mlab_mse
-           for dataset in ["vrd"]: # , "vg"]:
-            for prof in ["only_sem", "only_sem_diff", "only_sem_mul", "only_sem_dot", "only_spat", "spat_sem"]: # , "vg"]:
-                if "mse" in loss and (pred_sem_mode_1 == -1 or pred_sem_mode_1>=16):
-                  continue
-                pred_sem_mode = pred_sem_mode_1+1
-                session_id = "scan-v13-{}-{}-{}-{}-{}-{}-{},{:b}-{}-{}".format(globals.embedding_model, prof, lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode, pred_sem_mode, dataset, loss)
-                profile = ["pred_sem", "by_pred", prof] # "only_spat"]
-                training = {}
-                if dataset == "vg":
-                  profile.append("vg")
-                  training = {"num_epochs" : 2, "test_freq" : [1,2]}
-                test_type = True # 0.5
-
-                trainer = vrd_trainer(session_id, {
-                  "training" : training,
-                  "model" : {"use_pred_sem" : pred_sem_mode},
-                  "eval" : {"test_pre" : test_type}, # "test_rel" : test_type},
-                  "opt": {
-                    "lr": lr,
-                    "weight_decay" : weight_decay,
-                    "lr_fus_ratio" : lr_fus_ratio,
-                    "lr_rel_ratio" : lr_rel_ratio,
-                    }
-                  }, profile = profile)
-                trainer.train()
+                      trainer = vrd_trainer(session_id, {
+                        "data" : { "emb_model" : emb_model}
+                        "training" : training,
+                        "model" : {"use_pred_sem" : pred_sem_mode},
+                        "eval" : {"test_pre" : test_type}, # "test_rel" : test_type},
+                        "opt": {
+                          "lr": lr,
+                          "weight_decay" : weight_decay,
+                          "lr_fus_ratio" : lr_fus_ratio,
+                          "lr_rel_ratio" : lr_rel_ratio,
+                          }
+                        }, profile = profile)
+                      trainer.train()
 
 
   sys.exit(0)

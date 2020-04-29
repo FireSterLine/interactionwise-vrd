@@ -16,7 +16,7 @@ import utils, globals
 
 class VRDDataset():
 
-  def __init__(self, name, subset = None, with_bg_obj=True, with_bg_pred=False, justafew=False):
+  def __init__(self, name, subset = None, emb_model = None, with_bg_obj=True, with_bg_pred=False, justafew=False):
 
     img_subset = ""
     # This allows to use names like "vrd/dsr", "vg/150-50-50"
@@ -32,6 +32,8 @@ class VRDDataset():
     self.name         = name
     self.subset       = subset
     self.img_subset   = img_subset
+    self.emb_model    = emb_model
+
     self.with_bg_obj  = with_bg_obj
     self.with_bg_pred = with_bg_pred
     self.justafew     = justafew
@@ -113,6 +115,13 @@ class VRDDataset():
           data = data[self.justafew:self.justafew+1]
       self._vrd_data_cache[(format, stage, granularity)] = data
     return self._vrd_data_cache[(format, stage, granularity)]
+
+  def getEmb(self, type, model_name = None):
+    if model_name != None:
+      print("Warning! A different embedding model than the one VRDDataset is instantiated with is being requested! '{}', '{}'".format(self.emb_model, model_name))
+    else:
+      model_name = self.emb_model
+    return np.array(self.readJSON("{}-emb-{}.json".format(type, model_name)))
 
   def getDistribution(self, type, stage = "train"):
     """ Computes and returns some distributional data """

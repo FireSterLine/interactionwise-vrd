@@ -4,6 +4,7 @@ data:
   with_bg_obj: False
   with_bg_pred: False
 
+  emb_model: gnews
   justafew : False
 
 # Architecture (or model) type

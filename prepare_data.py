@@ -94,10 +94,11 @@ class DataPreparer:
         self.pred_vocab = pred_vocab
 
         if self.generate_emb is not None:
-            obj_emb = [ utils.getEmbedding(obj_label,  self.generate_emb).astype(float).tolist() for  obj_label in self.obj_vocab]
-            pred_emb = [ utils.getEmbedding(pred_label, self.generate_emb).astype(float).tolist() for pred_label in self.pred_vocab]
-            self.writejson(obj_emb,  "objects-emb.json")
-            self.writejson(pred_emb, "predicates-emb.json")
+          for model_name,model in self.generate_emb.items():
+            obj_emb  = [ getWordEmbedding(obj_label,  model, globals.emb_model_size(model_name)).astype(float).tolist() for  obj_label in self.obj_vocab]
+            pred_emb = [ getWordEmbedding(pred_label, model, globals.emb_model_size(model_name)).astype(float).tolist() for pred_label in self.pred_vocab]
+            self.writejson(obj_emb,  "objects-emb-{}.json".format(model_name))
+            self.writejson(pred_emb, "predicates-emb-{}.json".format(model_name))
 
 
     # This function converts to relst
@@ -696,29 +697,71 @@ class VGPrep(DataPreparer):
 
         return relst
 
+def getWordEmbedding(word, emb_model, emb_size, depth=0):
+    if not hasattr(getWordEmbedding, "fallback_emb_map"):
+        # This map defines the fall-back words of words that do not exist in the embedding model
+        with open(os.path.join(globals.data_dir, "embeddings", "fallback-v1.json"), 'r') as rfile:
+            getWordEmbedding.fallback_emb_map = json.load(rfile)
+    try:
+        embedding = emb_model[word]
+    except KeyError:
+        embedding = np.zeros(emb_size)
+        fallback_words = []
+        if word in getWordEmbedding.fallback_emb_map:
+          fallback_words = getWordEmbedding.fallback_emb_map[word]
+        if " " in word:
+          fallback_words = ["_".join(word.split(" "))] + fallback_words + [word.split(" ")]
+
+        for fallback_word in fallback_words:
+          if isinstance(fallback_word, str):
+            embedding = getWordEmbedding(fallback_word, emb_model, depth+1)
+            if np.all(embedding != np.zeros(emb_size)):
+              if fallback_word != "_".join(word.split(" ")):
+                print("{}'{}' mapped to '{}'".format("  " * depth, word, fallback_word))
+              break
+          elif isinstance(fallback_word, list):
+            fallback_vec = [getWordEmbedding(fb_sw, emb_model, depth+1) for fb_sw in fallback_word]
+            filtered_wv = [(w,v) for w,v in zip(fallback_word,fallback_vec) if not np.all(v == np.zeros(emb_size))]
+            fallback_w,fallback_v = [],[]
+            if len(filtered_wv) > 0:
+              fallback_w,fallback_v = zip(*filtered_wv)
+              embedding = np.mean(fallback_v, axis=0)
+            if np.all(embedding != np.zeros(emb_size)):
+              print("{}'{}' mapped to the average of {}".format("  " * depth, word, fallback_w))
+              break
+          else:
+              raise ValueError("Error fallback word is of type {}: {}".format(fallback_word, type(fallback_word)))
+    if np.all(embedding == np.zeros(emb_size)):
+      print("{}Warning! Couldn't find semantic vector for '{}'".format("  " * depth, word))
+      return embedding
+    return embedding / np.linalg.norm(embedding)
+
+
+
 
 if __name__ == '__main__':
 
     # TODO: filter out relationships between the same object?
 
     multi_label = True # False
-    generate_embeddings = True # False #  True # False # False # True # False # True # False
+
+    # generate_embeddings = False
+    generate_embeddings = ["gnews", "50", "100", "coco-30-50"]
 
     w2v_model = None
     if generate_embeddings:
-        print("Loading w2v model '{}'...".format(globals.embedding_model))
-        if globals.embedding_model is "gnews":
-            w2v_model = KeyedVectors.load_word2vec_format(globals.w2v_model_path, binary=True)
-        # elif globals.embedding_model in ["50", "100"]:
+      w2v_model = {}
+      for model_name in generate_embeddings:
+        print("Loading embedding model '{}'...".format(model_name))
+        model_path = globals.emb_model_path(model_name)
+        if model_name is "gnews":
+          model = KeyedVectors.load_word2vec_format(model_path, binary=True)
         else:
-            # w2v_model = Word2Vec.load(globals.w2v_model_path)
-            try:
-                w2v_model = VRDEmbedding.load_model(globals.w2v_model_path)
-            except ModuleNotFoundError:
-                # this happens in the case of COCO finetuned models because they were dumped from outside the
-                # train_word2vec script, so the train_word2vec module needs to be in the path for them to load
-                sys.path.append('./scripts')
-                w2v_model = VRDEmbedding.load_model(globals.w2v_model_path)
+          # This is needed happens in the case of COCO finetuned models because they were dumped from outside the
+          # train_word2vec script, so the train_word2vec module needs to be in the path for them to load
+          sys.path.append("./scripts")
+          model = VRDEmbedding.load_model(model_path)
+        w2v_model[model_name] = model
 
     #"""
     print("Preparing data for VRD!")

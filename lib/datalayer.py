@@ -35,8 +35,7 @@ class VRDDataLayer(data.Dataset):
 
     self.soP_prior = self.dataset.getDistribution("soP")
 
-    # TODO: allow to choose which model to use. We only have w2v for now
-    self.emb = {"obj" : self.dataset.readJSON("objects-emb.json"), "pred" : self.dataset.readJSON("predicates-emb.json")}
+    self.emb = {"obj" : self.dataset.getEmb("objects"), "pred" : self.dataset.getEmb("predicates")}
 
     self.vrd_data = self.dataset.getData("annos", self.stage, self.granularity)
 
@@ -260,7 +259,7 @@ class VRDDataLayer(data.Dataset):
     else:
 
       # Semantic vector for the predicate
-      gt_pred_sem = np.zeros((n_rels, globals.emb_size))
+      gt_pred_sem = np.zeros((n_rels, globals.emb_model_size(self.dataset.emb_model)))
 
       # Targets (ground-truth input to the losses)
       if "mlab" in self.y_cols:

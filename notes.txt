@@ -1,21 +1,10 @@
 Maybe, title: Class Semantic Awareness for Visual Relationship Detection
 
-- Make it extra clear what parts are your own contributions and what parts come from the original approach by Liang.
-- (The main exception seems to be the zero-shot results for the model with spatial features. Any idea why the scores drop in this cases?)
-- I think the the first and third explanations you propose are sensible. (I'm not sure I understand the second explanation.)
-  But couldn't you try to carry out some sort of error analysis to investigate to what extent these explanations hold? Right now, these explanations build on nothing but your hunches.
-- Work on expanding it following your comment about formalization.
-
-- MAKE SURE:
-  - that the metrics are weak (the network learns to give high scores to popular predicates.)
-     So we believe that the metrics are weak in this sense.
-  - antonyms refer to the same "semantic area"
-- Also try using MSE instead of cosine_similarity
+So we believe that the metrics are weak in this sense.
 
 - Introduce a new metric (inspired from https://arxiv.org/pdf/2004.00436.pdf),
   consisting of a variation of R@50 and R@100 where the semantics of the predicates is taken into account.
   Some cosine distance-based metric.
-
 
 - create the matrix manually?
 	"on", "above", "on the top of",
