@@ -483,7 +483,7 @@ if __name__ == "__main__":
                       test_type = True # 0.5
 
                       trainer = vrd_trainer(session_id, {
-                        "data" : { "emb_model" : emb_model}
+                        "data" : { "emb_model" : emb_model},
                         "training" : training,
                         "model" : {"use_pred_sem" : pred_sem_mode},
                         "eval" : {"test_pre" : test_type}, # "test_rel" : test_type},
