@@ -184,10 +184,10 @@ class vrd_trainer():
     if self.args.eval.test_rel: res_headers += self.gt_headers(self.args.eval.test_rel, "Rel") + ["Avg"]
     if self.args.eval.by_predicates: # TODO: fix the two (gt+gt_zs)
       if self.args.eval.test_pre:
-        for i in range( 1 + len(self.args.eval.rec)*((self.eval.self.gt    is not None) + (self.eval.self.gt    is not None))):
+        for i in range( 1 + len(self.args.eval.rec)*((self.eval.gt    is not None) + (self.eval.gt    is not None))):
           res_headers += [x if i else "Pre "+x for i,x in enumerate(self.dataset.pred_classes)]
       if self.args.eval.test_rel:
-        for i in range( 1 + len(self.args.eval.rec)*((self.eval.self.gt_zs is not None) + (self.eval.self.gt_zs is not None))):
+        for i in range( 1 + len(self.args.eval.rec)*((self.eval.gt_zs is not None) + (self.eval.gt_zs is not None))):
           res_headers += [x if i else "Rel "+x for i,x in enumerate(self.dataset.pred_classes)]
 
     res = []
