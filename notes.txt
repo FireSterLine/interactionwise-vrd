@@ -1,11 +1,5 @@
 Maybe, title: Class Semantic Awareness for Visual Relationship Detection
 
-Hey man, I was reading this: https://medium.com/data-from-the-trenches/arithmetic-properties-of-word-embeddings-e918e3fda2ac
-and they talk about properties of word2vec embeddings first, and then properties of GloVe embeddings (also FastText, and then mention others in the conclusions),
-so I thought maybe we could (depending on how difficult it is) try to use GloVe embeddings as well and compare the use of the GloVe and w2v in terms of the results we get for VRD
-(also examining their differences in terms of the pred2pred matrix).
-What do you think?
-
 
 Semantic dense representation instead of 1-hot.
 Skip-Gram/CBOW

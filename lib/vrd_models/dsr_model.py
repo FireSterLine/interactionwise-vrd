@@ -118,6 +118,14 @@ class DSRModel(nn.Module):
         self.fc_semantic = FC(self.args.emb_size, self.args.n_fus_neurons)
       elif self.args.feat_used.sem == "dot":
         self.fc_semantic = FC(1, self.args.n_fus_neurons)
+      elif self.args.feat_used.sem == "catdiff":
+        self.fc_semantic = FC(2*self.args.emb_size+self.args.emb_size, self.args.n_fus_neurons)
+      elif self.args.feat_used.sem == "subdiff":
+        self.fc_semantic = FC(self.args.emb_size+self.args.emb_size, self.args.n_fus_neurons)
+      elif self.args.feat_used.sem == "catdot":
+        self.fc_semantic = FC(2*self.args.emb_size+1, self.args.n_fus_neurons)
+      elif self.args.feat_used.sem == "diffdot":
+        self.fc_semantic = FC(self.args.emb_size+1, self.args.n_fus_neurons)
       else:
         raise ValueError("Unknown semantic feature type: {}".format(self.args.feat_used.sem))
 
@@ -334,6 +342,7 @@ class DSRModel(nn.Module):
       emb_object  = torch.index_select(emb, 0, idx_o[0]).unsqueeze(0) # TODO: warning, use batched_index_select otherwise this won't work
       # print("emb_subject.shape: ", emb_subject.shape)
 
+      emb_dot = lambda emb_subject, emb_object: torch.stack([torch.mm(s.unsqueeze(0),o.unsqueeze(0).t()).squeeze(0) for s,o in zip(emb_subject.squeeze(0),emb_object.squeeze(0))]).unsqueeze(0)
       if self.args.feat_used.sem == "concat":
         emb_s_o = torch.cat((emb_subject, emb_object), dim=2)
       elif self.args.feat_used.sem == "diff":
@@ -346,8 +355,16 @@ class DSRModel(nn.Module):
         #print(torch.squeeze(emb_object,0).t().shape)
         #print(torch.mm(torch.squeeze(emb_subject,0), torch.squeeze(emb_object,0).t()).squeeze(0).shape)
         #print([s.shape for s,o in zip(emb_subject.squeeze(0),emb_object.squeeze(0))])
-        emb_s_o = torch.stack([torch.mm(s.unsqueeze(0),o.unsqueeze(0).t()).squeeze(0) for s,o in zip(emb_subject.squeeze(0),emb_object.squeeze(0))]).unsqueeze(0)
+        emb_s_o = emb_dot(emb_subject, emb_object)
         #print(emb_s_o.shape)
+      elif self.args.feat_used.sem == "catdiff":
+        emb_s_o = torch.cat((emb_subject, emb_object, emb_subject - emb_object), dim=2)
+      elif self.args.feat_used.sem == "subdiff":
+        emb_s_o = torch.cat((emb_subject, emb_subject - emb_object), dim=2)
+      elif self.args.feat_used.sem == "catdot":
+        emb_s_o = torch.cat((emb_subject, emb_object, emb_dot(emb_subject, emb_object)), dim=2)
+      elif self.args.feat_used.sem == "diffdot":
+        emb_s_o = torch.cat((emb_subject - emb_object, emb_dot(emb_subject, emb_object)), dim=2)
 
       # print("emb_s_o.shape: ", emb_s_o.shape)
       emb = self.fc_semantic(emb_s_o)
