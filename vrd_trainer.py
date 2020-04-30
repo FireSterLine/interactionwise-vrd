@@ -442,7 +442,7 @@ if __name__ == "__main__":
       #trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : test_type}}, profile = "vg")
       #trainer.train()
 
-  for emb_model in ["50", "100", "coco-70-50", "gnews"]:
+  for emb_model in ["gnews"]: # ["50", "100", "coco-70-50", "gnews"]:
     base_profile = ["pred_sem", "by_pred"]
     if FEATURES_SCAN:
       #trainer = vrd_trainer("test-no_prior-no-features",  {"training" : {"test_first" : True, "loss" : "mlab_no_prior"}}, profile = base_profile + ["no-feat"])
@@ -470,7 +470,7 @@ if __name__ == "__main__":
               for pred_sem_mode_1 in [-1, 16]: # 11 #, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
                 for loss in ["mlab"]: # "bcel"]: # mlab_mse
                   for dataset in ["vrd"]: # , "vg"]:
-                    for prof in ["only_spat", "spat_sem", "only_sem", False]: # , "vg"]:
+                    for prof in ["only_sem_subdiff", "only_sem_subdot", "only_sem_catdiff", "only_sem_catdot", "only_sem_diffdot"]: # ["only_spat", "spat_sem", "only_sem", False]: # , "vg"]:
                       if "mse" in loss and (pred_sem_mode_1 == -1 or pred_sem_mode_1>=16):
                         continue
                       pred_sem_mode = pred_sem_mode_1+1

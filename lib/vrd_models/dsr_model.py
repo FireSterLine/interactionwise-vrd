@@ -122,6 +122,8 @@ class DSRModel(nn.Module):
         self.fc_semantic = FC(2*self.args.emb_size+self.args.emb_size, self.args.n_fus_neurons)
       elif self.args.feat_used.sem == "subdiff":
         self.fc_semantic = FC(self.args.emb_size+self.args.emb_size, self.args.n_fus_neurons)
+      elif self.args.feat_used.sem == "subdot":
+        self.fc_semantic = FC(self.args.emb_size+1, self.args.n_fus_neurons)
       elif self.args.feat_used.sem == "catdot":
         self.fc_semantic = FC(2*self.args.emb_size+1, self.args.n_fus_neurons)
       elif self.args.feat_used.sem == "diffdot":
@@ -361,6 +363,8 @@ class DSRModel(nn.Module):
         emb_s_o = torch.cat((emb_subject, emb_object, emb_subject - emb_object), dim=2)
       elif self.args.feat_used.sem == "subdiff":
         emb_s_o = torch.cat((emb_subject, emb_subject - emb_object), dim=2)
+      elif self.args.feat_used.sem == "subdot":
+        emb_s_o = torch.cat((emb_subject, emb_dot(emb_subject, emb_object)), dim=2)
       elif self.args.feat_used.sem == "catdot":
         emb_s_o = torch.cat((emb_subject, emb_object, emb_dot(emb_subject, emb_object)), dim=2)
       elif self.args.feat_used.sem == "diffdot":
