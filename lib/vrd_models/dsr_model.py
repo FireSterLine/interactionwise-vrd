@@ -7,7 +7,7 @@ import torch.nn as nn
 
 import sys
 import os.path as osp
-from lib.network import FC, Conv2d, ROIPool, SemSim
+from lib.network import FC, Conv2d, ROIPool, SemSim, SoftEmbRescore
 from lib.network import batched_index_select, set_trainability
 from easydict import EasyDict
 import utils, globals
@@ -159,12 +159,13 @@ class DSRModel(nn.Module):
       #  so the output of the previous layer is not activated with relu (which forces values to be non-negatives)
       if mode < 8:
         mode = mode
-        # 2 Fully-Connected layers: 1024 -> 512 -> 300
-        self.fc_fusion = FC(self.total_fus_neurons, 512)
-        self.fc_rel    = nn.Sequential(
-          FC(512, self.args.emb_size, relu = False),
-          SemSim(self.args.pred_emb, mode = mode),
+        # Here we have the prediction of a score distribution in self.fc_fusion,
+        #  then we rescore with SemSim, considering soft embeddings (according to the score distribution).
+        self.fc_fusion = nn.Sequential(
+          FC(self.total_fus_neurons, 256),
+          FC(256, self.args.n_pred, relu = False)
         )
+        self.fc_rel    = SoftEmbRescore(self.args.pred_emb, mode = mode)
       elif mode < 16:
         mode = mode - 8
         # 1 Fully-Connected layers: 1024 -> 300

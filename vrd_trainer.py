@@ -32,7 +32,7 @@ TEST_TRAIN_VALIDITY = False #True # True # True
 # Try overfitting to a single element
 TEST_OVERFIT = False #True # False # True
 
-FEATURES_SCAN = False
+FEATURES_SCAN = True
 
 PARAMS_SCAN = True # False
 
@@ -441,10 +441,10 @@ if __name__ == "__main__":
       # trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : False, "test_rel" : test_type}}, profile = "vg")
       #trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : test_type}}, profile = "vg")
       #trainer.train()
+  scan_name = "scan-v15"
+  base_profile = ["pred_sem", "by_pred"]
+  if FEATURES_SCAN:
 
-  for emb_model in ["gnews"]: # ["50", "100", "coco-70-50", "gnews"]:
-    base_profile = ["pred_sem", "by_pred"]
-    if FEATURES_SCAN:
       #trainer = vrd_trainer("test-no_prior-no-features",  {"training" : {"test_first" : True, "loss" : "mlab_no_prior"}}, profile = base_profile + ["no-feat"])
       #trainer.train()
       #trainer = vrd_trainer("test-no_prior-only_vis",  {"training" : {"num_epochs" : 4, "loss" : "mlab_no_prior"}, "model" : {"feat_used" : {"sem" : 0, "spat" : 0}}})
@@ -453,11 +453,15 @@ if __name__ == "__main__":
       #trainer.train()
       #trainer = vrd_trainer("test-no_prior-only_spat",  {"training" : {"loss" : "mlab_no_prior"}}, profile = base_profile + ["only_spat"])
       #trainer.train()
-      trainer = vrd_trainer("test-no-features-{}".format(emb_model),  {}, profile = base_profile + ["no-feat"])
+    for emb_model in ["gnews", "50"]:
+      trainer = vrd_trainer("{}-test-no-features-{}".format(scan_name, emb_model),  {}, profile = base_profile + ["no-feat"])
       trainer.train()
-      trainer = vrd_trainer("test-only_spat-{}".format(emb_model), {}, profile = base_profile + ["only_spat"])
+      trainer = vrd_trainer("{}-test-only_spat-{}".format(scan_name, emb_model), {}, profile = base_profile + ["only_spat"])
       trainer.train()
-      trainer = vrd_trainer("test-only_sem-{}".format(emb_model),  {}, profile = base_profile + ["only_sem"])
+  
+  for emb_model in ["gnews", "50", "coco-70-50", "coco-30-50", "100"]:
+    if FEATURES_SCAN:
+      trainer = vrd_trainer("{}-test-only_sem-{}".format(scan_name, emb_model),  {}, profile = base_profile + ["only_sem"])
       trainer.train()
 
     # Scan (rotating parameters)
@@ -470,11 +474,11 @@ if __name__ == "__main__":
               for pred_sem_mode_1 in [-1, 16]: # 11 #, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
                 for loss in ["mlab"]: # "bcel"]: # mlab_mse
                   for dataset in ["vrd"]: # , "vg"]:
-                    for prof in ["only_sem", "only_sem_subdiff", "only_sem_subdot", "only_sem_catdiff", "only_sem_catdot", "only_sem_diffdot"]: # ["only_spat", "spat_sem", "only_sem", False]: # , "vg"]:
+                    for prof in ["only_sem", "only_spat", "spat_sem", "only_sem", "all_feats"]: # "only_sem_subdot", "only_sem_catdiff", "only_sem_catdot", "only_sem_diffdot"]: # ["only_spat", "spat_sem", "only_sem", False]: # , "vg"]:
                       if "mse" in loss and (pred_sem_mode_1 == -1 or pred_sem_mode_1>=16):
                         continue
                       pred_sem_mode = pred_sem_mode_1+1
-                      session_id = "scan-v14-{}-{}-{}-{}-{}-{}-{},{:b}-{}-{}".format(emb_model, prof, lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode, pred_sem_mode, dataset, loss)
+                      session_id = "{}-{}-{}-{}-{}-{}-{}-{},{:b}-{}-{}".format(scan_name, emb_model, prof, lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode, pred_sem_mode, dataset, loss)
                       profile = base_profile + [prof]
                       training = {}
                       if dataset == "vg":

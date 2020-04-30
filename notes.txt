@@ -4,6 +4,10 @@ Maybe, title: Class Semantic Awareness for Visual Relationship Detection
 Semantic dense representation instead of 1-hot.
 Skip-Gram/CBOW
 
+scan-v14 gnews ["only_sem_subdiff", "only_sem_subdot", "only_sem_catdiff", "only_sem_catdot", "only_sem_diffdot"]
+  is with 70 predicates
+  everything else 20
+
 
 Makes sure that the model is still valid (validate original with original dataset)
 Show the results with a randomly initialized untrained models.
@@ -11,6 +15,32 @@ Show the results with a randomly initialized untrained models.
   	R@100:  70.558	ZS:  76.166
   	R@50:  37.993	ZS:  43.205
   ...
+
+original, untrained
+PRED TEST:
+  R@100:  12.870  ZS:  13.858
+  R@50:  2.907    ZS:  4.363
+
+  -  Epoch    Pre R@100       ZS     R@50       ZS      Avg
+  --------  -----------  -------  -------  -------  -------
+  -      0      70.5576  76.1663  37.9926  43.2049  56.9803
+  -      1      98.1413  94.6247  88.7175  72.8195  88.5757
+  -      2      98.5316  95.4361  91.71    77.9919  90.9174
+  -      3      98.829   96.4503  92.5093  79.8174  91.9015
+  -      4      98.8848  96.5517  92.7323  79.6146  91.9459
+  -      5      98.9219  96.5517  92.881   79.8174  92.043
+  \ No newline at end of file
+  +  Epoch    Pre R@100       ZS      R@50       ZS       Avg
+  +-------  -----------  -------  --------  -------  --------
+  +      0      12.8699  13.858    2.90652   4.3627   8.49927
+  +      1      91.5161  80.4106  80.2435   57.3995  77.3924
+  +      2      94.0953  84.5167  84.7604   64.2429  81.9038
+  +      3      95.0511  86.3131  86.5933   67.237   83.7986
+  +      4      95.1951  86.6553  87.0647   68.349   84.316
+  +      5      95.2082  86.5697  87.2218   68.6056  84.4013
+  \ No newline at end of file
+
+
 So we believe that the metrics are weak in this sense.
 
 - Introduce a new metric (inspired from https://arxiv.org/pdf/2004.00436.pdf),
