@@ -11,6 +11,13 @@ Show the results with a randomly initialized untrained models.
   	R@100:  70.558	ZS:  76.166
   	R@50:  37.993	ZS:  43.205
   ...
+
+original, untrained
+PRED TEST:
+  R@100:  12.870  ZS:  13.858
+  R@50:  2.907    ZS:  4.363
+
+
 So we believe that the metrics are weak in this sense.
 
 - Introduce a new metric (inspired from https://arxiv.org/pdf/2004.00436.pdf),

@@ -92,6 +92,59 @@ class SemSim(nn.Module):
 
     return a
 
+
+class SoftEmbRescore(nn.Module):
+  """ This layer computes a soft predicate embedding according to a score distribution,
+        and rescore similarly to SemSim """
+
+  def __init__(self, emb, mode = 0):
+    super(SemSim, self).__init__()
+    print("SemSim with mode {}".format(mode))
+    self.emb = torch.as_tensor(emb).to("cuda:0") # TODO fix
+    self.mode = mode
+    self.tanh = nn.Tanh()
+    self.sig = nn.Sigmoid()
+    #print(emb.shape)
+
+  def forward(self, x):
+    #print(x.shape)
+    batch_size = x.shape[0]
+
+    # TODO: allow batching
+    x = x[0]
+
+    # 70 x 300
+    print(self.emb.shape)
+    # 23 x 70
+    print(x.shape)
+
+    # 23 x 300: a soft embedding for each obj_pair
+    soft_emb = x * self.emb
+
+    print(soft_emb.shape)
+    print(F.cosine_similarity(soft_emb[0], self.emb, dim=-1).shape)
+    print(F.cosine_similarity(soft_emb[0], self.emb, dim=0).shape)
+    print(F.cosine_similarity(soft_emb[0], self.emb).shape)
+    print()
+
+    n_obj_pair   = soft_emb.shape[0]
+
+    cos_sim = lambda x : F.cosine_similarity(x, self.emb, dim=-1)
+
+    if self.mode % 2:
+      # We can compute the scores through simple cosine similarity (output is vector of values in [0,1])
+      new_scores = [cos_sim(soft_emb[r]) for r in range(n_obj_pair)]
+    else:
+      # We can compute the cosine similarities scores and remap them into the real axis
+      # atanh   = lambda x : 0.5 * torch.log((1+x)/(1-x))
+      logit = lambda x : torch.log(x/(1-x))
+      new_scores = [logit(cos_sim(soft_emb[r])) for r in range(n_obj_pair)]
+
+    new_score_distr = torch.stack(new_scores)
+    new_score_distr = new_score_distr.unsqueeze(0)
+
+    return new_score_distr
+
 # This function is the batched version of torch.index_select
 # Source: https://discuss.pytorch.org/t/batch-index-select/62621/4
 # def batched_index_select(A, indices):
