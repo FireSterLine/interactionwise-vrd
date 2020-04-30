@@ -746,6 +746,7 @@ if __name__ == '__main__':
     multi_label = True # False
 
     # generate_embeddings = False
+    #generate_embeddings = ["gnews"]
     generate_embeddings = ["gnews", "50", "100", "coco-30-50"]
 
     w2v_model = None
