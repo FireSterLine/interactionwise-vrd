@@ -25,14 +25,14 @@ from lib.datalayer import VRDDataLayer, net_input_to, loss_targets_to
 from lib.evaluator import VRDEvaluator
 
 # Test if code compiles
-TEST_DEBUGGING = True # True # False
+TEST_DEBUGGING = False
 # Test if a newly-introduced change affects the validity of the code
-TEST_EVAL_VALIDITY = True # True # False # True # False # True # False #  True # True
-TEST_TRAIN_VALIDITY = True #  True # True
+TEST_EVAL_VALIDITY = False # True # False # True # False #  True # True
+TEST_TRAIN_VALIDITY = False # True # True
 # Try overfitting to a single element
 TEST_OVERFIT = False #True # False # True
 
-FEATURES_SCAN = True # False
+FEATURES_SCAN =False
 
 PARAMS_SCAN = True # False
 
@@ -470,7 +470,7 @@ if __name__ == "__main__":
               for pred_sem_mode_1 in [-1, 11, 16]: # 11 #, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
                 for loss in ["mlab"]: # "bcel"]: # mlab_mse
                   for dataset in ["vrd"]: # , "vg"]:
-                    for prof in ["only_sem", "only_sem_diff", "only_sem_mul", "only_sem_dot", "only_spat", "spat_sem"]: # , "vg"]:
+                    for prof in ["only_sem_dot", "only_spat", "spat_sem", "only_sem", "only_sem_diff", "only_sem_mul"]: # , "vg"]:
                       if "mse" in loss and (pred_sem_mode_1 == -1 or pred_sem_mode_1>=16):
                         continue
                       pred_sem_mode = pred_sem_mode_1+1
@@ -483,7 +483,7 @@ if __name__ == "__main__":
                       test_type = True # 0.5
 
                       trainer = vrd_trainer(session_id, {
-                        "data" : { "emb_model" : emb_model}
+                        "data" : { "emb_model" : emb_model},
                         "training" : training,
                         "model" : {"use_pred_sem" : pred_sem_mode},
                         "eval" : {"test_pre" : test_type}, # "test_rel" : test_type},

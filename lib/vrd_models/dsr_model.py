@@ -341,7 +341,13 @@ class DSRModel(nn.Module):
       elif self.args.feat_used.sem == "mul":
         emb_s_o = torch.mul(emb_subject, emb_object)
       elif self.args.feat_used.sem == "dot":
-        emb_s_o = torch.mm(emb_subject,emb_object)
+        #print(emb_subject.shape, emb_object.shape)
+        #print(torch.squeeze(emb_subject,0).shape)
+        #print(torch.squeeze(emb_object,0).t().shape)
+        #print(torch.mm(torch.squeeze(emb_subject,0), torch.squeeze(emb_object,0).t()).squeeze(0).shape)
+        #print([s.shape for s,o in zip(emb_subject.squeeze(0),emb_object.squeeze(0))])
+        emb_s_o = torch.stack([torch.mm(s.unsqueeze(0),o.unsqueeze(0).t()).squeeze(0) for s,o in zip(emb_subject.squeeze(0),emb_object.squeeze(0))]).unsqueeze(0)
+        #print(emb_s_o.shape)
 
       # print("emb_s_o.shape: ", emb_s_o.shape)
       emb = self.fc_semantic(emb_s_o)
