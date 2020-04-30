@@ -1,5 +1,22 @@
 Maybe, title: Class Semantic Awareness for Visual Relationship Detection
 
+Hey man, I was reading this: https://medium.com/data-from-the-trenches/arithmetic-properties-of-word-embeddings-e918e3fda2ac
+and they talk about properties of word2vec embeddings first, and then properties of GloVe embeddings (also FastText, and then mention others in the conclusions),
+so I thought maybe we could (depending on how difficult it is) try to use GloVe embeddings as well and compare the use of the GloVe and w2v in terms of the results we get for VRD
+(also examining their differences in terms of the pred2pred matrix).
+What do you think?
+
+
+Semantic dense representation instead of 1-hot.
+Skip-Gram/CBOW
+
+
+Makes sure that the model is still valid (validate original with original dataset)
+Show the results with a randomly initialized untrained models.
+  PRED TEST:
+  	R@100:  70.558	ZS:  76.166
+  	R@50:  37.993	ZS:  43.205
+  ...
 So we believe that the metrics are weak in this sense.
 
 - Introduce a new metric (inspired from https://arxiv.org/pdf/2004.00436.pdf),
@@ -24,6 +41,18 @@ So we believe that the metrics are weak in this sense.
 		all of the scores for this object pair are going to be boosted,
 		if the value is low (it is unlikely that the object pair is interacting in any way),
 		they are going to be low.
+
+
+ (this is what happens in works like \citebyaut{languagepriors} \citebyaut{structural-ranking} and
+\citebyaut{prior-softmax}). % namely, the semantic embedding of the objects
+% is computed using a pre-trained Word2Vec model, and a a different, independent,
+% linear projection of the combined subject-object embeddings for every predicate.
+
+ % consist of a 8-dimensional vector ... cite dsr
+
+We're going to use R@50 and R@30 because the values were quite high already.
+...To complete the description, their ranking approach involves all $n(n-1) \cdot M$ detections in an image to be ranked by score.
+(at test time...)
 
 
 DSR:
@@ -62,3 +91,17 @@ https://sagivtech.com/2017/09/19/optimizing-pytorch-training-code/
 
 criterion = nn.CrossEntropyLoss()
 optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
+
+
+
+
+
+Using a subset of 20 predicates, epoch 4
+R@50  R@50 ZS     R@30     R@30 ZS    Avg.   Type
+76.3011  62.2718  62.1933  45.9432  61.6774  no input
+86.0595  73.2252  73.8662  57.5051  72.664   spat + prior
+89.3494  79.1075  78.7546  63.0832  77.5737  spat (+ prior with lr 1e-4 & wd 1e-4 )
+82.0632  69.4726  70.223   56.4909  69.5624  SemSim-1100 (+ prior with lr 1e-4 & wd 1e-4 )
+76.4498  64.6045  67.974   54.8682  65.9741  SemSim-1100, 50-dim embeddings (+ prior with lr 1e-4 & wd 1e-4 )
+89.3494  78.8032  79.052   62.8803  77.5213  Re-scoring-10001
+89.0149  78.7018  79.3494  63.4888  77.6387  Re-scoring-10001, 50-dim
