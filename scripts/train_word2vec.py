@@ -3,6 +3,7 @@ import os
 import sys
 import time
 import pickle
+import argparse
 import unicodedata
 from glob import glob
 from gensim.models import Word2Vec
@@ -73,7 +74,7 @@ class VRDEmbedding:
             if token_min_len <= len(token) <= token_max_len and not token.startswith('_')
         ]
 
-    def train_model(self, num_cores, serialize=False):
+    def train_model(self, num_cores, num_epochs=None, model_name=None, serialize=False, server_flag=False):
         wiki_path = os.path.join(self.path_prefix, "wiki.pkl")
         if os.path.exists(wiki_path):
             print("Loading wiki from pickle file!")
@@ -81,8 +82,11 @@ class VRDEmbedding:
             wiki.fname = os.path.join(path_prefix, "enwiki-latest-pages-articles.xml.bz2")
         else:
             print("Creating datapath...")
-            # path_to_wiki_dump = datapath("enwiki-latest-pages-articles1.xml-p000000010p000030302-shortened.bz2")
-            path_to_wiki_dump = datapath(os.path.join(path_prefix, "enwiki-latest-pages-articles.xml.bz2"))
+            # if it's the local environment, we are testing on the shortened wiki texts
+            if server_flag is False:
+                path_to_wiki_dump = datapath("enwiki-latest-pages-articles1.xml-p000000010p000030302-shortened.bz2")
+            else:
+                path_to_wiki_dump = datapath(os.path.join(path_prefix, "enwiki-latest-pages-articles.xml.bz2"))
 
             print("Initializing corpus...")
             start = time.time()
@@ -90,8 +94,10 @@ class VRDEmbedding:
                               tokenizer_func=self.vrd_tokenize)  # create word->word_id mapping, ~8h on full wiki
             end = time.time()
             print("Time taken to initialize corpus: {}".format(end - start))
-            print("Dumping wiki to disk...")
-            pickle.dump(wiki, open(os.path.join(path_prefix, "wiki.pkl"), 'wb'))
+            # this is to that the original wiki.pkl does not get overwritten by the one generated for shortened wiki
+            if server_flag is True:
+                print("Dumping wiki to disk...")
+                pickle.dump(wiki, open(os.path.join(path_prefix, "wiki.pkl"), 'wb'))
 
             if serialize is True:
                 print("Creating corpus path...")
@@ -105,10 +111,31 @@ class VRDEmbedding:
         # make an iterator around the get_texts() function of wiki
         wiki_iterator = self.MakeIter(wiki)
 
-        print("Training Word2Vec with dimensionality {}...".format(dim))
+        print("Training Word2Vec with dimensionality {}...".format(self.dim))
         start = time.time()
-        model = Word2Vec(wiki_iterator, size=self.dim, workers=num_cores, min_count=1, callbacks=[
-            self.epoch_logger, self.epoch_saver])
+        if model_name is None:
+            model = Word2Vec(wiki_iterator, size=self.dim, workers=num_cores, min_count=1, iter=5, callbacks=[
+                self.epoch_logger, self.epoch_saver])
+        else:
+            # NOTE: This is model fine-tuning
+            model = self.load_model(model_name)
+            # Existing models renaming should only happen for those models which were trained for a number of
+            #   epochs between epochs_trained and (epochs_trained + num_epochs). However, this causes the existing
+            #   model (which is to be fine-tuned) to be renamed too, essentially creating a copy that we don't need.
+            #   Technically this is how it should be, and what's happening right now - however, when fine-tuning a
+            #   Word2Vec model on Wiki further, we theoretically have no need left for the original model then.
+            #   Need to change?
+            # dim = re.search(r'(?<=_dim_)\d+', model_name).group(0)
+            epochs_trained = int(re.search(r'(?<=epoch_)\d+', model_name).group(0))
+            # total epochs = epochs the model has been trained on + epochs the model is to be fine-tuned on
+            # total_epochs = epochs_trained + num_epochs
+            # models_renamed_flag = self._rename_existing_models(model.callbacks[1].path_prefix, total_epochs, dim,
+            #                                                    revert=False)
+            model.callbacks[0].epoch = epochs_trained + 1
+            model.callbacks[1].epoch += 1
+            model.train(wiki_iterator, total_examples=model.corpus_count, epochs=num_epochs)
+            # if models_renamed_flag is True:
+            #     self._rename_existing_models(model.callbacks[1].path_prefix, total_epochs, dim, revert=True)
         end = time.time()
         print("Time taken to train the model: {}".format(end - start))
         return model
@@ -278,22 +305,36 @@ class EpochLogger(CallbackAny2Vec):
 
 
 if __name__ == '__main__':
-    server_local = sys.argv[1]
-    num_cores = int(sys.argv[2])
-    dim = int(sys.argv[3])
+    parser = argparse.ArgumentParser(description="Train a Word2Vec model on the Wikipedia dataset")
+    parser.add_argument("-SL", "--server_local", dest="server_local", type=str, default="local",
+                        help="Define whether the execution environment is the server or local")
+    parser.add_argument("-C", "--num_cores", dest="num_cores", type=int, default=6,
+                        help="Define the number of cores to use for the training process")
+    parser.add_argument("-E", "--num_epochs", dest="num_epochs", type=int, default=None,
+                        help="Define the number of epochs to use for the training process")
+    parser.add_argument("-D", "--dim", dest="dim", type=int, help="Define the size of the vectors")
+    parser.add_argument("-M", "--model_name", dest="model_name", type=str, default=None,
+                        help="Define the path to the model to finetune")
     server_flag = False
     serialize = False
+    args = parser.parse_args()
 
-    if server_local.lower().strip() == 'server':
+    if args.server_local.lower().strip() == 'server':
         server_flag = True
+
+    if args.model_name is not None:
+        if not os.path.exists(args.model_name):
+            print("The specified model '{}' could not be found on disk; please verify!".format(args.model_name))
+            exit(1)
 
     if server_flag:
         path_prefix = "/home/findwise/interactionwise/wikipedia_dump/"
     else:
         path_prefix = "/media/azfar/New Volume/WikiDump/"
 
-    vrd_embedder = VRDEmbedding(path_prefix, dim)
-    model = vrd_embedder.train_model(num_cores=num_cores, serialize=False)
+    vrd_embedder = VRDEmbedding(path_prefix, args.dim)
+    model = vrd_embedder.train_model(num_cores=args.num_cores, num_epochs=args.num_epochs, serialize=False,
+                                     server_flag=server_flag, model_name=args.model_name)
 
     # model = VRDEmbedding.load_model(os.path.join(path_prefix, "epoch_4_dim_50.model"))
     # model = VRDEmbedding.load_model(os.path.join(path_prefix, "epoch_4_dim_100.model"))
