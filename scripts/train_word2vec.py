@@ -117,14 +117,16 @@ class VRDEmbedding:
             model = Word2Vec(wiki_iterator, size=self.dim, workers=num_cores, min_count=1, iter=5, callbacks=[
                 self.epoch_logger, self.epoch_saver])
         else:
+            # NOTE: This is model fine-tuning
             model = self.load_model(model_name)
-            epochs_trained = int(re.search(r'(?<=epoch_)\d+', model_name).group(0))
             # Existing models renaming should only happen for those models which were trained for a number of
             #   epochs between epochs_trained and (epochs_trained + num_epochs). However, this causes the existing
             #   model (which is to be fine-tuned) to be renamed too, essentially creating a copy that we don't need.
-            #   Technically this is how it should be - however, when fine-tuning a Word2Vec model on Wiki further, we
-            #   theoretically have no need left for the original model then.
+            #   Technically this is how it should be, and what's happening right now - however, when fine-tuning a
+            #   Word2Vec model on Wiki further, we theoretically have no need left for the original model then.
+            #   Need to change?
             dim = re.search(r'(?<=_dim_)\d+', model_name).group(0)
+            epochs_trained = int(re.search(r'(?<=epoch_)\d+', model_name).group(0))
             # total epochs = epochs the model has been trained on + epochs the model is to be fine-tuned on
             total_epochs = epochs_trained + num_epochs
             models_renamed_flag = self._rename_existing_models(model.callbacks[1].path_prefix, total_epochs, dim,
