@@ -46,7 +46,7 @@ class SemSim(nn.Module):
 
   def __init__(self, emb, mode = 0):
     super(SemSim, self).__init__()
-    print("SemSim with mode {}".format(mode))
+    print("SemSim with mode {}={:b}".format(mode,mode))
     self.emb = torch.as_tensor(emb).to("cuda:0") # TODO fix
     self.mode = mode
     self.tanh = nn.Tanh()
@@ -99,7 +99,7 @@ class SoftEmbRescore(nn.Module):
 
   def __init__(self, emb, mode = 0):
     super(SoftEmbRescore, self).__init__()
-    print("SoftEmbRescore with mode {}".format(mode))
+    print("SoftEmbRescore with mode {}={:b}".format(mode,mode))
     self.emb = torch.as_tensor(emb, dtype=torch.float).to("cuda:0") # TODO fix
     self.mode = mode
     
