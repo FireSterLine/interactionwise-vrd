@@ -122,14 +122,10 @@ class vrd_trainer():
       utils.weights_normal_init(self.model, dev=0.01)
       # Load existing embeddings
       if self.model.args.feat_used.sem:
-        try:
-          # obj_emb = torch.from_numpy(self.dataset.readPKL("params_emb.pkl"))
-          obj_emb = torch.from_numpy(self.dataset.getEmb("objects"))
-        except FileNotFoundError:
-          print("Warning! Initialization weights for emb.weight layer not found! Weights are initialized randomly")
-          input()
-          # set_trainability(self.model.emb, requires_grad=True)
+        # obj_emb = torch.from_numpy(self.dataset.readPKL("params_emb.pkl"))
+        obj_emb = torch.from_numpy(self.dataset.getEmb("objects"))
         self.model.state_dict()["emb.weight"].copy_(obj_emb)
+        #TODO: try set_trainability(self.model.emb, requires_grad=True)
 
     # Training
     print("Initializing training...")
@@ -163,7 +159,7 @@ class vrd_trainer():
       dataset = self.datalayer,
       batch_size = 1, # self.args.training.batch_size,
       # sampler= Random ...,
-      num_workers = 4, # num_workers=self.num_workers
+      num_workers = 1, # num_workers=self.num_workers
       pin_memory = True,
       shuffle = self.args.training.use_shuffle,
     )
@@ -263,6 +259,7 @@ class vrd_trainer():
           recalls_by_preds_avg = np.zeros(self.dataset.n_pred)
           for rec_score in range(len(recalls)):  # e.g 4
             recalls_by_preds_avg += np.array(recalls_by_preds[rec_score*self.dataset.n_pred:(rec_score+1)*self.dataset.n_pred])
+          recalls_by_preds_avg /= len(recalls)
           res_row_end_end += list(recalls_by_preds_avg)
         res_row += recalls + (sum(recalls)/len(recalls),)
 
@@ -453,16 +450,16 @@ if __name__ == "__main__":
       #trainer.train()
       #trainer = vrd_trainer("test-no_prior-only_spat",  {"training" : {"loss" : "mlab_no_prior"}}, profile = base_profile + ["only_spat"])
       #trainer.train()
-    for emb_model in ["gnews", "50"]:
-      trainer = vrd_trainer("{}-test-no-features-{}".format(scan_name, emb_model),  {}, profile = base_profile + ["no-feat"])
+      #for emb_model in ["gnews", "50"]:
+      trainer = vrd_trainer("{}-test-no-features".format(scan_name),  {}, profile = base_profile + ["no-feat"])
       trainer.train()
-      trainer = vrd_trainer("{}-test-only_spat-{}".format(scan_name, emb_model), {}, profile = base_profile + ["only_spat"])
+      trainer = vrd_trainer("{}-test-only_spat".format(scan_name), {}, profile = base_profile + ["only_spat"])
       trainer.train()
   
-  for emb_model in ["gnews", "50", "coco-70-50", "coco-30-50", "100"]:
-    if FEATURES_SCAN:
-      trainer = vrd_trainer("{}-test-only_sem-{}".format(scan_name, emb_model),  {}, profile = base_profile + ["only_sem"])
-      trainer.train()
+  for emb_model in ["coco-70-50", "coco-30-50", "100"]:
+    #if FEATURES_SCAN:
+    trainer = vrd_trainer("{}-test-only_sem-{}".format(scan_name, emb_model),  {}, profile = base_profile + ["only_sem"])
+    trainer.train()
 
     # Scan (rotating parameters)
     if PARAMS_SCAN:
