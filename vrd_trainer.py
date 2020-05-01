@@ -32,7 +32,7 @@ TEST_TRAIN_VALIDITY = False #True # True # True
 # Try overfitting to a single element
 TEST_OVERFIT = False #True # False # True
 
-FEATURES_SCAN = True
+FEATURES_SCAN = False
 
 PARAMS_SCAN = True # False
 
@@ -403,6 +403,7 @@ if __name__ == "__main__":
     torch.backends.cudnn.benchmark = False
     trainer = vrd_trainer("test", {"training" : {"num_epochs" : 1, "test_first" : True}, # , "loss" : "mlab_bcel"},
         "eval" : {"test_pre" : test_type,  "test_rel" : test_type},
+        #"model" : {"use_pred_sem" : 1+8},
         "data" : {"justafew" : True}}, profile="by_pred") #, checkpoint="epoch_4_checkpoint.pth.tar")
     trainer.train()
 
@@ -456,10 +457,10 @@ if __name__ == "__main__":
       trainer = vrd_trainer("{}-test-only_spat".format(scan_name), {}, profile = base_profile + ["only_spat"])
       trainer.train()
   
-  for emb_model in ["coco-70-50", "coco-30-50", "100"]:
+  for emb_model in ["gnews"]: # , "50", "coco-70-50", "coco-30-50", "100"]:
     #if FEATURES_SCAN:
-    trainer = vrd_trainer("{}-test-only_sem-{}".format(scan_name, emb_model),  {}, profile = base_profile + ["only_sem"])
-    trainer.train()
+    #trainer = vrd_trainer("{}-test-only_sem-{}".format(scan_name, emb_model),  {}, profile = base_profile + ["only_sem"])
+    #trainer.train()
 
     # Scan (rotating parameters)
     if PARAMS_SCAN:
@@ -468,10 +469,10 @@ if __name__ == "__main__":
         for weight_decay in [0.0001]:
           for lr_fus_ratio in [10]:
             for lr_rel_ratio in [10]: #, 100]:
-              for pred_sem_mode_1 in [-1, 16]: # 11 #, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
+              for pred_sem_mode_1 in [3, 2, 0, 1]: #-1, 16]: # 11 #, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
                 for loss in ["mlab"]: # "bcel"]: # mlab_mse
                   for dataset in ["vrd"]: # , "vg"]:
-                    for prof in ["only_sem", "only_spat", "spat_sem", "only_sem", "all_feats"]: # "only_sem_subdot", "only_sem_catdiff", "only_sem_catdot", "only_sem_diffdot"]: # ["only_spat", "spat_sem", "only_sem", False]: # , "vg"]:
+                    for prof in ["only_sem", "only_spat"]: # , "spat_sem", "only_sem", "all_feats"]: # "only_sem_subdot", "only_sem_catdiff", "only_sem_catdot", "only_sem_diffdot"]: # ["only_spat", "spat_sem", "only_sem", False]: # , "vg"]:
                       if "mse" in loss and (pred_sem_mode_1 == -1 or pred_sem_mode_1>=16):
                         continue
                       pred_sem_mode = pred_sem_mode_1+1
