@@ -189,25 +189,26 @@ class DataPreparer:
       self.cur_dformat = "annos"
 
     def save_counts(self):
+      print("\tSaving object and predicate counts...")
       if self.cur_dformat != "relst":
         print("Warning! prepareGT requires relst format (I'll convert it, but maybe you want to prepareGT later or sooner than now)")
         if not osp.exists(save_dir):
           os.mkdir(save_dir)
         self.to_dformat("relst")
 
-      def save_rels_counts(ids, name):
-        pred_counts = np.zeros(len(pred_vocab))
-        obj_counts  = np.zeros((len(obj_vocab), 3)) # Count occurrences as sub,obj, and total
+      def save_rels_counts(img_ids, name):
+        pred_counts = np.zeros(len(self.pred_vocab), dtype=np.int)
+        obj_counts  = np.zeros((len(self.obj_vocab), 3), dtype=np.int) # Count occurrences as sub,obj, and total
         for img_path in img_ids:
           _, relst = self.get_vrd_data_pair(img_path)
           if relst is not None:
             for i_rel, rel in enumerate(relst):
               for id in rel["predicate"]["id"]:
                 pred_counts[id]                  += 1
-                obj_counts[rel["subject"]["id"]][0,1] += 1
-                obj_counts[rel["object"]["id"]][0,2]  += 1
-        self.writejson({obj  : count for obj,count  in zip(self.obj_vocab,  obj_counts.tolist())},  "objects-counts_{}.json".format(name))
-        self.writejson({pred : count for pred,count in zip(self.pred_vocab, pred_counts.tolist())}, "predicates-counts_{}.json".format(name))
+                obj_counts[rel["subject"]["id"],(0,1)] += 1
+                obj_counts[rel["object"]["id"],(0,2)]  += 1
+        self.writejson([(obj,count) for obj,count  in zip(self.obj_vocab,  obj_counts.tolist())],  "objects-counts_{}.json".format(name))
+        self.writejson([(pred,count) for pred,count in zip(self.pred_vocab, pred_counts.tolist())], "predicates-counts_{}.json".format(name))
 
       save_rels_counts(self.splits["train"], "train")
       save_rels_counts(self.splits["test"], "test")
@@ -780,9 +781,9 @@ if __name__ == '__main__':
 
     multi_label = True # False
 
-    # generate_embeddings = []
     #generate_embeddings = ["gnews"]
-    generate_embeddings = ["gnews", "50", "100", "coco-70-50", "coco-30-50"]
+    #generate_embeddings = ["gnews", "50", "100", "coco-70-50", "coco-30-50"]
+    generate_embeddings = []
 
     #"""
     print("Preparing data for VRD!")
