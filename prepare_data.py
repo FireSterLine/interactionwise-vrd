@@ -117,7 +117,7 @@ class DataPreparer:
         output_file_format = "{}_{}_{}_{{}}.json".format(self.prefix, dformat, granularity)
 
         vrd_data_train = []
-        vrd_data_test = []
+        vrd_data_test  = []
         for img_path in self.splits["train"]:
           vrd_data_train.append(self.get_vrd_data_pair(img_path))
         for img_path in self.splits["test"]:
@@ -187,6 +187,31 @@ class DataPreparer:
 
       self.vrd_data = new_vrd_data
       self.cur_dformat = "annos"
+
+    def save_counts(self):
+      if self.cur_dformat != "relst":
+        print("Warning! prepareGT requires relst format (I'll convert it, but maybe you want to prepareGT later or sooner than now)")
+        if not osp.exists(save_dir):
+          os.mkdir(save_dir)
+        self.to_dformat("relst")
+
+      def save_rels_counts(ids, name):
+        pred_counts = np.zeros(len(pred_vocab))
+        obj_counts  = np.zeros((len(obj_vocab), 3)) # Count occurrences as sub,obj, and total
+        for img_path in img_ids:
+          _, relst = self.get_vrd_data_pair(img_path)
+          if relst is not None:
+            for i_rel, rel in enumerate(relst):
+              for id in rel["predicate"]["id"]:
+                pred_counts[id]                  += 1
+                obj_counts[rel["subject"]["id"]][0,1] += 1
+                obj_counts[rel["object"]["id"]][0,2]  += 1
+        self.writejson({obj  : count for obj,count  in zip(self.obj_vocab,  obj_counts.tolist())},  "objects-counts_{}.json".format(name))
+        self.writejson({pred : count for pred,count in zip(self.pred_vocab, pred_counts.tolist())}, "predicates-counts_{}.json".format(name))
+
+      save_rels_counts(self.splits["train"], "train")
+      save_rels_counts(self.splits["test"], "test")
+
 
     def prepareGT(self):
       print("\tGenerating ground-truth pickle...")
@@ -774,6 +799,7 @@ if __name__ == '__main__':
     #data_preparer_vrd.randomize_split()
     data_preparer_vrd.prepareGT()
     data_preparer_vrd.save_data("relst")
+    data_preparer_vrd.save_counts()
     #data_preparer_vrd.save_data("relst", "rel")
     data_preparer_vrd.save_data("annos")
     #"""
@@ -783,6 +809,7 @@ if __name__ == '__main__':
     print("Generating data in DSR format...")
     data_preparer_vrd.load_dsr()
     data_preparer_vrd.save_data("relst")
+    data_preparer_vrd.save_counts()
     #data_preparer_vrd.save_data("relst", "rel")
     data_preparer_vrd.save_data("annos")
     """
@@ -794,6 +821,7 @@ if __name__ == '__main__':
     #subset = (1600, 400, 20)
     data_preparer_vg = VGPrep(subset, multi_label=multi_label, generate_emb=w2v_model)
     data_preparer_vg.save_data("relst")
+    data_preparer_vg.save_counts()
     data_preparer_vg.prepareGT()
     #data_preparer_vg.save_data("relst", "rel")
     data_preparer_vg.save_data("annos")
