@@ -45,7 +45,7 @@ Notes:
 """
 
 class DataPreparer:
-    def __init__(self, multi_label = True, generate_emb = None):
+    def __init__(self, multi_label = True, generate_emb = []):
         self.objects_vocab_file    = "objects.json"
         self.predicates_vocab_file = "predicates.json"
 
@@ -93,8 +93,8 @@ class DataPreparer:
         self.obj_vocab  = obj_vocab
         self.pred_vocab = pred_vocab
 
-        if self.generate_emb is not None:
-          for model_name,model in self.generate_emb.items():
+        for model_name in self.generate_emb:
+            model = load_emb_model(model_name)
             obj_emb  = [ getWordEmbedding(obj_label,  model, globals.emb_model_size(model_name)).astype(float).tolist() for  obj_label in self.obj_vocab]
             pred_emb = [ getWordEmbedding(pred_label, model, globals.emb_model_size(model_name)).astype(float).tolist() for pred_label in self.pred_vocab]
             self.writejson(obj_emb,  "objects-emb-{}.json".format(model_name))
@@ -368,7 +368,7 @@ class DataPreparer:
 
 
 class VRDPrep(DataPreparer):
-    def __init__(self, multi_label = True, generate_emb = None, use_cleaning_map = False):
+    def __init__(self, multi_label = True, generate_emb = [], use_cleaning_map = False):
       super(VRDPrep, self).__init__(multi_label = multi_label, generate_emb = generate_emb)
 
       print("\tVRDPrep(multi-label : {}, use_cleaning_map : {})...".format(multi_label, use_cleaning_map))
@@ -629,7 +629,7 @@ class VRDPrep(DataPreparer):
 
 
 class VGPrep(DataPreparer):
-    def __init__(self, subset, multi_label=True, generate_emb=None):
+    def __init__(self, subset, multi_label=True, generate_emb = []):
         super(VGPrep, self).__init__(multi_label=multi_label, generate_emb=generate_emb)
 
         print("\tLoad VRD data...")
@@ -761,7 +761,17 @@ def getWordEmbedding(word, emb_model, emb_size, depth=0):
       return embedding
     return embedding / np.linalg.norm(embedding)
 
-
+def load_emb_model(model_name):
+      print("Loading embedding model '{}'...".format(model_name))
+      model_path = globals.emb_model_path(model_name)
+      if model_name is "gnews":
+        model = KeyedVectors.load_word2vec_format(model_path, binary=True)
+      else:
+        # This is needed happens in the case of COCO finetuned models because they were dumped from outside the
+        # train_word2vec script, so the train_word2vec module needs to be in the path for them to load
+        sys.path.append("./scripts")
+        model = VRDEmbedding.load_model(model_path)
+      return model
 
 
 if __name__ == '__main__':
@@ -770,28 +780,13 @@ if __name__ == '__main__':
 
     multi_label = True # False
 
-    # generate_embeddings = False
+    # generate_embeddings = []
     #generate_embeddings = ["gnews"]
-    generate_embeddings = ["gnews", "50", "100", "coco-30-50"]
-
-    w2v_model = None
-    if generate_embeddings:
-      w2v_model = {}
-      for model_name in generate_embeddings:
-        print("Loading embedding model '{}'...".format(model_name))
-        model_path = globals.emb_model_path(model_name)
-        if model_name is "gnews":
-          model = KeyedVectors.load_word2vec_format(model_path, binary=True)
-        else:
-          # This is needed happens in the case of COCO finetuned models because they were dumped from outside the
-          # train_word2vec script, so the train_word2vec module needs to be in the path for them to load
-          sys.path.append("./scripts")
-          model = VRDEmbedding.load_model(model_path)
-        w2v_model[model_name] = model
+    generate_embeddings = ["gnews", "50", "100", "coco-70-50", "coco-30-50"]
 
     #"""
     print("Preparing data for VRD!")
-    data_preparer_vrd = VRDPrep(use_cleaning_map=True, multi_label=multi_label, generate_emb=w2v_model)
+    data_preparer_vrd = VRDPrep(use_cleaning_map=True, multi_label=multi_label, generate_emb=generate_embeddings)
     #"""
     #print("\tPreparing evaluation data from Language Priors...")
     #data_preparer_vrd.prepareEvalFromLP()
@@ -819,7 +814,7 @@ if __name__ == '__main__':
     print("Preparing data for VG...")
     subset = (150, 50, 50)
     #subset = (1600, 400, 20)
-    data_preparer_vg = VGPrep(subset, multi_label=multi_label, generate_emb=w2v_model)
+    data_preparer_vg = VGPrep(subset, multi_label=multi_label, generate_emb=generate_embeddings)
     data_preparer_vg.save_data("relst")
     data_preparer_vg.save_counts()
     data_preparer_vg.prepareGT()

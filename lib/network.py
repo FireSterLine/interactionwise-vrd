@@ -46,7 +46,7 @@ class SemSim(nn.Module):
 
   def __init__(self, emb, mode = 0):
     super(SemSim, self).__init__()
-    print("SemSim with mode {}".format(mode))
+    print("SemSim with mode {}={:b}".format(mode,mode))
     self.emb = torch.as_tensor(emb).to("cuda:0") # TODO fix
     self.mode = mode
     self.tanh = nn.Tanh()
@@ -98,12 +98,14 @@ class SoftEmbRescore(nn.Module):
         and rescore similarly to SemSim """
 
   def __init__(self, emb, mode = 0):
-    super(SemSim, self).__init__()
-    print("SemSim with mode {}".format(mode))
-    self.emb = torch.as_tensor(emb).to("cuda:0") # TODO fix
+    super(SoftEmbRescore, self).__init__()
+    print("SoftEmbRescore with mode {}={:b}".format(mode,mode))
+    self.emb = torch.as_tensor(emb, dtype=torch.float).to("cuda:0") # TODO fix
     self.mode = mode
+    
     self.tanh = nn.Tanh()
     self.sig = nn.Sigmoid()
+    self.relu = nn.ReLU(inplace=True)
     #print(emb.shape)
 
   def forward(self, x):
@@ -114,18 +116,19 @@ class SoftEmbRescore(nn.Module):
     x = x[0]
 
     # 70 x 300
-    print(self.emb.shape)
+    #print(self.emb.shape)
+    #print(self.emb.type())
     # 23 x 70
-    print(x.shape)
+    #print(x.shape)
+    #print(x.type())
 
     # 23 x 300: a soft embedding for each obj_pair
-    soft_emb = x * self.emb
+    #soft_emb = torch.mm(self.emb,x)
+    soft_emb = torch.mm(x,self.emb)
 
-    print(soft_emb.shape)
-    print(F.cosine_similarity(soft_emb[0], self.emb, dim=-1).shape)
-    print(F.cosine_similarity(soft_emb[0], self.emb, dim=0).shape)
-    print(F.cosine_similarity(soft_emb[0], self.emb).shape)
-    print()
+    #print(soft_emb.shape)
+    #print(F.cosine_similarity(soft_emb[0], self.emb, dim=-1).shape)
+    #print()
 
     n_obj_pair   = soft_emb.shape[0]
 
@@ -142,6 +145,9 @@ class SoftEmbRescore(nn.Module):
 
     new_score_distr = torch.stack(new_scores)
     new_score_distr = new_score_distr.unsqueeze(0)
+    
+    if (self.mode//2) % 2:
+      self.relu(new_score_distr)
 
     return new_score_distr
 
