@@ -88,10 +88,11 @@ class DataPreparer:
           pred_vocab, pred_cls_map = cleaned_vocab(pred_vocab, cleaning_map["pred_map"], cleaning_map["pred_subset"])
           self.cleaning_map = {"pred" : pred_cls_map}
 
-        self.writejson(obj_vocab,  self.objects_vocab_file)
-        self.writejson(pred_vocab, self.predicates_vocab_file)
         self.obj_vocab  = obj_vocab
         self.pred_vocab = pred_vocab
+
+        self.writejson(self.obj_vocab,  self.objects_vocab_file)
+        self.writejson(self.pred_vocab, self.predicates_vocab_file)
 
         for model_name in self.generate_emb:
             model = load_emb_model(model_name)
@@ -207,11 +208,11 @@ class DataPreparer:
                 pred_counts[id]                  += 1
                 obj_counts[rel["subject"]["id"],(0,1)] += 1
                 obj_counts[rel["object"]["id"],(0,2)]  += 1
-        self.writejson([(obj,count) for obj,count  in zip(self.obj_vocab,  obj_counts.tolist())],  "objects-counts_{}.json".format(name))
+        self.writejson([(obj,count)  for obj,count  in zip(self.obj_vocab,  obj_counts.tolist())],  "objects-counts_{}.json".format(name))
         self.writejson([(pred,count) for pred,count in zip(self.pred_vocab, pred_counts.tolist())], "predicates-counts_{}.json".format(name))
 
       save_rels_counts(self.splits["train"], "train")
-      save_rels_counts(self.splits["test"], "test")
+      save_rels_counts(self.splits["test"],  "test")
 
 
     def prepareGT(self):
