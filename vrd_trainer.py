@@ -466,17 +466,17 @@ if __name__ == "__main__":
     if PARAMS_SCAN:
       print("PARAMS_SCAN")
       for lr in [0.00001]: # [0.001, 0.0001, 0.00001, 0.000001]:
-        for weight_decay in [0.0001, 0.0005]:
+        for weight_decay in [0.0001]:
           for lr_fus_ratio in [10]:
             for lr_rel_ratio in [10]: #, 100]:
-              for pred_sem_mode_1 in [2, 0, 1]: #-1, 16]: # 11 #, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
+              for pred_sem_mode_1 in [3]: #, 0, 1]: #-1, 16]: # 11 #, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
                 for loss in ["mlab"]: # "bcel"]: # mlab_mse
                   for dataset in ["vrd"]: # , "vg"]:
                     for prof in ["only_sem", "all_feats"]: # "only_sem_subdot", "only_sem_catdiff", "only_sem_catdot", "only_sem_diffdot"]: # ["only_spat", "spat_sem", "only_sem", False]: # , "vg"]:
                       if "mse" in loss and (pred_sem_mode_1 == -1 or pred_sem_mode_1>=16):
                         continue
+                      session_id = "{}-{}-{}-{}-{}-{}-{}-{},{:b}-{}-{}".format(scan_name, emb_model, prof, lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode_1, pred_sem_mode_1, dataset, loss)
                       pred_sem_mode = pred_sem_mode_1+1
-                      session_id = "{}-{}-{}-{}-{}-{}-{}-{},{:b}-{}-{}".format(scan_name, emb_model, prof, lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode, pred_sem_mode, dataset, loss)
                       profile = base_profile + [prof]
                       training = {}
                       if dataset == "vg":
