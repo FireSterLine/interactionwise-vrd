@@ -1,4 +1,7 @@
 {
+  "of"                 : ["about"],
+  "in front of"        : ["in_front", "front_of", "front"],
+  "on top of"          : [ "on top", "top of", "top"],
    "traffic light"     : ["trafficlight", "stoplight"],
    "trash can"         : ["trashcan", "papercan", "trash"],
    "next to"           : ["next"],
