@@ -783,7 +783,7 @@ if __name__ == '__main__':
 
     #generate_embeddings = ["gnews"]
     #generate_embeddings = ["gnews", "50", "100", "coco-70-50", "coco-30-50"]
-    generate_embeddings = []
+    generate_embeddings = ["300"]
 
     #"""
     print("Preparing data for VRD!")
