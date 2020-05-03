@@ -457,7 +457,7 @@ if __name__ == "__main__":
       trainer = vrd_trainer("{}-test-only_spat".format(scan_name), {}, profile = base_profile + ["only_spat"])
       trainer.train()
   
-  for emb_model in ["300"]: # "gnews"]: # , "50", "coco-70-50", "coco-30-50", "100"]:
+  for emb_model in ["gnews"]: # , "300", "50", "coco-70-50", "coco-30-50", "100"]:
     #if FEATURES_SCAN:
     #trainer = vrd_trainer("{}-test-only_sem-{}".format(scan_name, emb_model),  {}, profile = base_profile + ["only_sem"])
     #trainer.train()
@@ -465,14 +465,14 @@ if __name__ == "__main__":
     # Scan (rotating parameters)
     if PARAMS_SCAN:
       print("PARAMS_SCAN")
-      for lr in [0.0001]: # , 0.00001, 0.000001]: # [0.001, 0.0001, 0.00001, 0.000001]:
-        for weight_decay in [0.0001]:
+      for lr in [0.00001]: # [0.001, 0.0001, 0.00001, 0.000001]:
+        for weight_decay in [0.0001, 0.0005]:
           for lr_fus_ratio in [10]:
             for lr_rel_ratio in [10]: #, 100]:
-              for pred_sem_mode_1 in [-1, 16]: # 3, 2, 0, 1]: #-1, 16]: # 11 #, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
+              for pred_sem_mode_1 in [2, 0, 1]: #-1, 16]: # 11 #, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
                 for loss in ["mlab"]: # "bcel"]: # mlab_mse
                   for dataset in ["vrd"]: # , "vg"]:
-                    for prof in ["only_sem", "only_spat", "spat_sem", "all_feats"]: # "only_sem_subdot", "only_sem_catdiff", "only_sem_catdot", "only_sem_diffdot"]: # ["only_spat", "spat_sem", "only_sem", False]: # , "vg"]:
+                    for prof in ["only_sem", "all_feats"]: # "only_sem_subdot", "only_sem_catdiff", "only_sem_catdot", "only_sem_diffdot"]: # ["only_spat", "spat_sem", "only_sem", False]: # , "vg"]:
                       if "mse" in loss and (pred_sem_mode_1 == -1 or pred_sem_mode_1>=16):
                         continue
                       pred_sem_mode = pred_sem_mode_1+1
