@@ -14,9 +14,7 @@ def emb_model_path(model_name):
   elif "coco" in model_name:
     _, ep, dim = model_name.split("-")
     w2v_model_path = "/home/findwise/interactionwise/wikipedia_dump/coco/epoch_{}_dim_{}.model".format(ep, dim)
-  elif model_name in ["50", "100"]:
-    w2v_model_path = "/home/findwise/interactionwise/wikipedia_dump/epoch_4_dim_{}.model".format(model_name)
-  elif model_name in ["300"]:
+  elif model_name in ["50", "100", "300"]:
     w2v_model_path = "/home/findwise/interactionwise/wikipedia_dump/epoch_5_dim_{}.model".format(model_name)
   else:
     raise ValueError("Unknown embedding model: '{}'".format(model_name))

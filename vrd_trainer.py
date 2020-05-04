@@ -439,7 +439,7 @@ if __name__ == "__main__":
       # trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : False, "test_rel" : test_type}}, profile = "vg")
       #trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : test_type}}, profile = "vg")
       #trainer.train()
-  scan_name = "scan-v15"
+  scan_name = "v16-all_preds"
   base_profile = ["pred_sem", "by_pred"]
   if FEATURES_SCAN:
 
@@ -469,10 +469,10 @@ if __name__ == "__main__":
         for weight_decay in [0.0001]:
           for lr_fus_ratio in [10]:
             for lr_rel_ratio in [10]: #, 100]:
-              for pred_sem_mode_1 in [-1, 16]: # 3, 11 #, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
+              for pred_sem_mode_1 in [-1, 3, 11, 16]: # 3, 11 #, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
                 for loss in ["mlab"]: # "bcel"]: # mlab_mse
-                  for dataset in ["vg"]: # vrd
-                    for prof in ["only_sem", "only_spat", "all_feats"]: # "only_sem_subdot", "only_sem_catdiff", "only_sem_catdot", "only_sem_diffdot"]: # ["only_spat", "spat_sem", "only_sem", False]: # , "vg"]:
+                  for dataset in ["vrd"]: # vrd
+                    for prof in ["only_sem", "all_feats"]: # "only_sem_subdot", "only_sem_catdiff", "only_sem_catdot", "only_sem_diffdot"]: # ["only_spat", "spat_sem", "only_sem", False]: # , "vg"]:
                       if "mse" in loss and (pred_sem_mode_1 == -1 or pred_sem_mode_1>=16):
                         continue
                       session_id = "{}-{}-{}-{}-{}-{}-{}-{},{:b}-{}-{}".format(scan_name, emb_model, prof, lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode_1, pred_sem_mode_1, dataset, loss)

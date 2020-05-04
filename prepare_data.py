@@ -759,7 +759,8 @@ def getWordEmbedding(word, emb_model, emb_size, depth=0):
           else:
               raise ValueError("Error fallback word is of type {}: {}".format(fallback_word, type(fallback_word)))
     if np.all(embedding == np.zeros(emb_size)):
-      print("{}Warning! Couldn't find semantic vector for '{}'".format("  " * depth, word))
+      if depth == 0:
+        print("{}Warning! Couldn't find semantic vector for '{}'".format("  " * depth, word))
       return embedding
     return embedding / np.linalg.norm(embedding)
 
@@ -782,14 +783,15 @@ if __name__ == '__main__':
 
     multi_label = True # False
 
-    #generate_embeddings = ["gnews"]
     #generate_embeddings = ["gnews", "50", "100", "coco-70-50", "coco-30-50"]
-    generate_embeddings = ["300"]
+    generate_embeddings = ["gnews", "300"]
+    #generate_embeddings = ["gnews"]
+    #generate_embeddings = ["300"]
 
     #"""
     print("Preparing data for VRD!")
-    data_preparer_vrd = VRDPrep(use_cleaning_map=True, multi_label=multi_label, generate_emb=generate_embeddings)
-    #"""
+    #data_preparer_vrd = VRDPrep(use_cleaning_map=True, multi_label=multi_label, generate_emb=generate_embeddings)
+    data_preparer_vrd = VRDPrep(use_cleaning_map=False, multi_label=multi_label, generate_emb=generate_embeddings)
     #print("\tPreparing evaluation data from Language Priors...")
     #data_preparer_vrd.prepareEvalFromLP()
     data_preparer_vrd.load_vrd()
@@ -823,3 +825,5 @@ if __name__ == '__main__':
     #data_preparer_vg.save_data("relst", "rel")
     data_preparer_vg.save_data("annos")
     #"""
+
+    sys.exit(0)
