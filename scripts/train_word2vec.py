@@ -130,12 +130,7 @@ class VRDEmbedding:
             #   Technically this is how it should be, and what's happening right now - however, when fine-tuning a
             #   Word2Vec model on Wiki further, we theoretically have no need left for the original model then.
             #   Need to change?
-            # dim = re.search(r'(?<=_dim_)\d+', model_name).group(0)
             epochs_trained = int(re.search(r'(?<=epoch_)\d+', model_file).group(0))
-            # total epochs = epochs the model has been trained on + epochs the model is to be fine-tuned on
-            # total_epochs = epochs_trained + num_epochs
-            # models_renamed_flag = self._rename_existing_models(model.callbacks[1].path_prefix, total_epochs, dim,
-            #                                                    revert=False)
             model.callbacks[0].epoch = epochs_trained + 1
             model.callbacks[1].epoch += 1
             model.train(wiki_iterator, total_examples=model.corpus_count, epochs=num_epochs)
