@@ -15,6 +15,7 @@ with open("data/vrd/dsr_relst_test.json", 'r') as f:
 with open("data/vrd/data_relst_img_test.json", 'r') as f:
   test_data_pkl = json.load(f)
 
+
 len(train)
 len(test)
 
@@ -307,11 +308,10 @@ for i in range(len(ddsr["obj_bboxes"])):
   np.array(d2["boxes"][0], dtype=np.int)[ind]
 
 
-
 import json
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
-filename = "data/vrd/predicates-emb.json"
+filename = "data/vrd/predicates-emb-gnews.json"
 with open(filename, 'r') as f:
   pred_emb = json.load(f)
 
@@ -322,7 +322,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 a = [[1],[-1]]
 cosine_similarity(a)
 
-filename = "data/vrd/objects-emb.json"
+filename = "data/genome/150-50-50/objects-emb-gnews.json"
 with open(filename, 'r') as f:
   pred_emb = json.load(f)
 
@@ -424,3 +424,33 @@ python gen_obj_det.py --dataset vg --net res101 \
                    --cut_predictions_at $CUT_AT \
                    --checksession $SESSION --checkepoch $EPOCH --checkpoint $CHECKPOINT \
                    --cuda --vis
+
+
+data_dir = "data/vrd"
+model = "gnews"
+
+def save_pred2pred(data_dir, model):
+  import json
+  import numpy as np
+  filename = "{}/predicates-emb-{}.json".format(data_dir, model)
+  with open(filename, 'r') as f:
+    pred_emb = json.load(f)
+  pred_emb =np.array(pred_emb)
+  from sklearn.metrics.pairwise import cosine_similarity
+  pred2pred_sim = cosine_similarity(pred_emb, pred_emb)
+  np.savetxt("{}/pred2pred_sim-{}.csv".format(data_dir, model), pred2pred_sim, delimiter=",")
+  return pred2pred_sim
+
+
+def save_pred2pred_diff(data_dir, model1, model2):
+  import numpy as np
+  pred2pred1_sim = save_pred2pred(data_dir, model1)
+  pred2pred2_sim = save_pred2pred(data_dir, model2)
+  np.savetxt("{}/pred2pred_sim-{}-{}.csv".format(data_dir, model1, model2), (pred2pred1_sim-pred2pred2_sim), delimiter=",")
+
+
+save_pred2pred("data/vrd", "gnews");
+save_pred2pred("data/vrd", "300");
+save_pred2pred_diff("data/vrd", "gnews", "300");
+save_pred2pred_diff("data/vrd", "50", "300");
+save_pred2pred_diff("data/vrd", "50", "100");

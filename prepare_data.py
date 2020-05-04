@@ -192,7 +192,7 @@ class DataPreparer:
     def save_counts(self):
       print("\tSaving object and predicate counts...")
       if self.cur_dformat != "relst":
-        print("Warning! prepareGT requires relst format (I'll convert it, but maybe you want to prepareGT later or sooner than now)")
+        print("Warning! save_counts requires relst format (I'll convert it, but maybe you want to save_counts later or sooner than now)")
         if not osp.exists(save_dir):
           os.mkdir(save_dir)
         self.to_dformat("relst")
@@ -254,6 +254,10 @@ class DataPreparer:
             for id in rel["predicate"]["id"]:
               train_tuple_label.append([rel["subject"]["id"], id, rel["object"]["id"]])
 
+      # save zs counts
+      zs_pred_counts = np.zeros(len(self.pred_vocab), dtype=np.int)
+      zs_obj_counts  = np.zeros((len(self.obj_vocab), 3), dtype=np.int) # Count occurrences as sub,obj, and total
+
       for img_path in self.splits["test"]:
         _, relst = self.get_vrd_data_pair(img_path)
 
@@ -272,6 +276,11 @@ class DataPreparer:
               tuple_label = [rel["subject"]["id"], id, rel["object"]["id"]]
               sub_bbox = utils.bboxDictToNumpy(rel["subject"]["bbox"])
               obj_bbox = utils.bboxDictToNumpy(rel["object"]["bbox"])
+
+              # ZS occurrence counts
+              zs_pred_counts[id]                        += 1
+              zs_obj_counts[rel["subject"]["id"],(0,1)] += 1
+              zs_obj_counts[rel["object"]["id"],(0,2)]  += 1
 
               tuple_labels.append(tuple_label)
               sub_bboxes.append(sub_bbox)
@@ -302,6 +311,10 @@ class DataPreparer:
 
       self.writepickle(gt_pkl, gt_output_path)
       self.writepickle(gt_zs_pkl, gt_zs_output_path)
+
+      # save zs counts
+      self.writejson([(obj,count)  for obj,count  in zip(self.obj_vocab,  zs_obj_counts.tolist())],  "objects-counts_{}.json".format("test_zs"))
+      self.writejson([(pred,count) for pred,count in zip(self.pred_vocab, zs_pred_counts.tolist())], "predicates-counts_{}.json".format("test_zs"))
 
 
     # def annos2relst(self):
