@@ -277,11 +277,6 @@ class DataPreparer:
               sub_bbox = utils.bboxDictToNumpy(rel["subject"]["bbox"])
               obj_bbox = utils.bboxDictToNumpy(rel["object"]["bbox"])
 
-              # ZS occurrence counts
-              zs_pred_counts[id]                        += 1
-              zs_obj_counts[rel["subject"]["id"],(0,1)] += 1
-              zs_obj_counts[rel["object"]["id"],(0,2)]  += 1
-
               tuple_labels.append(tuple_label)
               sub_bboxes.append(sub_bbox)
               obj_bboxes.append(obj_bbox)
@@ -289,6 +284,11 @@ class DataPreparer:
                 zs_tuple_labels.append(tuple_label)
                 zs_sub_bboxes.append(sub_bbox)
                 zs_obj_bboxes.append(obj_bbox)
+                # ZS occurrence counts
+                zs_pred_counts[id]                        += 1
+                zs_obj_counts[rel["subject"]["id"],(0,1)] += 1
+                zs_obj_counts[rel["object"]["id"],(0,2)]  += 1
+
 
         tuple_labels = np.array(tuple_labels, dtype = np.uint8)
         sub_bboxes   = np.array(sub_bboxes,   dtype = np.uint16)
@@ -796,8 +796,9 @@ if __name__ == '__main__':
 
     multi_label = True # False
 
+    generate_embeddings = []
     #generate_embeddings = ["gnews", "50", "100", "coco-70-50", "coco-30-50"]
-    generate_embeddings = ["gnews", "300"]
+    #generate_embeddings = ["gnews", "300"]
     #generate_embeddings = ["gnews"]
     #generate_embeddings = ["300"]
 
