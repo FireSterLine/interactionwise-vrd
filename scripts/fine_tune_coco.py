@@ -4,6 +4,7 @@ import sys
 import json
 import spacy
 import pickle
+import argparse
 from train_word2vec import VRDEmbedding, EpochLogger, EpochSaver
 
 
@@ -77,28 +78,36 @@ def explore_captions_data(tok_captions, obj_filename, pred_filename):
     return obj_pred_count
 
 
-def fine_tune_embeddings_coco(path_to_model, model_name, tokenized_captions, num_epochs):
+def fine_tune_embeddings_coco(path_to_model, tokenized_captions, num_epochs):
     # the dim here does not matter, since we will ultimately load the model specified in `path_to_model` for fine-tuning
-    vrd_embedder = VRDEmbedding(path_to_model, dim=100)
+    model_type = re.search(r'[A-Za-z\d]+(?=_)', path_to_model.split('/')[-1]).group(0)
+    vrd_embedder = VRDEmbedding(path_to_model, dim=100, model=model_type)
     # model = vrd_embedder.load_model(os.path.join(path_to_model, "epoch_4.model"))
-    print("Training model over COCO...")
-    model = vrd_embedder.fine_tune_model_coco(os.path.join(path_to_model, model_name), tokenized_captions, num_epochs)
+    model = vrd_embedder.fine_tune_model_coco(path_to_model, model_type, tokenized_captions, num_epochs)
     return model
 
 
 if __name__ == '__main__':
     tokenize_regex = re.compile(r'(((?![\d])\w)+)', re.UNICODE)
-    server_local = sys.argv[1]
-    model_name = sys.argv[2]
-    num_epochs = int(sys.argv[3])
-    server_flag = False
+    parser = argparse.ArgumentParser(description="Finetune a Word2Vec/FastText model on the COCO captions dataset")
+    parser.add_argument("-SL", "--server_local", dest="server_local", type=str, default="local",
+                        help="Define whether the execution environment is the server or local")
+    parser.add_argument("-F", "--model_file_name", dest="model_file_name", type=str,
+                        help="Define the path to the model to finetune")
+    parser.add_argument("-E", "--epochs", dest="num_epochs", type=int, default=5,
+                        help="Define the number of epochs to finetune the model over")
+    args = parser.parse_args()
 
-    if server_local.lower().strip() == 'server':
+    server_flag = False
+    if args.server_local.lower().strip() == 'server':
         server_flag = True
     if server_flag:
         path_prefix = "/home/findwise/interactionwise/wikipedia_dump/"
     else:
         path_prefix = "/media/azfar/New Volume/WikiDump/"
+
+    if "/" not in args.model_file_name:
+        args.model_file_name = os.path.join(path_prefix, args.model_file_name)
 
     captions_filename = "../../coco_captions.txt"
     vrd_objects_filename = "../data/vrd/objects.json"
@@ -179,4 +188,4 @@ if __name__ == '__main__':
         tokenized_captions = pickle.load(open(tokenized_captions_pickle, 'rb'))
 
     print("Finetuning model on COCO...")
-    model = fine_tune_embeddings_coco(path_prefix, model_name, tokenized_captions, num_epochs=num_epochs)
+    model = fine_tune_embeddings_coco(args.model_file_name, tokenized_captions, num_epochs=args.num_epochs)
