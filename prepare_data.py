@@ -333,16 +333,19 @@ class DataPreparer:
       self.writejson([(pred,count) for pred,count in zip(self.pred_vocab, zs_pred_counts.tolist())], "predicates-counts_{}.json".format("test_zs"))
 
       # save tuple counts
-      def get_tuple_counts(self, tuple_labels_list):
-        sop_counts = np.zeros((self.n_obj, self.n_obj, self.n_pred))
+      def get_tuple_counts(tuple_labels_list):
+        n_obj = len(self.obj_vocab)
+        n_pred = len(self.pred_vocab)
+        sop_counts = np.zeros((n_obj, n_obj, n_pred), dtype=np.int)
         for tuple_label in tuple_labels_list:
           subject_label, predicate_labels, object_label = tuple_label
           np.add.at(sop_counts[subject_label][object_label], predicate_labels, 1)
         counts = {}
-        for sub_idx in range(self.n_obj):
-          for obj_idx in range(self.n_obj):
-            for pred_idx in range(self.n_pred):
-              counts[tuple(sub_idx,obj_idx,pred_idx)] = sop_counts[sub_idx][obj_idx][pred_idx]
+        for sub_idx in range(n_obj):
+          for obj_idx in range(n_obj):
+            for pred_idx in range(n_pred):
+              if sop_counts[sub_idx][obj_idx][pred_idx] > 0:
+                counts[str([sub_idx,obj_idx,pred_idx])] = int(sop_counts[sub_idx][obj_idx][pred_idx])
         return counts
       self.writejson(get_tuple_counts(all_train_tuple_labels), "tuples-counts_{}.json".format("train"))
       self.writejson(get_tuple_counts(all_test_tuple_labels),  "tuples-counts_{}.json".format("test"))
@@ -839,9 +842,9 @@ if __name__ == '__main__':
     #generate_embeddings = ["gnews", "50", "100", "coco-70-50", "coco-30-50"]
     #generate_embeddings = ["gnews", "300"]
     #generate_embeddings = ["gnews"]
-    generate_embeddings = ["gnews", "300", "glove-50"]
+    #generate_embeddings = ["gnews", "300", "glove-50"]
 
-    """
+    #"""
     print("Preparing data for VRD!")
     #data_preparer_vrd = VRDPrep(use_cleaning_map=True, multi_label=multi_label, generate_emb=generate_embeddings)
     data_preparer_vrd = VRDPrep(use_cleaning_map=False, multi_label=multi_label, generate_emb=generate_embeddings)
