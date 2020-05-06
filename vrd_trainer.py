@@ -181,10 +181,10 @@ class vrd_trainer():
     if self.args.eval.by_predicates: # TODO: fix the two (gt+gt_zs)
       if self.args.eval.test_pre:
         for i in range( 1 + len(self.args.eval.rec)*((self.eval.gt    is not None) + (self.eval.gt    is not None))):
-          res_headers += [x if i else "Pre_"+x for i,x in enumerate(self.dataset.pred_classes)]
+          res_headers += [x if i else "Pre "+x for i,x in enumerate(self.dataset.pred_classes)]
       if self.args.eval.test_rel:
         for i in range( 1 + len(self.args.eval.rec)*((self.eval.gt_zs is not None) + (self.eval.gt_zs is not None))):
-          res_headers += [x if i else "Rel_"+x for i,x in enumerate(self.dataset.pred_classes)]
+          res_headers += [x if i else "Rel "+x for i,x in enumerate(self.dataset.pred_classes)]
 
     res = []
 
@@ -266,7 +266,10 @@ class vrd_trainer():
     res.append(res_row + res_row_end + res_row_end_end)
     with open(osp.join(globals.models_dir, "{}.txt".format(self.session_name)), 'w') as f:
       f.write(tabulate(res, res_headers))
-    np.savetxt(osp.join(globals.models_dir, "{}.csv".format(self.session_name)), np.asarray([res_headers] + res), delimiter=",")
+    a =np.asarray([res_headers] + res)
+    print(a)
+    #np.savetxt(osp.join(globals.models_dir, "{}.csv".format(self.session_name)), np.asarray(res), delimiter=",", header=",".join(res_headers), comments='', fmt="%6.3f")
+    np.savetxt(osp.join(globals.models_dir, "{}.csv".format(self.session_name)), np.asarray([res_headers] + res), delimiter=",", fmt="%s")
 
   def __train_epoch(self):
     self.model.train()
@@ -382,7 +385,7 @@ class vrd_trainer():
       if isinstance(x, float): return "{}x".format(x)
       elif isinstance(x, int): return str(x)
     if prefix == "":        fst_col_prefix = ""
-    elif test_type != True: fst_col_prefix = "{}_{} ".format(prefix, test_type)
+    elif test_type != True: fst_col_prefix = "{} {} ".format(prefix, test_type)
     else:                   fst_col_prefix = "{} ".format(prefix)
     headers = []
     for i,x in enumerate(self.args.eval.rec):
@@ -390,7 +393,7 @@ class vrd_trainer():
       else:      name = ""
       name += "R@" + metric_name(x)
       headers.append(name)
-      headers.append("{}_ZS".format(name))
+      headers.append("{} ZS".format(name))
     return headers
 
 if __name__ == "__main__":
@@ -440,7 +443,7 @@ if __name__ == "__main__":
       # trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : False, "test_rel" : test_type}}, profile = "vg")
       #trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : test_type}}, profile = "vg")
       #trainer.train()
-  scan_name = "v16-all_preds-relcls"
+  scan_name = "v16-all_preds-fix by_pred"
   base_profile = ["pred_sem", "by_pred"]
   base_training = {"num_epochs" : 5, "test_freq" : [2,3,4]}
 
@@ -495,8 +498,8 @@ if __name__ == "__main__":
                         "data" : { "emb_model" : emb_model},
                         "training" : training,
                         "model" : {"use_pred_sem" : pred_sem_mode},
-                        #"eval" : {"test_pre" : True}, # "test_rel" : True},
-                        "eval" : {"test_pre" : False, "test_rel" : True},
+                        "eval" : {"test_pre" : True}, # "test_rel" : True},
+                        #"eval" : {"test_pre" : False, "test_rel" : True},
                         "opt": {
                           "lr": lr,
                           "weight_decay" : weight_decay,

@@ -10,6 +10,8 @@ import scipy.io as sio
 
 from gensim.models import KeyedVectors
 from gensim.models import Word2Vec
+from gensim.test.utils import datapath, get_tmpfile
+from gensim.scripts.glove2word2vec import glove2word2vec
 
 import json
 import pickle
@@ -20,6 +22,7 @@ from copy import deepcopy
 
 from data.genome.clean_vg import VGCleaner
 from scripts.train_word2vec import VRDEmbedding, EpochLogger, EpochSaver
+from glove import Glove
 
 # Prepare the data without saving anything at all
 DRY_RUN = False
@@ -96,8 +99,8 @@ class DataPreparer:
 
         for model_name in self.generate_emb:
             model = load_emb_model(model_name)
-            obj_emb  = [ getWordEmbedding(obj_label,  model, globals.emb_model_size(model_name)).astype(float).tolist() for  obj_label in self.obj_vocab]
-            pred_emb = [ getWordEmbedding(pred_label, model, globals.emb_model_size(model_name)).astype(float).tolist() for pred_label in self.pred_vocab]
+            obj_emb  = [ getWordEmbedding(obj_label,  model, model_name, globals.emb_model_size(model_name)).astype(float).tolist() for  obj_label in self.obj_vocab]
+            pred_emb = [ getWordEmbedding(pred_label, model, model_name, globals.emb_model_size(model_name)).astype(float).tolist() for pred_label in self.pred_vocab]
             self.writejson(obj_emb,  "objects-emb-{}.json".format(model_name))
             self.writejson(pred_emb, "predicates-emb-{}.json".format(model_name))
 
@@ -310,7 +313,7 @@ class DataPreparer:
         gt_zs_pkl["tuple_label"].append(zs_tuple_labels)
         gt_zs_pkl["sub_bboxes"].append(zs_sub_bboxes)
         gt_zs_pkl["obj_bboxes"].append(zs_obj_bboxes)
-        
+
         #asd += 1
 
       #gt_pkl    = np.array(gt_pkl)
@@ -744,12 +747,15 @@ class VGPrep(DataPreparer):
 
         return relst
 
-def getWordEmbedding(word, emb_model, emb_size, depth=0):
+def getWordEmbedding(word, emb_model, model_name, emb_size, depth=0):
     if not hasattr(getWordEmbedding, "fallback_emb_map"):
         # This map defines the fall-back words of words that do not exist in the embedding model
         with open(os.path.join(globals.data_dir, "embeddings", "fallback-v1.json"), 'r') as rfile:
             getWordEmbedding.fallback_emb_map = json.load(rfile)
     try:
+      if "glove" in model_name:
+        embedding = emb_model.word_vectors[emb_model.dictionary[word]]
+      else:
         embedding = emb_model[word]
     except KeyError:
         embedding = np.zeros(emb_size)
@@ -789,6 +795,11 @@ def load_emb_model(model_name):
       model_path = globals.emb_model_path(model_name)
       if model_name is "gnews":
         model = KeyedVectors.load_word2vec_format(model_path, binary=True)
+      elif "glove" in model_name:
+        model = Glove().load(model_path)
+        # tmp_file = get_tmpfile("{}.txt".format(model_path))
+        # _ = glove2word2vec(model_path, tmp_file)
+        # model = Word2Vec.load(tmp_file)
       else:
         # This is needed happens in the case of COCO finetuned models because they were dumped from outside the
         # train_word2vec script, so the train_word2vec module needs to be in the path for them to load
@@ -808,6 +819,7 @@ if __name__ == '__main__':
     #generate_embeddings = ["gnews", "300"]
     #generate_embeddings = ["gnews"]
     #generate_embeddings = ["300"]
+    generate_embeddings = ["glove-50"]
 
     #"""
     print("Preparing data for VRD!")
