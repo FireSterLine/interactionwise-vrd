@@ -266,7 +266,7 @@ class vrd_trainer():
     res.append(res_row + res_row_end + res_row_end_end)
     with open(osp.join(globals.models_dir, "{}.txt".format(self.session_name)), 'w') as f:
       f.write(tabulate(res, res_headers))
-    numpy.savetxt(osp.join(globals.models_dir, "{}.csv".format(self.session_name)), numpy.asarray([res_headers] + res), delimiter=",")
+    np.savetxt(osp.join(globals.models_dir, "{}.csv".format(self.session_name)), np.asarray([res_headers] + res), delimiter=",")
 
   def __train_epoch(self):
     self.model.train()
