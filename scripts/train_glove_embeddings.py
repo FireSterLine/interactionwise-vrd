@@ -46,15 +46,18 @@ def train_glove_model(path_prefix, dim, num_epochs, num_cores, server_flag=False
 
 
 def fine_tune_embeddings(path_to_model, tokenized_captions_fname, multi_word_phrases, num_epochs, num_cores):
+    print("Loading Glove model...")
     model = Glove().load(path_to_model)
     vrd_objects = json.load(open("../data/vrd/objects.json", 'r'))
     vrd_predicates = json.load(open("../data/vrd/predicates.json", 'r'))
     fall_back_json = json.load(open("../data/embeddings/fallback-v1.json", 'r'))
     tokenized_captions = pickle.load(open(tokenized_captions_fname, 'rb'))
     relevant_words = []
+    print("Adding single word objects and predicates...")
     # get only single word objects and predicates
     relevant_words.extend([a for a in vrd_objects if len(a.split()) == 1])
     relevant_words.extend([a for a in vrd_predicates if len(a.split()) == 1])
+    print("Adding underscore-unionized multiword objects and predicates...")
     # get all multi-word objects and predicates joined by underscore
     for m_word in multi_word_phrases:
         unionized_token = '_'.join(m_word.split())
@@ -65,10 +68,12 @@ def fine_tune_embeddings(path_to_model, tokenized_captions_fname, multi_word_phr
             print("{} not found in model!".format(unionized_token))
 
     # get all words from COCO vocabulary
+    print("Adding COCO vocabulary...")
     for tok_caption in tokenized_captions:
-        relevant_words.extend(tok_caption)
+        relevant_words.extend([a.lower() for a in tok_caption])
 
     # get unique words
+    print("Getting unique words...")
     unique_words = set(relevant_words)
     # sanity check
     for word in unique_words:
