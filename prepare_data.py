@@ -248,14 +248,17 @@ class DataPreparer:
       gt_zs_pkl["tuple_label"] = []
       gt_zs_pkl["sub_bboxes"]  = []
       gt_zs_pkl["obj_bboxes"]  = []
-      train_tuple_label = []
+
+      all_train_tuple_labels = []
+      all_test_tuple_labels  = []
+      all_zs_tuple_labels    = []
 
       for img_path in self.splits["train"]:
         _, relst = self.get_vrd_data_pair(img_path)
         if relst is not None:
           for i_rel, rel in enumerate(relst):
             for id in rel["predicate"]["id"]:
-              train_tuple_label.append([rel["subject"]["id"], id, rel["object"]["id"]])
+              all_train_tuple_labels.append([rel["subject"]["id"], id, rel["object"]["id"]])
 
       # save zs counts
       zs_pred_counts = np.zeros(len(self.pred_vocab), dtype=np.int)
@@ -281,10 +284,12 @@ class DataPreparer:
               sub_bbox = utils.bboxDictToNumpy(rel["subject"]["bbox"])
               obj_bbox = utils.bboxDictToNumpy(rel["object"]["bbox"])
 
+              all_test_tuple_labels.append(tuple_label)
               tuple_labels.append(tuple_label)
               sub_bboxes.append(sub_bbox)
               obj_bboxes.append(obj_bbox)
-              if not tuple_label in train_tuple_label:
+
+              if not tuple_label in all_train_tuple_labels:
                 zs_tuple_labels.append(tuple_label)
                 zs_sub_bboxes.append(sub_bbox)
                 zs_obj_bboxes.append(obj_bbox)
@@ -302,6 +307,7 @@ class DataPreparer:
         sub_bboxes   = np.array(sub_bboxes,   dtype = np.uint16)
         obj_bboxes   = np.array(obj_bboxes,   dtype = np.uint16)
 
+        all_zs_tuple_labels += zs_tuple_labels
         zs_tuple_labels = np.array(zs_tuple_labels, dtype = np.uint8)
         zs_sub_bboxes   = np.array(zs_sub_bboxes,   dtype = np.uint16)
         zs_obj_bboxes   = np.array(zs_obj_bboxes,   dtype = np.uint16)
@@ -326,6 +332,21 @@ class DataPreparer:
       self.writejson([(obj,count)  for obj,count  in zip(self.obj_vocab,  zs_obj_counts.tolist())],  "objects-counts_{}.json".format("test_zs"))
       self.writejson([(pred,count) for pred,count in zip(self.pred_vocab, zs_pred_counts.tolist())], "predicates-counts_{}.json".format("test_zs"))
 
+      # save tuple counts
+      def get_tuple_counts(self, tuple_labels_list):
+        sop_counts = np.zeros((self.n_obj, self.n_obj, self.n_pred))
+        for tuple_label in tuple_labels_list:
+          subject_label, predicate_labels, object_label = tuple_label
+          np.add.at(sop_counts[subject_label][object_label], predicate_labels, 1)
+        counts = {}
+        for sub_idx in range(self.n_obj):
+          for obj_idx in range(self.n_obj):
+            for pred_idx in range(self.n_pred):
+              counts[tuple(sub_idx,obj_idx,pred_idx)] = sop_counts[sub_idx][obj_idx][pred_idx]
+        return counts
+      self.writejson(get_tuple_counts(all_train_tuple_labels), "tuples-counts_{}.json".format("train"))
+      self.writejson(get_tuple_counts(all_test_tuple_labels),  "tuples-counts_{}.json".format("test"))
+      self.writejson(get_tuple_counts(all_zs_tuple_labels),    "tuples-counts_{}.json".format("test_zs"))
 
     # def annos2relst(self):
     #     TODO
