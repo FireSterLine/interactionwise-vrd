@@ -506,8 +506,9 @@ class VRDPrep(DataPreparer):
               found = False
               for i,rel in enumerate(relst):
                 if rel_data["subject"] == rel["subject"] and rel_data["object"] == rel["object"] and not rel_data['predicate']['id'][0] in relst[i]['predicate']['id']:
-                  relst[i]['predicate']['name'] += rel_data['predicate']['name']
-                  relst[i]['predicate']['id']   += rel_data['predicate']['id']
+                  if rel_data['predicate']['id'] not in relst[i]['predicate']['id']:
+                    relst[i]['predicate']['name'] += rel_data['predicate']['name']
+                    relst[i]['predicate']['id']   += rel_data['predicate']['id']
                   found = True
                   break
               if not found:
@@ -762,8 +763,9 @@ class VGPrep(DataPreparer):
                 found = False
                 for i, rel in enumerate(relst):
                     if rel_data["subject"] == rel["subject"] and rel_data["object"] == rel["object"] and not rel_data['predicate']['id'][0] in relst[i]['predicate']['id']:
-                        relst[i]['predicate']['name'] += rel_data['predicate']['name']
-                        relst[i]['predicate']['id']   += rel_data['predicate']['id']
+                        if rel_data['predicate']['id'] not in relst[i]['predicate']['id']:
+                          relst[i]['predicate']['name'] += rel_data['predicate']['name']
+                          relst[i]['predicate']['id']   += rel_data['predicate']['id']
                         found = True
                         break
                 if not found:
@@ -844,7 +846,7 @@ if __name__ == '__main__':
     #generate_embeddings = ["gnews"]
     #generate_embeddings = ["gnews", "300", "glove-50"]
 
-    #"""
+    """
     print("Preparing data for VRD!")
     #data_preparer_vrd = VRDPrep(use_cleaning_map=True, multi_label=multi_label, generate_emb=generate_embeddings)
     data_preparer_vrd = VRDPrep(use_cleaning_map=False, multi_label=multi_label, generate_emb=generate_embeddings)
