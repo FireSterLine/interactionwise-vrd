@@ -181,10 +181,10 @@ class vrd_trainer():
     if self.args.eval.by_predicates: # TODO: fix the two (gt+gt_zs)
       if self.args.eval.test_pre:
         for i in range( 1 + len(self.args.eval.rec)*((self.eval.gt    is not None) + (self.eval.gt    is not None))):
-          res_headers += [x if i else "Pre "+x for i,x in enumerate(self.dataset.pred_classes)]
+          res_headers += [x if i else "Pre_"+x for i,x in enumerate(self.dataset.pred_classes)]
       if self.args.eval.test_rel:
         for i in range( 1 + len(self.args.eval.rec)*((self.eval.gt_zs is not None) + (self.eval.gt_zs is not None))):
-          res_headers += [x if i else "Rel "+x for i,x in enumerate(self.dataset.pred_classes)]
+          res_headers += [x if i else "Rel_"+x for i,x in enumerate(self.dataset.pred_classes)]
 
     res = []
 
@@ -266,6 +266,7 @@ class vrd_trainer():
     res.append(res_row + res_row_end + res_row_end_end)
     with open(osp.join(globals.models_dir, "{}.txt".format(self.session_name)), 'w') as f:
       f.write(tabulate(res, res_headers))
+    numpy.savetxt(osp.join(globals.models_dir, "{}.csv".format(self.session_name)), numpy.asarray([res_headers] + res), delimiter=",")
 
   def __train_epoch(self):
     self.model.train()
@@ -381,7 +382,7 @@ class vrd_trainer():
       if isinstance(x, float): return "{}x".format(x)
       elif isinstance(x, int): return str(x)
     if prefix == "":        fst_col_prefix = ""
-    elif test_type != True: fst_col_prefix = "{} {} ".format(prefix, test_type)
+    elif test_type != True: fst_col_prefix = "{}_{} ".format(prefix, test_type)
     else:                   fst_col_prefix = "{} ".format(prefix)
     headers = []
     for i,x in enumerate(self.args.eval.rec):
@@ -389,7 +390,7 @@ class vrd_trainer():
       else:      name = ""
       name += "R@" + metric_name(x)
       headers.append(name)
-      headers.append("ZS")
+      headers.append("{}_ZS".format(name))
     return headers
 
 if __name__ == "__main__":
@@ -456,7 +457,7 @@ if __name__ == "__main__":
       trainer.train()
       trainer = vrd_trainer("{}-test-only_spat".format(scan_name), {}, profile = base_profile + ["only_spat"])
       trainer.train()
-  
+
   for emb_model in ["gnews", "300"]: # , "50", "coco-70-50", "coco-30-50", "100"]:
     #if FEATURES_SCAN:
     trainer = vrd_trainer("{}-test-only_sem-{}".format(scan_name, emb_model),  {}, profile = base_profile + ["only_sem"])
