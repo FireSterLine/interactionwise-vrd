@@ -439,7 +439,7 @@ if __name__ == "__main__":
       # trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : False, "test_rel" : test_type}}, profile = "vg")
       #trainer = vrd_trainer("original-vg", {"training" : {"test_first" : True, "num_epochs" : 5}, "eval" : {"test_pre" : test_type}}, profile = "vg")
       #trainer.train()
-  scan_name = "v16-all_preds"
+  scan_name = "v16-all_preds-relcls"
   base_profile = ["pred_sem", "by_pred"]
   if FEATURES_SCAN:
 
@@ -459,8 +459,8 @@ if __name__ == "__main__":
   
   for emb_model in ["gnews", "300"]: # , "50", "coco-70-50", "coco-30-50", "100"]:
     #if FEATURES_SCAN:
-    #trainer = vrd_trainer("{}-test-only_sem-{}".format(scan_name, emb_model),  {}, profile = base_profile + ["only_sem"])
-    #trainer.train()
+    trainer = vrd_trainer("{}-test-only_sem-{}".format(scan_name, emb_model),  {}, profile = base_profile + ["only_sem"])
+    trainer.train()
 
     # Scan (rotating parameters)
     if PARAMS_SCAN:
@@ -472,7 +472,7 @@ if __name__ == "__main__":
               for pred_sem_mode_1 in [-1, 3, 11, 16]: # 3, 11 #, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
                 for loss in ["mlab"]: # "bcel"]: # mlab_mse
                   for dataset in ["vrd"]: # vrd
-                    for prof in ["only_sem", "all_feats"]: # "only_sem_subdot", "only_sem_catdiff", "only_sem_catdot", "only_sem_diffdot"]: # ["only_spat", "spat_sem", "only_sem", False]: # , "vg"]:
+                    for prof in ["only_sem", "only_spat", "all_feats"]: # "only_sem_subdot", "only_sem_catdiff", "only_sem_catdot", "only_sem_diffdot"]: # ["only_spat", "spat_sem", "only_sem", False]: # , "vg"]:
                       if "mse" in loss and (pred_sem_mode_1 == -1 or pred_sem_mode_1>=16):
                         continue
                       session_id = "{}-{}-{}-{}-{}-{}-{}-{},{:b}-{}-{}".format(scan_name, emb_model, prof, lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode_1, pred_sem_mode_1, dataset, loss)
@@ -488,7 +488,8 @@ if __name__ == "__main__":
                         "data" : { "emb_model" : emb_model},
                         "training" : training,
                         "model" : {"use_pred_sem" : pred_sem_mode},
-                        "eval" : {"test_pre" : test_type}, # "test_rel" : test_type},
+                        #"eval" : {"test_pre" : test_type}, # "test_rel" : test_type},
+                        "eval" : {"test_pre" : False, "test_rel" : test_type},
                         "opt": {
                           "lr": lr,
                           "weight_decay" : weight_decay,
