@@ -10,6 +10,8 @@ import scipy.io as sio
 
 from gensim.models import KeyedVectors
 from gensim.models import Word2Vec
+from gensim.test.utils import datapath, get_tmpfile
+from gensim.scripts.glove2word2vec import glove2word2vec
 
 import json
 import pickle
@@ -789,6 +791,10 @@ def load_emb_model(model_name):
       model_path = globals.emb_model_path(model_name)
       if model_name is "gnews":
         model = KeyedVectors.load_word2vec_format(model_path, binary=True)
+      elif "glove" in model_name:
+        tmp_file = get_tmpfile("{}.txt".format(model_path))
+        _ = glove2word2vec(model_path, tmp_file)
+        model = Word2Vec.load(tmp_file)
       else:
         # This is needed happens in the case of COCO finetuned models because they were dumped from outside the
         # train_word2vec script, so the train_word2vec module needs to be in the path for them to load
@@ -808,6 +814,7 @@ if __name__ == '__main__':
     #generate_embeddings = ["gnews", "300"]
     #generate_embeddings = ["gnews"]
     #generate_embeddings = ["300"]
+    generate_embeddings = ["glove-50"]
 
     #"""
     print("Preparing data for VRD!")

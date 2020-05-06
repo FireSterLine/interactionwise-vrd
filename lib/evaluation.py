@@ -153,19 +153,18 @@ def eval_recall_at_N(res, gts, Ns = [100, 50, 4.], num_imgs = None, use_rel = Tr
     for i in range(test_set_size):
       if by_predicates:
         img_tp, img_gt, img_tp_preds, img_gt_preds = eval_per_image(i, this_gt, pred, use_rel, return_preds = by_predicates, gt_thr = 0.5)
-        if 13 in img_gt_preds:
-          print("Found a 13 in gt_preds at image {}".format(i))
-          input()
-
-        np.add.at(num_tp_by_pred, img_tp_preds 1)
-        np.add.at(num_gt_by_pred, img_gt_preds 1)
+        #if 13 in img_gt_preds:
+        #  print("Found a 13 in gt_preds at image {}".format(i))
+        #  input()
+        np.add.at(num_tp_by_pred, img_tp_preds, 1)
+        np.add.at(num_gt_by_pred, img_gt_preds, 1)
       else:
         img_tp, img_gt = eval_per_image(i, this_gt, pred, use_rel, return_preds = by_predicates, gt_thr = 0.5)
       num_tp += img_tp
       num_gt += img_gt
-    if 13 in img_gt_preds:
-      print("13: {}/{} = {}".format(num_tp_by_pred[13], num_gt_by_pred[13], ((np.float64(num_tp_by_pred)/num_gt_by_pred)*100)[13]))
-      input()
+    #if 13 in img_gt_preds:
+    #  print("13: {}/{} = {}".format(num_tp_by_pred[13], num_gt_by_pred[13], ((np.float64(num_tp_by_pred)/num_gt_by_pred)*100)[13]))
+    #  input()
 
     if by_predicates:
       return (np.float64(num_tp)/num_gt)*100, (np.float64(num_tp_by_pred)/num_gt_by_pred)*100
