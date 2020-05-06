@@ -258,7 +258,7 @@ class DataPreparer:
       zs_pred_counts = np.zeros(len(self.pred_vocab), dtype=np.int)
       zs_obj_counts  = np.zeros((len(self.obj_vocab), 3), dtype=np.int) # Count occurrences as sub,obj, and total
 
-      asd = 0
+      #asd = 0
       for img_path in self.splits["test"]:
         _, relst = self.get_vrd_data_pair(img_path)
 
@@ -285,11 +285,11 @@ class DataPreparer:
                 zs_tuple_labels.append(tuple_label)
                 zs_sub_bboxes.append(sub_bbox)
                 zs_obj_bboxes.append(obj_bbox)
-                # ZS occurrence counts
-                if id == 13:
-                  print("Found 13 at image: {}, '{}'".format(asd, img_path))
-                  input()
+                #if id == 13:
+                #  print("Found 13 at image: ({},{},{}), {}, '{}'".format(tuple_label, rel["subject"]["bbox"], rel["object"]["bbox"], asd, img_path))
+                #  input()
 
+                # ZS occurrence counts
                 zs_pred_counts[id]                        += 1
                 zs_obj_counts[rel["subject"]["id"],(0,1)] += 1
                 zs_obj_counts[rel["object"]["id"],(0,2)]  += 1
@@ -310,6 +310,8 @@ class DataPreparer:
         gt_zs_pkl["tuple_label"].append(zs_tuple_labels)
         gt_zs_pkl["sub_bboxes"].append(zs_sub_bboxes)
         gt_zs_pkl["obj_bboxes"].append(zs_obj_bboxes)
+        
+        #asd += 1
 
       #gt_pkl    = np.array(gt_pkl)
       #gt_zs_pkl = np.array(gt_zs_pkl)

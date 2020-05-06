@@ -168,7 +168,7 @@ class VRDDataset():
         object_label     = elem["object"]["id"]
         predicate_labels = elem["predicate"]["id"]
 
-        sop_counts[subject_label][object_label][predicate_labels] += 1
+        np.add.at(sop_counts[subject_label][object_label], predicate_labels, 1)
 
     return sop_counts
 
