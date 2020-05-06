@@ -767,13 +767,13 @@ def getWordEmbedding(word, emb_model, model_name, emb_size, depth=0):
 
         for fallback_word in fallback_words:
           if isinstance(fallback_word, str):
-            embedding = getWordEmbedding(fallback_word, emb_model, depth+1)
+            embedding = getWordEmbedding(fallback_word, emb_model, model_name, emb_size, depth=depth+1)
             if np.all(embedding != np.zeros(emb_size)):
               if fallback_word != "_".join(word.split(" ")):
                 print("{}'{}' mapped to '{}'".format("  " * depth, word, fallback_word))
               break
           elif isinstance(fallback_word, list):
-            fallback_vec = [getWordEmbedding(fb_sw, emb_model, depth+1) for fb_sw in fallback_word]
+            fallback_vec = [getWordEmbedding(fb_sw, emb_model, model_name, emb_size, depth=depth+1) for fb_sw in fallback_word]
             filtered_wv = [(w,v) for w,v in zip(fallback_word,fallback_vec) if not np.all(v == np.zeros(emb_size))]
             fallback_w,fallback_v = [],[]
             if len(filtered_wv) > 0:
@@ -818,10 +818,9 @@ if __name__ == '__main__':
     #generate_embeddings = ["gnews", "50", "100", "coco-70-50", "coco-30-50"]
     #generate_embeddings = ["gnews", "300"]
     #generate_embeddings = ["gnews"]
-    #generate_embeddings = ["300"]
-    generate_embeddings = ["glove-50"]
+    generate_embeddings = ["gnews", "300", "glove-50"]
 
-    #"""
+    """
     print("Preparing data for VRD!")
     #data_preparer_vrd = VRDPrep(use_cleaning_map=True, multi_label=multi_label, generate_emb=generate_embeddings)
     data_preparer_vrd = VRDPrep(use_cleaning_map=False, multi_label=multi_label, generate_emb=generate_embeddings)
@@ -846,7 +845,7 @@ if __name__ == '__main__':
     data_preparer_vrd.save_data("annos")
     """
 
-    """
+    #"""
     # TODO: allow multi-word vocabs, so that we can load 1600-400-20_bottomup
     print("Preparing data for VG...")
     subset = (150, 50, 50)
