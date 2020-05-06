@@ -77,7 +77,10 @@ def fine_tune_embeddings(path_to_model, tokenized_captions_fname, multi_word_phr
     unique_words = set(relevant_words)
     # sanity check
     for word in unique_words:
-        model.word_vectors[model.dictionary[word]]
+        try:
+            model.word_vectors[model.dictionary[word]]
+        except KeyError:
+            print("{} not found in model!".format(word))
 
 
 if __name__ == '__main__':
