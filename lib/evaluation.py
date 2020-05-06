@@ -157,8 +157,8 @@ def eval_recall_at_N(res, gts, Ns = [100, 50, 4.], num_imgs = None, use_rel = Tr
           print("Found a 13 in gt_preds at image {}".format(i))
           input()
 
-        num_tp_by_pred[img_tp_preds] += 1
-        num_gt_by_pred[img_gt_preds] += 1
+        np.add.at(num_tp_by_pred, img_tp_preds 1)
+        np.add.at(num_gt_by_pred, img_gt_preds 1)
       else:
         img_tp, img_gt = eval_per_image(i, this_gt, pred, use_rel, return_preds = by_predicates, gt_thr = 0.5)
       num_tp += img_tp
