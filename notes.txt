@@ -1,12 +1,7 @@
 Maybe, title: Class Semantic Awareness for Visual Relationship Detection
 
 
-Semantic dense representation instead of 1-hot.
 Skip-Gram/CBOW
-
-scan-v14 gnews ["only_sem_subdiff", "only_sem_subdot", "only_sem_catdiff", "only_sem_catdot", "only_sem_diffdot"]
-  is with 70 predicates
-  everything else 20
 
 
 Makes sure that the model is still valid (validate original with original dataset)

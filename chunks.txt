@@ -429,6 +429,7 @@ python gen_obj_det.py --dataset vg --net res101 \
 data_dir = "data/vrd"
 model = "gnews"
 
+
 def save_pred2pred(data_dir, model):
   import json
   import numpy as np
@@ -454,3 +455,6 @@ save_pred2pred("data/vrd", "300");
 save_pred2pred_diff("data/vrd", "gnews", "300");
 save_pred2pred_diff("data/vrd", "50", "300");
 save_pred2pred_diff("data/vrd", "50", "100");
+
+save_pred2pred("data/vrd", "glove-50")
+save_pred2pred_diff("data/vrd", "glove-50", "50")

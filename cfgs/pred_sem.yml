@@ -2,10 +2,6 @@
 data:
   name: vrd
 
-# Architecture (or model) type
-#model:
-    #  use_pred_sem: True
-
 # Evaluation Arguments
 eval:
   eval_obj: False
@@ -14,7 +10,5 @@ eval:
 
 # Training parameters
 training:
-  num_epochs: 5
   checkpoint_freq: 0
   loss: mlab
-  test_freq: [2,3,4]
