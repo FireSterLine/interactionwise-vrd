@@ -258,6 +258,7 @@ class DataPreparer:
       zs_pred_counts = np.zeros(len(self.pred_vocab), dtype=np.int)
       zs_obj_counts  = np.zeros((len(self.obj_vocab), 3), dtype=np.int) # Count occurrences as sub,obj, and total
 
+      asd = 0
       for img_path in self.splits["test"]:
         _, relst = self.get_vrd_data_pair(img_path)
 
@@ -285,6 +286,10 @@ class DataPreparer:
                 zs_sub_bboxes.append(sub_bbox)
                 zs_obj_bboxes.append(obj_bbox)
                 # ZS occurrence counts
+                if id == 13:
+                  print("Found 13 at image: {}, '{}'".format(asd, img_path))
+                  input()
+
                 zs_pred_counts[id]                        += 1
                 zs_obj_counts[rel["subject"]["id"],(0,1)] += 1
                 zs_obj_counts[rel["object"]["id"],(0,2)]  += 1
