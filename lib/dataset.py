@@ -49,7 +49,7 @@ class VRDDataset():
         "vg"  : "150-50-50", # "1600-400-20", "2500-1000-500"
         "vrd" : "all"
       }
-      self.subset = default_subset[self.name]
+      self.subset = default_subsets[self.name]
 
     self.img_dir      = None
     self.metadata_dir = None
