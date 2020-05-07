@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 import os.path as osp
 from glob import glob
@@ -22,7 +23,7 @@ from copy import deepcopy
 
 from data.genome.clean_vg import VGCleaner
 from scripts.train_word2vec import VRDEmbedding, EpochLogger, EpochSaver
-from glove import Glove
+#from glove import Glove
 
 # Prepare the data without saving anything at all
 DRY_RUN = False
@@ -49,15 +50,12 @@ Notes:
 
 class DataPreparer:
     def __init__(self, multi_label = True, generate_emb = []):
-        self.objects_vocab_file    = "objects.json"
-        self.predicates_vocab_file = "predicates.json"
+
+        self.multi_label  = multi_label
+        self.generate_emb = generate_emb
 
         self.obj_vocab    = None
         self.pred_vocab   = None
-
-        self.multi_label  = multi_label
-
-        self.generate_emb = generate_emb
 
         self.dir         = None
         self.vrd_data    = None
@@ -65,15 +63,17 @@ class DataPreparer:
         self.splits      = None
         self.prefix      = "data"
 
+        # TODO move soP computations from dataset.py to prepare_data.py
         self.to_delete = ["soP.pkl", "pP.pkl"]
 
     # This function reads the dataset's vocab txt files and loads them
-    def prepare_vocabs(self, obj_vocab_file, pred_vocab_file, use_cleaning_map = False):
-        obj_vocab = utils.load_txt_list(self.fullpath(obj_vocab_file))
+    def prepare_vocabs(self, obj_vocab_file, pred_vocab_file, subset = False):
+        print("\tPreparing vocabs...")
+        obj_vocab  = utils.load_txt_list(self.fullpath(obj_vocab_file))
         pred_vocab = utils.load_txt_list(self.fullpath(pred_vocab_file))
 
-        if use_cleaning_map is not False:
-          cleaning_map = self.readjson("cleaning_map.json")
+        if subset is not False:
+          subset_mapping = self.readjson("subset_{}.json".format(subset))
           def cleaned_vocab(cls_vocab, cl_map, cl_subset):
             new_vocab = []
             cls_map = {}
@@ -86,47 +86,58 @@ class DataPreparer:
               if (len(cl_subset) == 0 or to_cls in cl_subset):
                 cls_map[cls_vocab.index(cls)] = new_vocab.index(to_cls)
             return new_vocab, cls_map
-          # assert cleaning_map["obj_map"] == {}, "NotImplemented: A cleaning map for objects requires some preprocessing to the object_detections as well, if not a re-train of the object detection model. Better not touch these things."
-          # obj_vocab,  obj_cls_map  = cleaned_vocab(obj_vocab,  cleaning_map["obj_map"])
-          pred_vocab, pred_cls_map = cleaned_vocab(pred_vocab, cleaning_map["pred_map"], cleaning_map["pred_subset"])
-          self.cleaning_map = {"pred" : pred_cls_map}
+          # assert subset_mapping["obj_map"] == {}, "NotImplemented: A cleaning map for objects requires some preprocessing to the object_detections as well, if not a re-train of the object detection model. Better not touch these things."
+          # obj_vocab,  obj_cls_map  = cleaned_vocab(obj_vocab,  subset_mapping["obj_map"])
+          pred_vocab, pred_cls_map = cleaned_vocab(pred_vocab, subset_mapping["pred_map"], subset_mapping["pred_subset"])
+          self.subset_mapping = {"pred" : pred_cls_map}
 
         self.obj_vocab  = obj_vocab
         self.pred_vocab = pred_vocab
 
-        self.writejson(self.obj_vocab,  self.objects_vocab_file)
-        self.writejson(self.pred_vocab, self.predicates_vocab_file)
-
-        for model_name in self.generate_emb:
-            model = load_emb_model(model_name)
-            obj_emb  = [ getWordEmbedding(obj_label,  model, model_name, globals.emb_model_size(model_name)).astype(float).tolist() for  obj_label in self.obj_vocab]
-            pred_emb = [ getWordEmbedding(pred_label, model, model_name, globals.emb_model_size(model_name)).astype(float).tolist() for pred_label in self.pred_vocab]
-            self.writejson(obj_emb,  "objects-emb-{}.json".format(model_name))
-            self.writejson(pred_emb, "predicates-emb-{}.json".format(model_name))
-
-
-    # This function converts to relst
+    # These functions are used for each different "dataset source" to convert the annotations to our formats
     def _generate_relst(self, anns): raise NotImplementedError
     def _generate_annos(self, anns): raise NotImplementedError
 
-    # Save data
-    def save_data(self, dformat, granularity = "img"):
-        print("\tGenerating '{}' data with '{}' granularity...".format(dformat, granularity))
+    # Save data according to the specified formats
+    def save_data(self, dformats):
+
+      self.save_counts()
+
+      # Remove existing files before saving
+      for to_delete in self.to_delete:
+        f = self.fullpath(to_delete, outputdir = True)
+        if os.path.exists(f):
+          os.remove(f)
+
+      # Save vocabs
+      print("\tGenerating vocabs...")
+      self.writejson(self.obj_vocab,  "objects.json")
+      self.writejson(self.pred_vocab, "predicates.json")
+
+      # Save embeddings
+      print("\tGenerating embeddings...")
+      for model_name in self.generate_emb:
+        model = load_emb_model(model_name)
+        obj_emb  = [ getWordEmbedding(obj_label,  model, model_name).astype(float).tolist() for  obj_label in self.obj_vocab]
+        pred_emb = [ getWordEmbedding(pred_label, model, model_name).astype(float).tolist() for pred_label in self.pred_vocab]
+        self.writejson(obj_emb,  "objects-emb-{}.json".format(model_name))
+        self.writejson(pred_emb, "predicates-emb-{}.json".format(model_name))
+
+      # Save actual data
+      for dformat in dformats:
+        print("\tGenerating '{}' data...".format(dformat))
+        granularity = "img"
+        if isinstance(dformat, tuple):
+          dformat, granularity = dformat
+
+        output_file_format = "data_{}_{}_{{}}.json".format(dformat, granularity)
+
+        # Get data
         self.to_dformat(dformat)
+        vrd_data_train = [self.get_vrd_data_pair(img_path) for img_path in self.splits["train"]]
+        vrd_data_test  = [self.get_vrd_data_pair(img_path) for img_path in self.splits["test"]]
 
-        for to_delete in self.to_delete:
-          if os.path.exists(self.fullpath(to_delete)):
-            os.remove(self.fullpath(to_delete))
-
-        output_file_format = "{}_{}_{}_{{}}.json".format(self.prefix, dformat, granularity)
-
-        vrd_data_train = []
-        vrd_data_test  = []
-        for img_path in self.splits["train"]:
-          vrd_data_train.append(self.get_vrd_data_pair(img_path))
-        for img_path in self.splits["test"]:
-          vrd_data_test.append(self.get_vrd_data_pair(img_path))
-
+        # Granulate if needed
         if granularity == "rel":
           assert dformat == "relst", "Mh. Does it make sense to granulate 'rel' with dformat {}?".format(dformat)
           def granulate(d):
@@ -145,10 +156,11 @@ class DataPreparer:
         else:
           raise ValueError("Error. Unknown granularity: {}".format(granularity))
 
+        # Save
         self.writejson(vrd_data_train, output_file_format.format("train"))
         self.writejson(vrd_data_test,  output_file_format.format("test"))
 
-    # transform vrd_data to the desired format
+    # Transform vrd_data to the desired format
     def to_dformat(self, to_dformat):
       if to_dformat == self.cur_dformat:
         return
@@ -159,7 +171,7 @@ class DataPreparer:
       else:
         raise NotImplementedError("Unknown format conversion: {} -> {}".format(self.cur_dformat, to_dformat))
 
-    # "annos" format separates objects and relatinoships
+    # "annos" format separates objects and relationships into two different lists
     def relst2annos(self):
       new_vrd_data = {}
       for img_path, relst in self.vrd_data.items():
@@ -219,40 +231,42 @@ class DataPreparer:
 
 
     def prepareGT(self):
-      print("\tGenerating ground-truth pickle...")
+      print("\tGenerating ground-truth pickles and counts...")
       if self.cur_dformat != "relst":
         print("Warning! prepareGT requires relst format (I'll convert it, but maybe you want to prepareGT later or sooner than now)")
         if not osp.exists(save_dir):
           os.mkdir(save_dir)
         self.to_dformat("relst")
 
+      if not osp.exists(self.fullpath("eval", outputdir = True)):
+        os.mkdir(self.fullpath("eval", outputdir = True))
+
       # Output files
-      if not osp.exists(self.fullpath("eval")):
-        os.mkdir(self.fullpath("eval"))
       gt_output_path         = osp.join("eval", "gt.pkl")
-      # TODO: zeroshot
       gt_zs_output_path      = osp.join("eval", "gt_zs.pkl")
 
-      if os.path.exists(self.fullpath(gt_output_path)):
-        os.remove(self.fullpath(gt_output_path))
-      if os.path.exists(self.fullpath(gt_zs_output_path)):
-        os.remove(self.fullpath(gt_zs_output_path))
+      # Count triplets
+      all_train_tuple_labels = []
+      all_test_tuple_labels  = []
+      all_zs_tuple_labels    = []
 
+      # Count zero-shot objects and predicates
+      zs_pred_counts = np.zeros(len(self.pred_vocab), dtype=np.int)
+      zs_obj_counts  = np.zeros((len(self.obj_vocab), 3), dtype=np.int) # Count occurrences as sub,obj, and total
+
+      # Test set
       gt_pkl = {}
       gt_pkl["tuple_label"] = []
       gt_pkl["sub_bboxes"]  = []
       gt_pkl["obj_bboxes"]  = []
 
-      # TODO: zeroshot: count all the different triples in the train set, and filter out the ones in the test set that are also in the train set
+      # zero-shot set
       gt_zs_pkl = {}
       gt_zs_pkl["tuple_label"] = []
       gt_zs_pkl["sub_bboxes"]  = []
       gt_zs_pkl["obj_bboxes"]  = []
 
-      all_train_tuple_labels = []
-      all_test_tuple_labels  = []
-      all_zs_tuple_labels    = []
-
+      # Gather tuples in train set (needed for computing zero-shot set)
       for img_path in self.splits["train"]:
         _, relst = self.get_vrd_data_pair(img_path)
         if relst is not None:
@@ -260,11 +274,7 @@ class DataPreparer:
             for id in rel["predicate"]["id"]:
               all_train_tuple_labels.append([rel["subject"]["id"], id, rel["object"]["id"]])
 
-      # save zs counts
-      zs_pred_counts = np.zeros(len(self.pred_vocab), dtype=np.int)
-      zs_obj_counts  = np.zeros((len(self.obj_vocab), 3), dtype=np.int) # Count occurrences as sub,obj, and total
-
-      #asd = 0
+      # Create test/zero-shot set; Count tuples, zero-shot objs/preds
       for img_path in self.splits["test"]:
         _, relst = self.get_vrd_data_pair(img_path)
 
@@ -278,61 +288,51 @@ class DataPreparer:
 
         if relst is not None:
           for i_rel, rel in enumerate(relst):
-            # multi_label (namely multi-predicate relationships) are not allowed in ground-truth pickles
+            # Note: multi-predicate relationship triplets are not allowed in ground-truth pickles; we just list them as multiple triplets with same obj-subj
             for id in rel["predicate"]["id"]:
               tuple_label = [rel["subject"]["id"], id, rel["object"]["id"]]
               sub_bbox = utils.bboxDictToNumpy(rel["subject"]["bbox"])
               obj_bbox = utils.bboxDictToNumpy(rel["object"]["bbox"])
 
+              # test
               all_test_tuple_labels.append(tuple_label)
               tuple_labels.append(tuple_label)
               sub_bboxes.append(sub_bbox)
               obj_bboxes.append(obj_bbox)
 
+              # zero-shot
               if not tuple_label in all_train_tuple_labels:
                 zs_tuple_labels.append(tuple_label)
                 zs_sub_bboxes.append(sub_bbox)
                 zs_obj_bboxes.append(obj_bbox)
-                #if id == 13:
-                #  print("Found 13 at image: ({},{},{}), {}, '{}'".format(tuple_label, rel["subject"]["bbox"], rel["object"]["bbox"], asd, img_path))
-                #  input()
 
-                # ZS occurrence counts
                 zs_pred_counts[id]                        += 1
                 zs_obj_counts[rel["subject"]["id"],(0,1)] += 1
                 zs_obj_counts[rel["object"]["id"],(0,2)]  += 1
 
+        # test
+        gt_pkl["tuple_label"].append(np.array(tuple_labels, dtype = np.uint8))
+        gt_pkl["sub_bboxes"].append(np.array(sub_bboxes,    dtype = np.uint16))
+        gt_pkl["obj_bboxes"].append(np.array(obj_bboxes,    dtype = np.uint16))
 
-        tuple_labels = np.array(tuple_labels, dtype = np.uint8)
-        sub_bboxes   = np.array(sub_bboxes,   dtype = np.uint16)
-        obj_bboxes   = np.array(obj_bboxes,   dtype = np.uint16)
-
+        # zero-shot
         all_zs_tuple_labels += zs_tuple_labels
-        zs_tuple_labels = np.array(zs_tuple_labels, dtype = np.uint8)
-        zs_sub_bboxes   = np.array(zs_sub_bboxes,   dtype = np.uint16)
-        zs_obj_bboxes   = np.array(zs_obj_bboxes,   dtype = np.uint16)
+        gt_zs_pkl["tuple_label"].append(np.array(zs_tuple_labels, dtype = np.uint8))
+        gt_zs_pkl["sub_bboxes"].append(np.array(zs_sub_bboxes,    dtype = np.uint16))
+        gt_zs_pkl["obj_bboxes"].append(np.array(zs_obj_bboxes,    dtype = np.uint16))
 
-        gt_pkl["tuple_label"].append(tuple_labels)
-        gt_pkl["sub_bboxes"].append(sub_bboxes)
-        gt_pkl["obj_bboxes"].append(obj_bboxes)
-
-        gt_zs_pkl["tuple_label"].append(zs_tuple_labels)
-        gt_zs_pkl["sub_bboxes"].append(zs_sub_bboxes)
-        gt_zs_pkl["obj_bboxes"].append(zs_obj_bboxes)
-
-        #asd += 1
-
-      #gt_pkl    = np.array(gt_pkl)
-      #gt_zs_pkl = np.array(gt_zs_pkl)
-
+      # save test/zero-shot gt pickles
+      print("\tSaving gt pickles...")
       self.writepickle(gt_pkl, gt_output_path)
       self.writepickle(gt_zs_pkl, gt_zs_output_path)
 
-      # save zs counts
+      # save zero-shot counts
+      print("\tSaving zero-shot counts...")
       self.writejson([(obj,count)  for obj,count  in zip(self.obj_vocab,  zs_obj_counts.tolist())],  "objects-counts_{}.json".format("test_zs"))
       self.writejson([(pred,count) for pred,count in zip(self.pred_vocab, zs_pred_counts.tolist())], "predicates-counts_{}.json".format("test_zs"))
 
       # save tuple counts
+      print("\tSaving tuple counts...")
       def get_tuple_counts(tuple_labels_list):
         n_obj = len(self.obj_vocab)
         n_pred = len(self.pred_vocab)
@@ -351,19 +351,9 @@ class DataPreparer:
       self.writejson(get_tuple_counts(all_test_tuple_labels),  "tuples-counts_{}.json".format("test"))
       self.writejson(get_tuple_counts(all_zs_tuple_labels),    "tuples-counts_{}.json".format("test_zs"))
 
-    # def annos2relst(self):
-    #     TODO
-    #     self.cur_dformat = "relst"
-
-    def get_vrd_data_pair(self, k):
-      try:
-        data = self.vrd_data[k]
-        if data is None: return (None, None)
-        else: return (k, data)
-      except KeyError:
-        if k is not None:
-          print("Image '{}' not found in train vrd_data (e.g {})".format(k, next(iter(self.vrd_data))))
-        return (None, None)
+    def annos2relst(self):
+      raise NotImplementedError
+      self.cur_dformat = "relst"
 
     def randomize_split(self):
       print("Randomizing splits...")
@@ -380,9 +370,22 @@ class DataPreparer:
         'xmax': (bbox[3]-margin)
       }
 
+    def get_vrd_data_pair(self, k):
+      try:
+        data = self.vrd_data[k]
+        if data is None: return (None, None)
+        else: return (k, data)
+      except KeyError:
+        if k is not None:
+          print("Image '{}' not found in train vrd_data (e.g {})".format(k, next(iter(self.vrd_data))))
+        return (None, None)
+
+    def needed_idxs(self): return [idx for _,idxs in self.splits.items() for idx in idxs]
+
     # INPUT/OUTPUT Helpers
-    def fullpath(self, filename):
-      return osp.join(globals.data_dir, self.dir, filename)
+    def fullpath(self, filename, outputdir = False):
+      if outputdir and hasattr(self, "outdir"): return osp.join(globals.data_dir, self.dir, self.outdir, filename)
+      else:                                     return osp.join(globals.data_dir, self.dir, filename)
 
     # plain files
     def readfile(self, filename):
@@ -390,7 +393,7 @@ class DataPreparer:
 
     def writefile(self, filename):
       if DRY_RUN: return
-      return open(self.fullpath(filename), 'w')
+      return open(self.fullpath(filename, outputdir = True), 'w')
 
     # json files
     def readjson(self, filename):
@@ -407,9 +410,9 @@ class DataPreparer:
       with open(self.fullpath(filename), 'rb') as f:
         return pickle.load(f, encoding="latin1")
 
-    def writepickle(self, obj, filename):
+    def writepickle(self, obj, filename, to_outputdir = True):
       if DRY_RUN: return
-      with open(self.fullpath(filename), 'wb') as f:
+      with open(self.fullpath(filename, outputdir = to_outputdir), 'wb') as f:
         pickle.dump(obj, f)
 
     # matlab files
@@ -417,46 +420,61 @@ class DataPreparer:
 
 
 class VRDPrep(DataPreparer):
-    def __init__(self, multi_label = True, generate_emb = [], use_cleaning_map = False):
+    def __init__(self, subset = False, multi_label = True, generate_emb = [], load_dsr = False):
       super(VRDPrep, self).__init__(multi_label = multi_label, generate_emb = generate_emb)
 
-      print("\tVRDPrep(multi-label : {}, use_cleaning_map : {})...".format(multi_label, use_cleaning_map))
+      print("\tVRDPrep(subset : {}, multi-label : {}, generate_emb = {}, load_dsr = {})...".format(subset, multi_label, generate_emb, load_dsr))
 
       self.dir = "vrd"
-      self.use_cleaning_map = use_cleaning_map
+      self.subset = subset
 
       self.train_dsr = self.readpickle("train.pkl")
       self.test_dsr  = self.readpickle("test.pkl")
 
-      self.prepare_vocabs("obj.txt", "rel.txt", use_cleaning_map = self.use_cleaning_map)
+      self.prepare_vocabs("obj.txt", "rel.txt")
 
-      # TODO: Additionally handle files like {test,train}_image_metadata.json
+      self.prepare_obj_det_FromLP()
 
-    def get_clean_obj_cls(self,  cls):
-      return cls # if not (hasattr(self, "cleaning_map") and "obj" in self.cleaning_map) else self.cleaning_map["obj"][cls]
-    def get_clean_pred_cls(self, cls):
-      if (hasattr(self, "cleaning_map") and "pred" in self.cleaning_map):
-        # print(self.cleaning_map["pred"])
-        return self.cleaning_map["pred"].get(cls, None)
+      # Subset determines subpath directory
+      if not load_dsr:
+        self.outdir = "all" if self.subset == False else self.subset
       else:
-        return cls
+        assert self.subset == False, "Error. subset will cause the vocabs to be different from DSR."
+        self.outdir = "dsr"
+
+      # Clean directory
+      f = self.fullpath(self.outdir)
+      # if os.path.exists(f):
+      #   shutil.rmtree(f)
+      if not os.path.exists(f):
+        os.mkdir(f)
+
+      # Load data
+      # TODO: Additionally handle files like {test,train}_image_metadata.json ?
+      if load_dsr:
+        self.load_dsr()
+        self.prepareGT_FromLP()
+      else:
+        self.load_vrd()
+        self.prepareGT()
+
+
+    def get_clean_obj_cls(self,  cls): # TODO: validate this
+      return self.subset_mapping["obj"].get(cls, None) if (hasattr(self, "subset_mapping") and "obj" in self.subset_mapping) else cls
+    def get_clean_pred_cls(self, cls):
+      return self.subset_mapping["pred"].get(cls, None) if (hasattr(self, "subset_mapping") and "pred" in self.subset_mapping) else cls
 
     def load_vrd(self):
       print("\tLoad VRD data...")
-      # LOAD DATA
+
+      # Read data
       annotations_train = self.readjson("annotations_train.json")
       annotations_test  = self.readjson("annotations_test.json")
 
-      # Transform img file names to img subpaths
-      annotations = {}
-      for img_file,anns in annotations_train.items():
-        annotations[osp.join("sg_train_images", img_file)] = anns
-      for img_file,anns in annotations_test.items():
-        annotations[osp.join("sg_test_images", img_file)] = anns
-
+      # Join split and transform img filenames to paths
       vrd_data = {}
-      for img_path, anns in annotations.items():
-          vrd_data[img_path] = self._generate_relst(anns)
+      for img_file,anns in annotations_train.items(): vrd_data[osp.join("sg_train_images", img_file)] = self._generate_relst(anns)
+      for img_file,anns in annotations_test.items():  vrd_data[osp.join("sg_test_images",  img_file)] = self._generate_relst(anns)
 
       self.vrd_data = vrd_data
       self.cur_dformat = "relst"
@@ -465,6 +483,9 @@ class VRDPrep(DataPreparer):
         "train" : [osp.join(*x["img_path"].split("/")[-2:]) if x is not None else None for x in self.train_dsr],
         "test"  : [osp.join(*x["img_path"].split("/")[-2:]) if x is not None else None for x in self.test_dsr],
       }
+
+      if len(vrd_data) != len(self.needed_idxs()):
+        print("\tWarning! vrd_data has a different number of keys than the number of indices in the selected split: {} != {}".format(len(vrd_data), len(self.needed_idxs())))
 
     def _generate_relst(self, anns):
         relst = []
@@ -516,13 +537,54 @@ class VRDPrep(DataPreparer):
 
         return relst
 
+    ########################################################################################################################
+    # Specific functions for converting files from other works (Deep Structural Ranking, Language Priors)
+    ########################################################################################################################
+
+    # Create Object Detections from Language Priors
+    def prepare_obj_det_FromLP(self):
+      print("\tPreparing object detections from Language Priors...")
+
+      if not osp.exists(self.fullpath("eval", outputdir = False)):
+        os.mkdir(self.fullpath("eval", outputdir = False))
+
+      det_result_path = osp.join("from-language-priors", "det_result.mat")
+      det_result_output_path = osp.join("eval", "det_res.pkl")
+
+      det_result = self.readmat(det_result_path)
+
+      assert len(det_result["detection_bboxes"]) == 1, "ERROR. Malformed .mat file"
+      assert len(det_result["detection_labels"]) == 1, "ERROR. Malformed .mat file"
+      assert len(det_result["detection_confs"])  == 1, "ERROR. Malformed .mat file"
+
+      det_result_pkl = {}
+      det_result_pkl["boxes"] = []
+      det_result_pkl["cls"]   = []
+      det_result_pkl["confs"] = []
+
+      for i,(lp_boxes, lp_cls, lp_confs) in \
+              enumerate(zip(det_result["detection_bboxes"][0],
+                            det_result["detection_labels"][0],
+                            det_result["detection_confs"][0])):
+
+        # The -1s fixes the matlab-is-1-indexed problem
+        transf_lp_boxes = lp_boxes-1
+        transf_lp_cls   = self.get_clean_obj_cls(lp_cls-1)
+        transf_lp_confs = lp_confs
+
+        det_result_pkl["boxes"].append(np.array(transf_lp_boxes, dtype=np.int))
+        det_result_pkl["cls"]  .append(np.array(transf_lp_cls,   dtype=np.int))
+        det_result_pkl["confs"].append(np.array(transf_lp_confs, dtype=np.float32))
+
+      # The object detections are shared across all VRD cuts
+      self.writepickle(det_result_pkl, det_result_output_path, to_outputdir = False)
+
     def load_dsr(self):
         """
             This function loads the {train,test}.pkl which contains the original format of the data
             from the vrd-dsr repo, and converts it to the relst format.
         """
-        print("\tLoad dsr VRD data...")
-        assert self.use_cleaning_map == False, "Error. use_cleaning_map will cause the vocabs to be different from DSR."
+        print("\tLoad DSR data...")
 
         vrd_data = {}
         for (stage, src_data) in [("train", self.train_dsr),("test", self.test_dsr)]:
@@ -607,9 +669,8 @@ class VRDPrep(DataPreparer):
           "test"  : [osp.join(*x["img_path"].split("/")[-2:]) if x is not None else None for x in self.test_dsr],
         }
 
-        self.prefix = "dsr"
-
-    def prepareEvalFromLP(self):
+    def prepareGT_FromLP(self):
+        print("\tPreparing Ground-Truths from Language Priors...")
         '''
             This function creates the pickles used for the evaluation on the for VRD Dataset
             The ground "truths and object detections are provided by Visual Relationships with Language Priors
@@ -617,72 +678,39 @@ class VRDPrep(DataPreparer):
         '''
 
         # Input files
-        det_result_path = osp.join("eval", "from-language-priors", "det_result.mat")
-        gt_path         = osp.join("eval", "from-language-priors", "gt.mat")
-        gt_zs_path      = osp.join("eval", "from-language-priors", "zeroShot.mat")
+        gt_path         = osp.join("from-language-priors", "gt.mat")
+        gt_zs_path      = osp.join("from-language-priors", "zeroShot.mat")
 
         # Output files
-        det_result_output_path = osp.join("eval", "det_res.pkl")
         gt_output_path         = osp.join("eval", "gt.pkl")
         gt_zs_output_path      = osp.join("eval", "gt_zs.pkl")
 
-        def prepareGT():
-          gt = self.readmat(gt_path)
-          gt_pkl = {}
-          gt_pkl["tuple_label"] = gt["gt_tuple_label"][0]-1
-          gt_pkl["obj_bboxes"]  = gt["gt_obj_bboxes"][0]
-          gt_pkl["sub_bboxes"]  = gt["gt_sub_bboxes"][0]
-          self.writepickle(gt_pkl, gt_output_path)
+        gt = self.readmat(gt_path)
+        gt_pkl = {}
+        gt_pkl["tuple_label"] = gt["gt_tuple_label"][0]-1
+        gt_pkl["obj_bboxes"]  = gt["gt_obj_bboxes"][0]
+        gt_pkl["sub_bboxes"]  = gt["gt_sub_bboxes"][0]
+        self.writepickle(gt_pkl, gt_output_path)
 
-          gt_zs = self.readmat(gt_zs_path)
-          zs = gt_zs["zeroShot"][0];
-          gt_zs_pkl = deepcopy(gt_pkl)
-          for ii in range(len(gt_pkl["tuple_label"])):
-            if zs[ii].shape[0] == 0:
-              continue
-            idx = zs[ii] == 1
-            gt_zs_pkl["tuple_label"][ii] = gt_pkl["tuple_label"][ii][idx[0]]
-            gt_zs_pkl["obj_bboxes"][ii]  = gt_pkl["obj_bboxes"][ii][idx[0]]
-            gt_zs_pkl["sub_bboxes"][ii]  = gt_pkl["sub_bboxes"][ii][idx[0]]
-          self.writepickle(gt_zs_pkl, gt_zs_output_path)
-
-        def prepareDetRes():
-          det_result = self.readmat(det_result_path)
-
-          assert len(det_result["detection_bboxes"]) == 1, "ERROR. Malformed .mat file"
-          assert len(det_result["detection_labels"]) == 1, "ERROR. Malformed .mat file"
-          assert len(det_result["detection_confs"])  == 1, "ERROR. Malformed .mat file"
-
-          det_result_pkl = {}
-          det_result_pkl["boxes"] = []
-          det_result_pkl["cls"]   = []
-          det_result_pkl["confs"] = []
-
-          for i,(lp_boxes, lp_cls, lp_confs) in \
-                  enumerate(zip(det_result["detection_bboxes"][0],
-                                det_result["detection_labels"][0],
-                                det_result["detection_confs"][0])):
-
-              # The -1s fixes the matlab-is-1-indexed problem
-              transf_lp_boxes = lp_boxes-1
-              transf_lp_cls   = lp_cls-1
-              transf_lp_confs = lp_confs
-
-              det_result_pkl["boxes"].append(np.array(transf_lp_boxes, dtype=np.int))
-              det_result_pkl["cls"]  .append(np.array(transf_lp_cls,   dtype=np.int))
-              det_result_pkl["confs"].append(np.array(transf_lp_confs, dtype=np.float32))
-
-          self.writepickle(det_result_pkl, det_result_output_path)
-
-        prepareDetRes()
-        prepareGT()
+        gt_zs = self.readmat(gt_zs_path)
+        zs = gt_zs["zeroShot"][0];
+        gt_zs_pkl = deepcopy(gt_pkl)
+        for ii in range(len(gt_pkl["tuple_label"])):
+          if zs[ii].shape[0] == 0:
+            continue
+          idx = zs[ii] == 1
+          gt_zs_pkl["tuple_label"][ii] = gt_pkl["tuple_label"][ii][idx[0]]
+          gt_zs_pkl["obj_bboxes"][ii]  = gt_pkl["obj_bboxes"][ii][idx[0]]
+          gt_zs_pkl["sub_bboxes"][ii]  = gt_pkl["sub_bboxes"][ii][idx[0]]
+        self.writepickle(gt_zs_pkl, gt_zs_output_path)
 
 
 class VGPrep(DataPreparer):
     def __init__(self, subset, multi_label=True, generate_emb = []):
         super(VGPrep, self).__init__(multi_label=multi_label, generate_emb=generate_emb)
 
-        print("\tLoad VRD data...")
+        print("\tVGPrep(subset : {}, multi-label : {}, generate_emb = {})...".format(subset, multi_label, generate_emb))
+
         num_objects, num_attributes, num_predicates = subset
         self.dir = osp.join("genome", "{}-{}-{}".format(num_objects, num_attributes, num_predicates))
 
@@ -691,28 +719,26 @@ class VGPrep(DataPreparer):
         # if the path to metadata files does not exist, generate those files using VGCleaner
         if not osp.exists(self.fullpath(self.data_format)):
             assert DRY_RUN == False, "Can't perform dry run when I need to run VGCleaner()"
-            print("Generating {} files for VG relationships...".format(self.data_format))
+            print("\tGenerating {} files for VG relationships...".format(self.data_format))
             cleaner = VGCleaner(num_objects, num_attributes, num_predicates, self.data_format)
             cleaner.build_vocabs_and_json()
 
         self.prepare_vocabs("objects_vocab.txt", "relations_vocab.txt")
 
         # LOAD DATA
-        self.objects_label_to_id_mapping = utils.invert_dict(self.obj_vocab)
+        print("\tLoad data...")
+        self.objects_label_to_id_mapping    = utils.invert_dict(self.obj_vocab)
         self.predicates_label_to_id_mapping = utils.invert_dict(self.pred_vocab)
-        # print(self.predicates_label_to_id_mapping)
-        # print(self.objects_label_to_id_mapping)
 
         self.splits = {
             "train" : [line.split(" ")[0] for line in utils.load_txt_list(self.fullpath("../train.txt"))],
             "test"  : [line.split(" ")[0] for line in utils.load_txt_list(self.fullpath("../val.txt"))],
         }
-        needed_idxs = [idx for _,idxs in self.splits.items() for idx in idxs]
 
         vrd_data = {}
         n_not_found = []
+        needed_idxs = self.needed_idxs()
         for ix, img_path in enumerate(needed_idxs):
-
             filepath = self.img_metadata_file_format.format(osp.splitext(osp.basename(img_path))[0])
             try:
               relst = self._generate_relst(self.readjson(filepath))
@@ -727,6 +753,8 @@ class VGPrep(DataPreparer):
 
         self.vrd_data = vrd_data
         self.cur_dformat = "relst"
+
+        self.prepareGT()
 
     def _generate_relst(self, data):
         objects_info = {}
@@ -773,115 +801,105 @@ class VGPrep(DataPreparer):
 
         return relst
 
-def getWordEmbedding(word, emb_model, model_name, emb_size, depth=0):
-    if not hasattr(getWordEmbedding, "fallback_emb_map"):
-        # This map defines the fall-back words of words that do not exist in the embedding model
-        with open(os.path.join(globals.data_dir, "embeddings", "fallback-v1.json"), 'r') as rfile:
-            getWordEmbedding.fallback_emb_map = json.load(rfile)
-    try:
-      if "glove" in model_name:
-        embedding = emb_model.word_vectors[emb_model.dictionary[word]]
+# Obtain the embedding of a word given the embedding model
+def getWordEmbedding(word, emb_model, model_name, depth=0):
+  emb_size = globals.emb_model_size(model_name)
+  if not hasattr(getWordEmbedding, "fallback_emb_map"):
+    # This map defines the fall-back words of words that do not exist in the embedding model
+    with open(os.path.join(globals.data_dir, "embeddings", "fallback-v1.json"), 'r') as rfile:
+      getWordEmbedding.fallback_emb_map = json.load(rfile)
+  try:
+    if "glove" in model_name:
+      embedding = emb_model.word_vectors[emb_model.dictionary[word]]
+    else:
+      embedding = emb_model[word]
+  except KeyError:
+    embedding = np.zeros(emb_size)
+    fallback_words = []
+    if word in getWordEmbedding.fallback_emb_map:
+      fallback_words = getWordEmbedding.fallback_emb_map[word]
+    if " " in word:
+      fallback_words = ["_".join(word.split(" "))] + fallback_words + [word.split(" ")]
+
+    for fallback_word in fallback_words:
+      if isinstance(fallback_word, str):
+        embedding = getWordEmbedding(fallback_word, emb_model, model_name, depth=depth+1)
+        if np.all(embedding != np.zeros(emb_size)):
+          if fallback_word != "_".join(word.split(" ")):
+            print("{}'{}' mapped to '{}'".format("  " * depth, word, fallback_word))
+          break
+      elif isinstance(fallback_word, list):
+        fallback_vec = [getWordEmbedding(fb_sw, emb_model, model_name, depth=depth+1) for fb_sw in fallback_word]
+        filtered_wv = [(w,v) for w,v in zip(fallback_word,fallback_vec) if not np.all(v == np.zeros(emb_size))]
+        fallback_w,fallback_v = [],[]
+        if len(filtered_wv) > 0:
+          fallback_w,fallback_v = zip(*filtered_wv)
+          embedding = np.mean(fallback_v, axis=0)
+        if np.all(embedding != np.zeros(emb_size)):
+          print("{}'{}' mapped to the average of {}".format("  " * depth, word, fallback_w))
+          break
       else:
-        embedding = emb_model[word]
-    except KeyError:
-        embedding = np.zeros(emb_size)
-        fallback_words = []
-        if word in getWordEmbedding.fallback_emb_map:
-          fallback_words = getWordEmbedding.fallback_emb_map[word]
-        if " " in word:
-          fallback_words = ["_".join(word.split(" "))] + fallback_words + [word.split(" ")]
+        raise ValueError("Error fallback word is of type {}: {}".format(fallback_word, type(fallback_word)))
+  if np.all(embedding == np.zeros(emb_size)):
+    if depth == 0:
+      print("{}Warning! Couldn't find semantic vector for '{}'".format("  " * depth, word))
+    return embedding
+  return embedding / np.linalg.norm(embedding)
 
-        for fallback_word in fallback_words:
-          if isinstance(fallback_word, str):
-            embedding = getWordEmbedding(fallback_word, emb_model, model_name, emb_size, depth=depth+1)
-            if np.all(embedding != np.zeros(emb_size)):
-              if fallback_word != "_".join(word.split(" ")):
-                print("{}'{}' mapped to '{}'".format("  " * depth, word, fallback_word))
-              break
-          elif isinstance(fallback_word, list):
-            fallback_vec = [getWordEmbedding(fb_sw, emb_model, model_name, emb_size, depth=depth+1) for fb_sw in fallback_word]
-            filtered_wv = [(w,v) for w,v in zip(fallback_word,fallback_vec) if not np.all(v == np.zeros(emb_size))]
-            fallback_w,fallback_v = [],[]
-            if len(filtered_wv) > 0:
-              fallback_w,fallback_v = zip(*filtered_wv)
-              embedding = np.mean(fallback_v, axis=0)
-            if np.all(embedding != np.zeros(emb_size)):
-              print("{}'{}' mapped to the average of {}".format("  " * depth, word, fallback_w))
-              break
-          else:
-              raise ValueError("Error fallback word is of type {}: {}".format(fallback_word, type(fallback_word)))
-    if np.all(embedding == np.zeros(emb_size)):
-      if depth == 0:
-        print("{}Warning! Couldn't find semantic vector for '{}'".format("  " * depth, word))
-      return embedding
-    return embedding / np.linalg.norm(embedding)
-
+# Load embedding model
 def load_emb_model(model_name):
-      print("Loading embedding model '{}'...".format(model_name))
-      model_path = globals.emb_model_path(model_name)
-      if model_name is "gnews":
-        model = KeyedVectors.load_word2vec_format(model_path, binary=True)
-      elif "glove" in model_name:
-        model = Glove().load(model_path)
-        # tmp_file = get_tmpfile("{}.txt".format(model_path))
-        # _ = glove2word2vec(model_path, tmp_file)
-        # model = Word2Vec.load(tmp_file)
-      else:
-        # This is needed happens in the case of COCO finetuned models because they were dumped from outside the
-        # train_word2vec script, so the train_word2vec module needs to be in the path for them to load
-        sys.path.append("./scripts")
-        model = VRDEmbedding.load_model(model_path)
-      return model
+  print("Loading embedding model '{}'...".format(model_name))
+  model_path = globals.emb_model_path(model_name)
+  if model_name is "gnews":
+    model = KeyedVectors.load_word2vec_format(model_path, binary=True)
+  elif "glove" in model_name:
+    raise NotImplementedError
+    #model = Glove().load(model_path)
+    # tmp_file = get_tmpfile("{}.txt".format(model_path))
+    # _ = glove2word2vec(model_path, tmp_file)
+    # model = Word2Vec.load(tmp_file)
+  else:
+    # This is needed happens in the case of COCO finetuned models because they were dumped from outside the
+    # train_word2vec script, so the train_word2vec module needs to be in the path for them to load
+    sys.path.append("./scripts")
+    model = VRDEmbedding.load_model(model_path)
+  return model
 
 
 if __name__ == '__main__':
-
-    # TODO: filter out relationships between the same object?
 
     multi_label = True # False
 
     generate_embeddings = []
     #generate_embeddings = ["gnews", "50", "100", "coco-70-50", "coco-30-50"]
-    #generate_embeddings = ["gnews", "300"]
     #generate_embeddings = ["gnews"]
+    #generate_embeddings = ["gnews", "300"]
     #generate_embeddings = ["gnews", "300", "glove-50"]
 
-    #"""
-    print("Preparing data for VRD!")
-    #data_preparer_vrd = VRDPrep(use_cleaning_map=True, multi_label=multi_label, generate_emb=generate_embeddings)
-    data_preparer_vrd = VRDPrep(use_cleaning_map=False, multi_label=multi_label, generate_emb=generate_embeddings)
-    #print("\tPreparing evaluation data from Language Priors...")
-    #data_preparer_vrd.prepareEvalFromLP()
-    data_preparer_vrd.load_vrd()
-    #data_preparer_vrd.randomize_split()
-    data_preparer_vrd.prepareGT()
-    data_preparer_vrd.save_data("relst")
-    data_preparer_vrd.save_counts()
-    #data_preparer_vrd.save_data("relst", "rel")
-    data_preparer_vrd.save_data("annos")
+    #""" VRD
+    print("Preparing data for VRD")
+    subset = False
+    # subset = "spatial"
+    # subset = "activities"
+    data_preparer_vrd = VRDPrep(subset = subset, multi_label = multi_label, generate_emb = generate_embeddings)
+    data_preparer_vrd.save_data(["relst", "annos"])
     #"""
 
-    """
-    # Generate the data in relst format using the {train,test}.pkl files provided by DSR
-    print("Generating data in DSR format...")
-    data_preparer_vrd.load_dsr()
-    data_preparer_vrd.save_data("relst")
-    data_preparer_vrd.save_counts()
-    #data_preparer_vrd.save_data("relst", "rel")
-    data_preparer_vrd.save_data("annos")
-    """
-
-    """
-    # TODO: allow multi-word vocabs, so that we can load 1600-400-20_bottomup
-    print("Preparing data for VG...")
+    #""" VG
+    print("Preparing data for VG")
     subset = (150, 50, 50)
-    #subset = (1600, 400, 20)
+    #subset = (1600, 400, 20) # TODO: allow multi-word vocabs, so that we can load 1600-400-20_bottomup
     data_preparer_vg = VGPrep(subset, multi_label=multi_label, generate_emb=generate_embeddings)
-    data_preparer_vg.save_data("relst")
-    data_preparer_vg.save_counts()
-    data_preparer_vg.prepareGT()
-    #data_preparer_vg.save_data("relst", "rel")
-    data_preparer_vg.save_data("annos")
+    data_preparer_vg.save_data(["relst", "annos"])
+    # data_preparer_vg.save_data(["relst", ("relst", "rel"), "annos"])
+    #"""
+
+
+    #""" VRD/DSR
+    # Generate the data in relst format using the {train,test}.pkl files provided by DSR
+    print("Generating data from VRD/DSR")
+    data_preparer_vrd = VRDPrep(subset = subset, multi_label = multi_label, generate_emb = generate_embeddings, load_dsr = True)
+    data_preparer_vrd.save_data(["relst", "annos"])
     #"""
 
     sys.exit(0)

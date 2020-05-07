@@ -27,10 +27,12 @@ data/genome/xml
 data/genome/*/xml
 data/genome/*/json
 #data/genome/1600-400-20/data_*.json
+
 data/**/*_relst_*.json
 data/genome/**/*_count.txt
 data/genome/**/data_annos_img_train.json
 !data/vrd/*.json
+
 data/sg_dataset.zip # TODO: remove, move sg_dataset.zip to vrd folder
 data/vrd/sg_dataset*
 #data/vrd/4392556686_44d71ff5a0_o.jpg
@@ -38,7 +40,9 @@ data/vrd/sg_dataset*
 # Non-evaluation Pickles, Matlab
 data/**/*.pkl
 data/**/*.mat
-!data/**/eval/**/*.pkl
-!data/**/eval/**/*.mat
 data/**/*.npy
+!data/vrd/**/eval/**/*.pkl
+!data/vrd/from-dsr/*.pkl
+data/vrd/from-dsr/so_prior.pkl
+!data/vrd/from-language-priors/*.mat
 

@@ -44,6 +44,13 @@ class VRDDataset():
     if self.img_subset != "" and self.name != "vg":
       raise ValueError("Couldn't initialize img_subset '{}' for dataset '{}'".format(self.img_subset, self.name))
 
+    if self.subset == None:
+      default_subsets = {
+        "vg"  : "150-50-50", # "1600-400-20", "2500-1000-500"
+        "vrd" : "all"
+      }
+      self.subset = default_subset[self.name]
+
     self.img_dir      = None
     self.metadata_dir = None
 
@@ -52,14 +59,9 @@ class VRDDataset():
 
     if self.name == "vrd":
       self.img_dir = osp.join(globals.data_dir, "vrd", "sg_dataset")
-      self.metadata_dir = osp.join(globals.data_dir, "vrd")
+      self.metadata_dir = osp.join(globals.data_dir, "vrd", self.subset)
 
     elif self.name == "vg":
-
-      if self.subset == None:
-        # self.subset = "1600-400-20"
-        # self.subset = "2500-1000-500"
-        self.subset = "150-50-50"
 
       self.img_dir = osp.join(globals.data_dir, "vg")
       self.metadata_dir = osp.join(globals.data_dir, "genome", self.subset)
@@ -95,8 +97,6 @@ class VRDDataset():
     # print((format, stage, granularity))
     if not (format, stage, granularity) in self._vrd_data_cache:
       filename = "data_{}_{}_{}.json".format(format, granularity, stage)
-      if self.name == "vrd" and self.subset == "dsr":
-          filename = "dsr_{}_{}_{}.json".format(format, granularity, stage)
       # print("Data not cached. Reading {}...".format(filename))
       data = self.readJSON(filename)
       if self.img_subset != "":
