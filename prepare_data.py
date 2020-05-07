@@ -846,7 +846,7 @@ if __name__ == '__main__':
     #generate_embeddings = ["gnews"]
     #generate_embeddings = ["gnews", "300", "glove-50"]
 
-    """
+    #"""
     print("Preparing data for VRD!")
     #data_preparer_vrd = VRDPrep(use_cleaning_map=True, multi_label=multi_label, generate_emb=generate_embeddings)
     data_preparer_vrd = VRDPrep(use_cleaning_map=False, multi_label=multi_label, generate_emb=generate_embeddings)
@@ -871,7 +871,7 @@ if __name__ == '__main__':
     data_preparer_vrd.save_data("annos")
     """
 
-    #"""
+    """
     # TODO: allow multi-word vocabs, so that we can load 1600-400-20_bottomup
     print("Preparing data for VG...")
     subset = (150, 50, 50)

@@ -462,8 +462,8 @@ if __name__ == "__main__":
 
   for emb_model in ["gnews"]: # , "300", "glove-50" "50", "coco-70-50", "coco-30-50", "100"]:
     #if FEATURES_SCAN:
-    trainer = vrd_trainer("{}-test-only_sem-{}".format(scan_name, emb_model),  {"training" : base_training}, profile = base_profile + ["only_sem"])
-    trainer.train()
+    #trainer = vrd_trainer("{}-test-only_sem-{}".format(scan_name, emb_model),  {"training" : base_training}, profile = base_profile + ["only_sem"])
+    #trainer.train()
 
     # Scan (rotating parameters)
     if PARAMS_SCAN:
@@ -472,10 +472,10 @@ if __name__ == "__main__":
         for weight_decay in [0.0001]:
           for lr_fus_ratio in [10]:
             for lr_rel_ratio in [10]: #, 100]:
-              for pred_sem_mode_1 in [11, 16]: # -1, 3, 11 #, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
+              for pred_sem_mode_1 in [16, 3, 11]: # -1, 3, 11 #, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
                 for loss in ["mlab"]: # "bcel"]: # mlab_mse
-                  for dataset in ["vrd"]: # vrd
-                    for prof in ["only_sem", "only_spat", "all_feats"]: # "only_sem_subdot", "only_sem_catdiff", "only_sem_catdot", "only_sem_diffdot"]: # ["only_spat", "spat_sem", "only_sem", False]: # , "vg"]:
+                  for dataset in ["vg"]: # vrd
+                    for prof in ["only_sem", "all_feats"]: # "only_sem_subdot", "only_sem_catdiff", "only_sem_catdot", "only_sem_diffdot"]: # ["only_spat", "spat_sem", "only_sem", False]: # , "vg"]:
                       if "mse" in loss and (pred_sem_mode_1 == -1 or pred_sem_mode_1>=16):
                         continue
                       session_id = "{}-{}-{}-{}-{}-{}-{}-{},{:b}-{}-{}".format(scan_name, emb_model, prof, lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode_1, pred_sem_mode_1, dataset, loss)
@@ -486,10 +486,10 @@ if __name__ == "__main__":
 
                       if dataset == "vg":
                         profile.append("vg")
-                        training = {"num_epochs" : 2, "test_freq" : [1,2]}
+                        training = {"num_epochs" : 4, "test_freq" : [1,2,3]}
 
                       # More to learn with all_feats?
-                      if prof == "all_feats" and pred_sem_mode_1 >= 0 and pred_sem_mode_1 <= 16:
+                      if dataset == "vrd" and prof == "all_feats" and pred_sem_mode_1 >= 0 and pred_sem_mode_1 <= 16:
                         training["num_epochs"] += 1
                         training["test_freq"] = [x+1 for x in training["test_freq"]]
 
