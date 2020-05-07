@@ -63,7 +63,7 @@ class VRDDataLayer(data.Dataset):
       # TODO: proposals is not ordered, but a dictionary with im_path keys
       # TODO: expand so that we don't need the proposals pickle, and we generate it if it's not there, using Faster-RCNN?
       # TODO: move the proposals file path to a different one (maybe in Faster-RCNN)
-      proposals = self.dataset.readPKL(osp.join("eval", "det_res.pkl"))
+      proposals = self.dataset.readPKL(osp.join("..", "eval", "det_res.pkl"))
       # TODO fix data bottlenecks like this one
       self.objdet_res = [ {
           "boxes"   : proposals["boxes"][i],
