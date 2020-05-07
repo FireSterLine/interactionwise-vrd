@@ -439,7 +439,7 @@ class VRDPrep(DataPreparer):
       if not load_dsr:
         self.outdir = "all" if self.subset == False else self.subset
       else:
-        assert self.subset == False, "Error. subset will cause the vocabs to be different from DSR."
+        assert self.subset == False, "Error. Using a subset will cause the vocabs to be different from DSR.".format(self.subset)
         self.outdir = "dsr"
 
       # Clean directory
@@ -682,6 +682,8 @@ class VRDPrep(DataPreparer):
         gt_zs_path      = osp.join("from-language-priors", "zeroShot.mat")
 
         # Output files
+        if not osp.exists(self.fullpath("eval", outputdir = True)):
+          os.mkdir(self.fullpath("eval", outputdir = True))
         gt_output_path         = osp.join("eval", "gt.pkl")
         gt_zs_output_path      = osp.join("eval", "gt_zs.pkl")
 
@@ -874,7 +876,7 @@ if __name__ == '__main__':
     #generate_embeddings = ["gnews", "50", "100", "coco-70-50", "coco-30-50"]
     #generate_embeddings = ["gnews"]
     #generate_embeddings = ["gnews", "300"]
-    #generate_embeddings = ["gnews", "300", "glove-50"]
+    generate_embeddings = ["gnews", "300", "glove-50"]
 
     #""" VRD
     print("Preparing data for VRD")
@@ -895,10 +897,10 @@ if __name__ == '__main__':
     #"""
 
 
-    #""" VRD/DSR
+    """ VRD/DSR
     # Generate the data in relst format using the {train,test}.pkl files provided by DSR
     print("Generating data from VRD/DSR")
-    data_preparer_vrd = VRDPrep(subset = subset, multi_label = multi_label, generate_emb = generate_embeddings, load_dsr = True)
+    data_preparer_vrd = VRDPrep(subset = False, multi_label = multi_label, generate_emb = generate_embeddings, load_dsr = True)
     data_preparer_vrd.save_data(["relst", "annos"])
     #"""
 

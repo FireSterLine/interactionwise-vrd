@@ -31,6 +31,7 @@ data/genome/*/json
 data/**/*_relst_*.json
 data/genome/**/*_count.txt
 data/genome/**/data_annos_img_train.json
+data/vrd/dsr/data_annos_img_train.json
 !data/vrd/*.json
 
 data/sg_dataset.zip # TODO: remove, move sg_dataset.zip to vrd folder
