@@ -143,6 +143,8 @@ class VRDEmbedding:
     def fine_tune_model_coco(self, path_to_model, model_type, tokenized_captions, num_epochs):
         # load the model
         model = self.load_model(path_to_model)
+        model.callbacks[0] = self.epoch_logger
+        model.callbacks[1] = self.epoch_saver
 
         # we save the COCO models in a subdirectory called "coco". If this subdirectory doesn't exist, create it
         if 'coco' not in model.callbacks[1].path_prefix:
@@ -158,7 +160,7 @@ class VRDEmbedding:
         epochs_trained = int(re.search(r'(?<=epoch_)\d+', path_to_model).group(0))
         # set epoch counters for the callbacks such that they continue from last epoch number of original model
         model.callbacks[0].epoch = epochs_trained + 1
-        model.callbacks[1].epoch += 1
+        model.callbacks[1].epoch = epochs_trained + 1
         # get file extensions for vectors and trainables of the model of choice (FastText or Word2Vec)
         model_vectors_ext = model.callbacks[1].vectors_ext
         model_trainables_ext = model.callbacks[1].trainables_ext
@@ -353,12 +355,14 @@ if __name__ == '__main__':
     vrd_embedder = VRDEmbedding(path_prefix, args.dim, args.model.lower())
     model = vrd_embedder.train_model(num_cores=args.num_cores, num_epochs=args.num_epochs, serialize=False,
                                      server_flag=server_flag, model_file=args.model_file_name)
+    # fine_tuned_model = vrd_embedder.fine_tune_model_coco(
+    #     os.path.join(path_prefix, "word2vec_epoch_5_dim_50.model"),
+    #     model_type=args.model,
+    #     tokenized_captions=pickle.load(open("../../coco_captions_tokenized.pkl", 'rb')),
+    #     num_epochs=5
+    # )
 
     # model = VRDEmbedding.load_model(os.path.join(path_prefix, "epoch_4_dim_50.model"))
-    # model = VRDEmbedding.load_model(os.path.join(path_prefix, "epoch_4_dim_100.model"))
 
-    # print("Dumping model to disk...")
-    # model.save("/media/azfar/New Volume/WikiDump/word2vec_model")
-
-    print("person: ")
-    print(model.wv['person'])
+    print("Wiki person: {}".format(model.wv['person']))
+    # print("COCO person: {}".format(fine_tuned_model['person']))
