@@ -140,7 +140,7 @@ class VRDEmbedding:
         print("Time taken to train the model: {}".format(end - start))
         return model
 
-    def fine_tune_model_coco(self, path_to_model, model_type, tokenized_captions, num_epochs):
+    def fine_tune_model_coco(self, path_to_model, model_type, dim, tokenized_captions, num_epochs):
         # load the model
         model = self.load_model(path_to_model)
         model.callbacks[0] = self.epoch_logger
@@ -154,8 +154,6 @@ class VRDEmbedding:
                 os.mkdir(coco_path)
             model.callbacks[1].path_prefix = os.path.join(model.callbacks[1].path_prefix, "coco/")
 
-        # get dimension from path_to_model
-        dim = re.search(r'(?<=_dim_)\d+', path_to_model).group(0)
         # get the number of epochs the current model is trained on
         epochs_trained = int(re.search(r'(?<=epoch_)\d+', path_to_model).group(0))
         # set epoch counters for the callbacks such that they continue from last epoch number of original model
