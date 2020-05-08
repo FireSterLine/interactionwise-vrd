@@ -121,11 +121,11 @@ def fine_tune_embeddings(path_to_model, tokenized_captions_fname, multi_word_phr
 
     # get the number of epochs the current model is trained on
     epochs_trained = int(re.search(r'(?<=epoch_)\d+', path_to_model).group(0))
-    filename = os.path.join(os.path.dirname(path_to_model), 'glove_epoch_{}_dim_{}.json'.format(
+    filename = os.path.join(os.path.dirname(path_to_model), 'glove_epoch_{}_dim_{}.pkl'.format(
         epochs_trained + num_epochs,
         dim
     ))
-    pickle.dump(coco_embeddings, open(filename, 'w'))
+    pickle.dump(coco_embeddings, open(filename, 'wb'))
 
 
 if __name__ == '__main__':
