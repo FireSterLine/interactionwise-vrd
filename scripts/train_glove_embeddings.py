@@ -143,6 +143,8 @@ if __name__ == '__main__':
     parser.add_argument("-E", "--num_epochs", dest="num_epochs", type=int, default=5,
                         help="Define the number of epochs to use for the training process")
     parser.add_argument("-D", "--dim", dest="dim", type=int, help="Define the size of the vectors")
+    parser.add_argument("-F", "--model_file_name", dest="model_filename", type=str, default=None,
+                        help="Define the name of the model to finetune over COCO")
     args = parser.parse_args()
 
     multi_word_phrases = ["traffic light", "trash can", "next to", "sleep next to", "sit next to", "stand next to",
@@ -173,10 +175,11 @@ if __name__ == '__main__':
     else:
         path_prefix = "/media/azfar/New Volume/WikiDump/"
 
-    # to train new model
-    # model = train_glove_model(path_prefix, args.dim, args.num_epochs, args.num_cores, server_flag)
-    path_to_model = os.path.join(path_prefix, "glove_epoch_5_dim_20.model")
-    path_to_captions = "../../coco_captions_tokenized.pkl"
-
-    # finetune model
-    fine_tune_embeddings(path_to_model, path_to_captions, multi_word_phrases, args.num_epochs, args.dim)
+    if args.model_filename is None:
+        # to train new model
+        model = train_glove_model(path_prefix, args.dim, args.num_epochs, args.num_cores, server_flag)
+    else:
+        # finetune model
+        path_to_model = os.path.join(path_prefix, args.model_filename)
+        path_to_captions = "../../coco_captions_tokenized.pkl"
+        fine_tune_embeddings(path_to_model, path_to_captions, multi_word_phrases, args.num_epochs, args.dim)
