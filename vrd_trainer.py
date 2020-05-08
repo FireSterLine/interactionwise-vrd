@@ -123,7 +123,6 @@ class vrd_trainer():
       utils.weights_normal_init(self.model, dev=0.01)
       # Load existing embeddings
       if self.model.args.feat_used.sem:
-        # obj_emb = torch.from_numpy(self.dataset.readPKL("params_emb.pkl"))
         obj_emb = torch.from_numpy(self.dataset.getEmb("objects"))
         self.model.state_dict()["emb.weight"].copy_(obj_emb)
         #TODO: try set_trainability(self.model.emb, requires_grad=True)

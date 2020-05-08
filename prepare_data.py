@@ -682,6 +682,7 @@ class VRDPrep(DataPreparer):
             The ground "truths and object detections are provided by Visual Relationships with Language Priors
             (files available on GitHub) as matlab .mat objects.
         '''
+        # TODO create object emb json from params_emb.pkl ?
 
         # Input files
         gt_path         = osp.join("from-language-priors", "gt.mat")

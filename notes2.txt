@@ -1,0 +1,245 @@
+IN THE MORNING:
+- show per predicate: Pre ZS R@30 with gnews (open zs-study.ods and insert new data)
+- put on results for vg predcls
+
+- focus on other types of predicates, see the behavior
+   NOTE: spatial predicates are all the same, semantically-wise
+- complete scan on vg (vrd_trainer.py?)
+- ? zs with respect to new predicates!
+
+
+- Scan SoftEmbRescore with only_sem 0,1,2,3 and all_feats
+- Poi vedi se funziona meglio con certi lr
+	With mode 1 (no logit), it can be tuned. A relu afterwards?
+  Mode 0 (logit) seems to f* everything up. Maybe a linear layer afterwards?
+
+- introduce soft embedding, instead of hard for objects? (doesn't affect PredCls)
+
+# TODO: filter out relationships between the same object?
+
+
+WRITING:
+
+Maybe, title: Class Semantic Awareness for Visual Relationship Detection
+
+
+So we believe that the metrics are weak in this sense.
+
+
+
+"Another challenge is that object categories are often se-mantically  associated  (Deng  et  al.,  2009;  Krishna  et  al.,2017;  Deng  et  al.,  2014),
+and  such  connections  could  bemore subtle for relationships since they are conditioned onthe contexts"
+  https://research.fb.com/wp-content/uploads/2019/01/Large-Scale-Visual-Relationship-Understanding.pdf
+
+  remove ", say, "
+  " And then when I go into the results I expect that the results I am seeing of the "blind" model and so on were explained in the methods section. "
+
+show the figure of the original model
+
+Introduction
+- maybe the problems should be under the introduction ?
+- mention the current problem/performance of the existing model which you try to improve, and why do you believe that it performs bad now
+- You use a lot words like we and us.. For a master thesis I don't like it but discuss it with your supervisor.
+- add real world applications examples
+
+"Semantic dense representation instead of 1-hot."
+
+explain SoftEmbRescore?
+
+"Simple MLC systems assume that labels are independent of one another, while more complex approaches capture inter-dependencies among labels."
+  from https://www.researchgate.net/publication/310459461_Improved_Multi-Label_Classification_using_Inter-dependence_Structure_via_a_Generative_Mixture_Model
+
+- we question whether treating the class as independent is the best approach, and look to see if we can teach the models some
+ their inter-dependency in some form.
+- And then, either: in this work we find that we can leverage word embeddings for the purpose; or we clearly state the hypothesis: can we leverage word embeddings for this
+
+idea to justify the use of predicate semantics: perhaps that is not good for a generic framework where the metrics are not softened,
+perhaps in that case it's better to treat the classes as totally unrelated entities. But here, with the ranking approach, and these softened R@x metrics,
+similar class labels can help eachother in rising above the others
+
+
+
+explain multi-label classification, with networks mmlab loss
+ranking approach
+
+fix i casi dove uso which anziche the * of which o whose
+
+
+In the discussion, make points about results, re-establish the research, show the limitations, future research and recommendation
+
+
+Abstract:
+- overall well written.
+- of an existing model which relies on ? it would be nice to mention the kind eg CNN or whatever..
+- focus on teaching our model ? how do you teach ? just one two words would be helpful
+- It would be nice to add as last sentence your achievement. Eg. we improved the existing model by decreasing the error by 4%.
+
+Introduction
+- See and speak --> I really like this paragraph
+- maybe the problems should be under the introduction ?
+- mention the current problem/performance of the existing model which you try to improve
+and why do you believe that it performs bad now
+- You use a lot words like we and us.. For a master thesis I don't like it but discuss it with your supervisor.
+- Minor: in 2.3 words like object detection, predicate predictions etc are huge and bold.. I don't like it so much
+- add real world applications examples
+
+Datasets
+- Starts with "This paper ..." which paper ?
+- Do you really need a subsection for it ? It is only one paragraph..
+
+Multi-modality:
+- first paragraph is huuuuge --> keep balance
+    (this is what happens in works like \citebyaut{languagepriors} \citebyaut{structural-ranking} and
+    \citebyaut{prior-softmax}). % namely, the semantic embedding of the objects
+    % is computed using a pre-trained Word2Vec model, and a a different, independent,
+    % linear projection of the combined subject-object embeddings for every predicate.
+
+    % consist of a 8-dimensional vector ... cite dsr
+
+    We're going to use R@50 and R@30 because the values were quite high already.
+    ...To complete the description, their ranking approach involves all $n(n-1) \cdot M$ detections in an image to be ranked by score.
+    (at test time...)
+
+    DSR:
+     One direct way to dealwith incomplete predicate annotation is to take the unla-
+     beled relationships as negative samples and solve the rela
+     tionship detection problem using a multi-label classification
+     framework based on cross-entropy loss
+
+     In this paper, we propose a deep neural network frame-work with structural ranking loss to tackle the visual rela-tionship detection problem
+
+     Moreover, we integrate the structural losswith the probability of the predicates conditioned on its sub-
+     ject and object to further reduce the impact of incompleteannotations
+
+     MultiLabelMarginLoss: multi-label ranking loss
+
+     Long-tail Classification (e.g read a little bit of https://arxiv.org/pdf/2004.00436.pdf)
+
+
+Results
+  When showing the results per-predicate, signal that:
+    do not exist in gnews, 300 and glove-50
+    	sleep next to mapped to (sleep, next)
+    	sit next to mapped to (sit, next)
+    	stand next to mapped to (stand, next)
+    	walk next to mapped to (walk, next)
+
+    	Also:
+    		windshield_wiper not found in model!
+    		tv_stand not found in model!
+    		number_2 not found in model!
+    		baseball_uniform not found in model!
+    		computer_monitor not found in model!
+
+    do not exist in gnews:
+    	'traffic light' mapped to 'stoplight'
+    	'trash can' mapped to 'trashcan'
+
+    	'next to' mapped to 'next'
+    	'stand next to' mapped to 'stand next'
+    	'park next' mapped to the average of ('park', 'next')
+    	'stand behind' mapped to the average of ('stand', 'behind')
+    	'sit behind' mapped to the average of ('sit', 'behind')
+    	'park behind' mapped to the average of ('park', 'behind')
+    	'in the front of' mapped to 'front'
+    	'stand under' mapped to the average of ('stand', 'under')
+    	'sit under' mapped to the average of ('sit', 'under')
+    	'walk to' mapped to the average of ('walk',)
+    	'walk past' mapped to the average of ('walk', 'past')
+    	'walk beside' mapped to the average of ('walk', 'beside')
+    	    'on top' mapped to the average of ('on', 'top')
+    	  'on top of' mapped to 'on top'
+    	'on the top of' mapped to 'on top of'
+    	    'of' mapped to 'about'
+    	  'on left of' mapped to the average of ('on', 'left', 'of')
+    	'on the left of' mapped to 'on left of'
+    	    'of' mapped to 'about'
+    	'on right of' mapped to the average of ('on', 'right', 'of')                                                                                                  [74/1929]
+    	'on the right of' mapped to 'on right of'
+    	'sit on' mapped to the average of ('sit', 'on')
+    	'stand on' mapped to the average of ('stand', 'on')
+    	'attach to' mapped to the average of ('attach',)
+    	'adjacent to' mapped to the average of ('adjacent',)
+    	'drive on' mapped to the average of ('drive', 'on')
+    	'taller than' mapped to 'taller'
+    	'park on' mapped to the average of ('park', 'on')
+    	'lying on' mapped to the average of ('lying', 'on')
+    	'lean on' mapped to the average of ('lean', 'on')
+    	'play with' mapped to 'play'
+    	'sleep on' mapped to the average of ('sleep', 'on')
+    	'of' mapped to 'about'
+    	'outside of' mapped to the average of ('outside', 'of')
+    	'rest on' mapped to the average of ('rest', 'on')
+    	'skate on' mapped to the average of ('skate', 'on')
+
+    FOR VG:
+    	Loading embedding model 'gnews'...
+    	'attach to' mapped to the average of ('attach',)
+    	'be in' mapped to the average of ('be', 'in')
+    	'be on' mapped to the average of ('be', 'on')
+    	'belong to' mapped to the average of ('belong',)
+    	'hang from' mapped to the average of ('hang', 'from')
+    	'hang on' mapped to the average of ('hang', 'on')
+    	'have a' mapped to the average of ('have',)
+    	'in a' mapped to the average of ('in',)
+    	'in front of' mapped to 'front'
+    	  'of' mapped to 'about'
+    	'inside of' mapped to the average of ('inside', 'of')
+    	'lay on' mapped to the average of ('lay', 'on')
+    	'next to' mapped to 'next'
+    	'of' mapped to 'about'
+    	  'of' mapped to 'about'
+    	'of a' mapped to the average of ('of',)
+    	'on a' mapped to the average of ('on',)
+    	  'of' mapped to 'about'
+    	'on front of' mapped to the average of ('on', 'front', 'of')
+    	  'of' mapped to 'about'
+    	'on side of' mapped to the average of ('on', 'side', 'of')
+    	  'on top' mapped to the average of ('on', 'top')
+    	'on top of' mapped to 'on top'
+    	'sit in' mapped to the average of ('sit', 'in')
+    	'sit on' mapped to the average of ('sit', 'on')
+    	'stand in' mapped to the average of ('stand', 'in')
+    	'stand on' mapped to the average of ('stand', 'on')
+    	'walk on' mapped to the average of ('walk', 'on')
+    	'wear a' mapped to the average of ('wear',)
+    	Loading embedding model '300'...
+    	'be in' mapped to the average of ('be', 'in')
+    	'be on' mapped to the average of ('be', 'on')
+    	'belong to' mapped to the average of ('belong', 'to')
+    	'hang from' mapped to the average of ('hang', 'from')
+    	'hang on' mapped to the average of ('hang', 'on')
+    	'have a' mapped to the average of ('have',)
+    	'in a' mapped to the average of ('in',)
+    	'in front of' mapped to 'in_front'
+    	'inside of' mapped to the average of ('inside', 'of')
+    	'lay on' mapped to the average of ('lay', 'on')
+    	'of a' mapped to the average of ('of',)
+    	'on front of' mapped to the average of ('on', 'front', 'of')
+    	'on side of' mapped to the average of ('on', 'side', 'of')
+    	  'on top' mapped to the average of ('on', 'top')
+    	'on top of' mapped to 'on top'
+    	'sit in' mapped to the average of ('sit', 'in')
+    	'stand in' mapped to the average of ('stand', 'in')
+    	'walk on' mapped to the average of ('walk', 'on')
+    	'wear a' mapped to the average of ('wear',)
+    	Loading embedding model 'glove-50'...
+    	'be in' mapped to the average of ('be', 'in')
+    	'be on' mapped to the average of ('be', 'on')
+    	'belong to' mapped to the average of ('belong', 'to')
+    	'hang from' mapped to the average of ('hang', 'from')
+    	'hang on' mapped to the average of ('hang', 'on')
+    	'have a' mapped to the average of ('have',)
+    	'in a' mapped to the average of ('in',)
+    	'in front of' mapped to 'in_front'
+    	'inside of' mapped to the average of ('inside', 'of')
+    	'lay on' mapped to the average of ('lay', 'on')
+    	'of a' mapped to the average of ('of',)
+    	'on front of' mapped to the average of ('on', 'front', 'of')
+    	'on side of' mapped to the average of ('on', 'side', 'of')
+    	  'on top' mapped to the average of ('on', 'top')
+    	'on top of' mapped to 'on top'
+    	'sit in' mapped to the average of ('sit', 'in')
+    	'stand in' mapped to the average of ('stand', 'in')
+    	'walk on' mapped to the average of ('walk', 'on')
+    	'wear a' mapped to the average of ('wear',)

@@ -1,10 +1,6 @@
-Maybe, title: Class Semantic Awareness for Visual Relationship Detection
+TODO: Any difference between Skip-Gram/CBOW?
 
 
-Skip-Gram/CBOW
-
-
-Makes sure that the model is still valid (validate original with original dataset)
 Show the results with a randomly initialized untrained models.
   PRED TEST:
   	R@100:  70.558	ZS:  76.166
@@ -36,8 +32,6 @@ PRED TEST:
   \ No newline at end of file
 
 
-So we believe that the metrics are weak in this sense.
-
 - Introduce a new metric (inspired from https://arxiv.org/pdf/2004.00436.pdf),
   consisting of a variation of R@50 and R@100 where the semantics of the predicates is taken into account.
   Some cosine distance-based metric.
@@ -62,39 +56,15 @@ So we believe that the metrics are weak in this sense.
 		they are going to be low.
 
 
- (this is what happens in works like \citebyaut{languagepriors} \citebyaut{structural-ranking} and
-\citebyaut{prior-softmax}). % namely, the semantic embedding of the objects
-% is computed using a pre-trained Word2Vec model, and a a different, independent,
-% linear projection of the combined subject-object embeddings for every predicate.
-
- % consist of a 8-dimensional vector ... cite dsr
-
-We're going to use R@50 and R@30 because the values were quite high already.
-...To complete the description, their ranking approach involves all $n(n-1) \cdot M$ detections in an image to be ranked by score.
-(at test time...)
-
-
-DSR:
-  One direct way to dealwith incomplete predicate annotation is to take the unla-
-  beled relationships as negative samples and solve the rela
-  tionship detection problem using a multi-label classification
-  framework based on cross-entropy loss
-
-  In this paper, we propose a deep neural network frame-work with structural ranking loss to tackle the visual rela-tionship detection problem
-
-  Moreover, we integrate the structural losswith the probability of the predicates conditioned on its sub-
-  ject and object to further reduce the impact of incompleteannotations
-
-  MultiLabelMarginLoss: multi-label ranking loss
-
-  Long-tail Classification (e.g read a little bit of https://arxiv.org/pdf/2004.00436.pdf)
-
 
 
 New idea:
  look for "Let’s build a proper (yet simple" here: https://towardsdatascience.com/understanding-pytorch-with-an-example-a-step-by-step-tutorial-81fc5f8c4e8e
  They have single parameters. Well, implement the linear projection for a predicate there. Beforee that, check if it's already there somewhere int he code.
  Do they claim it is already there, in the paper?
+
+
+
 
  To give example numbers, the model learns to give a 80% R@100 score without any input,
   and multi-modality only helps bringing it up to 93-95%. Also, it looks like one modality (vis, sem, spat)
@@ -107,9 +77,6 @@ New idea:
 
 
 https://sagivtech.com/2017/09/19/optimizing-pytorch-training-code/
-
-criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
 
 
 
