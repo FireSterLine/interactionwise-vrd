@@ -129,7 +129,10 @@ def fine_tune_embeddings(path_to_model, tokenized_captions_fname, multi_word_phr
         # this word is not originally in COCO and therefore its embedding has not been fine=tuned; get original
         # embedding from the GloVe model trained on Wiki
         else:
-            coco_embeddings[word] = model.word_vectors[model.dictionary[word]]
+            try:
+                coco_embeddings[word] = model.word_vectors[model.dictionary[word]]
+            except KeyError:
+                print("No embedding found for {}!".format(word))
 
     # get the number of epochs the current model is trained on
     epochs_trained = int(re.search(r'(?<=epoch_)\d+', path_to_model).group(0))
