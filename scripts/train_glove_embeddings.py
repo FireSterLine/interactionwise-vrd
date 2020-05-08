@@ -125,7 +125,7 @@ def fine_tune_embeddings(path_to_model, tokenized_captions_fname, multi_word_phr
         epochs_trained + num_epochs,
         dim
     ))
-    json.dump(coco_embeddings, open(filename, 'w'))
+    pickle.dump(coco_embeddings, open(filename, 'w'))
 
 
 if __name__ == '__main__':
