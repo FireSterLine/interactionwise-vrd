@@ -36,13 +36,13 @@ def train_glove_model(path_prefix, dim, num_epochs, num_cores, server_flag=False
     corpus.fit(wiki_iterator, window=5)
 
     print("Initializing Glove model...")
-    model = Glove(no_components=args.dim)
+    model = Glove(no_components=dim)
     print("Fitting Glove embeddings on corpus matrix...")
     model.fit(corpus.matrix, epochs=num_epochs, no_threads=num_cores, verbose=True)
     print("Adding Glove dictionary...")
     model.add_dictionary(corpus.dictionary)
     print("Saving Glove model to disk...")
-    model.save(os.path.join(path_prefix, "glove_epoch_5_dim_{}.model".format(args.dim)))
+    model.save(os.path.join(path_prefix, "glove_epoch_{}_dim_{}.model".format(num_epochs, dim)))
 
     print(model.word_vectors[model.dictionary['person']])
     return model
@@ -187,9 +187,11 @@ if __name__ == '__main__':
 
     if args.model_filename is None:
         # to train new model
+        print("Training new GloVe model over Wiki dataset!")
         model = train_glove_model(path_prefix, args.dim, args.num_epochs, args.num_cores, server_flag)
     else:
         # finetune model
+        print("Finetuning existing GloVe model over COCO captions!")
         path_to_model = os.path.join(path_prefix, args.model_filename)
         path_to_captions = "../../coco_captions_tokenized.pkl"
         fine_tune_embeddings(path_to_model, path_to_captions, multi_word_phrases, args.num_epochs, args.dim)
