@@ -113,19 +113,19 @@ def fine_tune_embeddings(path_to_model, tokenized_captions_fname, multi_word_phr
     mittens_model = Mittens(n=dim, max_iter=num_epochs, display_progress=1)
     # TODO: vocab and model_embeddings are not in the same order for some reason. Fix!
     # NOTE: This should be much faster on the GPU...
-    new_embeddings = mittens_model.fit(np.array(coco_corpus.matrix.todense()),
-                                       vocab=coco_vocab,
+    new_embeddings = mittens_model.fit(np.array(coco_corpus.matrix.todense()), vocab=coco_vocab,
                                        initial_embedding_dict=model_embeddings)
 
     person_index = coco_vocab.index('person')
-    print("'Person' old embedding: {}".format(model.word_vectors[model.dictionary['person']]))
+    print("\n'Person' old embedding: {}".format(model.word_vectors[model.dictionary['person']]))
     print("'Person' new embedding: {}".format(new_embeddings[person_index]))
 
     coco_embeddings = {}
-    for index, word in enumerate(all_words):
+    for word in all_words:
         # get the new fine=tuned embedding
         if word in coco_vocab:
-            coco_embeddings[word] = list(new_embeddings[index])
+            word_index = coco_vocab.index(word)
+            coco_embeddings[word] = list(new_embeddings[word_index])
         # this word is not originally in COCO and therefore its embedding has not been fine=tuned; get original
         # embedding from the GloVe model trained on Wiki
         else:
