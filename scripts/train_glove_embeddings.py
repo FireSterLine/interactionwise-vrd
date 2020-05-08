@@ -117,7 +117,7 @@ def fine_tune_embeddings(path_to_model, tokenized_captions_fname, multi_word_phr
 
     coco_embeddings = {}
     for index, word in enumerate(vocab):
-        coco_embeddings[word] = new_embeddings[index]
+        coco_embeddings[word] = list(new_embeddings[index])
 
     # get the number of epochs the current model is trained on
     epochs_trained = int(re.search(r'(?<=epoch_)\d+', path_to_model).group(0))
