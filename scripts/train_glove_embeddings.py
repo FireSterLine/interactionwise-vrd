@@ -51,23 +51,25 @@ def train_glove_model(path_prefix, dim, num_epochs, num_cores, server_flag=False
 def fine_tune_embeddings(path_to_model, tokenized_captions_fname, multi_word_phrases, num_epochs, dim):
     print("Loading Glove model...")
     model = Glove().load(path_to_model)
-    # vrd_objects = json.load(open("../data/vrd/objects.json", 'r'))
-    # vrd_predicates = json.load(open("../data/vrd/predicates.json", 'r'))
+
+    print("Loading vocabularies...")
+    vrd_objects = json.load(open("../data/vrd/objects.json", 'r'))
+    vrd_predicates = json.load(open("../data/vrd/predicates.json", 'r'))
     # fall_back_json = json.load(open("../data/embeddings/fallback-v1.json", 'r'))
     tokenized_captions = pickle.load(open(tokenized_captions_fname, 'rb'))
-    relevant_words = []
-    # print("Adding single word objects and predicates...")
+    # this will contain words from VRD objects, VRD predicates, multi-word phrases and COCO vocab
+    all_words = []
     # get only single word objects and predicates
-    # relevant_words.extend([a for a in vrd_objects if len(a.split()) == 1])
-    # relevant_words.extend([a for a in vrd_predicates if len(a.split()) == 1])
-    # print("Adding underscore-unionized multiword objects and predicates...")
+    all_words.extend([a for a in vrd_objects if len(a.split()) == 1])
+    all_words.extend([a for a in vrd_predicates if len(a.split()) == 1])
     # get all multi-word objects and predicates joined by underscore
-    # for m_word in multi_word_phrases:
-    #     unionized_token = '_'.join(m_word.split())
-    #     relevant_words.append(unionized_token)
+    for m_word in multi_word_phrases:
+        unionized_token = '_'.join(m_word.split())
+        all_words.append(unionized_token)
 
     # get all words from COCO vocabulary
-    print("Adding COCO vocabulary...")
+    print("Removing OOV words from COCO captions...")
+    coco_words = []
     vocab_tokenized_captions = []
     # remove those words from COCO captions that the model doesn't know of
     for tok_caption in tokenized_captions:
@@ -77,54 +79,65 @@ def fine_tune_embeddings(path_to_model, tokenized_captions_fname, multi_word_phr
             try:
                 model.word_vectors[model.dictionary[word]]
                 vocab_caption.append(word)
+                # add this word to all_words if it already doesn't exist there
+                if word not in all_words:
+                    all_words.append(word)
             except KeyError:
                 pass
-        relevant_words.extend(vocab_caption)
+        coco_words.extend(vocab_caption)
         vocab_tokenized_captions.append(vocab_caption)
 
     # get unique words
-    print("Getting unique words...")
-    unique_words = list(set(relevant_words))
+    coco_words = list(set(coco_words))
 
     # add only those words in the vocab and embedding dict which the model knows
-    vocab = []
+    coco_vocab = []
     model_embeddings = {}
-    for word in unique_words:
+    for word in coco_words:
         try:
             embedding = model.word_vectors[model.dictionary[word]]
-            vocab.append(word)
+            coco_vocab.append(word)
             model_embeddings[word] = embedding
         except KeyError:
             pass
 
+    print("Initializing GloVe corpus with COCO vocab...")
     coco_corpus = Corpus()
     coco_corpus.fit(vocab_tokenized_captions, window=5)
 
     print("COCO corpus: {}".format(coco_corpus.matrix.shape))
-    print("Vocab: {}; first word: {}".format(len(vocab), vocab[0]))
+    print("Vocab: {}; first word: {}".format(len(coco_vocab), coco_vocab[0]))
     print("Original embeddings: {}; first word: {}".format(len(model_embeddings), list(model_embeddings.keys())[0]))
 
+    print("Fitting mittens model...")
     mittens_model = Mittens(n=dim, max_iter=num_epochs, display_progress=1)
     # TODO: vocab and model_embeddings are not in the same order for some reason. Fix!
     # NOTE: This should be much faster on the GPU...
     new_embeddings = mittens_model.fit(np.array(coco_corpus.matrix.todense()),
-                                       vocab=vocab,
+                                       vocab=coco_vocab,
                                        initial_embedding_dict=model_embeddings)
 
-    person_index = vocab.index('person')
+    person_index = coco_vocab.index('person')
     print("'Person' old embedding: {}".format(model.word_vectors[model.dictionary['person']]))
     print("'Person' new embedding: {}".format(new_embeddings[person_index]))
 
     coco_embeddings = {}
-    for index, word in enumerate(vocab):
-        coco_embeddings[word] = list(new_embeddings[index])
+    for index, word in enumerate(all_words):
+        # get the new fine=tuned embedding
+        if word in coco_vocab:
+            coco_embeddings[word] = list(new_embeddings[index])
+        # this word is not originally in COCO and therefore its embedding has not been fine=tuned; get original
+        # embedding from the GloVe model trained on Wiki
+        else:
+            coco_embeddings[word] = model.word_vectors[model.dictionary[word]]
 
     # get the number of epochs the current model is trained on
     epochs_trained = int(re.search(r'(?<=epoch_)\d+', path_to_model).group(0))
-    filename = os.path.join(os.path.dirname(path_to_model), 'glove_epoch_{}_dim_{}.pkl'.format(
+    filename = os.path.join(os.path.dirname(path_to_model), 'coco', 'glove_epoch_{}_dim_{}.pkl'.format(
         epochs_trained + num_epochs,
         dim
     ))
+    print("Dumping finetuned embeddings to disk...")
     pickle.dump(coco_embeddings, open(filename, 'wb'))
 
 
