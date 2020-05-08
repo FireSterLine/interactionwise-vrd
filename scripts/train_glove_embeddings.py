@@ -51,20 +51,20 @@ def train_glove_model(path_prefix, dim, num_epochs, num_cores, server_flag=False
 def fine_tune_embeddings(path_to_model, tokenized_captions_fname, multi_word_phrases, num_epochs, dim):
     print("Loading Glove model...")
     model = Glove().load(path_to_model)
-    vrd_objects = json.load(open("../data/vrd/objects.json", 'r'))
-    vrd_predicates = json.load(open("../data/vrd/predicates.json", 'r'))
-    fall_back_json = json.load(open("../data/embeddings/fallback-v1.json", 'r'))
+    # vrd_objects = json.load(open("../data/vrd/objects.json", 'r'))
+    # vrd_predicates = json.load(open("../data/vrd/predicates.json", 'r'))
+    # fall_back_json = json.load(open("../data/embeddings/fallback-v1.json", 'r'))
     tokenized_captions = pickle.load(open(tokenized_captions_fname, 'rb'))
     relevant_words = []
-    print("Adding single word objects and predicates...")
+    # print("Adding single word objects and predicates...")
     # get only single word objects and predicates
-    relevant_words.extend([a for a in vrd_objects if len(a.split()) == 1])
-    relevant_words.extend([a for a in vrd_predicates if len(a.split()) == 1])
-    print("Adding underscore-unionized multiword objects and predicates...")
+    # relevant_words.extend([a for a in vrd_objects if len(a.split()) == 1])
+    # relevant_words.extend([a for a in vrd_predicates if len(a.split()) == 1])
+    # print("Adding underscore-unionized multiword objects and predicates...")
     # get all multi-word objects and predicates joined by underscore
-    for m_word in multi_word_phrases:
-        unionized_token = '_'.join(m_word.split())
-        relevant_words.append(unionized_token)
+    # for m_word in multi_word_phrases:
+    #     unionized_token = '_'.join(m_word.split())
+    #     relevant_words.append(unionized_token)
 
     # get all words from COCO vocabulary
     print("Adding COCO vocabulary...")
@@ -86,19 +86,13 @@ def fine_tune_embeddings(path_to_model, tokenized_captions_fname, multi_word_phr
     print("Getting unique words...")
     unique_words = list(set(relevant_words))
 
-    # add only those words in the vocab which the model knows
+    # add only those words in the vocab and embedding dict which the model knows
     vocab = []
+    model_embeddings = {}
     for word in unique_words:
         try:
-            model.word_vectors[model.dictionary[word]]
-            vocab.append(word)
-        except KeyError:
-            pass
-
-    model_embeddings = {}
-    for word in vocab:
-        try:
             embedding = model.word_vectors[model.dictionary[word]]
+            vocab.append(word)
             model_embeddings[word] = embedding
         except KeyError:
             pass
