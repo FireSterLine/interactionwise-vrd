@@ -41,8 +41,12 @@ def train_glove_model(path_prefix, dim, num_epochs, num_cores, server_flag=False
     model.fit(corpus.matrix, epochs=num_epochs, no_threads=num_cores, verbose=True)
     print("Adding Glove dictionary...")
     model.add_dictionary(corpus.dictionary)
-    print("Saving Glove model to disk...")
-    model.save(os.path.join(path_prefix, "glove_epoch_{}_dim_{}.model".format(num_epochs, dim)))
+    try:
+        print("Saving Glove model to disk...")
+        model.save(os.path.join(path_prefix, "glove_epoch_{}_dim_{}.model".format(num_epochs, dim)))
+    except Exception as e:
+        print("The following exception occurred: {}".format(str(e)))
+        pass
 
     print(model.word_vectors[model.dictionary['person']])
     return model
