@@ -65,10 +65,6 @@ def save_tuple_counts(data_dir):
 """
 save_pred2pred("data/vrd/all", "gnews");
 save_pred2pred("data/vrd/all", "300");
-
-
-save_pred2pred("data/vrd/all", "gnews");
-save_pred2pred("data/vrd/all", "300");
 save_pred2pred_diff("data/vrd/all", "gnews", "300");
 save_pred2pred_diff("data/vrd/all", "50", "300");
 save_pred2pred_diff("data/vrd/all", "50", "100");
