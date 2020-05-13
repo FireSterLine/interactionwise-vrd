@@ -489,7 +489,7 @@ if __name__ == "__main__":
                       #  training = {"num_epochs" : 4, "test_freq" : [1,2,3]}
 
                       # More to learn with all_feats?
-                      if dataset == "vrd" and prof == "all_feats" and pred_sem_mode_1 >= 0 and pred_sem_mode_1 <= 16:
+                      if dataset == "vrd" and prof == "all_feats" and pred_sem_mode_1 >= 0 and pred_sem_mode_1 < 16:
                         training["num_epochs"] += 1
                         training["test_freq"] = [x+1 for x in training["test_freq"]]
 
