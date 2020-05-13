@@ -1,0 +1,164 @@
+add citations for npcompleteness {neural-net-npc}
+
+- (this is what happens in works like \citebyaut{languagepriors} \citebyaut{structural-ranking} and
+    \citebyaut{prior-softmax}). % namely, the semantic embedding of the objects
+    % is computed using a pre-trained Word2Vec model, and a a different, independent,
+    % linear projection of the combined subject-object embeddings for every predicate.
+- Long-tail Classification (e.g read a little bit of https://arxiv.org/pdf/2004.00436.pdf)
+- 2.3.3 Convolutional Neural Network from thesis 249....pdf
+
+WRITING:
+- Class Semantic Awareness for Visual Relationship Detection
+
+Abstract
+- It would be nice to add as last sentence your achievement. Eg. we improved the existing model by decreasing the error by 4%.
+- And then, either: in this work we find that we can leverage word embeddings for the purpose; or we clearly state the hypothesis: can we leverage word embeddings for this
+
+Introduction
+- maybe the problems should be under the introduction ?
+- mention the current problem/performance of the existing model which you try to improve, and why do you believe that it may profit from something else
+- Avoid we and our
+- add real world applications examples
+
+Datasets
+- EXPAND
+
+Multi-modality:
+- first paragraph is huuuuge --> keep balance
+
+Methods
+- the results should show the results obtained with models described in methods
+- explain the blind model
+
+Discussion
+- Make points about results, re-establish the research, show the limitations, future research and recommendation
+
+Results
+- We're going to use R@50 and R@30 because the values were quite high already.
+- ...So we believe that the metrics are weak in this sense. In fact, this may be a side offect of using ``softened metrics'' (see section...)
+- When showing the results per-predicate, signal that:
+    do not exist in gnews, 300 and glove-50
+    	sleep next to mapped to (sleep, next)
+    	sit next to mapped to (sit, next)
+    	stand next to mapped to (stand, next)
+    	walk next to mapped to (walk, next)
+
+    	Also:
+    		windshield_wiper not found in model!
+    		tv_stand not found in model!
+    		number_2 not found in model!
+    		baseball_uniform not found in model!
+    		computer_monitor not found in model!
+
+    do not exist in gnews:
+    	'traffic light' mapped to 'stoplight'
+    	'trash can' mapped to 'trashcan'
+
+    	'next to' mapped to 'next'
+    	'stand next to' mapped to 'stand next'
+    	'park next' mapped to the average of ('park', 'next')
+    	'stand behind' mapped to the average of ('stand', 'behind')
+    	'sit behind' mapped to the average of ('sit', 'behind')
+    	'park behind' mapped to the average of ('park', 'behind')
+    	'in the front of' mapped to 'front'
+    	'stand under' mapped to the average of ('stand', 'under')
+    	'sit under' mapped to the average of ('sit', 'under')
+    	'walk to' mapped to the average of ('walk',)
+    	'walk past' mapped to the average of ('walk', 'past')
+    	'walk beside' mapped to the average of ('walk', 'beside')
+    	    'on top' mapped to the average of ('on', 'top')
+    	  'on top of' mapped to 'on top'
+    	'on the top of' mapped to 'on top of'
+    	    'of' mapped to 'about'
+    	  'on left of' mapped to the average of ('on', 'left', 'of')
+    	'on the left of' mapped to 'on left of'
+    	    'of' mapped to 'about'
+    	'on right of' mapped to the average of ('on', 'right', 'of')                                                                                                  [74/1929]
+    	'on the right of' mapped to 'on right of'
+    	'sit on' mapped to the average of ('sit', 'on')
+    	'stand on' mapped to the average of ('stand', 'on')
+    	'attach to' mapped to the average of ('attach',)
+    	'adjacent to' mapped to the average of ('adjacent',)
+    	'drive on' mapped to the average of ('drive', 'on')
+    	'taller than' mapped to 'taller'
+    	'park on' mapped to the average of ('park', 'on')
+    	'lying on' mapped to the average of ('lying', 'on')
+    	'lean on' mapped to the average of ('lean', 'on')
+    	'play with' mapped to 'play'
+    	'sleep on' mapped to the average of ('sleep', 'on')
+    	'of' mapped to 'about'
+    	'outside of' mapped to the average of ('outside', 'of')
+    	'rest on' mapped to the average of ('rest', 'on')
+    	'skate on' mapped to the average of ('skate', 'on')
+
+    FOR VG:
+    	Loading embedding model 'gnews'...
+    	'attach to' mapped to the average of ('attach',)
+    	'be in' mapped to the average of ('be', 'in')
+    	'be on' mapped to the average of ('be', 'on')
+    	'belong to' mapped to the average of ('belong',)
+    	'hang from' mapped to the average of ('hang', 'from')
+    	'hang on' mapped to the average of ('hang', 'on')
+    	'have a' mapped to the average of ('have',)
+    	'in a' mapped to the average of ('in',)
+    	'in front of' mapped to 'front'
+    	  'of' mapped to 'about'
+    	'inside of' mapped to the average of ('inside', 'of')
+    	'lay on' mapped to the average of ('lay', 'on')
+    	'next to' mapped to 'next'
+    	'of' mapped to 'about'
+    	  'of' mapped to 'about'
+    	'of a' mapped to the average of ('of',)
+    	'on a' mapped to the average of ('on',)
+    	  'of' mapped to 'about'
+    	'on front of' mapped to the average of ('on', 'front', 'of')
+    	  'of' mapped to 'about'
+    	'on side of' mapped to the average of ('on', 'side', 'of')
+    	  'on top' mapped to the average of ('on', 'top')
+    	'on top of' mapped to 'on top'
+    	'sit in' mapped to the average of ('sit', 'in')
+    	'sit on' mapped to the average of ('sit', 'on')
+    	'stand in' mapped to the average of ('stand', 'in')
+    	'stand on' mapped to the average of ('stand', 'on')
+    	'walk on' mapped to the average of ('walk', 'on')
+    	'wear a' mapped to the average of ('wear',)
+    	Loading embedding model '300'...
+    	'be in' mapped to the average of ('be', 'in')
+    	'be on' mapped to the average of ('be', 'on')
+    	'belong to' mapped to the average of ('belong', 'to')
+    	'hang from' mapped to the average of ('hang', 'from')
+    	'hang on' mapped to the average of ('hang', 'on')
+    	'have a' mapped to the average of ('have',)
+    	'in a' mapped to the average of ('in',)
+    	'in front of' mapped to 'in_front'
+    	'inside of' mapped to the average of ('inside', 'of')
+    	'lay on' mapped to the average of ('lay', 'on')
+    	'of a' mapped to the average of ('of',)
+    	'on front of' mapped to the average of ('on', 'front', 'of')
+    	'on side of' mapped to the average of ('on', 'side', 'of')
+    	  'on top' mapped to the average of ('on', 'top')
+    	'on top of' mapped to 'on top'
+    	'sit in' mapped to the average of ('sit', 'in')
+    	'stand in' mapped to the average of ('stand', 'in')
+    	'walk on' mapped to the average of ('walk', 'on')
+    	'wear a' mapped to the average of ('wear',)
+    	Loading embedding model 'glove-50'...
+    	'be in' mapped to the average of ('be', 'in')
+    	'be on' mapped to the average of ('be', 'on')
+    	'belong to' mapped to the average of ('belong', 'to')
+    	'hang from' mapped to the average of ('hang', 'from')
+    	'hang on' mapped to the average of ('hang', 'on')
+    	'have a' mapped to the average of ('have',)
+    	'in a' mapped to the average of ('in',)
+    	'in front of' mapped to 'in_front'
+    	'inside of' mapped to the average of ('inside', 'of')
+    	'lay on' mapped to the average of ('lay', 'on')
+    	'of a' mapped to the average of ('of',)
+    	'on front of' mapped to the average of ('on', 'front', 'of')
+    	'on side of' mapped to the average of ('on', 'side', 'of')
+    	  'on top' mapped to the average of ('on', 'top')
+    	'on top of' mapped to 'on top'
+    	'sit in' mapped to the average of ('sit', 'in')
+    	'stand in' mapped to the average of ('stand', 'in')
+    	'walk on' mapped to the average of ('walk', 'on')
+    	'wear a' mapped to the average of ('wear',)

@@ -74,6 +74,10 @@ class DataPreparer:
 
         if subset is not False:
           subset_mapping = self.readjson("subset_{}.json".format(subset))
+          def rename_vocab(cls_vocab, rename_map):
+            for cls in range(len(cls_vocab)):
+              if cls_vocab[cls] in rename_map:
+                cls_vocab[cls] = rename_map[cls_vocab[cls]]
           def cleaned_vocab(cls_vocab, cl_map, cl_subset):
             new_vocab = []
             cls_map = {}
@@ -88,6 +92,8 @@ class DataPreparer:
             return new_vocab, cls_map
           # assert subset_mapping["obj_map"] == {}, "NotImplemented: A cleaning map for objects requires some preprocessing to the object_detections as well, if not a re-train of the object detection model. Better not touch these things."
           # obj_vocab,  obj_cls_map  = cleaned_vocab(obj_vocab,  subset_mapping["obj_map"])
+
+          pred_vocab = rename_vocab(pred_vocab, subset_mapping["pred_rename"])
           pred_vocab, pred_cls_map = cleaned_vocab(pred_vocab, subset_mapping["pred_map"], subset_mapping["pred_subset"])
           self.subset_mapping = {"pred" : pred_cls_map}
 
@@ -676,6 +682,7 @@ class VRDPrep(DataPreparer):
             The ground "truths and object detections are provided by Visual Relationships with Language Priors
             (files available on GitHub) as matlab .mat objects.
         '''
+        # TODO create object emb json from params_emb.pkl ?
 
         # Input files
         gt_path         = osp.join("from-language-priors", "gt.mat")

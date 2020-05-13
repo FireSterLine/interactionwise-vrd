@@ -135,7 +135,7 @@ class VRDDataset():
       distribution = None
 
       if type == "soP" and self.subset == "dsr":
-        distribution_pkl_path = osp.join(self.metadata_dir, "so_prior.pkl")
+        distribution_pkl_path = osp.join(self.metadata_dir, "from-dsr", "so_prior.pkl")
         dont_pkl = True
 
       try:

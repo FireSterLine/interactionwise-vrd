@@ -1,53 +1,31 @@
-Maybe, title: Class Semantic Awareness for Visual Relationship Detection
+IN THE MORNING:
+- Find out if, with Pre ZS R@30 with gnews, the improvements are of a specific subset/type of predicates.
+- put on results for vg predcls
+- Then show the pre-predicate results, and justify the selection of a subset of predicates
+
+- focus on other types of predicates, see the behavior
+   NOTE: spatial predicates are all the same, semantically-wise
+- complete scan on vg (vrd_trainer.py?)
+- ? zs with respect to new predicates!
 
 
-Skip-Gram/CBOW
+- Scan SoftEmbRescore with only_sem 0,1,2,3 and all_feats
+- Poi vedi se funziona meglio con certi lr
+	With mode 1 (no logit), it can be tuned. A relu afterwards?
+  Mode 0 (logit) seems to f* everything up. Maybe a linear layer afterwards?
 
 
-Makes sure that the model is still valid (validate original with original dataset)
-Show the results with a randomly initialized untrained models.
-  PRED TEST:
-  	R@100:  70.558	ZS:  76.166
-  	R@50:  37.993	ZS:  43.205
-  ...
+# TODO: filter out relationships between the same object?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-original, untrained
-PRED TEST:
-  R@100:  12.870  ZS:  13.858
-  R@50:  2.907    ZS:  4.363
-
-  -  Epoch    Pre R@100       ZS     R@50       ZS      Avg
-  --------  -----------  -------  -------  -------  -------
-  -      0      70.5576  76.1663  37.9926  43.2049  56.9803
-  -      1      98.1413  94.6247  88.7175  72.8195  88.5757
-  -      2      98.5316  95.4361  91.71    77.9919  90.9174
-  -      3      98.829   96.4503  92.5093  79.8174  91.9015
-  -      4      98.8848  96.5517  92.7323  79.6146  91.9459
-  -      5      98.9219  96.5517  92.881   79.8174  92.043
-  \ No newline at end of file
-  +  Epoch    Pre R@100       ZS      R@50       ZS       Avg
-  +-------  -----------  -------  --------  -------  --------
-  +      0      12.8699  13.858    2.90652   4.3627   8.49927
-  +      1      91.5161  80.4106  80.2435   57.3995  77.3924
-  +      2      94.0953  84.5167  84.7604   64.2429  81.9038
-  +      3      95.0511  86.3131  86.5933   67.237   83.7986
-  +      4      95.1951  86.6553  87.0647   68.349   84.316
-  +      5      95.2082  86.5697  87.2218   68.6056  84.4013
-  \ No newline at end of file
-
-
-So we believe that the metrics are weak in this sense.
-
-- Introduce a new metric (inspired from https://arxiv.org/pdf/2004.00436.pdf),
-  consisting of a variation of R@50 and R@100 where the semantics of the predicates is taken into account.
-  Some cosine distance-based metric.
+- Show the results with a randomly initialized untrained model.
 
 - create the matrix manually?
 	"on", "above", "on the top of",
 	"next to", "beside", "near", "by", "adjacent to", "against",
 	"in", "inside", "beneath",
 	"under", "below",
-	"contain", "outside of"
+	"contain", ? "outside of"
 	"behind",
 	"in the front of",
 	"on the left of",
@@ -62,39 +40,15 @@ So we believe that the metrics are weak in this sense.
 		they are going to be low.
 
 
- (this is what happens in works like \citebyaut{languagepriors} \citebyaut{structural-ranking} and
-\citebyaut{prior-softmax}). % namely, the semantic embedding of the objects
-% is computed using a pre-trained Word2Vec model, and a a different, independent,
-% linear projection of the combined subject-object embeddings for every predicate.
-
- % consist of a 8-dimensional vector ... cite dsr
-
-We're going to use R@50 and R@30 because the values were quite high already.
-...To complete the description, their ranking approach involves all $n(n-1) \cdot M$ detections in an image to be ranked by score.
-(at test time...)
-
-
-DSR:
-  One direct way to dealwith incomplete predicate annotation is to take the unla-
-  beled relationships as negative samples and solve the rela
-  tionship detection problem using a multi-label classification
-  framework based on cross-entropy loss
-
-  In this paper, we propose a deep neural network frame-work with structural ranking loss to tackle the visual rela-tionship detection problem
-
-  Moreover, we integrate the structural losswith the probability of the predicates conditioned on its sub-
-  ject and object to further reduce the impact of incompleteannotations
-
-  MultiLabelMarginLoss: multi-label ranking loss
-
-  Long-tail Classification (e.g read a little bit of https://arxiv.org/pdf/2004.00436.pdf)
-
 
 
 New idea:
  look for "Let’s build a proper (yet simple" here: https://towardsdatascience.com/understanding-pytorch-with-an-example-a-step-by-step-tutorial-81fc5f8c4e8e
  They have single parameters. Well, implement the linear projection for a predicate there. Beforee that, check if it's already there somewhere int he code.
  Do they claim it is already there, in the paper?
+
+
+
 
  To give example numbers, the model learns to give a 80% R@100 score without any input,
   and multi-modality only helps bringing it up to 93-95%. Also, it looks like one modality (vis, sem, spat)
@@ -107,20 +61,3 @@ New idea:
 
 
 https://sagivtech.com/2017/09/19/optimizing-pytorch-training-code/
-
-criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(net.parameters(), lr=0.001, momentum=0.9)
-
-
-
-
-
-Using a subset of 20 predicates, epoch 4
-R@50  R@50 ZS     R@30     R@30 ZS    Avg.   Type
-76.3011  62.2718  62.1933  45.9432  61.6774  no input
-86.0595  73.2252  73.8662  57.5051  72.664   spat + prior
-89.3494  79.1075  78.7546  63.0832  77.5737  spat (+ prior with lr 1e-4 & wd 1e-4 )
-82.0632  69.4726  70.223   56.4909  69.5624  SemSim-1100 (+ prior with lr 1e-4 & wd 1e-4 )
-76.4498  64.6045  67.974   54.8682  65.9741  SemSim-1100, 50-dim embeddings (+ prior with lr 1e-4 & wd 1e-4 )
-89.3494  78.8032  79.052   62.8803  77.5213  Re-scoring-10001
-89.0149  78.7018  79.3494  63.4888  77.6387  Re-scoring-10001, 50-dim
