@@ -351,7 +351,7 @@ class VRDTrainer():
       self.optimizer.step()
 
       # Track loss values and print them every now and then
-      losses.update(loss.item())
+      losses.update(loss.mean().item())
       if utils.smart_frequency_check(i_iter, n_iter, self.args.training.print_freq, last=True):
         print("LOSS: {: 6.3f}\n".format(losses.avg(0)), end="")
         losses.reset(0)
@@ -468,7 +468,7 @@ if __name__ == "__main__":
   ## The following portion of code is useful for tuning the model
   ############################################################
 
-  scan_name = "v17-all_preds-no_reduction"
+  scan_name = "v18-all_preds-nored"
   base_profile = ["pred_sem", "by_pred"]
   base_training = {"num_epochs" : 5, "test_freq" : [2,3,4]}
 
@@ -517,7 +517,7 @@ if __name__ == "__main__":
                     #  # "sem_spat": Only uses semantic + spatial features, "hides" visual features
                     #  # "all_feats": Uses semantics + spatial + visual features
                     #  # "no_feat": Doesn't use features. Weird
-                    for profile_name in ["only_sem", "all_feats"]: # "only_sem_subdot", "only_sem_catdiff", "only_sem_catdot", "only_sem_diffdot"]: # ["only_spat", "spat_sem", "only_sem", False]: # , "vg"]:
+                    for profile_name in ["all_feats"]: # "only_sem_subdot", "only_sem_catdiff", "only_sem_catdot", "only_sem_diffdot"]: # ["only_spat", "spat_sem", "only_sem", False]: # , "vg"]:
                       if "mse" in loss and (pred_sem_mode_1 == -1 or pred_sem_mode_1>=16):
                         continue
 
