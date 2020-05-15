@@ -1,4 +1,3 @@
-add citations for npcompleteness {neural-net-npc}
 
 - (this is what happens in works like \citebyaut{languagepriors} \citebyaut{structural-ranking} and
     \citebyaut{prior-softmax}). % namely, the semantic embedding of the objects
@@ -6,6 +5,11 @@ add citations for npcompleteness {neural-net-npc}
     % linear projection of the combined subject-object embeddings for every predicate.
 - Long-tail Classification (e.g read a little bit of https://arxiv.org/pdf/2004.00436.pdf)
 - 2.3.3 Convolutional Neural Network from thesis 249....pdf
+
+Ideas to save cleaner results:
+- One thing we can do is to get rid of the txts (until a few days ago, I was not producing csvs, now I'm producing both but we don't really need both anymore, we can just continue with csvs, more easily manageable when pasting and copying and displaying etc.))
+- Add the count for each predicate
+- For each epoch add more than one line (by predicate recalls scores can be stacked vertically instead of horizontally)
 
 WRITING:
 - Class Semantic Awareness for Visual Relationship Detection

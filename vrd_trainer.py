@@ -182,7 +182,7 @@ class VRDTrainer():
 
 
   # Perform the complete training process
-  def train(self):
+  def train(self, output_results = False):
     print("train()")
 
     # Prepare result table
@@ -192,11 +192,13 @@ class VRDTrainer():
     if self.args.eval.test_rel: res_headers += self.gt_headers(self.args.eval.test_rel, "Rel") + ["Avg"]
     if self.args.eval.by_predicates: # TODO: fix the two (gt+gt_zs)
       if self.args.eval.test_pre:
-        for i in range( 1 + len(self.args.eval.rec)*((self.eval.gt    is not None) + (self.eval.gt    is not None))):
+        for i in range(len(self.args.eval.rec)*((self.eval.gt    is not None) + (self.eval.gt    is not None))):
           res_headers += [x if i else "Pre "+x for i,x in enumerate(self.dataset.pred_classes)]
+        res_headers += [x if i else "Pre avg. "+x for i,x in enumerate(self.dataset.pred_classes)]
       if self.args.eval.test_rel:
-        for i in range( 1 + len(self.args.eval.rec)*((self.eval.gt_zs is not None) + (self.eval.gt_zs is not None))):
+        for i in range(len(self.args.eval.rec)*((self.eval.gt_zs is not None) + (self.eval.gt_zs is not None))):
           res_headers += [x if i else "Rel "+x for i,x in enumerate(self.dataset.pred_classes)]
+        res_headers += [x if i else "Rel avg. "+x for i,x in enumerate(self.dataset.pred_classes)]
 
     # Test before training?
     if self.args.training.test_first:
@@ -251,11 +253,13 @@ class VRDTrainer():
           "session_name"  : self.session_name,
           "args"          : unmunchify(self.args),
           "state"         : self.state,
-          "result"        : dict(zip(res_headers, res[-1])),
+          "result"        : ([res_headers] + res), # dict(zip(res_headers, res[-1])),
         }, osp.join(save_dir, "checkpoint_epoch_{}.pth.tar".format(self.state["epoch"])))
 
       self.state["epoch"] += 1
 
+    if output_results:
+      return res_headers, res
 
   # Test network
   def do_test(self, res, res_headers, force_epoch = None):
@@ -413,6 +417,41 @@ class VRDTrainer():
       headers.append("{} ZS".format(name))
     return headers
 
+# This class execute a VRDTrainer session for a number of times and averages the results
+def VRDTrainerRepeater(repeat_n_times, **kwargs):
+
+  # Obtain result headers & tables
+  trainer = None
+  results = []
+  for v_iter in range(repeat_n_times):
+    trainer = VRDTrainer(**kwargs)
+    results.append(trainer.train(output_results = True))
+  res_headerss, res_tables = [i for i in zip(*results)]
+
+  # Obtain any header
+  for any_res_headers in res_headerss:
+    assert res_headerss[0] == any_res_headers, "Warning! Headers from repeated runs do not match: {}".format(res_headerss)
+  res_headers = np.array(res_headerss[0])
+
+  # Compute average and deviation of the tables
+  res_tables = np.array(res_tables)
+  avg_table = res_tables.mean(axis=0)
+  stds = res_tables[:,:,1:].std(axis=0)
+  std_table = prepend_col(stds, avg_table[:,0])
+  def prepend_col(table, col):
+    new_table = np.zeros((table.shape[0], table.shape[1]+1))
+    new_table[:,1:] = table
+    new_table[:,0] = col
+    return new_table
+
+  # TODO from here I'm assuming by_predicates = True
+  output_xls = osp.join(globals.models_dir, "{}.xls".format(trainer.session_name))
+  np.vstack((res_headers, avg_table).to_excel(output_xls, sheet_name="Avg-{}".format(repeat_n_times)))
+  np.vstack((res_headers, std_table).to_excel(output_xls, sheet_name="Dev-{}".format(repeat_n_times)))
+
+  # TODO: add counts before the first epoch!
+  # TODO: create, for each of the lines in avg_table (epoch) two sheets with as many columns as there are predicates, and stack the 4+1 1d arrays onto each other. Then, transpose.
+
 if __name__ == "__main__":
 
   test_type = True # 0.2
@@ -469,6 +508,7 @@ if __name__ == "__main__":
   ############################################################
 
   scan_name = "v18-all_preds-nored"
+  v = 5
   base_profile = ["pred_sem", "by_pred"]
   base_training = {"num_epochs" : 5, "test_freq" : [2,3,4]}
 
@@ -541,19 +581,19 @@ if __name__ == "__main__":
                       #  # A session name, which will be used to label the saved results
                       #  # A dictionary specifying the options that override the profile
                       #  # A profile (string or list of strings) specifying the profile file(s) that are loaded and override(s) the default options (deafult.yml).
-                      VRDTrainer(session_id, {
-                        "data" : { "emb_model" : emb_model},
-                        "training" : training,
-                        "model" : {"use_pred_sem" : pred_sem_mode},
-                        "eval" : {"test_pre" : True}, # "test_rel" : True},
-                        #"eval" : {"test_pre" : False, "test_rel" : True},
-                        "opt": {
-                          "lr": lr,
-                          "weight_decay" : weight_decay,
-                          "lr_fus_ratio" : lr_fus_ratio,
-                          "lr_rel_ratio" : lr_rel_ratio,
-                          }
-                        }, profile = profile).train()
+                      VRDTrainerRepeater(v, session_id, {
+                          "data" : { "emb_model" : emb_model},
+                          "training" : training,
+                          "model" : {"use_pred_sem" : pred_sem_mode},
+                          "eval" : {"test_pre" : True}, # "test_rel" : True},
+                          #"eval" : {"test_pre" : False, "test_rel" : True},
+                          "opt": {
+                            "lr": lr,
+                            "weight_decay" : weight_decay,
+                            "lr_fus_ratio" : lr_fus_ratio,
+                            "lr_rel_ratio" : lr_rel_ratio,
+                            }
+                          }, profile = profile)
 
   pass
 
