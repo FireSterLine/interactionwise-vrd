@@ -28,6 +28,9 @@ from scripts.train_word2vec import VRDEmbedding, EpochLogger, EpochSaver
 # Prepare the data without saving anything at all
 DRY_RUN = False
 
+# Re-sort predicate categories by # of occurrences in the train set
+RESORT_PREDICATES_BY_TRAIN_COUNTS = True
+
 """
 This script prepares the data from the input format to the one we want.
 Each dataset has potentially a different format, so we use an abstract class DataPreparer
@@ -61,8 +64,10 @@ class DataPreparer:
         self.vrd_data    = None
         self.cur_dformat = None
         self.splits      = None
-        self.prefix      = "data"
 
+        # This flag tracks if something has been written already. Used for safety when handling data
+        self.already_wrote_something = False
+        self.pred_resorted = False
         # TODO move soP computations from dataset.py to prepare_data.py
         self.to_delete = ["soP.pkl", "pP.pkl"]
 
@@ -104,10 +109,18 @@ class DataPreparer:
     def _generate_relst(self, anns): raise NotImplementedError
     def _generate_annos(self, anns): raise NotImplementedError
 
+    def _read_data_check(self):
+      if self.pred_resorted:
+        print("ERROR! Can't read more data when predicates have been resorted")
+        input()
+        exit(0)
+
+
     # Save data according to the specified formats
     def save_data(self, dformats):
 
       self.save_counts()
+      self.prepareGT()
 
       # Remove existing files before saving
       for to_delete in self.to_delete:
@@ -218,7 +231,7 @@ class DataPreparer:
           os.mkdir(save_dir)
         self.to_dformat("relst")
 
-      def save_rels_counts(img_ids, name):
+      def get_rels_counts(img_ids, name):
         pred_counts = np.zeros(len(self.pred_vocab), dtype=np.int)
         obj_counts  = np.zeros((len(self.obj_vocab), 3), dtype=np.int) # Count occurrences as sub,obj, and total
         for img_path in img_ids:
@@ -229,11 +242,36 @@ class DataPreparer:
                 pred_counts[id]                  += 1
                 obj_counts[rel["subject"]["id"],(0,1)] += 1
                 obj_counts[rel["object"]["id"],(0,2)]  += 1
-        self.writejson([(obj,count)  for obj,count  in zip(self.obj_vocab,  obj_counts.tolist())],  "objects-counts_{}.json".format(name))
-        self.writejson([(pred,count) for pred,count in zip(self.pred_vocab, pred_counts.tolist())], "predicates-counts_{}.json".format(name))
+        return obj_counts, pred_counts
 
-      save_rels_counts(self.splits["train"], "train")
-      save_rels_counts(self.splits["test"],  "test")
+      obj_counts_train, pred_counts_train  = get_rels_counts(self.splits["train"], "train")
+      obj_counts_test,  pred_counts_test   = get_rels_counts(self.splits["test"],  "test")
+
+      if RESORT_PREDICATES_BY_TRAIN_COUNTS:
+        print("Resort predicates by train counts...")
+        if self.already_wrote_something:
+          print("ERROR! Not a good idea to RESORT_PREDICATES_BY_TRAIN_COUNTS since something has been written already.")
+          input()
+          exit(0)
+
+        new_inds = pred_counts_train.argsort()[::-1]
+        def resort_preds_in_relst(relst):
+          if relst is None: return None
+          for i_rel,rel in enumerate(relst):
+            relst[i_rel]["predicate"]["id"] = new_inds.index(relst[i_rel]["predicate"]["id"])
+
+        new_pred_counts_train = pred_counts_train[new_inds]
+        new_pred_vocab = [self.pred_vocab[i] for i in new_inds]
+        new_vrd_data = {k: resort_preds_in_relst(v) for k, v in self.vrd_data.items()}
+
+        pred_counts_train = new_pred_counts_train
+        self.pred_vocab = new_pred_vocab
+        self.vrd_data = new_vrd_data
+        self.pred_resorted = True
+
+      for set, obj_counts, pred_counts in [("train",obj_counts_train,pred_counts_train),("test",obj_counts_test,pred_counts_test)]:
+        self.writejson([(obj,count)  for obj,count  in zip(self.obj_vocab,  obj_counts.tolist())],  "objects-counts_{}.json".format(set))
+        self.writejson([(pred,count) for pred,count in zip(self.pred_vocab, pred_counts.tolist())], "predicates-counts_{}.json".format(set))
 
 
     def prepareGT(self):
@@ -399,6 +437,7 @@ class DataPreparer:
 
     def writefile(self, filename):
       if DRY_RUN: return
+      self.already_wrote_something = True
       return open(self.fullpath(filename, outputdir = True), 'w')
 
     # json files
@@ -408,6 +447,7 @@ class DataPreparer:
 
     def writejson(self, obj, filename):
       if DRY_RUN: return
+      self.already_wrote_something = True
       with self.writefile(filename) as f:
         json.dump(obj, f)
 
@@ -418,6 +458,7 @@ class DataPreparer:
 
     def writepickle(self, obj, filename, to_outputdir = True):
       if DRY_RUN: return
+      self.already_wrote_something = True
       with open(self.fullpath(filename, outputdir = to_outputdir), 'wb') as f:
         pickle.dump(obj, f)
 
@@ -459,15 +500,13 @@ class VRDPrep(DataPreparer):
       # TODO: Additionally handle files like {test,train}_image_metadata.json ?
       if load_dsr:
         self.load_dsr()
-        self.prepareGT_FromLP()
       else:
         self.load_vrd()
-        self.prepareGT()
-
 
     def get_clean_obj_cls(self,  cls): # TODO: validate this
       return self.subset_mapping["obj"].get(cls, None) if (hasattr(self, "subset_mapping") and "obj" in self.subset_mapping) else cls
     def get_clean_pred_cls(self, cls):
+      if self.pred_resorted: print("ERROR! Can't read more data when predicates have been resorted")
       return self.subset_mapping["pred"].get(cls, None) if (hasattr(self, "subset_mapping") and "pred" in self.subset_mapping) else cls
 
     def load_vrd(self):
@@ -494,6 +533,7 @@ class VRDPrep(DataPreparer):
         print("\tWarning! vrd_data has a different number of keys than the number of indices in the selected split: {} != {}".format(len(vrd_data), len(self.needed_idxs())))
 
     def _generate_relst(self, anns):
+        self._read_data_check()
         relst = []
         for ann in anns:
             subject_id = self.get_clean_obj_cls(ann['subject']['category'])
@@ -675,6 +715,7 @@ class VRDPrep(DataPreparer):
           "test"  : [osp.join(*x["img_path"].split("/")[-2:]) if x is not None else None for x in self.test_dsr],
         }
 
+    """
     def prepareGT_FromLP(self):
         print("\tPreparing Ground-Truths from Language Priors...")
         '''
@@ -712,6 +753,7 @@ class VRDPrep(DataPreparer):
           gt_zs_pkl["obj_bboxes"][ii]  = gt_pkl["obj_bboxes"][ii][idx[0]]
           gt_zs_pkl["sub_bboxes"][ii]  = gt_pkl["sub_bboxes"][ii][idx[0]]
         self.writepickle(gt_zs_pkl, gt_zs_output_path)
+    """
 
 
 class VGPrep(DataPreparer):
@@ -763,9 +805,8 @@ class VGPrep(DataPreparer):
         self.vrd_data = vrd_data
         self.cur_dformat = "relst"
 
-        self.prepareGT()
-
     def _generate_relst(self, data):
+        self._read_data_check()
         objects_info = {}
         for obj in data['objects']:
             obj_id = obj['object_id']
