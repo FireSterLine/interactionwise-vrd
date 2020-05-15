@@ -29,7 +29,7 @@ from lib.evaluator import VRDEvaluator
 # Test if code compiles
 TEST_DEBUGGING = False
 # Test if a newly-introduced change affects the validity of the code
-TEST_EVAL_VALIDITY = True
+TEST_EVAL_VALIDITY = False
 TEST_TRAIN_VALIDITY = False
 # Test to overfit to a single element
 TEST_OVERFIT = False
@@ -64,7 +64,7 @@ class VRDTrainer():
       profile = utils.listify(profile)
       for p in profile:
         default_args = utils.dict_patch(utils.load_cfg_profile(p), default_args)
-    args = utils.dict_patch(args, def_args)
+    args = utils.dict_patch(args, default_args)
 
     #print("Arguments:\n", yaml.dump(args, default_flow_style=False))
 
@@ -351,7 +351,7 @@ class VRDTrainer():
       self.optimizer.step()
 
       # Track loss values and print them every now and then
-      losses.update(loss.item())
+      losses.update(loss.mean().item())
       if utils.smart_frequency_check(i_iter, n_iter, self.args.training.print_freq, last=True):
         print("LOSS: {: 6.3f}\n".format(losses.avg(0)), end="")
         losses.reset(0)
@@ -445,8 +445,8 @@ if __name__ == "__main__":
   torch.backends.cudnn.deterministic = False
   torch.backends.cudnn.benchmark = True
   random.seed(datetime.now())
-  np.random.seed(datetime.now())
-  torch.manual_seed(datetime.now())
+  np.random.seed(int(time.time()))
+  torch.manual_seed(int(time.time()))
 
 
   # TEST_OVERFIT: Try overfitting the network to a single batch
@@ -468,7 +468,7 @@ if __name__ == "__main__":
   ## The following portion of code is useful for tuning the model
   ############################################################
 
-  scan_name = "v16-all_preds-fixby_pred"
+  scan_name = "v18-all_preds-nored"
   base_profile = ["pred_sem", "by_pred"]
   base_training = {"num_epochs" : 5, "test_freq" : [2,3,4]}
 
@@ -477,7 +477,7 @@ if __name__ == "__main__":
     # VRDTrainer("test-no_prior-no-features",  {"training" : {"test_first" : True, "loss" : "mlab_no_prior"}}, profile = base_profile + ["no_feat"]).train()
     # VRDTrainer("test-no_prior-only_vis",  {"training" : {"num_epochs" : 4, "loss" : "mlab_no_prior"}, "model" : {"feat_used" : {"sem" : 0, "spat" : 0}}}).train()
     # VRDTrainer("test-no_prior-only_sem",  {"training" : {"num_epochs" : 4, "loss" : "mlab_no_prior"}, "model" : {"feat_used" : {"vis" : False, "vis_so" : False, "spat" : 0}}}).train()
-    VRDTrainer("{}-test-no-features".format(scan_name),  {"training" : base_training}, profile = base_profile + ["no_feat"]).train()
+    VRDTrainer("{}-test-no-features".format(scan_name),  {"training" : {"num_epochs" : 5, "test_freq" : [2,3,4], "test_first": True}}, profile = base_profile + ["no_feat"]).train()
     VRDTrainer("{}-test-only_spat".format(scan_name),    {"training" : base_training}, profile = base_profile + ["only_spat"]).train()
 
   # Parameters scan: scans parameter combinations
@@ -499,7 +499,7 @@ if __name__ == "__main__":
               # Predicate Semantics Mode, offset by one
               #  # -1 indicates no use of predicate semantics;
               #  # Values from 0 onwards indicate some of the different "modes" to introducte predicate semantics (e.g SemSim, Semantic Rescoring)
-              for pred_sem_mode_1 in [-1, 16, 3, 11]: #, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
+              for pred_sem_mode_1 in [-1, 16]: # , 3, 11]: #, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
                 # Loss function in use. These are the available ones
                 #  # "mlab": MultiLabelMarginLoss
                 #  # "mlab_no_prior": MultiLabelMarginLoss without soP_prior
@@ -517,7 +517,7 @@ if __name__ == "__main__":
                     #  # "sem_spat": Only uses semantic + spatial features, "hides" visual features
                     #  # "all_feats": Uses semantics + spatial + visual features
                     #  # "no_feat": Doesn't use features. Weird
-                    for profile_name in ["only_sem", "all_feats"]: # "only_sem_subdot", "only_sem_catdiff", "only_sem_catdot", "only_sem_diffdot"]: # ["only_spat", "spat_sem", "only_sem", False]: # , "vg"]:
+                    for profile_name in ["all_feats"]: # "only_sem_subdot", "only_sem_catdiff", "only_sem_catdot", "only_sem_diffdot"]: # ["only_spat", "spat_sem", "only_sem", False]: # , "vg"]:
                       if "mse" in loss and (pred_sem_mode_1 == -1 or pred_sem_mode_1>=16):
                         continue
 
