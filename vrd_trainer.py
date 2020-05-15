@@ -146,15 +146,15 @@ class VRDTrainer():
     y_cols = []
     if "mlab" in self.args.training.loss:
       y_cols.append("mlab")
-      self.criterions["mlab"] = torch.nn.MultiLabelMarginLoss(reduction="sum").to(device=utils.device)
+      self.criterions["mlab"] = torch.nn.MultiLabelMarginLoss(reduction="none").to(device=utils.device)
     if "bcel" in self.args.training.loss:
       y_cols.append("1-hots")
-      self.criterions["bcel"] = torch.nn.BCEWithLogitsLoss(reduction="sum").to(device=utils.device)
+      self.criterions["bcel"] = torch.nn.BCEWithLogitsLoss(reduction="none").to(device=utils.device)
     if "mse" in self.args.training.loss:
-      self.criterions["mse"] = torch.nn.MSELoss(reduction="sum").to(device=utils.device)
+      self.criterions["mse"] = torch.nn.MSELoss(reduction="none").to(device=utils.device)
     if "cross-entropy" in self.args.training.loss:
       # Warning, this doesn't work/do well for multi-label classification
-      self.criterions["cross-entropy"] = torch.nn.CrossEntropyLoss(reduction="sum").to(device=utils.device)
+      self.criterions["cross-entropy"] = torch.nn.CrossEntropyLoss(reduction="none").to(device=utils.device)
     if not len(self.criterions):
       raise ValueError("Unknown loss specified: '{}'".format(self.args.training.loss))
 
