@@ -260,7 +260,32 @@ class VRDTrainer():
       self.state["epoch"] += 1
 
     if output_results:
-      return res_headers, res
+      res_np = np.array(res)
+      res_headers_np = np.array(res_headers)
+
+      num_epochs, num_cols = res_np.shape
+      res_dict = {}
+      res_headers_dict = {}
+
+      # Number of recalls
+      num_recalls = 0
+      if self.args.eval.test_pre:
+        num_recalls += len(self.args.eval.rec)*2+1
+      if self.args.eval.test_rel:
+        num_recalls += len(self.args.eval.rec)*2+1
+
+      res_headers_dict["head"] = res_headers_np[:num_recalls+1]
+      res_dict["head"]               = res_np[:,:num_recalls+1]
+
+      if self.args.eval.by_predicates:
+        res_headers_dict["predicates"] = res_headers_np[[0] + list(range(num_recalls+1,num_cols))]
+        res_dict["predicates"]               = res_np[:,[0] + list(range(num_recalls+1,num_cols))]
+        #
+        # res_dict["predicates"]
+        # for rec_score in range(num_recalls):
+        #   recalls_by_preds[:,rec_score*self.dataset.n_pred:(rec_score+1)*self.dataset.n_pred]
+
+      return res_headers_dict, res_dict
 
   # Test network
   def do_test(self, res, res_headers, force_epoch = None):
@@ -427,29 +452,35 @@ def VRDTrainerRepeater(repeat_n_times, **kwargs):
   for v_iter in range(repeat_n_times):
     trainer = VRDTrainer(**kwargs)
     results.append(trainer.train(output_results = True))
-  res_headerss, res_tables = [i for i in zip(*results)]
+  res_headerss, res_sheets = [i for i in zip(*results)]
 
   # Obtain any header
-  for any_res_headers in res_headerss:
-    assert res_headerss[0] == any_res_headers, "Warning! Headers from repeated runs do not match: {}".format(res_headerss)
   res_headers = np.array(res_headerss[0])
+  for any_res_headers in res_headerss:
+    assert np.all(res_headers == any_res_headers), "Warning! Headers from repeated runs do not match: {}".format(res_headerss)
 
   # Compute average and deviation of the tables
-  res_tables = np.array(res_tables)
-  avg_table = res_tables.mean(axis=0)
-  stds = res_tables[:,:,1:].std(axis=0)
-  def prepend_col(table, col):
-    new_table = np.zeros((table.shape[0], table.shape[1]+1))
-    new_table[:,1:] = table
-    new_table[:,0] = col
-    return new_table
-  std_table = prepend_col(stds, avg_table[:,0])
+  def get_avg_and_std(res_tables):
+    def prepend_col(table, col):
+      new_table = np.zeros((table.shape[0], table.shape[1]+1))
+      new_table[:,1:] = table
+      new_table[:,0] = col
+      return new_table
+    avg_table = res_tables.mean(axis=0)
+    stds = res_tables[:,:,1:].std(axis=0)
+    std_table = prepend_col(stds, avg_table[:,0])
+    return avg_table, std_table
 
-  # TODO from here I'm assuming by_predicates = True
-  output_xls = osp.join(globals.models_dir, "{}.xls".format(trainer.session_name))
+  output_xls = osp.join(globals.models_dir, "{}-r{}.xls".format(trainer.session_name, repeat_n_times))
   writer = pd.ExcelWriter(output_xls)
-  pd.DataFrame(np.vstack((res_headers, avg_table))).to_excel(writer, sheet_name="Avg-{}".format(repeat_n_times))
-  pd.DataFrame(np.vstack((res_headers, std_table))).to_excel(writer, sheet_name="Dev-{}".format(repeat_n_times))
+
+  res_sheets = np.array(utils.ld_to_dl(res_sheets))
+
+  for table_name,res_tables in res_sheets.items():
+    avg_table, std_table = get_avg_and_std(res_tables)
+    pd.DataFrame(np.vstack((res_headers[k], avg_table))).to_excel(writer, sheet_name="{}-Avg".format(table_name))
+    pd.DataFrame(np.vstack((res_headers[k], std_table))).to_excel(writer, sheet_name="{}-Dev".format(table_name))
+
   writer.save()
   # TODO: add counts before the first epoch!
   # TODO: create, for each of the lines in avg_table (epoch) two sheets with as many columns as there are predicates, and stack the 4+1 1d arrays onto each other. Then, transpose.

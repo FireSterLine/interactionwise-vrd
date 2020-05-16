@@ -239,6 +239,11 @@ def invert_dict(d):
   return {v: k for k, v in d_pairs}
   # ? for list dict(zip(self.d, xrange(self.d)))
 
+# Helpers: ListOfDicts <-> DictsOfLists
+# Source: https://stackoverflow.com/a/33046935
+def ld_to_dl(LD): return {k: [dic[k] for dic in LD] for k in LD[0]}
+def dl_to_ld(DL): return [dict(zip(DL,t)) for t in zip(*DL.values())]
+
 # Config File
 
 def load_cfg_profile(profile):
