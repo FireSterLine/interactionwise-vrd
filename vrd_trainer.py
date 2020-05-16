@@ -455,7 +455,7 @@ def VRDTrainerRepeater(repeat_n_times, **kwargs):
   res_headerss, res_sheets = [i for i in zip(*results)]
 
   # Obtain any header
-  res_headers = np.array(res_headerss[0])
+  res_headers = res_headerss[0]
   for any_res_headers in res_headerss:
     assert np.all(res_headers == any_res_headers), "Warning! Headers from repeated runs do not match: {}".format(res_headerss)
 
@@ -474,12 +474,12 @@ def VRDTrainerRepeater(repeat_n_times, **kwargs):
   output_xls = osp.join(globals.models_dir, "{}-r{}.xls".format(trainer.session_name, repeat_n_times))
   writer = pd.ExcelWriter(output_xls)
 
-  res_sheets = np.array(utils.ld_to_dl(res_sheets))
+  res_sheets = utils.ld_to_dl(res_sheets)
 
   for table_name,res_tables in res_sheets.items():
-    avg_table, std_table = get_avg_and_std(res_tables)
-    pd.DataFrame(np.vstack((res_headers[k], avg_table))).to_excel(writer, sheet_name="{}-Avg".format(table_name))
-    pd.DataFrame(np.vstack((res_headers[k], std_table))).to_excel(writer, sheet_name="{}-Dev".format(table_name))
+    avg_table, std_table = get_avg_and_std(np.array(res_tables))
+    pd.DataFrame(np.vstack((res_headers[table_name], avg_table))).to_excel(writer, sheet_name="{}-Avg".format(table_name))
+    pd.DataFrame(np.vstack((res_headers[table_name], std_table))).to_excel(writer, sheet_name="{}-Dev".format(table_name))
 
   writer.save()
   # TODO: add counts before the first epoch!
