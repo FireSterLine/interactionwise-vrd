@@ -284,9 +284,9 @@ class VRDTrainer():
         for i_rec_score,rec_score in enumerate(res_head_headers):
           x = res_dict["predicates"][:,[0] + list(range(1+i_rec_score*self.dataset.n_pred,1+(i_rec_score+1)*self.dataset.n_pred))]
           predicates_stacked += x.tolist()
-          predicates_stacked.append([0 for _ in x])
+          predicates_stacked.append([0.0 for _ in range(x.shape[1])])
 
-        res_headers_dict["predicates_stacked"] = res_headers_dict["predicates"][0].tolist() + self.dataset.pred_classes
+        res_headers_dict["predicates_stacked"] = np.array(res_headers_dict["predicates"][[0]].tolist() + self.dataset.pred_classes)
         res_dict["predicates_stacked"] = np.array(predicates_stacked)
         del(res_dict["predicates"])
         del(res_headers_dict["predicates"])
@@ -462,8 +462,8 @@ def VRDTrainerRepeater(repeat_n_times, **kwargs):
 
   # Obtain any header
   res_headers = res_headerss[0]
-  for any_res_headers in res_headerss:
-    assert np.all(res_headers == any_res_headers), "Warning! Headers from repeated runs do not match: {}".format(res_headerss)
+  #for any_res_headers in res_headerss:
+  #  assert np.array_equal(res_headers, any_res_headers), "Warning! Headers from repeated runs do not match: {}\n\n{},{}".format(res_headerss,res_headers,any_res_headers)
 
   # Compute average and deviation of the tables
   def get_avg_and_std(res_tables):
