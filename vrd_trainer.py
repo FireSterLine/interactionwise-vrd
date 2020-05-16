@@ -283,12 +283,14 @@ class VRDTrainer():
 
         predicates_stacked = []
         for rec_score in range(num_recalls):
-          x = res_dict["predicates"][:,rec_score*self.dataset.n_pred:(rec_score+1)*self.dataset.n_pred]
-          predicates_stacked.append(x)
+          x = res_dict["predicates"][:,[0] + list(range(1+rec_score*self.dataset.n_pred,1+(rec_score+1)*self.dataset.n_pred))]
+          predicates_stacked += x.tolist()
           # predicates_stacked.append(["" for _ in x])
 
-        res_headers_dict["predicates_stacked"] = res_headers_dict["predicates"][:self.dataset.n_pred]
+        res_headers_dict["predicates_stacked"] = res_headers_dict["predicates"][:self.dataset.n_pred+1]
         res_dict["predicates_stacked"] = np.array(predicates_stacked)
+        del(res_dict["predicates"])
+        del(res_headers_dict["predicates"])
 
       return res_headers_dict, res_dict
 
