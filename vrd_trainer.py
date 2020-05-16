@@ -482,6 +482,7 @@ def VRDTrainerRepeater(repeat_n_times, **kwargs):
 
   output_xls = osp.join(globals.models_dir, "{}-r{}.xls".format(trainer.session_name, repeat_n_times))
   writer = pd.ExcelWriter(output_xls)
+  writer_opt = {"float_format" : "%.2f"}
 
   res_sheets = utils.ld_to_dl(res_sheets)
 
@@ -491,8 +492,8 @@ def VRDTrainerRepeater(repeat_n_times, **kwargs):
     std = np.vstack((res_headers[table_name], std_table))
     if table_name in ["predicates", "predicates_stacked"]:
       avg, std = avg.transpose(), std.transpose()
-    pd.DataFrame(avg).to_excel(writer, sheet_name="{}-Avg".format(table_name))
-    pd.DataFrame(std).to_excel(writer, sheet_name="{}-Dev".format(table_name))
+    pd.DataFrame(avg).to_excel(writer, sheet_name="{}-Avg".format(table_name), **writer_opt)
+    pd.DataFrame(std).to_excel(writer, sheet_name="{}-Dev".format(table_name), **writer_opt)
 
   writer.save()
   # TODO: add counts before the first epoch!
