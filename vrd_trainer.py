@@ -17,6 +17,7 @@ np.random.seed(0)
 import torch
 torch.manual_seed(0)
 
+import pandas as pd
 import globals, utils
 
 # VRD Model, Dataset, Datalayer, Evaluator
@@ -30,11 +31,11 @@ from lib.evaluator import VRDEvaluator
 TEST_DEBUGGING = False
 # Test if a newly-introduced change affects the validity of the code
 TEST_EVAL_VALIDITY = False
-TEST_TRAIN_VALIDITY = True
+TEST_TRAIN_VALIDITY = False
 # Test to overfit to a single element
 TEST_OVERFIT = False
 
-FEATURES_SCAN = True
+FEATURES_SCAN = False
 PARAMS_SCAN = True
 #####################################################################################
 
@@ -437,17 +438,17 @@ def VRDTrainerRepeater(repeat_n_times, **kwargs):
   res_tables = np.array(res_tables)
   avg_table = res_tables.mean(axis=0)
   stds = res_tables[:,:,1:].std(axis=0)
-  std_table = prepend_col(stds, avg_table[:,0])
   def prepend_col(table, col):
     new_table = np.zeros((table.shape[0], table.shape[1]+1))
     new_table[:,1:] = table
     new_table[:,0] = col
     return new_table
+  std_table = prepend_col(stds, avg_table[:,0])
 
   # TODO from here I'm assuming by_predicates = True
   output_xls = osp.join(globals.models_dir, "{}.xls".format(trainer.session_name))
-  np.vstack((res_headers, avg_table).to_excel(output_xls, sheet_name="Avg-{}".format(repeat_n_times)))
-  np.vstack((res_headers, std_table).to_excel(output_xls, sheet_name="Dev-{}".format(repeat_n_times)))
+  pd.DataFrame(np.vstack((res_headers, avg_table))).to_excel(output_xls, sheet_name="Avg-{}".format(repeat_n_times))
+  pd.DataFrame(np.vstack((res_headers, std_table))).to_excel(output_xls, sheet_name="Dev-{}".format(repeat_n_times))
 
   # TODO: add counts before the first epoch!
   # TODO: create, for each of the lines in avg_table (epoch) two sheets with as many columns as there are predicates, and stack the 4+1 1d arrays onto each other. Then, transpose.
@@ -581,7 +582,7 @@ if __name__ == "__main__":
                       #  # A session name, which will be used to label the saved results
                       #  # A dictionary specifying the options that override the profile
                       #  # A profile (string or list of strings) specifying the profile file(s) that are loaded and override(s) the default options (deafult.yml).
-                      VRDTrainerRepeater(v, session_id, {
+                      VRDTrainerRepeater(v, session_name = session_id, args = {
                           "data" : { "emb_model" : emb_model},
                           "training" : training,
                           "model" : {"use_pred_sem" : pred_sem_mode},
