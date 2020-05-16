@@ -280,10 +280,15 @@ class VRDTrainer():
       if self.args.eval.by_predicates:
         res_headers_dict["predicates"] = res_headers_np[[0] + list(range(num_recalls+1,num_cols))]
         res_dict["predicates"]               = res_np[:,[0] + list(range(num_recalls+1,num_cols))]
-        #
-        # res_dict["predicates"]
-        # for rec_score in range(num_recalls):
-        #   recalls_by_preds[:,rec_score*self.dataset.n_pred:(rec_score+1)*self.dataset.n_pred]
+
+        predicates_stacked = []
+        for rec_score in range(num_recalls):
+          x = res_dict["predicates"][:,rec_score*self.dataset.n_pred:(rec_score+1)*self.dataset.n_pred]
+          predicates_stacked.append(x)
+          # predicates_stacked.append(["" for _ in x])
+
+        res_headers_dict["predicates_stacked"] = res_headers_dict["predicates"][:self.dataset.n_pred]
+        res_dict["predicates_stacked"] = np.array(predicates_stacked)
 
       return res_headers_dict, res_dict
 
