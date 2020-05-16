@@ -17,8 +17,8 @@ np.random.seed(0)
 import torch
 torch.manual_seed(0)
 
-import pandas as pd
 import globals, utils
+import pandas as pd
 
 # VRD Model, Dataset, Datalayer, Evaluator
 from lib.vrd_models import VRDModel
@@ -447,9 +447,10 @@ def VRDTrainerRepeater(repeat_n_times, **kwargs):
 
   # TODO from here I'm assuming by_predicates = True
   output_xls = osp.join(globals.models_dir, "{}.xls".format(trainer.session_name))
-  pd.DataFrame(np.vstack((res_headers, avg_table))).to_excel(output_xls, sheet_name="Avg-{}".format(repeat_n_times))
-  pd.DataFrame(np.vstack((res_headers, std_table))).to_excel(output_xls, sheet_name="Dev-{}".format(repeat_n_times))
-
+  writer = pd.ExcelWriter(output_xls)
+  pd.DataFrame(np.vstack((res_headers, avg_table))).to_excel(writer, sheet_name="Avg-{}".format(repeat_n_times))
+  pd.DataFrame(np.vstack((res_headers, std_table))).to_excel(writer, sheet_name="Dev-{}".format(repeat_n_times))
+  writer.save()
   # TODO: add counts before the first epoch!
   # TODO: create, for each of the lines in avg_table (epoch) two sheets with as many columns as there are predicates, and stack the 4+1 1d arrays onto each other. Then, transpose.
 
