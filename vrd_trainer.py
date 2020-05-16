@@ -268,11 +268,10 @@ class VRDTrainer():
       res_headers_dict = {}
 
       # Number of recalls
-      num_recalls = 0
-      if self.args.eval.test_pre:
-        num_recalls += len(self.args.eval.rec)*2+1
-      if self.args.eval.test_rel:
-        num_recalls += len(self.args.eval.rec)*2+1
+      res_head_headers = []
+      if self.args.eval.test_pre: res_head_headers += self.gt_headers(self.args.eval.test_pre, "Pre") + ["Pre Avg"]
+      if self.args.eval.test_rel: res_head_headers += self.gt_headers(self.args.eval.test_rel, "Rel") + ["Rel Avg"]
+      num_recalls = len(res_head_headers)
 
       res_headers_dict["head"] = res_headers_np[:num_recalls+1]
       res_dict["head"]               = res_np[:,:num_recalls+1]
@@ -282,12 +281,12 @@ class VRDTrainer():
         res_dict["predicates"]               = res_np[:,[0] + list(range(num_recalls+1,num_cols))]
 
         predicates_stacked = []
-        for rec_score in range(num_recalls):
-          x = res_dict["predicates"][:,[0] + list(range(1+rec_score*self.dataset.n_pred,1+(rec_score+1)*self.dataset.n_pred))]
+        for i_rec_score,rec_score in enumerate(res_head_headers):
+          x = res_dict["predicates"][:,[0] + list(range(1+i_rec_score*self.dataset.n_pred,1+(i_rec_score+1)*self.dataset.n_pred))]
           predicates_stacked += x.tolist()
-          # predicates_stacked.append(["" for _ in x])
+          predicates_stacked.append([0 for _ in x])
 
-        res_headers_dict["predicates_stacked"] = res_headers_dict["predicates"][:self.dataset.n_pred+1]
+        res_headers_dict["predicates_stacked"] = res_headers_dict["predicates"][0].tolist() + self.dataset.pred_classes
         res_dict["predicates_stacked"] = np.array(predicates_stacked)
         del(res_dict["predicates"])
         del(res_headers_dict["predicates"])
