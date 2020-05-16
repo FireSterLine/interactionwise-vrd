@@ -23,7 +23,7 @@ from copy import deepcopy
 
 from data.genome.clean_vg import VGCleaner
 from scripts.train_word2vec import VRDEmbedding, EpochLogger, EpochSaver
-#from glove import Glove
+from glove import Glove
 
 # Prepare the data without saving anything at all
 DRY_RUN = False
@@ -64,6 +64,7 @@ class DataPreparer:
         self.vrd_data    = None
         self.cur_dformat = None
         self.splits      = None
+        self.prepare_obj_det_fun = None
 
         # This flag tracks if something has been written already. Used for safety when handling data
         self.already_wrote_something = False
@@ -121,6 +122,8 @@ class DataPreparer:
 
       self.save_counts()
       self.prepareGT()
+      if not self.prepare_obj_det_fun is None:
+        self.prepare_obj_det_fun()
 
       # Remove existing files before saving
       for to_delete in self.to_delete:
@@ -248,25 +251,22 @@ class DataPreparer:
       obj_counts_test,  pred_counts_test   = get_rels_counts(self.splits["test"],  "test")
 
       if RESORT_PREDICATES_BY_TRAIN_COUNTS:
-        print("Resort predicates by train counts...")
+        print("\tResort predicates by train counts...")
         if self.already_wrote_something:
           print("ERROR! Not a good idea to RESORT_PREDICATES_BY_TRAIN_COUNTS since something has been written already.")
           input()
           exit(0)
 
-        new_inds = pred_counts_train.argsort()[::-1]
-        def resort_preds_in_relst(relst):
-          if relst is None: return None
-          for i_rel,rel in enumerate(relst):
-            relst[i_rel]["predicate"]["id"] = new_inds.index(relst[i_rel]["predicate"]["id"])
+        new_inds = pred_counts_train.argsort()[::-1].tolist()
 
         new_pred_counts_train = pred_counts_train[new_inds]
         new_pred_vocab = [self.pred_vocab[i] for i in new_inds]
-        new_vrd_data = {k: resort_preds_in_relst(v) for k, v in self.vrd_data.items()}
-
         pred_counts_train = new_pred_counts_train
         self.pred_vocab = new_pred_vocab
-        self.vrd_data = new_vrd_data
+        for k,relst in self.vrd_data.items():
+          if relst is None: continue
+          for i_rel,rel in enumerate(relst):
+            self.vrd_data[k][i_rel]["predicate"]["id"] = [new_inds.index(x) for x in rel["predicate"]["id"]]
         self.pred_resorted = True
 
       for set, obj_counts, pred_counts in [("train",obj_counts_train,pred_counts_train),("test",obj_counts_test,pred_counts_test)]:
@@ -480,7 +480,7 @@ class VRDPrep(DataPreparer):
 
       self.prepare_vocabs("obj.txt", "rel.txt")
 
-      self.prepare_obj_det_FromLP()
+      self.prepare_obj_det_fun = self.prepare_obj_det_FromLP
 
       # Subset determines subpath directory
       if not load_dsr:
@@ -903,11 +903,11 @@ def load_emb_model(model_name):
   if model_name is "gnews":
     model = KeyedVectors.load_word2vec_format(model_path, binary=True)
   elif "glove" in model_name:
-    raise NotImplementedError
-    #model = Glove().load(model_path)
-    # tmp_file = get_tmpfile("{}.txt".format(model_path))
-    # _ = glove2word2vec(model_path, tmp_file)
-    # model = Word2Vec.load(tmp_file)
+    #raise NotImplementedError
+    model = Glove().load(model_path)
+    tmp_file = get_tmpfile("{}.txt".format(model_path))
+    _ = glove2word2vec(model_path, tmp_file)
+    model = Word2Vec.load(tmp_file)
   else:
     # This is needed happens in the case of COCO finetuned models because they were dumped from outside the
     # train_word2vec script, so the train_word2vec module needs to be in the path for them to load
@@ -925,6 +925,7 @@ if __name__ == '__main__':
     #generate_embeddings = ["gnews"]
     #generate_embeddings = ["gnews", "300"]
     generate_embeddings = ["gnews", "300", "glove-50"]
+    #generate_embeddings = ["glove-50"]
 
     #""" VRD
     print("Preparing data for VRD")
@@ -935,7 +936,7 @@ if __name__ == '__main__':
     data_preparer_vrd.save_data(["relst", "annos"])
     #"""
 
-    #""" VG
+    """ VG
     print("Preparing data for VG")
     subset = (150, 50, 50)
     #subset = (1600, 400, 20) # TODO: allow multi-word vocabs, so that we can load 1600-400-20_bottomup

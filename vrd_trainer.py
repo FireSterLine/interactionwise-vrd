@@ -30,11 +30,11 @@ from lib.evaluator import VRDEvaluator
 TEST_DEBUGGING = False
 # Test if a newly-introduced change affects the validity of the code
 TEST_EVAL_VALIDITY = False
-TEST_TRAIN_VALIDITY = False
+TEST_TRAIN_VALIDITY = True
 # Test to overfit to a single element
 TEST_OVERFIT = False
 
-FEATURES_SCAN = False
+FEATURES_SCAN = True
 PARAMS_SCAN = True
 #####################################################################################
 
@@ -507,7 +507,7 @@ if __name__ == "__main__":
   ## The following portion of code is useful for tuning the model
   ############################################################
 
-  scan_name = "v18-all_preds-nored"
+  scan_name = "v19-all_preds-nored-test-repeater"
   v = 5
   base_profile = ["pred_sem", "by_pred"]
   base_training = {"num_epochs" : 5, "test_freq" : [2,3,4]}
