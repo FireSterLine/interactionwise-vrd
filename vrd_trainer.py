@@ -595,8 +595,8 @@ if __name__ == "__main__":
                 # Loss functions can be used together by joining the two strings, for example with an underscore:
                 #  # For instance, "mlab_mse" indicates using the average of MultiLabelMarginLoss and MSELoss as the loss
                 for loss in ["mlab"]: # "bcel, mlab_mse]:
-                  # Dataset in use. "vrd", "vg" # TODO check if "vrd/spatial" works
-                  for dataset in ["vrd", "vrd/spatial", "vrd/activities"]:
+                  # Dataset in use. "vrd", "vg" # TODO check if "vrd:spatial" works
+                  for dataset in ["vrd:spatial", "vrd:activities"]:
                     # Training profile to load. The profiles are listed in the ./cfgs/ folder, and they contain the options that are used to override the default ones (deafult.yml).
                     # Some examples are:
                     #  # "only_sem": Only uses semantic, "hides" visual and spatial features
@@ -610,6 +610,7 @@ if __name__ == "__main__":
 
                       # Training session ID
                       session_id = "{}-{}-{}-{}-{}-{}-{}-{},{:b}-{}-{}".format(scan_name, emb_model, profile_name, lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode_1, pred_sem_mode_1, dataset, loss)
+                      print("Session: ", session_id)
 
                       pred_sem_mode = pred_sem_mode_1+1
                       profile = base_profile + utils.listify(profile_name)
@@ -623,13 +624,15 @@ if __name__ == "__main__":
                       if dataset == "vrd" and "all_feats" in profile and pred_sem_mode_1 >= 0 and pred_sem_mode_1 <= 16:
                         training["num_epochs"] += 1
                         training["test_freq"] = [x+1 for x in training["test_freq"]]
+                      
+                      training["loss"] = loss
 
                       # A training session takes:
                       #  # A session name, which will be used to label the saved results
                       #  # A dictionary specifying the options that override the profile
                       #  # A profile (string or list of strings) specifying the profile file(s) that are loaded and override(s) the default options (deafult.yml).
                       VRDTrainerRepeater(v, session_name = session_id, args = {
-                          "data" : { "emb_model" : emb_model},
+                          "data" : { "name" : dataset, "emb_model" : emb_model},
                           "training" : training,
                           "model" : {"use_pred_sem" : pred_sem_mode},
                           "eval" : {"test_pre" : True}, # "test_rel" : True},

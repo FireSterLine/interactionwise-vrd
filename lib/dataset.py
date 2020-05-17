@@ -19,9 +19,9 @@ class VRDDataset():
   def __init__(self, name, subset = None, emb_model = None, with_bg_obj=True, with_bg_pred=False, justafew=False):
 
     img_subset = ""
-    # This allows to use names like "vrd/dsr", "vg/150-50-50"
-    if "/" in name and subset == None:
-      pieces = name.split("/")
+    # This allows to use names like "vrd:dsr", "vg:150-50-50"
+    if ":" in name and subset == None:
+      pieces = name.split(":")
       if len(pieces) == 2:
         name,subset = pieces
       elif len(pieces) == 3:
