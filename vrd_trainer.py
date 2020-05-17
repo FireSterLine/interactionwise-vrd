@@ -488,12 +488,15 @@ def VRDTrainerRepeater(repeat_n_times, **kwargs):
 
   for table_name,res_tables in res_sheets.items():
     avg_table, std_table = get_avg_and_std(np.array(res_tables))
-    avg = np.vstack((res_headers[table_name], avg_table))
-    std = np.vstack((res_headers[table_name], std_table))
+    pd_avg = pd.DataFrame(avg_table.astype(float), columns = res_headers[table_name])
+    pd_std = pd.DataFrame(std_table.astype(float), columns = res_headers[table_name])
+    #avg = np.vstack((res_headers[table_name], avg_table))
+    #std = np.vstack((res_headers[table_name], std_table))
     if table_name in ["predicates", "predicates_stacked"]:
-      avg, std = avg.transpose(), std.transpose()
-    pd.DataFrame(avg).to_excel(writer, sheet_name="{}-Avg".format(table_name), float_format = "%.2f") # **writer_opt)
-    pd.DataFrame(std).to_excel(writer, sheet_name="{}-Dev".format(table_name), float_format = "%.2f") # **writer_opt)
+      #avg, std = avg.transpose(), std.transpose()
+      pd_avg, pd_std = pd_avg.transpose(), pd_std.transpose()
+    pd_avg.to_excel(writer, sheet_name="{}-Avg".format(table_name), float_format = "%.2f") # **writer_opt)
+    pd_std.to_excel(writer, sheet_name="{}-Dev".format(table_name), float_format = "%.2f") # **writer_opt)
 
   writer.save()
   # TODO: add counts before the first epoch!
