@@ -497,6 +497,12 @@ def VRDTrainerRepeater(repeat_n_times, **kwargs):
       pd_avg, pd_std = pd_avg.transpose(), pd_std.transpose()
     pd_avg.round(2).to_excel(writer, sheet_name="{}-Avg".format(table_name), **writer_opt)
     pd_std.round(2).to_excel(writer, sheet_name="{}-Dev".format(table_name), **writer_opt)
+    
+    workbook  = writer.book
+    worksheets = ["{}-Avg".format(table_name), "{}-Dev".format(table_name)]
+    format1 = workbook.add_format({'num_format': '0.00'})
+    for worksheet in worksheets:
+      writer.sheets[worksheet].set_column(0, -1, None, format1)
 
   writer.save()
   # TODO: add counts before the first epoch!
