@@ -481,7 +481,7 @@ def VRDTrainerRepeater(repeat_n_times, **kwargs):
     return avg_table, std_table
 
   output_xls = osp.join(globals.models_dir, "{}-r{}.xls".format(trainer.session_name, repeat_n_times))
-  writer = pd.ExcelWriter(output_xls)
+  writer = pd.ExcelWriter(output_xls, engine="xlsxwriter", options={"nan_inf_to_errors": True})
   writer_opt = {"float_format" : "%.2f"}
 
   res_sheets = utils.ld_to_dl(res_sheets)
