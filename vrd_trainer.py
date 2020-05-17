@@ -482,7 +482,7 @@ def VRDTrainerRepeater(repeat_n_times, **kwargs):
 
   output_xls = osp.join(globals.models_dir, "{}-r{}.xls".format(trainer.session_name, repeat_n_times))
   writer = pd.ExcelWriter(output_xls, engine="xlsxwriter", options={"nan_inf_to_errors": True})
-  writer_opt = {"float_format" : "%.02f", "header" : False}
+  writer_opt = {"float_format" : "%0.2f", "header" : False}
 
   res_sheets = utils.ld_to_dl(res_sheets)
 
