@@ -501,7 +501,7 @@ def VRDTrainerRepeater(repeat_n_times, **kwargs):
     workbook  = writer.book
     worksheets = ["{}-Avg".format(table_name), "{}-Dev".format(table_name)]
     format1 = workbook.add_format()
-    format1.set_num_format("0.00%")
+    format1.set_num_format(2)
     for worksheet in worksheets:
       writer.sheets[worksheet].set_column(0, -1, None, format1)
 
