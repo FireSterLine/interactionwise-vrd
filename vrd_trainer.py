@@ -507,7 +507,6 @@ def VRDTrainerRepeater(repeat_n_times, **kwargs):
 
   writer.save()
   # TODO: add counts before the first epoch!
-  # TODO: create, for each of the lines in avg_table (epoch) two sheets with as many columns as there are predicates, and stack the 4+1 1d arrays onto each other. Then, transpose.
 
 if __name__ == "__main__":
 
@@ -583,7 +582,9 @@ if __name__ == "__main__":
     # Name of the embedding model in use
     for emb_model in ["gnews"]: # , "300", "glove-50" "50", "coco-70-50", "coco-30-50", "100"]:
       #if FEATURES_SCAN:
-      #VRDTrainer("{}-test-only_sem-{}".format(scan_name, emb_model),  {"training" : base_training}, profile = base_profile + ["only_sem"]).train()
+      #  training = deepcopy(base_training)
+      #  training["test_first"] = True
+      #  VRDTrainer("{}-test-only_sem-{}".format(scan_name, emb_model),  {"training" : training}, profile = base_profile + ["only_sem"]).train()
 
       # Default learning rate
       for lr in [0.0001]: # [0.001, 0.0001, 0.00001, 0.000001]:
@@ -593,10 +594,6 @@ if __name__ == "__main__":
           for lr_fus_ratio in [10]:
             # multiplicative constant for the learning rate of the scoring layer (i.e last layer)
             for lr_rel_ratio in [10]: #, 100]:
-              # Predicate Semantics Mode, offset by one
-              #  # -1 indicates no use of predicate semantics;
-              #  # Values from 0 onwards indicate some of the different "modes" to introducte predicate semantics (e.g SemSim, Semantic Rescoring)
-              for pred_sem_mode_1 in [-1, 16]: # , 3, 11]: #, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
                 # Loss function in use. These are the available ones
                 #  # "mlab": MultiLabelMarginLoss
                 #  # "mlab_no_prior": MultiLabelMarginLoss without soP_prior
@@ -604,7 +601,11 @@ if __name__ == "__main__":
                 #  # "mse":  MSELoss
                 # Loss functions can be used together by joining the two strings, for example with an underscore:
                 #  # For instance, "mlab_mse" indicates using the average of MultiLabelMarginLoss and MSELoss as the loss
-                for loss in ["mlab"]: # "bcel, mlab_mse]:
+                for loss in ["mlab", "bcel"]: # , mlab_mse]:
+                 # Predicate Semantics Mode, offset by one
+                 #  # -1 indicates no use of predicate semantics;
+                 #  # Values from 0 onwards indicate some of the different "modes" to introducte predicate semantics (e.g SemSim, Semantic Rescoring)
+                 for pred_sem_mode_1 in [-1, 16, 3, 11]: #, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
                   # Dataset in use. "vrd", "vg" # TODO check if "vrd:spatial" works
                   for dataset in ["vrd:spatial", "vrd:activities"]:
                     # Training profile to load. The profiles are listed in the ./cfgs/ folder, and they contain the options that are used to override the default ones (deafult.yml).
