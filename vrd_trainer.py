@@ -281,13 +281,18 @@ class VRDTrainer():
         res_dict["predicates"]               = res_np[:,[0] + list(range(num_recalls+1,num_cols))]
 
         predicates_stacked = []
+        predicates_stacked_2ndlast = []
         for i_rec_score,rec_score in enumerate(res_head_headers):
           x = res_dict["predicates"][:,[0] + list(range(1+i_rec_score*self.dataset.n_pred,1+(i_rec_score+1)*self.dataset.n_pred))]
           predicates_stacked += x.tolist()
           predicates_stacked.append([np.nan for _ in range(x.shape[1])])
+          secndlast = x.tolist()[-2] if len(x.tolist()) > 1 else x.tolist()[-1]
+          predicates_stacked_2ndlast += [secndlast]
 
         res_headers_dict["predicates_stacked"] = np.array(res_headers_dict["predicates"][[0]].tolist() + self.dataset.pred_classes)
         res_dict["predicates_stacked"] = np.array(predicates_stacked)
+        res_headers_dict["predicates_stacked-2ndlast"] = np.array(res_headers_dict["predicates"][[0]].tolist() + self.dataset.pred_classes)
+        res_dict["predicates_stacked-2ndlast"] = np.array(predicates_stacked)
         
         #res_dict["predicates"]         = res_dict["predicates"].transpose()
         #res_dict["predicates_stacked"] = res_dict["predicates_stacked"].transpose()
@@ -482,24 +487,26 @@ def VRDTrainerRepeater(repeat_n_times, **kwargs):
 
   output_xls = osp.join(globals.models_dir, "{}-r{}.xls".format(trainer.session_name, repeat_n_times))
   writer = pd.ExcelWriter(output_xls, engine="xlsxwriter", options={"nan_inf_to_errors": True})
-  writer_opt = {"float_format" : "%.2f", "header" : False}
+  writer_opt = {"float_format" : "%.2f"} # , "header" : False}
 
   res_sheets = utils.ld_to_dl(res_sheets)
 
   for table_name,res_tables in res_sheets.items():
+    if table_name == "predicates": continue
     avg_table, std_table = get_avg_and_std(np.array(res_tables))
     pd_avg = pd.DataFrame(avg_table.astype(float), columns = res_headers[table_name])
     pd_std = pd.DataFrame(std_table.astype(float), columns = res_headers[table_name])
     #avg = np.vstack((res_headers[table_name], avg_table))
     #std = np.vstack((res_headers[table_name], std_table))
-    if table_name in ["predicates", "predicates_stacked"]:
+    if table_name in ["predicates", "predicates_stacked", "predicates_stacked-2ndlast"]:
       #avg, std = avg.transpose(), std.transpose()
       pd_avg, pd_std = pd_avg.transpose(), pd_std.transpose()
+    
     pd_avg.round(2).to_excel(writer, sheet_name="{}-Avg".format(table_name), **writer_opt)
     pd_std.round(2).to_excel(writer, sheet_name="{}-Dev".format(table_name), **writer_opt)
     
-    workbook  = writer.book
     worksheets = ["{}-Avg".format(table_name), "{}-Dev".format(table_name)]
+    workbook  = writer.book
     format1 = workbook.add_format()
     format1.set_num_format("0.00")
     for worksheet in worksheets:
