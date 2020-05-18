@@ -261,8 +261,10 @@ class DataPreparer:
         new_inds = pred_counts_train.argsort()[::-1].tolist()
 
         new_pred_counts_train = pred_counts_train[new_inds]
+        new_pred_counts_test = pred_counts_test[new_inds]
         new_pred_vocab = [self.pred_vocab[i] for i in new_inds]
         pred_counts_train = new_pred_counts_train
+        pred_counts_test  = new_pred_counts_test
         self.pred_vocab = new_pred_vocab
         for k,relst in self.vrd_data.items():
           if relst is None: continue
@@ -903,6 +905,14 @@ def getWordEmbedding(word, emb_model, model_name, depth=0):
 # Load embedding model
 def load_emb_model(model_name):
   print("Loading embedding model '{}'...".format(model_name))
+  
+  # Lookup model in cache
+  if not hasattr(load_emb_model, "cache"):
+    load_emb_model.cache = {}
+  if model_name in load_emb_model.cache:
+    return load_emb_model.cache[model_name]
+  
+  # Load model
   model_path = globals.emb_model_path(model_name)
   if model_name is "gnews":
     model = KeyedVectors.load_word2vec_format(model_path, binary=True)
@@ -917,6 +927,9 @@ def load_emb_model(model_name):
     # train_word2vec script, so the train_word2vec module needs to be in the path for them to load
     sys.path.append("./scripts")
     model = VRDEmbedding.load_model(model_path)
+  
+  # Cache and return model
+  load_emb_model.cache[model_name] = model
   return model
 
 
@@ -926,18 +939,20 @@ if __name__ == '__main__':
 
     generate_embeddings = []
     #generate_embeddings = ["gnews", "50", "100", "coco-70-50", "coco-30-50"]
-    generate_embeddings = ["gnews"]
-    #generate_embeddings = ["gnews", "300"]
+    #generate_embeddings = ["gnews"]
+    generate_embeddings = ["gnews", "300"]
     #generate_embeddings = ["gnews", "300", "glove-50"]
     #generate_embeddings = ["glove-50"]
 
     #""" VRD
     print("Preparing data for VRD")
-    subset = False
-    #subset = "spatial"
-    subset = "activities"
-    data_preparer_vrd = VRDPrep(subset = subset, multi_label = multi_label, generate_emb = generate_embeddings)
-    data_preparer_vrd.save_data(["relst", "annos"])
+    
+    vrd_subsets = [False]
+    #vrd_subsets = ["spatial", "activities"]
+    vrd_subsets = [False, "spatial", "activities"]
+    for vrd_subset in vrd_subsets:
+      data_preparer_vrd = VRDPrep(subset = vrd_subset, multi_label = multi_label, generate_emb = generate_embeddings)
+      data_preparer_vrd.save_data(["relst", "annos"])
     #"""
 
     """ VG
