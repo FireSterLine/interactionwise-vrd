@@ -81,6 +81,7 @@ class DataPreparer:
         if subset is not False:
           subset_mapping = self.readjson("subset_{}.json".format(subset))
           def rename_vocab(cls_vocab, rename_map):
+            if rename_map is None: return
             for cls in range(len(cls_vocab)):
               if cls_vocab[cls] in rename_map:
                 cls_vocab[cls] = rename_map[cls_vocab[cls]]
@@ -99,7 +100,7 @@ class DataPreparer:
           # assert subset_mapping["obj_map"] == {}, "NotImplemented: A cleaning map for objects requires some preprocessing to the object_detections as well, if not a re-train of the object detection model. Better not touch these things."
           # obj_vocab,  obj_cls_map  = cleaned_vocab(obj_vocab,  subset_mapping["obj_map"])
 
-          pred_vocab = rename_vocab(pred_vocab, subset_mapping["pred_rename"])
+          rename_vocab(pred_vocab, subset_mapping.get("pred_rename",None))
           pred_vocab, pred_cls_map = cleaned_vocab(pred_vocab, subset_mapping["pred_map"], subset_mapping["pred_subset"])
           self.subset_mapping = {"pred" : pred_cls_map}
 
@@ -478,7 +479,7 @@ class VRDPrep(DataPreparer):
       self.train_dsr = self.readpickle("train.pkl")
       self.test_dsr  = self.readpickle("test.pkl")
 
-      self.prepare_vocabs("obj.txt", "rel.txt")
+      self.prepare_vocabs("obj.txt", "rel.txt", subset)
 
       self.prepare_obj_det_fun = self.prepare_obj_det_FromLP
 
@@ -507,6 +508,9 @@ class VRDPrep(DataPreparer):
       return self.subset_mapping["obj"].get(cls, None) if (hasattr(self, "subset_mapping") and "obj" in self.subset_mapping) else cls
     def get_clean_pred_cls(self, cls):
       if self.pred_resorted: print("ERROR! Can't read more data when predicates have been resorted")
+      #print(self.subset_mapping["pred"])
+      #print(cls)
+      #print(self.subset_mapping["pred"][cls])
       return self.subset_mapping["pred"].get(cls, None) if (hasattr(self, "subset_mapping") and "pred" in self.subset_mapping) else cls
 
     def load_vrd(self):
@@ -930,8 +934,8 @@ if __name__ == '__main__':
     #""" VRD
     print("Preparing data for VRD")
     subset = False
-    subset = "spatial"
-    #subset = "activities"
+    #subset = "spatial"
+    subset = "activities"
     data_preparer_vrd = VRDPrep(subset = subset, multi_label = multi_label, generate_emb = generate_embeddings)
     data_preparer_vrd.save_data(["relst", "annos"])
     #"""

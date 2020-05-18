@@ -6,7 +6,7 @@ data:
 eval:
   eval_obj: False
   test_rel: False
-  rec: [50, 30]
+  rec: [50, 20]
 
 # Training parameters
 training:
