@@ -150,7 +150,7 @@ class VRDTrainer():
       self.criterions["mlab"] = torch.nn.MultiLabelMarginLoss(reduction="none").to(device=utils.device)
     if "bcel" in self.args.training.loss:
       y_cols.append("1-hots")
-      self.criterions["bcel"] = torch.nn.BCEWithLogitsLoss(reduction="none").to(device=utils.device)
+      self.criterions["bcel"] = torch.nn.BCEWithLogitsLoss(reduction="sum").to(device=utils.device)
     if "mse" in self.args.training.loss:
       self.criterions["mse"] = torch.nn.MSELoss(reduction="none").to(device=utils.device)
     if "cross-entropy" in self.args.training.loss:
@@ -605,9 +605,9 @@ if __name__ == "__main__":
                  # Predicate Semantics Mode, offset by one
                  #  # -1 indicates no use of predicate semantics;
                  #  # Values from 0 onwards indicate some of the different "modes" to introducte predicate semantics (e.g SemSim, Semantic Rescoring)
-                 for pred_sem_mode_1 in [-1, 16, 3, 11]: #, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
+                 for pred_sem_mode_1 in [16, 3, 11, -1]: #, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
                   # Dataset in use. "vrd", "vg" # TODO check if "vrd:spatial" works
-                  for dataset in ["vrd:spatial", "vrd:activities"]:
+                  for dataset in ["vrd"]: # "vrd:spatial", "vrd:activities"]:
                     # Training profile to load. The profiles are listed in the ./cfgs/ folder, and they contain the options that are used to override the default ones (deafult.yml).
                     # Some examples are:
                     #  # "only_sem": Only uses semantic, "hides" visual and spatial features
