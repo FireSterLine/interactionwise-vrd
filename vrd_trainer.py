@@ -31,7 +31,7 @@ from lib.evaluator import VRDEvaluator
 TEST_DEBUGGING = False
 # Test if a newly-introduced change affects the validity of the code
 TEST_EVAL_VALIDITY = False
-TEST_TRAIN_VALIDITY = True
+TEST_TRAIN_VALIDITY = False
 # Test to overfit to a single element
 TEST_OVERFIT = False
 
@@ -292,7 +292,7 @@ class VRDTrainer():
         res_headers_dict["predicates_stacked"] = np.array(res_headers_dict["predicates"][[0]].tolist() + self.dataset.pred_classes)
         res_dict["predicates_stacked"] = np.array(predicates_stacked)
         res_headers_dict["predicates_stacked-2ndlast"] = np.array(res_headers_dict["predicates"][[0]].tolist() + self.dataset.pred_classes)
-        res_dict["predicates_stacked-2ndlast"] = np.array(predicates_stacked)
+        res_dict["predicates_stacked-2ndlast"] = np.array(predicates_stacked_2ndlast)
         
         #res_dict["predicates"]         = res_dict["predicates"].transpose()
         #res_dict["predicates_stacked"] = res_dict["predicates_stacked"].transpose()
