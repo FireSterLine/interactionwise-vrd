@@ -55,45 +55,51 @@ Results
     		computer_monitor not found in model!
 
     do not exist in gnews:
-    	'traffic light' mapped to 'stoplight'
-    	'trash can' mapped to 'trashcan'
-
-    	'next to' mapped to 'next'
-    	'stand next to' mapped to 'stand next'
-    	'park next' mapped to the average of ('park', 'next')
-    	'stand behind' mapped to the average of ('stand', 'behind')
-    	'sit behind' mapped to the average of ('sit', 'behind')
-    	'park behind' mapped to the average of ('park', 'behind')
-    	'in the front of' mapped to 'front'
-    	'stand under' mapped to the average of ('stand', 'under')
-    	'sit under' mapped to the average of ('sit', 'under')
-    	'walk to' mapped to the average of ('walk',)
-    	'walk past' mapped to the average of ('walk', 'past')
-    	'walk beside' mapped to the average of ('walk', 'beside')
-    	    'on top' mapped to the average of ('on', 'top')
-    	  'on top of' mapped to 'on top'
-    	'on the top of' mapped to 'on top of'
-    	    'of' mapped to 'about'
-    	  'on left of' mapped to the average of ('on', 'left', 'of')
-    	'on the left of' mapped to 'on left of'
-    	    'of' mapped to 'about'
-    	'on right of' mapped to the average of ('on', 'right', 'of')                                                                                                  [74/1929]
-    	'on the right of' mapped to 'on right of'
-    	'sit on' mapped to the average of ('sit', 'on')
-    	'stand on' mapped to the average of ('stand', 'on')
-    	'attach to' mapped to the average of ('attach',)
-    	'adjacent to' mapped to the average of ('adjacent',)
-    	'drive on' mapped to the average of ('drive', 'on')
-    	'taller than' mapped to 'taller'
-    	'park on' mapped to the average of ('park', 'on')
-    	'lying on' mapped to the average of ('lying', 'on')
-    	'lean on' mapped to the average of ('lean', 'on')
-    	'play with' mapped to 'play'
-    	'sleep on' mapped to the average of ('sleep', 'on')
-    	'of' mapped to 'about'
-    	'outside of' mapped to the average of ('outside', 'of')
-    	'rest on' mapped to the average of ('rest', 'on')
-    	'skate on' mapped to the average of ('skate', 'on')
+      'traffic light' mapped to 'stoplight'
+      'trash can' mapped to 'trashcan'
+      'next to' mapped to 'next'
+      'in the front of' mapped to 'front'
+          'of' mapped to 'about'
+        'on left of' mapped to the average of ('on', 'left', 'of')
+      'on the left of' mapped to 'on left of'
+          'of' mapped to 'about'
+        'on right of' mapped to the average of ('on', 'right', 'of')
+      'on the right of' mapped to 'on right of'
+      'sit on' mapped to the average of ('sit', 'on')
+          'on top' mapped to the average of ('on', 'top')
+        'on top of' mapped to 'on top'
+      'on the top of' mapped to 'on top of'
+        'stand next' mapped to the average of ('stand', 'next')
+      'stand next to' mapped to 'stand next'
+      'stand on' mapped to the average of ('stand', 'on')
+        'sit next' mapped to the average of ('sit', 'next')
+      'sit next to' mapped to 'sit next'
+      'attach to' mapped to the average of ('attach',)
+      'park next' mapped to the average of ('park', 'next')
+      'taller than' mapped to 'taller'
+      'adjacent to' mapped to the average of ('adjacent',)
+      'park on' mapped to the average of ('park', 'on')
+      'walk to' mapped to the average of ('walk',)
+      'lean on' mapped to the average of ('lean', 'on')
+      'lying on' mapped to the average of ('lying', 'on')
+      'play with' mapped to 'play'
+      'sleep on' mapped to the average of ('sleep', 'on')
+      'drive on' mapped to the average of ('drive', 'on')
+      'stand behind' mapped to the average of ('stand', 'behind')
+      'sit behind' mapped to the average of ('sit', 'behind')
+      'rest on' mapped to the average of ('rest', 'on')
+        'of' mapped to 'about'
+      'outside of' mapped to the average of ('outside', 'of')
+        'walk next' mapped to the average of ('walk', 'next')
+      'walk next to' mapped to 'walk next'
+      'stand under' mapped to the average of ('stand', 'under')
+      'skate on' mapped to the average of ('skate', 'on')
+        'sleep next' mapped to the average of ('sleep', 'next')
+      'sleep next to' mapped to 'sleep next'
+      'walk beside' mapped to the average of ('walk', 'beside')
+      'sit under' mapped to the average of ('sit', 'under')
+      'walk past' mapped to the average of ('walk', 'past')
+      'park behind' mapped to the average of ('park', 'behind')
 
     FOR VG:
     	Loading embedding model 'gnews'...
