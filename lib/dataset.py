@@ -116,12 +116,17 @@ class VRDDataset():
       self._vrd_data_cache[(format, stage, granularity)] = data
     return self._vrd_data_cache[(format, stage, granularity)]
 
+  # get embeddings for objects/predicates
   def getEmb(self, type, model_name = None):
     if model_name != None:
       print("Warning! A different embedding model than the one VRDDataset is instantiated with is being requested! '{}', '{}'".format(self.emb_model, model_name))
     else:
       model_name = self.emb_model
     return np.array(self.readJSON("{}-emb-{}.json".format(type, model_name)))
+
+  # get counts for objects/predicates for train/test/test_zs
+  def getCounts(self, type, stage):
+    return [cnt[1] for cnt in self.readJSON("{}-counts_{}.json".format(type, stage))]
 
   def getDistribution(self, type, stage = "train"):
     """ Computes and returns some distributional data """

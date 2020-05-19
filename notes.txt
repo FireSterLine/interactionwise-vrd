@@ -1,5 +1,6 @@
 IN THE MORNING:
 - tune 3,11 and 16 with bcel?
+- https://www.google.com/search?client=firefox-b-d&q=print+the+absolute+count+instead+of+the+recall+pointsgoo%3F
 - Fix test, test_zs counts
 - Find out if, with Pre ZS R@30 with gnews, the improvements are of a specific subset/type of predicates.
 - put on results for vg predcls
