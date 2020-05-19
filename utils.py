@@ -223,6 +223,13 @@ def patch_key(d, old_key, new_key):
         del old_d[last_key]
         # print((("last_key","old_d"),(last_key,old_d)))
 
+# Append/Prepend column to numpy 2d array
+def append_col(table, col, prepend = False):
+  new_table = np.zeros((table.shape[0], table.shape[1]+1))
+  if prepend:  new_table[:,1:],  new_table[:,0] = table, col
+  else:        new_table[:,:-1], new_table[:,-1]= table, col
+  return new_table
+
 # Read a list from a file, line-by-line
 def load_txt_list(filename):
   l = []

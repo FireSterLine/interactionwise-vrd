@@ -296,9 +296,11 @@ class VRDTrainer():
         zs_cnt   = np.array([42.00] + self.dataset.getCounts("predicates", "test_zs"))
         counts_cols = [test_cnt, zs_cnt, test_cnt, zs_cnt]
         predicates_stacked_2ndlast_counts = (np.array(counts_cols)*np.array(predicates_stacked_2ndlast)[:-1]/100.).tolist()
-        predicates_stacked_2ndlast = np.array(predicates_stacked_2ndlast + counts_cols + predicates_stacked_2ndlast_counts)
-        res_headers_dict["predicates_stacked-2ndlast"] = np.array(res_headers_dict["predicates"][[0]].tolist() + self.dataset.pred_classes)
-        res_dict["predicates_stacked-2ndlast"] = predicates_stacked_2ndlast
+        predicates_stacked_2ndlast += counts_cols + predicates_stacked_2ndlast_counts
+        predicates_stacked_2ndlast = np.array(predicates_stacked_2ndlast)
+        sums_col = predicates_stacked_2ndlast.nansum(axis=1)
+        res_headers_dict["predicates_stacked-2ndlast"] = np.array(res_headers_dict["predicates"][[0]].tolist() + self.dataset.pred_classes + ["Sum"])
+        res_dict["predicates_stacked-2ndlast"] = utils.append_col(predicates_stacked_2ndlast, sums_col)
 
         #res_dict["predicates"]         = res_dict["predicates"].transpose()
         #res_dict["predicates_stacked"] = res_dict["predicates_stacked"].transpose()
@@ -481,16 +483,11 @@ def VRDTrainerRepeater(repeat_n_times, **kwargs):
 
   # Compute average and deviation of the tables
   def get_avg_and_std(res_tables):
-    def prepend_col(table, col):
-      new_table = np.zeros((table.shape[0], table.shape[1]+1))
-      new_table[:,1:] = table
-      new_table[:,0] = col
-      return new_table
     with warnings.catch_warnings():
       warnings.simplefilter("ignore", category=RuntimeWarning)
       avg_table = np.nanmean(res_tables, axis=0)
       stds      = np.nanstd(res_tables[:,:,1:], axis=0)
-    std_table = prepend_col(stds, avg_table[:,0])
+    std_table = utils.append_col(stds, avg_table[:,0], prepend = True)
     return avg_table, std_table
 
   output_xls = osp.join(globals.models_dir, "{}-r{}.xls".format(trainer.session_name, repeat_n_times))
