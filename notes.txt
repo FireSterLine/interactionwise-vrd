@@ -1,4 +1,6 @@
 IN THE MORNING:
+- tune 3,11 and 16 with bcel?
+- Fix test, test_zs counts
 - Find out if, with Pre ZS R@30 with gnews, the improvements are of a specific subset/type of predicates.
 - put on results for vg predcls
 - Then show the pre-predicate results, and justify the selection of a subset of predicates
@@ -17,6 +19,15 @@ IN THE MORNING:
 
 # TODO: filter out relationships between the same object?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Use @20 instead of R@30 and compare to other works
+https://arxiv.org/pdf/2004.06193.pdf
+https://kevinstan.github.io/data/aesg_report.pdf
+https://arxiv.org/pdf/2004.06193.pdf
+
+
+Anotnym
+https://arxiv.org/pdf/1605.07766.pdf
+http://tcci.ccf.org.cn/conference/2018/papers/141.pdf
 
 - Show the results with a randomly initialized untrained model.
 
