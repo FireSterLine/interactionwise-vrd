@@ -3,6 +3,7 @@ import os.path as osp
 import sys
 from datetime import datetime
 import time
+import warnings
 
 import pickle
 import yaml
@@ -318,11 +319,11 @@ class VRDTrainer():
           res_row_end += recalls_by_preds
           recalls_by_preds_avg = []
           for rec_score in range(len(recalls)):  # e.g 4
-            recalls_by_preds_avg += np.array(recalls_by_preds[rec_score*self.dataset.n_pred:(rec_score+1)*self.dataset.n_pred])
+            recalls_by_preds_avg.append(np.array(recalls_by_preds[rec_score*self.dataset.n_pred:(rec_score+1)*self.dataset.n_pred]))
           recalls_by_preds_avg = np.nanmean(np.array(recalls_by_preds_avg), axis=0)
           res_row_end_end += recalls_by_preds_avg.tolist()
         # Add avg. of recall scores
-        res_row += recalls + (float(np.nanmean(np.array(recalls))).,)
+        res_row += recalls + (float(np.nanmean(np.array(recalls))),)
 
     # Update results
     res.append([epoch] + res_row + res_row_end + res_row_end_end)
@@ -480,8 +481,10 @@ def VRDTrainerRepeater(repeat_n_times, **kwargs):
       new_table[:,1:] = table
       new_table[:,0] = col
       return new_table
-    avg_table = res_tables.nanmean(axis=0)
-    stds = res_tables[:,:,1:].std(axis=0)
+    with warnings.catch_warnings():
+      warnings.simplefilter("ignore", category=RuntimeWarning)
+      avg_table = np.nanmean(res_tables, axis=0)
+      stds      = np.nanstd(res_tables[:,:,1:], axis=0)
     std_table = prepend_col(stds, avg_table[:,0])
     return avg_table, std_table
 
@@ -572,7 +575,7 @@ if __name__ == "__main__":
   ## The following portion of code is useful for tuning the model
   ############################################################
 
-  scan_name = "v19-all_preds-nored-test-repeater"
+  scan_name = "v20-scan-3-11"
   v = 5
   base_profile = ["pred_sem", "by_pred"]
   base_training = {"num_epochs" : 5, "test_freq" : [2,3,4]}
@@ -596,13 +599,13 @@ if __name__ == "__main__":
       #  VRDTrainer("{}-test-only_sem-{}".format(scan_name, emb_model),  {"training" : training}, profile = base_profile + ["only_sem"]).train()
 
       # Default learning rate
-      for lr in [0.0001]: # [0.001, 0.0001, 0.00001, 0.000001]:
+      for lr in [0.00001]: # [0.001, 0.0001, 0.00001, 0.000001]:
         # Weight decay
         for weight_decay in [0.0001]:
           # multiplicative constant for the learning rate of the fusion layer (i.e second last layer)
           for lr_fus_ratio in [10]:
             # multiplicative constant for the learning rate of the scoring layer (i.e last layer)
-            for lr_rel_ratio in [10]: #, 100]:
+            for lr_rel_ratio in [10, 100]: #, 100]:
                 # Loss function in use. These are the available ones
                 #  # "mlab": MultiLabelMarginLoss
                 #  # "mlab_no_prior": MultiLabelMarginLoss without soP_prior
@@ -610,11 +613,11 @@ if __name__ == "__main__":
                 #  # "mse":  MSELoss
                 # Loss functions can be used together by joining the two strings, for example with an underscore:
                 #  # For instance, "mlab_mse" indicates using the average of MultiLabelMarginLoss and MSELoss as the loss
-                for loss in ["mlab"]: # , "bcel"]: # , mlab_mse]:
+                for loss in ["mlab", "bcel"]: # , mlab_mse]:
                  # Predicate Semantics Mode, offset by one
                  #  # -1 indicates no use of predicate semantics;
                  #  # Values from 0 onwards indicate some of the different "modes" to introducte predicate semantics (e.g SemSim, Semantic Rescoring)
-                  for dataset in ["vrd", "vrd:spatial", "vrd:activities"]:
+                  for dataset in ["vrd"]: # , "vrd:spatial", "vrd:activities"]:
                     # Training profile to load. The profiles are listed in the ./cfgs/ folder, and they contain the options that are used to override the default ones (deafult.yml).
                     # Some examples are:
                     #  # "only_sem": Only uses semantic, "hides" visual and spatial features
@@ -623,7 +626,7 @@ if __name__ == "__main__":
                     #  # "all_feats": Uses semantics + spatial + visual features
                     #  # "no_feat": Doesn't use features. Weird
                     for profile_name in ["only_sem"]: # "only_sem_subdot", "only_sem_catdiff", "only_sem_catdot", "only_sem_diffdot"]: # ["only_spat", "spat_sem", "only_sem", False]: # , "vg"]:
-                     for pred_sem_mode_1 in [16, -1, 3, 11]: #, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
+                     for pred_sem_mode_1 in [3, 11]: #, 16, -1, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
                      # Dataset in use. "vrd", "vg" # TODO check if "vrd:spatial" works
                       if "mse" in loss and (pred_sem_mode_1 == -1 or pred_sem_mode_1>=16):
                         continue
