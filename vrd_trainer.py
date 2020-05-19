@@ -296,7 +296,7 @@ class VRDTrainer():
         zs_cnt   = np.array([42.00] + self.dataset.getCounts("predicates", "test_zs"))
         counts_cols = [test_cnt, zs_cnt, test_cnt, zs_cnt]
         predicates_stacked_2ndlast_counts = (np.array(counts_cols)*np.array(predicates_stacked_2ndlast)[:-1]/100.).tolist()
-        predicates_stacked_2ndlast = np.array(predicates_stacked_2ndlast_counts + counts_cols + predicates_stacked_2ndlast_counts)
+        predicates_stacked_2ndlast = np.array(predicates_stacked_2ndlast + counts_cols + predicates_stacked_2ndlast_counts)
         res_headers_dict["predicates_stacked-2ndlast"] = np.array(res_headers_dict["predicates"][[0]].tolist() + self.dataset.pred_classes)
         res_dict["predicates_stacked-2ndlast"] = predicates_stacked_2ndlast
 
