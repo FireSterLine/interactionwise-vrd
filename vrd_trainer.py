@@ -494,7 +494,7 @@ def VRDTrainerRepeater(repeat_n_times, **kwargs):
     return avg_table, std_table
 
   output_xls = osp.join(globals.models_dir, "{}-r{}.xls".format(trainer.session_name, repeat_n_times))
-  writer = pd.ExcelWriter(output_xls, engine="xlsxwriter"}) # , options={"nan_inf_to_errors": True})
+  writer = pd.ExcelWriter(output_xls, engine="xlsxwriter") # , options={"nan_inf_to_errors": True})
   writer_opt = {"float_format" : "%.2f"} # , "header" : False}
 
   res_sheets = utils.ld_to_dl(res_sheets)
@@ -632,7 +632,7 @@ if __name__ == "__main__":
                      # Predicate Semantics Mode, offset by one
                      #  # -1 indicates no use of predicate semantics;
                      #  # Values from 0 onwards indicate some of the different "modes" to introducte predicate semantics (e.g SemSim, Semantic Rescoring)
-                     for pred_sem_mode_1 in [-1, 3, 11, 16]: #, 16, -1, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
+                     for pred_sem_mode_1 in [11, 16, -1]: #3, 16, -1, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
                       if "mse" in loss and (pred_sem_mode_1 == -1 or pred_sem_mode_1>=16):
                         continue
 
