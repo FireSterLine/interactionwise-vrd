@@ -316,13 +316,13 @@ class VRDTrainer():
           # If the evaluation also returns the recall scores by predicate, add the by-predicate average columns
           recalls, recalls_by_preds, dtime = f_test()
           res_row_end += recalls_by_preds
-          recalls_by_preds_avg = np.zeros(self.dataset.n_pred)
+          recalls_by_preds_avg = []
           for rec_score in range(len(recalls)):  # e.g 4
             recalls_by_preds_avg += np.array(recalls_by_preds[rec_score*self.dataset.n_pred:(rec_score+1)*self.dataset.n_pred])
-          recalls_by_preds_avg /= len(recalls)
-          res_row_end_end += list(recalls_by_preds_avg)
+          recalls_by_preds_avg = np.nanmean(np.array(recalls_by_preds_avg), axis=0)
+          res_row_end_end += recalls_by_preds_avg.tolist()
         # Add avg. of recall scores
-        res_row += recalls + (sum(recalls)/len(recalls),)
+        res_row += recalls + (float(np.nanmean(np.array(recalls))).,)
 
     # Update results
     res.append([epoch] + res_row + res_row_end + res_row_end_end)
@@ -480,7 +480,7 @@ def VRDTrainerRepeater(repeat_n_times, **kwargs):
       new_table[:,1:] = table
       new_table[:,0] = col
       return new_table
-    avg_table = res_tables.mean(axis=0)
+    avg_table = res_tables.nanmean(axis=0)
     stds = res_tables[:,:,1:].std(axis=0)
     std_table = prepend_col(stds, avg_table[:,0])
     return avg_table, std_table
@@ -589,7 +589,7 @@ if __name__ == "__main__":
   if PARAMS_SCAN:
     print("PARAMS_SCAN")
     # Name of the embedding model in use
-    for emb_model in ["gnews"]: # , "300", "glove-50" "50", "coco-70-50", "coco-30-50", "100"]:
+    for emb_model in ["300"]: # gnews, "300", "glove-50" "50", "coco-70-50", "coco-30-50", "100"]:
       #if FEATURES_SCAN:
       #  training = deepcopy(base_training)
       #  training["test_first"] = True
@@ -610,12 +610,10 @@ if __name__ == "__main__":
                 #  # "mse":  MSELoss
                 # Loss functions can be used together by joining the two strings, for example with an underscore:
                 #  # For instance, "mlab_mse" indicates using the average of MultiLabelMarginLoss and MSELoss as the loss
-                for loss in ["mlab", "bcel"]: # , mlab_mse]:
+                for loss in ["mlab"]: # , "bcel"]: # , mlab_mse]:
                  # Predicate Semantics Mode, offset by one
                  #  # -1 indicates no use of predicate semantics;
                  #  # Values from 0 onwards indicate some of the different "modes" to introducte predicate semantics (e.g SemSim, Semantic Rescoring)
-                 for pred_sem_mode_1 in [16, 3, 11, -1]: #, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
-                  # Dataset in use. "vrd", "vg" # TODO check if "vrd:spatial" works
                   for dataset in ["vrd", "vrd:spatial", "vrd:activities"]:
                     # Training profile to load. The profiles are listed in the ./cfgs/ folder, and they contain the options that are used to override the default ones (deafult.yml).
                     # Some examples are:
@@ -625,6 +623,8 @@ if __name__ == "__main__":
                     #  # "all_feats": Uses semantics + spatial + visual features
                     #  # "no_feat": Doesn't use features. Weird
                     for profile_name in ["only_sem"]: # "only_sem_subdot", "only_sem_catdiff", "only_sem_catdot", "only_sem_diffdot"]: # ["only_spat", "spat_sem", "only_sem", False]: # , "vg"]:
+                     for pred_sem_mode_1 in [16, -1, 3, 11]: #, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
+                     # Dataset in use. "vrd", "vg" # TODO check if "vrd:spatial" works
                       if "mse" in loss and (pred_sem_mode_1 == -1 or pred_sem_mode_1>=16):
                         continue
 
