@@ -298,9 +298,8 @@ class VRDTrainer():
         predicates_stacked_2ndlast_counts = (np.array(counts_cols)*np.array(predicates_stacked_2ndlast)[:-1]/100.).tolist()
         predicates_stacked_2ndlast += counts_cols + predicates_stacked_2ndlast_counts
         predicates_stacked_2ndlast = np.array(predicates_stacked_2ndlast)
-        sums_col = np.nansum(predicates_stacked_2ndlast, axis=1)
         res_headers_dict["predicates_stacked-2ndlast"] = np.array(res_headers_dict["predicates"][[0]].tolist() + self.dataset.pred_classes + ["Sum"])
-        res_dict["predicates_stacked-2ndlast"] = utils.append_col(predicates_stacked_2ndlast, sums_col)
+        res_dict["predicates_stacked-2ndlast"]         = utils.append_col(predicates_stacked_2ndlast, np.nansum(predicates_stacked_2ndlast, axis=1))
 
         #res_dict["predicates"]         = res_dict["predicates"].transpose()
         #res_dict["predicates_stacked"] = res_dict["predicates_stacked"].transpose()
