@@ -292,9 +292,14 @@ class VRDTrainer():
 
         res_headers_dict["predicates_stacked"] = np.array(res_headers_dict["predicates"][[0]].tolist() + self.dataset.pred_classes)
         res_dict["predicates_stacked"] = np.array(predicates_stacked)
+        test_cnt = np.array([42.00] + self.dataset.getCounts("predicates", "test"))
+        zs_cnt   = np.array([42.00] + self.dataset.getCounts("predicates", "test_zs"))
+        counts_cols = [test_cnt, zs_cnt, test_cnt, zs_cnt]
+        predicates_stacked_2ndlast_counts = (np.array(counts_cols)*np.array(predicates_stacked_2ndlast)[:-1]/100.).tolist()
+        predicates_stacked_2ndlast = np.array(predicates_stacked_2ndlast_counts + counts_cols + predicates_stacked_2ndlast_counts)
         res_headers_dict["predicates_stacked-2ndlast"] = np.array(res_headers_dict["predicates"][[0]].tolist() + self.dataset.pred_classes)
-        res_dict["predicates_stacked-2ndlast"] = np.array(predicates_stacked_2ndlast)
-        
+        res_dict["predicates_stacked-2ndlast"] = predicates_stacked_2ndlast
+
         #res_dict["predicates"]         = res_dict["predicates"].transpose()
         #res_dict["predicates_stacked"] = res_dict["predicates_stacked"].transpose()
         #del(res_dict["predicates"])
@@ -489,7 +494,7 @@ def VRDTrainerRepeater(repeat_n_times, **kwargs):
     return avg_table, std_table
 
   output_xls = osp.join(globals.models_dir, "{}-r{}.xls".format(trainer.session_name, repeat_n_times))
-  writer = pd.ExcelWriter(output_xls, engine="xlsxwriter", options={"nan_inf_to_errors": True})
+  writer = pd.ExcelWriter(output_xls, engine="xlsxwriter"}) # , options={"nan_inf_to_errors": True})
   writer_opt = {"float_format" : "%.2f"} # , "header" : False}
 
   res_sheets = utils.ld_to_dl(res_sheets)
@@ -504,10 +509,10 @@ def VRDTrainerRepeater(repeat_n_times, **kwargs):
     if table_name in ["predicates", "predicates_stacked", "predicates_stacked-2ndlast"]:
       #avg, std = avg.transpose(), std.transpose()
       pd_avg, pd_std = pd_avg.transpose(), pd_std.transpose()
-    
+
     pd_avg.round(2).to_excel(writer, sheet_name="{}-Avg".format(table_name), **writer_opt)
     pd_std.round(2).to_excel(writer, sheet_name="{}-Dev".format(table_name), **writer_opt)
-    
+
     worksheets = ["{}-Avg".format(table_name), "{}-Dev".format(table_name)]
     workbook  = writer.book
     format1 = workbook.add_format()
@@ -647,7 +652,7 @@ if __name__ == "__main__":
                       if dataset == "vrd" and "all_feats" in profile and pred_sem_mode_1 >= 0 and pred_sem_mode_1 <= 16:
                         training["num_epochs"] += 1
                         training["test_freq"] = [x+1 for x in training["test_freq"]]
-                      
+
                       training["loss"] = loss
 
                       # A training session takes:

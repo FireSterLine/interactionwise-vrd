@@ -5,6 +5,7 @@ __pycache__
 other
 iwenv*
 models/**/*.pth.tar
+**/.~lock.*
 #!models/*.txt
 
 images
