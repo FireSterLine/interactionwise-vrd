@@ -16,7 +16,7 @@ def emb_model_path(model_name):
     w2v_model_path = "/home/findwise/interactionwise/wikipedia_dump/glove_epoch_5_dim_{}.model".format(dim)
   elif "coco" in model_name:
     _, ep, dim = model_name.split("-")
-    w2v_model_path = "/home/findwise/interactionwise/wikipedia_dump/coco/epoch_{}_dim_{}.model".format(ep, dim)
+    w2v_model_path = "/home/findwise/interactionwise/wikipedia_dump/coco/word2vec_epoch_{}_dim_{}.model".format(int(ep)+5, dim)
   elif model_name in ["50", "100", "300"]:
     w2v_model_path = "/home/findwise/interactionwise/wikipedia_dump/word2vec_epoch_5_dim_{}.model".format(model_name)
   else:

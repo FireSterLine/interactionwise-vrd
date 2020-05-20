@@ -593,7 +593,7 @@ if __name__ == "__main__":
   if PARAMS_SCAN:
     print("PARAMS_SCAN")
     # Name of the embedding model in use
-    for emb_model in ["gnews"]: # gnews, "300", "glove-50" "50", "coco-70-50", "coco-30-50", "100"]:
+    for emb_model in ["coco-20-300", "coco-50-300"]: #, "gnews"]: # gnews, "300", "glove-50" "50", "coco-70-50", "coco-30-50", "100"]:
       #if FEATURES_SCAN:
       #  training = deepcopy(base_training)
       #  training["test_first"] = True
@@ -624,7 +624,7 @@ if __name__ == "__main__":
                     #  # "sem_spat": Only uses semantic + spatial features, "hides" visual features
                     #  # "all_feats": Uses semantics + spatial + visual features
                     #  # "no_feat": Doesn't use features. Weird
-                    for profile_name in ["all_feats", "only_spat"]: # "only_sem_subdot", "only_sem_catdiff", "only_sem_catdot", "only_sem_diffdot"]: # ["only_spat", "spat_sem", "only_sem", False]: # , "vg"]:
+                    for profile_name in ["all_feats", "only_spat", "only_sem"]: # "only_sem_subdot", "only_sem_catdiff", "only_sem_catdot", "only_sem_diffdot"]: # ["only_spat", "spat_sem", "only_sem", False]: # , "vg"]:
                      # Predicate Semantics Mode, offset by one
                      #  # -1 indicates no use of predicate semantics;
                      #  # Values from 0 onwards indicate some of the different "modes" to introducte predicate semantics (e.g SemSim, Semantic Rescoring)
