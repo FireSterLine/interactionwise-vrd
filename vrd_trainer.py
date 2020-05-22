@@ -593,7 +593,7 @@ if __name__ == "__main__":
   if PARAMS_SCAN:
     print("PARAMS_SCAN")
     # Name of the embedding model in use
-    for emb_model in ["coco-20-300", "coco-50-300"]: #, "gnews"]: # gnews, "300", "glove-50" "50", "coco-70-50", "coco-30-50", "100"]:
+    for emb_model in ["gnews"]: #coco-20-300", "coco-50-300"]: #, "gnews"]: # gnews, "300", "glove-50" "50", "coco-70-50", "coco-30-50", "100"]:
       #if FEATURES_SCAN:
       #  training = deepcopy(base_training)
       #  training["test_first"] = True
@@ -616,7 +616,7 @@ if __name__ == "__main__":
                 #  # For instance, "mlab_mse" indicates using the average of MultiLabelMarginLoss and MSELoss as the loss
                 for loss in ["mlab"]: # , "bcel"]: # , mlab_mse]:
                   # Dataset in use. "vrd", "vg" # TODO check if "vrd:spatial" works
-                  for dataset in ["vrd:activities"]: # , "vrd:spatial", "vrd:activities"]:
+                  for dataset in ["vg"]: # "vrd:activities"]: # , "vrd:spatial", "vrd:activities"]:
                     # Training profile to load. The profiles are listed in the ./cfgs/ folder, and they contain the options that are used to override the default ones (deafult.yml).
                     # Some examples are:
                     #  # "only_sem": Only uses semantic, "hides" visual and spatial features
@@ -624,7 +624,7 @@ if __name__ == "__main__":
                     #  # "sem_spat": Only uses semantic + spatial features, "hides" visual features
                     #  # "all_feats": Uses semantics + spatial + visual features
                     #  # "no_feat": Doesn't use features. Weird
-                    for profile_name in ["all_feats", "only_spat", "only_sem"]: # "only_sem_subdot", "only_sem_catdiff", "only_sem_catdot", "only_sem_diffdot"]: # ["only_spat", "spat_sem", "only_sem", False]: # , "vg"]:
+                    for profile_name in ["only_sem", "all_feats", "only_spat"]: # "only_sem_subdot", "only_sem_catdiff", "only_sem_catdot", "only_sem_diffdot"]: # ["only_spat", "spat_sem", "only_sem", False]: # , "vg"]:
                      # Predicate Semantics Mode, offset by one
                      #  # -1 indicates no use of predicate semantics;
                      #  # Values from 0 onwards indicate some of the different "modes" to introducte predicate semantics (e.g SemSim, Semantic Rescoring)
