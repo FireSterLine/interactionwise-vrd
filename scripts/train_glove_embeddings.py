@@ -63,7 +63,7 @@ def load_terms_from_text_file(filename):
 
 def load_terms_fallback_json(filename):
     terms = []
-    for key, values in json.load(open(filename, 'r')):
+    for key, values in json.load(open(filename, 'r')).items():
         terms.append(key)
         for val in values:
             if type(val) is str:
