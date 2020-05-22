@@ -1,0 +1,251 @@
+
+- co-frequency matrix
+- the ones with synonyms are?
+
+-
+- there are different types of predicates and word embeddings might behave differently for them.
+- they do, the two methods seem to work.
+- this makes sense because the spatial predicates
+- antonym problem for spatial predicates
+- separate the results for predicate semantics and embeddings
+- do the same with VG
+- show sum of the predicate rescoring matrix, or normalize it
+- give RELCLS in the end
+
+IN THE MORNING:
+- Show the results with a randomly initialized untrained model.
+- put on results for vg predcls
+- complete scan on vg?
+- focus on other types of predicates, see the behavior
+   NOTE: spatial predicates are all the same, semantically-wise
+
+- fix 3 SoftEmbRescore and Scan SoftEmbRescore with only_sem 0,1,2,3 and all_feats
+- Poi vedi se funziona meglio con certi lr
+	With mode 1 (no logit), it can be tuned. A relu afterwards?
+  Mode 0 (logit) seems to f* everything up. Maybe a linear layer afterwards?
+
+- what if you just use the label as categorical vector as feature vector of the objects?
+
+- look up the swap thingy + swap file
+- Mention that there are about 0.5 fluctuations
+
+- are close: beside, next to, adjacent to, near
+- on
+
+- (this is what happens in works like \citebyaut{languagepriors} \citebyaut{structural-ranking} and
+    \citebyaut{prior-softmax}). % namely, the semantic embedding of the objects
+    % is computed using a pre-trained Word2Vec model, and a a different, independent,
+    % linear projection of the combined subject-object embeddings for every predicate.
+- Long-tail Classification (e.g read a little bit of https://arxiv.org/pdf/2004.00436.pdf)
+- 2.3.3 Convolutional Neural Network from thesis 249....pdf
+
+Ideas to save cleaner results:
+- One thing we can do is to get rid of the txts (until a few days ago, I was not producing csvs, now I'm producing both but we don't really need both anymore, we can just continue with csvs, more easily manageable when pasting and copying and displaying etc.))
+- Add the count for each predicate
+- For each epoch add more than one line (by predicate recalls scores can be stacked vertically instead of horizontally)
+
+
+- Keep the figure and table captions short. If a caption becomes like a paragraph, then better to move that material into the running text.
+
+*** Chapter 4: ***
+
+My main difficulty here is "seeing the forest and not just the trees". I feel that I need at least a clear section structure, but hopefully also some discussions of the various results, before I can see what you are trying to tell here, so that I can react and give my feedback.
+
+You have many results and tables and to help the reader understand the logic of this chapter, I think it would be a good idea to start the results chapter with some sort of roadmap.
+
+As I don't yet know the story you are trying to tell, I can't determine which results are the main ones and which are less important. But if you feel that there are too many numbers and tables, you might consider moving some tables into an appendix. You don't have to put everything that you have done into chapter 4. It's enough to include the results that illustrate your main points.
+
+(Trivial point about tables: might look a bit more visually appealing if you don't use 4 decimal positions in some of the tables...)
+
+You should probably have an additional conclusion chapter. (That is, 4.3 and 4.4 should become chapter 5.)
+
+
+WRITING:
+
+- fix citations: change citebyauthor to Liang et. al, and switch back to normal cite{}
+
+Abstract
+- It would be nice to add as last sentence your achievement. Eg. we improved the existing model by decreasing the error by 4%.
+- And then, either: in this work we find that we can leverage word embeddings for the purpose; or we clearly state the hypothesis: can we leverage word embeddings for this
+
+Methods
+- Avoid we and our
+- Use present
+- the results should show the results obtained with models described in methods
+- explain the blind model
+
+Discussion
+- Make points about results, re-establish the research, show the limitations, future research and recommendation
+
+Results
+- be less humble in the results
+- ...So we believe that the metrics are weak in this sense. In fact, this may be a side offect of using ``softened metrics'' (see section...)
+- Use @20 instead of R@30 and compare to other works
+    https://arxiv.org/pdf/2004.06193.pdf
+    https://kevinstan.github.io/data/aesg_report.pdf
+    https://arxiv.org/pdf/2004.06193.pdf
+- When showing the results per-predicate, signal that:
+    do not exist in gnews, 300 and glove-50
+    	sleep next to mapped to (sleep, next)
+    	sit next to mapped to (sit, next)
+    	stand next to mapped to (stand, next)
+    	walk next to mapped to (walk, next)
+
+    	Also:
+    		windshield_wiper not found in model!
+    		tv_stand not found in model!
+    		number_2 not found in model!
+    		baseball_uniform not found in model!
+    		computer_monitor not found in model!
+
+    do not exist in gnews:
+        300: has them all
+
+        gnews:
+
+        all
+          'traffic light' mapped to 'stoplight'
+          'trash can' mapped to 'trashcan'
+          'next to' mapped to 'next'
+          'in the front of' mapped to 'front'
+              'of' mapped to 'about'
+            'on left of' mapped to the average of ('on', 'left', 'of')
+          'on the left of' mapped to 'on left of'
+              'of' mapped to 'about'
+            'on right of' mapped to the average of ('on', 'right', 'of')
+          'on the right of' mapped to 'on right of'
+          'sit on' mapped to the average of ('sit', 'on')
+              'on top' mapped to the average of ('on', 'top')
+            'on top of' mapped to 'on top'
+          'on the top of' mapped to 'on top of'
+            'stand next' mapped to the average of ('stand', 'next')
+          'stand next to' mapped to 'stand next'
+          'stand on' mapped to the average of ('stand', 'on')
+            'sit next' mapped to the average of ('sit', 'next')
+          'sit next to' mapped to 'sit next'
+          'attach to' mapped to the average of ('attach',)
+          'park next' mapped to the average of ('park', 'next')
+          'taller than' mapped to 'taller'
+          'adjacent to' mapped to the average of ('adjacent',)
+          'park on' mapped to the average of ('park', 'on')
+          'walk to' mapped to the average of ('walk',)
+          'lean on' mapped to the average of ('lean', 'on')
+          'lying on' mapped to the average of ('lying', 'on')
+          'play with' mapped to 'play'
+          'sleep on' mapped to the average of ('sleep', 'on')
+          'drive on' mapped to the average of ('drive', 'on')
+          'stand behind' mapped to the average of ('stand', 'behind')
+          'sit behind' mapped to the average of ('sit', 'behind')
+          'rest on' mapped to the average of ('rest', 'on')
+            'of' mapped to 'about'
+          'outside of' mapped to the average of ('outside', 'of')
+            'walk next' mapped to the average of ('walk', 'next')
+          'walk next to' mapped to 'walk next'
+          'stand under' mapped to the average of ('stand', 'under')
+          'skate on' mapped to the average of ('skate', 'on')
+            'sleep next' mapped to the average of ('sleep', 'next')
+          'sleep next to' mapped to 'sleep next'
+          'walk beside' mapped to the average of ('walk', 'beside')
+          'sit under' mapped to the average of ('sit', 'under')
+          'walk past' mapped to the average of ('walk', 'past')
+          'park behind' mapped to the average of ('park', 'behind')
+
+
+        activities
+          'traffic light' mapped to 'stoplight'
+          'trash can' mapped to 'trashcan'
+
+
+        spatial
+        Loading embedding model 'gnews'...
+        'traffic light' mapped to 'stoplight'
+        'trash can' mapped to 'trashcan'
+
+        'next to' mapped to 'next'
+        'in the front of' mapped to 'front'
+            'of' mapped to 'about'
+          'on left of' mapped to the average of ('on', 'left', 'of')
+        'on the left of' mapped to 'on left of'
+            'of' mapped to 'about'
+          'on right of' mapped to the average of ('on', 'right', 'of')
+        'on the right of' mapped to 'on right of'
+            'on top' mapped to the average of ('on', 'top')
+          'on top of' mapped to 'on top'
+        'on the top of' mapped to 'on top of'
+        'adjacent to' mapped to the average of ('adjacent',)
+          'of' mapped to 'about'
+        'outside of' mapped to the average of ('outside', 'of')
+                Generating 'relst' data...
+                Generating 'annos' data...
+
+    FOR VG:
+    	Loading embedding model 'gnews'...
+            'of' mapped to 'about'
+            'on a' mapped to the average of ('on',)
+            'have a' mapped to the average of ('have',)
+            'next to' mapped to 'next'
+              'on top' mapped to the average of ('on', 'top')
+            'on top of' mapped to 'on top'
+              'of' mapped to 'about'
+            'of a' mapped to the average of ('of',)
+            'sit on' mapped to the average of ('sit', 'on')
+            'in front of' mapped to 'front'
+              'of' mapped to 'about'
+            'on side of' mapped to the average of ('on', 'side', 'of')
+            'wear a' mapped to the average of ('wear',)
+            'stand on' mapped to the average of ('stand', 'on')
+            'be on' mapped to the average of ('be', 'on')
+            'stand in' mapped to the average of ('stand', 'in')
+            'walk on' mapped to the average of ('walk', 'on')
+            'attach to' mapped to the average of ('attach',)
+            'in a' mapped to the average of ('in',)
+            'be in' mapped to the average of ('be', 'in')
+            'hang on' mapped to the average of ('hang', 'on')
+            'belong to' mapped to the average of ('belong',)
+              'of' mapped to 'about'
+            'on front of' mapped to the average of ('on', 'front', 'of')
+            'lay on' mapped to the average of ('lay', 'on')
+            'sit in' mapped to the average of ('sit', 'in')
+            'hang from' mapped to the average of ('hang', 'from')
+              'of' mapped to 'about'
+            'inside of' mapped to the average of ('inside', 'of')
+    	Loading embedding model '300'...
+            'have a' mapped to the average of ('have',)
+              'on top' mapped to the average of ('on', 'top')
+            'on top of' mapped to 'on top'
+            'of a' mapped to the average of ('of',)
+            'in front of' mapped to 'in_front'
+            'on side of' mapped to the average of ('on', 'side', 'of')
+            'wear a' mapped to the average of ('wear',)
+            'be on' mapped to the average of ('be', 'on')
+            'stand in' mapped to the average of ('stand', 'in')
+            'walk on' mapped to the average of ('walk', 'on')
+            'in a' mapped to the average of ('in',)
+            'be in' mapped to the average of ('be', 'in')
+            'hang on' mapped to the average of ('hang', 'on')
+            'belong to' mapped to the average of ('belong', 'to')
+            'on front of' mapped to the average of ('on', 'front', 'of')
+            'lay on' mapped to the average of ('lay', 'on')
+            'sit in' mapped to the average of ('sit', 'in')
+            'hang from' mapped to the average of ('hang', 'from')
+            'inside of' mapped to the average of ('inside', 'of')
+    	Loading embedding model 'glove-50'...
+        	'be in' mapped to the average of ('be', 'in')
+        	'be on' mapped to the average of ('be', 'on')
+        	'belong to' mapped to the average of ('belong', 'to')
+        	'hang from' mapped to the average of ('hang', 'from')
+        	'hang on' mapped to the average of ('hang', 'on')
+        	'have a' mapped to the average of ('have',)
+        	'in a' mapped to the average of ('in',)
+        	'in front of' mapped to 'in_front'
+        	'inside of' mapped to the average of ('inside', 'of')
+        	'lay on' mapped to the average of ('lay', 'on')
+        	'of a' mapped to the average of ('of',)
+        	'on front of' mapped to the average of ('on', 'front', 'of')
+        	'on side of' mapped to the average of ('on', 'side', 'of')
+        	  'on top' mapped to the average of ('on', 'top')
+        	'on top of' mapped to 'on top'
+        	'sit in' mapped to the average of ('sit', 'in')
+        	'stand in' mapped to the average of ('stand', 'in')
+        	'walk on' mapped to the average of ('walk', 'on')
+        	'wear a' mapped to the average of ('wear',)

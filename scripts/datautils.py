@@ -33,15 +33,13 @@ def save_pred2pred_diff(data_dir, model1, model2):
 
 def save_tuple_counts(data_dir):
 	a = {}
-
 	with open("{}/tuples-counts_train.json".format(data_dir), 'r') as f:
-	  counts = json.load(f)
+	  counts_train = json.load(f)
 	with open("{}/tuples-counts_test.json".format(data_dir), 'r') as f:
 	  counts_test = json.load(f)
 	with open("{}/tuples-counts_test_zs.json".format(data_dir), 'r') as f:
-		counts_test_zs = json.load(f)
-
-	for tuple_str,count in counts.items():
+	  counts_test_zs = json.load(f)
+	for tuple_str,count in counts_train.items():
 		a[tuple_str] = [count, 0, 0]
 	for tuple_str,count in counts_test.items():
 		if a.get(tuple_str) is None:
@@ -53,15 +51,17 @@ def save_tuple_counts(data_dir):
 			a[tuple_str] = [0, 0, count]
 		else:
 			a[tuple_str][2] = count
-
 	tuple_counts = []
 	for tuple_str,counts in a.items():
 		row = [tuple_str.replace(",", "")]
 		row += [counts[0]] + [counts[1]] + [counts[0]+counts[1]] + [counts[2]]
 		tuple_counts.append(row)
-	len(counts, counts_test, counts_test_zs, a)
+	print("counts: ", len(counts_train))
+	print("counts_test: ", len(counts_test))
+	print("counts_test_zs: ", len(counts_test_zs))
+	print("a: ", len(a))
 	np.savetxt("{}/tuple_counts.csv".format(data_dir), np.array(tuple_counts), delimiter=",", fmt="%s")
-
+	return a
 """
 save_pred2pred("data/vrd/all", "gnews");
 save_pred2pred("data/vrd/all", "300");

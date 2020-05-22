@@ -1,36 +1,6 @@
-IN THE MORNING:
-- tune 3,11 and 16 with bcel?
-- https://www.google.com/search?client=firefox-b-d&q=print+the+absolute+count+instead+of+the+recall+pointsgoo%3F
-- Fix test, test_zs counts
-- Find out if, with Pre ZS R@30 with gnews, the improvements are of a specific subset/type of predicates.
-- put on results for vg predcls
-- Then show the pre-predicate results, and justify the selection of a subset of predicates
-
-- focus on other types of predicates, see the behavior
-   NOTE: spatial predicates are all the same, semantically-wise
-- complete scan on vg (vrd_trainer.py?)
-- ? zs with respect to new predicates!
-
-
-- Scan SoftEmbRescore with only_sem 0,1,2,3 and all_feats
-- Poi vedi se funziona meglio con certi lr
-	With mode 1 (no logit), it can be tuned. A relu afterwards?
-  Mode 0 (logit) seems to f* everything up. Maybe a linear layer afterwards?
-
-
-# TODO: filter out relationships between the same object?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Use @20 instead of R@30 and compare to other works
-https://arxiv.org/pdf/2004.06193.pdf
-https://kevinstan.github.io/data/aesg_report.pdf
-https://arxiv.org/pdf/2004.06193.pdf
-
-
-Anotnym
+Antonyms
 https://arxiv.org/pdf/1605.07766.pdf
 http://tcci.ccf.org.cn/conference/2018/papers/141.pdf
-
-- Show the results with a randomly initialized untrained model.
 
 - create the matrix manually?
 	"on", "above", "on the top of",

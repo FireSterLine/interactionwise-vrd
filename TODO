@@ -1,4 +1,5 @@
 -TODO: add fallback embedding for:
+- TODO: filter out relationships between the same object? in prepare_data
 
 "street lamp"           : [],
 "ski pant"              : [],
