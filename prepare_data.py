@@ -940,10 +940,11 @@ if __name__ == '__main__':
     generate_embeddings = []
     #generate_embeddings = ["gnews", "50", "100", "coco-70-50", "coco-30-50"]
     #generate_embeddings = ["gnews"]
-    generate_embeddings = ["gnews", "300"]
+    #generate_embeddings = ["gnews", "300"]
     #generate_embeddings = ["gnews", "300", "glove-50"]
     #generate_embeddings = ["glove-50"]
-
+    generate_embeddings = ["coco-20-300", "coco-50-300"]
+    
     #""" VRD
     print("Preparing data for VRD")
     
