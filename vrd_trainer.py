@@ -576,8 +576,8 @@ if __name__ == "__main__":
   ## The following portion of code is useful for tuning the model
   ############################################################
 
-  scan_name = "v21-verify-v19"
-  v = 5
+  scan_name = "v22-scan-all-modes"
+  v = 2
   base_profile = ["pred_sem", "by_pred"]
   base_training = {"num_epochs" : 5, "test_freq" : [2,3,4]}
 
@@ -616,7 +616,7 @@ if __name__ == "__main__":
                 #  # For instance, "mlab_mse" indicates using the average of MultiLabelMarginLoss and MSELoss as the loss
                 for loss in ["mlab"]: # , "bcel"]: # , mlab_mse]:
                   # Dataset in use. "vrd", "vg" # TODO check if "vrd:spatial" works
-                  for dataset in ["vg"]: # "vrd:activities"]: # , "vrd:spatial", "vrd:activities"]:
+                  for dataset in ["vg"] # "vrd:activities"]: # "vg"]: # "vrd:activities"]: # , "vrd:spatial", "vrd:activities"]:
                     # Training profile to load. The profiles are listed in the ./cfgs/ folder, and they contain the options that are used to override the default ones (deafult.yml).
                     # Some examples are:
                     #  # "only_sem": Only uses semantic, "hides" visual and spatial features
@@ -624,11 +624,11 @@ if __name__ == "__main__":
                     #  # "sem_spat": Only uses semantic + spatial features, "hides" visual features
                     #  # "all_feats": Uses semantics + spatial + visual features
                     #  # "no_feat": Doesn't use features. Weird
-                    for profile_name in ["only_sem", "all_feats", "only_spat"]: # "only_sem_subdot", "only_sem_catdiff", "only_sem_catdot", "only_sem_diffdot"]: # ["only_spat", "spat_sem", "only_sem", False]: # , "vg"]:
+                    for profile_name in ["only_sem", "all_feats"]: # , "all_feats", "only_spat"]: # "only_sem_subdot", "only_sem_catdiff", "only_sem_catdot", "only_sem_diffdot"]: # ["only_spat", "spat_sem", "only_sem", False]: # , "vg"]:
                      # Predicate Semantics Mode, offset by one
                      #  # -1 indicates no use of predicate semantics;
                      #  # Values from 0 onwards indicate some of the different "modes" to introducte predicate semantics (e.g SemSim, Semantic Rescoring)
-                     for pred_sem_mode_1 in [-1, 11, 16]: #3, 16, -1, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
+                     for pred_sem_mode_1 in [-1, 1, 15, 29, 11, 43, 25, 21, 9]: # 0, 1, 2, 3, 8, 9, 10, 11, 12, 13, 14, 15] + list(range(16,16+32)): #3, 16, -1, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
                       if "mse" in loss and (pred_sem_mode_1 == -1 or pred_sem_mode_1>=16):
                         continue
 
