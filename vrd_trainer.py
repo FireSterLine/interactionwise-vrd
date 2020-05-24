@@ -577,17 +577,19 @@ if __name__ == "__main__":
   ############################################################
 
   scan_name = "v23-scan-vg"
+  if not osp.exists(scan_name):
+    os.mkdir(scan_name)
   v = 2
   base_profile = ["pred_sem", "by_pred"]
-  base_training = {"num_epochs" : 5, "test_freq" : [3,4]}
+  base_training = {"num_epochs" : 5, "test_freq" : [2,3,4]}
 
   # Feature scan: scans different combinations of the features
   if FEATURES_SCAN:
     # VRDTrainer("test-no_prior-no-features",  {"training" : {"test_first" : True, "loss" : "mlab_no_prior"}}, profile = base_profile + ["no_feat"]).train()
     # VRDTrainer("test-no_prior-only_vis",  {"training" : {"num_epochs" : 4, "loss" : "mlab_no_prior"}, "model" : {"feat_used" : {"sem" : 0, "spat" : 0}}}).train()
     # VRDTrainer("test-no_prior-only_sem",  {"training" : {"num_epochs" : 4, "loss" : "mlab_no_prior"}, "model" : {"feat_used" : {"vis" : False, "vis_so" : False, "spat" : 0}}}).train()
-    VRDTrainer("{}-test-no-features".format(scan_name),  {"training" : {"num_epochs" : 5, "test_freq" : [3,4], "test_first": True}}, profile = base_profile + ["no_feat"]).train()
-    VRDTrainer("{}-test-only_spat".format(scan_name),    {"training" : base_training}, profile = base_profile + ["only_spat"]).train()
+    VRDTrainer("{}/test-no-features".format(scan_name),  {"training" : {"num_epochs" : 5, "test_freq" : [2,3,4], "test_first": True}}, profile = base_profile + ["no_feat"]).train()
+    VRDTrainer("{}/test-only_spat".format(scan_name),    {"training" : base_training}, profile = base_profile + ["only_spat"]).train()
 
   # Parameters scan: scans parameter combinations
   if PARAMS_SCAN:
@@ -597,7 +599,7 @@ if __name__ == "__main__":
       #if FEATURES_SCAN:
       #  training = deepcopy(base_training)
       #  training["test_first"] = True
-      #  VRDTrainer("{}-test-only_sem-{}".format(scan_name, emb_model),  {"training" : training}, profile = base_profile + ["only_sem"]).train()
+      #  VRDTrainer("{}/test-only_sem-{}".format(scan_name, emb_model),  {"training" : training}, profile = base_profile + ["only_sem"]).train()
 
       # Default learning rate
       for lr in [0.0001]: # [0.001, 0.0001, 0.00001, 0.000001]:
@@ -616,7 +618,7 @@ if __name__ == "__main__":
                 #  # For instance, "mlab_mse" indicates using the average of MultiLabelMarginLoss and MSELoss as the loss
                 for loss in ["mlab"]: # , "bcel"]: # , mlab_mse]:
                   # Dataset in use. "vrd", "vg" # TODO check if "vrd:spatial" works
-                  for dataset in ["vg:150-50-50/activities", "vg:150-50-50/spatial"]: # "vrd:activities"]: # "vg"]: # "vrd:activities"]: # , "vrd:spatial", "vrd:activities"]:
+                  for dataset in ["vg:150-50-50=activities", "vg:150-50-50=spatial"]: # "vrd:activities"]: # "vg"]: # "vrd:activities"]: # , "vrd:spatial", "vrd:activities"]:
                     # Training profile to load. The profiles are listed in the ./cfgs/ folder, and they contain the options that are used to override the default ones (deafult.yml).
                     # Some examples are:
                     #  # "only_sem": Only uses semantic, "hides" visual and spatial features
@@ -633,7 +635,7 @@ if __name__ == "__main__":
                         continue
 
                       # Training session ID
-                      session_id = "{}-{}-{}-{}-{}-{}-{}-{},{:b}-{}-{}".format(scan_name, emb_model, profile_name, lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode_1, pred_sem_mode_1, dataset, loss)
+                      session_id = "{}/{}-{}-{}-{}-{}-{}-{},{:b}-{}-{}".format(scan_name, emb_model, profile_name, lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode_1, pred_sem_mode_1, dataset, loss)
                       print("Session: ", session_id)
 
                       pred_sem_mode = pred_sem_mode_1+1
@@ -646,9 +648,9 @@ if __name__ == "__main__":
                         #training = {"num_epochs" : 4, "test_freq" : [1,2,3]}
 
                       # More to learn with all_feats?
-                      if dataset == "vrd" and "all_feats" in profile and pred_sem_mode_1 >= 0 and pred_sem_mode_1 <= 16:
-                        training["num_epochs"] += 1
-                        training["test_freq"] = [x+1 for x in training["test_freq"]]
+                      #if dataset == "vrd" and "all_feats" in profile and pred_sem_mode_1 >= 0 and pred_sem_mode_1 <= 16:
+                      #  training["num_epochs"] += 1
+                      #  training["test_freq"] = [x+1 for x in training["test_freq"]]
 
                       training["loss"] = loss
 
@@ -657,7 +659,7 @@ if __name__ == "__main__":
                       #  # A dictionary specifying the options that override the profile
                       #  # A profile (string or list of strings) specifying the profile file(s) that are loaded and override(s) the default options (deafult.yml).
                       VRDTrainerRepeater(v, session_name = session_id, args = {
-                          "data" : { "name" : dataset, "emb_model" : emb_model},
+                          "data" : { "name" : dataset, "emb_model" : emb_model, "justafew" : True},
                           "training" : training,
                           "model" : {"use_pred_sem" : pred_sem_mode},
                           "eval" : {"test_pre" : True}, # "test_rel" : True},

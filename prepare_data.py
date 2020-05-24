@@ -405,7 +405,7 @@ class DataPreparer:
         for sub_idx in range(n_obj):
           for obj_idx in range(n_obj):
             for pred_idx in range(n_pred):
-              if sop_counts[sub_idx][obj_idx][pred_idx] > 0:
+              if sop_counts[sub_idx][obj_idx][pred_idx] > 0: # NOTE: the order is changed to (s,o,p)
                 counts[str([sub_idx,obj_idx,pred_idx])] = int(sop_counts[sub_idx][obj_idx][pred_idx])
         return counts
       self.writejson(get_tuple_counts(all_train_tuple_labels), "tuples-counts_{}.json".format("train"))
@@ -839,7 +839,7 @@ class VGPrep(DataPreparer):
             pred_label   = pred['predicate']
 
             rel_data = defaultdict(lambda: dict())
-            
+
             subject_id = self.get_clean_obj_cls(int(self.objects_label_to_id_mapping[subject_info['name']]))
             rel_data['subject']['name'] = self.obj_vocab[subject_id]
             rel_data['subject']['id']   = subject_id
