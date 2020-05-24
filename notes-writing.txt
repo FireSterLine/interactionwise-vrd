@@ -5,7 +5,7 @@
 
 - there are different types of predicates and word embeddings might behave differently for them.
 - they do, the two methods seem to work.
-- this makes sense because the spatial predicates
+- this makes sense because the spatial predicates NOTE: spatial predicates are all the same, semantically-wise
 - antonym problem for spatial predicates
 - separate the results for predicate semantics and embeddings
 - do the same with VG
@@ -17,14 +17,6 @@ IN THE MORNING:
 
 - Show the results with a randomly initialized untrained model.
 - put on results for vg predcls
-- complete scan on vg?
-- focus on other types of predicates, see the behavior
-   NOTE: spatial predicates are all the same, semantically-wise
-
-- fix 3 SoftEmbRescore and Scan SoftEmbRescore with only_sem 0,1,2,3 and all_feats
-- Poi vedi se funziona meglio con certi lr
-	With mode 1 (no logit), it can be tuned. A relu afterwards?
-  Mode 0 (logit) seems to f* everything up. Maybe a linear layer afterwards?
 
 - what if you just use the label as categorical vector as feature vector of the objects?
 
@@ -38,15 +30,17 @@ IN THE MORNING:
 
 *** Chapter 4: ***
 
-My main difficulty here is "seeing the forest and not just the trees". I feel that I need at least a clear section structure, but hopefully also some discussions of the various results, before I can see what you are trying to tell here, so that I can react and give my feedback.
+My main difficulty here is "seeing the forest and not just the trees".
+I feel that I need at least a clear section structure, but hopefully also some discussions of the various results,
+before I can see what you are trying to tell here, so that I can react and give my feedback.
 
-You have many results and tables and to help the reader understand the logic of this chapter, I think it would be a good idea to start the results chapter with some sort of roadmap.
+You have many results and tables and to help the reader understand the logic of this chapter,
+I think it would be a good idea to start the results chapter with some sort of roadmap.
 
-As I don't yet know the story you are trying to tell, I can't determine which results are the main ones and which are less important. But if you feel that there are too many numbers and tables, you might consider moving some tables into an appendix. You don't have to put everything that you have done into chapter 4. It's enough to include the results that illustrate your main points.
-
-(Trivial point about tables: might look a bit more visually appealing if you don't use 4 decimal positions in some of the tables...)
-
-You should probably have an additional conclusion chapter. (That is, 4.3 and 4.4 should become chapter 5.)
+As I don't yet know the story you are trying to tell,
+I can't determine which results are the main ones and which are less important.
+But if you feel that there are too many numbers and tables, you might consider moving some tables into an appendix.
+You don't have to put everything that you have done into chapter 4. It's enough to include the results that illustrate your main points.
 
 
 WRITING:

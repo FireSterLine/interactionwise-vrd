@@ -28,7 +28,9 @@
 		"walk on"       : "on",
 		"in a"          : "in",
 		"be in"         : "in",
-		"sit in"        : "in"
+		"sit in"        : "in",
+		"on front of"   : "in front of",
+		"inside"        : "inside of"
   },
   "pred_subset" : [
 			"on",
@@ -45,13 +47,11 @@
 			"at",
 			"by",
 			"over",
-			"on front of",
 			"around",
 			"below",
-			"inside",
+			"inside of",
 			"along",
 			"between",
-			"inside of",
 			"on",
       "next to",
       "sleep next to",

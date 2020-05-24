@@ -1,6 +1,7 @@
 {
   "__comment__" : "This map defines how the dataset is cleaned. Some predicates classes that would preferably be removed and transformed into other classes, and other that we want to filter out.",
   "pred_map" : {
+    "wear a"     :  "wear"
   },
   "pred_rename" : {
     "sit on"     :  "sit",
@@ -11,7 +12,6 @@
     "lying on"   :  "lying",
     "rest on"    :  "rest",
     "play with"  :  "play",
-    "wear a"     :  "wear",
     "sit on"     :  "sit",
     "rid"        :  "ride"
   },
