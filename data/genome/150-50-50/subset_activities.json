@@ -13,7 +13,7 @@
     "play with"  :  "play",
     "wear a"     :  "wear",
     "sit on"     :  "sit",
-    "rid"        :  "ride",
+    "rid"        :  "ride"
   },
   "pred_subset" : [
     "wear",
