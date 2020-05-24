@@ -476,7 +476,6 @@ class VRDPrep(DataPreparer):
       print("\tVRDPrep(subset : {}, multi-label : {}, generate_emb = {}, load_dsr = {})...".format(subset, multi_label, generate_emb, load_dsr))
 
       self.dir = "vrd"
-      self.subset = subset
 
       self.train_dsr = self.readpickle("train.pkl")
       self.test_dsr  = self.readpickle("test.pkl")
@@ -487,9 +486,9 @@ class VRDPrep(DataPreparer):
 
       # Subset determines subpath directory
       if not load_dsr:
-        self.outdir = "all" if self.subset == False else self.subset
+        self.outdir = "all" if subset == False else subset
       else:
-        assert self.subset == False, "Error. Using a subset will cause the vocabs to be different from DSR.".format(self.subset)
+        assert subset == False, "Error. Using a subset will cause the vocabs to be different from DSR.".format(subset)
         self.outdir = "dsr"
 
       # Clean directory
@@ -768,19 +767,28 @@ class VGPrep(DataPreparer):
 
         print("\tVGPrep(subset : {}, multi-label : {}, generate_emb = {})...".format(subset, multi_label, generate_emb))
 
-        num_objects, num_attributes, num_predicates = subset
+        num_objects, num_attributes, num_predicates, subset_map = subset
         self.dir = osp.join("genome", "{}-{}-{}".format(num_objects, num_attributes, num_predicates))
 
         self.data_format = "json"
         self.img_metadata_file_format = osp.join(self.data_format, "{{}}.{}".format(self.data_format))
         # if the path to metadata files does not exist, generate those files using VGCleaner
         if not osp.exists(self.fullpath(self.data_format)):
-            assert DRY_RUN == False, "Can't perform dry run when I need to run VGCleaner()"
-            print("\tGenerating {} files for VG relationships...".format(self.data_format))
-            cleaner = VGCleaner(num_objects, num_attributes, num_predicates, self.data_format)
-            cleaner.build_vocabs_and_json()
+          assert DRY_RUN == False, "Can't perform dry run when I need to run VGCleaner()"
+          print("\tGenerating {} files for VG relationships...".format(self.data_format))
+          cleaner = VGCleaner(num_objects, num_attributes, num_predicates, self.data_format)
+          cleaner.build_vocabs_and_json()
 
-        self.prepare_vocabs("objects_vocab.txt", "relations_vocab.txt")
+        self.prepare_vocabs("objects_vocab.txt", "relations_vocab.txt", subset_map)
+
+        self.outdir = "all" if subset_map == False else subset_map
+
+        # Clean directory
+        f = self.fullpath(self.outdir)
+        # if os.path.exists(f):
+        #   shutil.rmtree(f)
+        if not os.path.exists(f):
+          os.mkdir(f)
 
         # LOAD DATA
         print("\tLoad data...")
@@ -788,8 +796,8 @@ class VGPrep(DataPreparer):
         self.predicates_label_to_id_mapping = utils.invert_dict(self.pred_vocab)
 
         self.splits = {
-            "train" : [line.split(" ")[0] for line in utils.load_txt_list(self.fullpath("../train.txt"))],
-            "test"  : [line.split(" ")[0] for line in utils.load_txt_list(self.fullpath("../val.txt"))],
+          "train" : [line.split(" ")[0] for line in utils.load_txt_list(self.fullpath("../train.txt"))],
+          "test"  : [line.split(" ")[0] for line in utils.load_txt_list(self.fullpath("../val.txt"))],
         }
 
         vrd_data = {}
@@ -905,13 +913,13 @@ def getWordEmbedding(word, emb_model, model_name, depth=0):
 # Load embedding model
 def load_emb_model(model_name):
   print("Loading embedding model '{}'...".format(model_name))
-  
+
   # Lookup model in cache
   if not hasattr(load_emb_model, "cache"):
     load_emb_model.cache = {}
   if model_name in load_emb_model.cache:
     return load_emb_model.cache[model_name]
-  
+
   # Load model
   model_path = globals.emb_model_path(model_name)
   if model_name is "gnews":
@@ -927,7 +935,7 @@ def load_emb_model(model_name):
     # train_word2vec script, so the train_word2vec module needs to be in the path for them to load
     sys.path.append("./scripts")
     model = VRDEmbedding.load_model(model_path)
-  
+
   # Cache and return model
   load_emb_model.cache[model_name] = model
   return model
@@ -944,10 +952,10 @@ if __name__ == '__main__':
     #generate_embeddings = ["gnews", "300", "glove-50"]
     #generate_embeddings = ["glove-50"]
     generate_embeddings = ["gnews", "300"] # , "coco-20-300", "coco-50-300", "coco-100-300"]
-    
+
     #""" VRD
     print("Preparing data for VRD")
-    
+
     vrd_subsets = [False]
     #vrd_subsets = ["spatial", "activities"]
     vrd_subsets = [False, "spatial", "activities"]
@@ -958,11 +966,12 @@ if __name__ == '__main__':
 
     #""" VG
     print("Preparing data for VG")
-    subset = (150, 50, 50)
     #subset = (1600, 400, 20) # TODO: allow multi-word vocabs, so that we can load 1600-400-20_bottomup
-    data_preparer_vg = VGPrep(subset, multi_label=multi_label, generate_emb=generate_embeddings)
-    data_preparer_vg.save_data(["relst", "annos"])
-    # data_preparer_vg.save_data(["relst", ("relst", "rel"), "annos"])
+    vg_subsets = [(150, 50, 50, "all"), (150, 50, 50, "activities"), (150, 50, 50, "spatial")]
+    for vg_subset in vg_subsets:
+      data_preparer_vg = VGPrep(subset = vg_subset, multi_label=multi_label, generate_emb=generate_embeddings)
+      data_preparer_vg.save_data(["relst", "annos"])
+      # data_preparer_vg.save_data(["relst", ("relst", "rel"), "annos"])
     #"""
 
 
