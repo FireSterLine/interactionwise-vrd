@@ -70,7 +70,8 @@ class DataPreparer:
         self.already_wrote_something = False
         self.pred_resorted = False
         # TODO move soP computations from dataset.py to prepare_data.py
-        self.to_delete = ["soP.pkl", "pP.pkl"]
+        self.to_delete = [] #["soP.pkl", "pP.pkl"]
+        #self.to_delete = ["soP.pkl", "pP.pkl"]
 
     # This function reads the dataset's vocab txt files and loads them
     def prepare_vocabs(self, obj_vocab_file, pred_vocab_file, subset = False):
@@ -78,7 +79,7 @@ class DataPreparer:
         obj_vocab  = utils.load_txt_list(self.fullpath(obj_vocab_file))
         pred_vocab = utils.load_txt_list(self.fullpath(pred_vocab_file))
 
-        if subset is not False:
+        if subset is not False and subset != "all":
           subset_mapping = self.readjson("subset_{}.json".format(subset))
           def rename_vocab(cls_vocab, rename_map):
             if rename_map is None: return
@@ -110,6 +111,16 @@ class DataPreparer:
     # These functions are used for each different "dataset source" to convert the annotations to our formats
     def _generate_relst(self, anns): raise NotImplementedError
     def _generate_annos(self, anns): raise NotImplementedError
+    
+    def get_clean_obj_cls(self,  cls): # TODO: validate this
+      return self.subset_mapping["obj"].get(cls, None) if (hasattr(self, "subset_mapping") and "obj" in self.subset_mapping) else cls
+    def get_clean_pred_cls(self, cls):
+      if self.pred_resorted: print("ERROR! Can't read more data when predicates have been resorted")
+      #print(self.subset_mapping["pred"])
+      #print(cls)
+      #print(self.subset_mapping["pred"][cls])
+      return self.subset_mapping["pred"].get(cls, None) if (hasattr(self, "subset_mapping") and "pred" in self.subset_mapping) else cls
+
 
     def _read_data_check(self):
       if self.pred_resorted:
@@ -505,15 +516,6 @@ class VRDPrep(DataPreparer):
       else:
         self.load_vrd()
 
-    def get_clean_obj_cls(self,  cls): # TODO: validate this
-      return self.subset_mapping["obj"].get(cls, None) if (hasattr(self, "subset_mapping") and "obj" in self.subset_mapping) else cls
-    def get_clean_pred_cls(self, cls):
-      if self.pred_resorted: print("ERROR! Can't read more data when predicates have been resorted")
-      #print(self.subset_mapping["pred"])
-      #print(cls)
-      #print(self.subset_mapping["pred"][cls])
-      return self.subset_mapping["pred"].get(cls, None) if (hasattr(self, "subset_mapping") and "pred" in self.subset_mapping) else cls
-
     def load_vrd(self):
       print("\tLoad VRD data...")
 
@@ -823,7 +825,7 @@ class VGPrep(DataPreparer):
         self._read_data_check()
         objects_info = {}
         for obj in data['objects']:
-            obj_id = obj['object_id']
+            obj_id = self.get_clean_obj_cls(obj['object_id'])
             objects_info[obj_id] = {
                 'name': obj['name'][0],
                 'bbox': {k: int(v) for k, v in obj['bndbox'].items()}
@@ -832,20 +834,23 @@ class VGPrep(DataPreparer):
         relst = []
         for pred in data['relations']:
             subject_info = objects_info[pred['subject_id']]
-            object_info = objects_info[pred['object_id']]
-            pred_label = pred['predicate']
+            object_info  = objects_info[pred['object_id']]
+            pred_label   = pred['predicate']
 
             rel_data = defaultdict(lambda: dict())
-            rel_data['subject']['name'] = subject_info['name']
-            rel_data['subject']['id'] = self.objects_label_to_id_mapping[subject_info['name']]
+            rel_data['subject']['id']   = self.get_clean_obj_cls(int(self.objects_label_to_id_mapping[subject_info['name']]))
+            rel_data['subject']['name'] = self.obj_vocab[rel_data['subject']['id']]
             rel_data['subject']['bbox'] = subject_info['bbox']
 
-            rel_data['object']['name'] = object_info['name']
-            rel_data['object']['id'] = self.objects_label_to_id_mapping[object_info['name']]
+            rel_data['object']['id']   = self.get_clean_obj_cls(int(self.objects_label_to_id_mapping[object_info['name']]))
+            rel_data['object']['name'] = self.obj_vocab[rel_data['object']['id']]
             rel_data['object']['bbox'] = object_info['bbox']
-
-            rel_data['predicate']['name'] = [pred_label]
-            rel_data['predicate']['id'] = [self.predicates_label_to_id_mapping[pred_label]]
+       
+            predicate_id = self.get_clean_pred_cls(int(self.predicates_label_to_id_mapping[pred_label]))
+            if predicate_id is None: continue
+            predicate_label = self.pred_vocab[predicate_id]
+            rel_data['predicate']['id'] = [predicate_id]
+            rel_data['predicate']['name'] = [predicate_label]
 
             # Add to the relationships list
             if not self.multi_label:
@@ -953,7 +958,7 @@ if __name__ == '__main__':
     #generate_embeddings = ["glove-50"]
     generate_embeddings = ["gnews", "300"] # , "coco-20-300", "coco-50-300", "coco-100-300"]
 
-    #""" VRD
+    """ VRD
     print("Preparing data for VRD")
 
     vrd_subsets = [False]
@@ -968,6 +973,7 @@ if __name__ == '__main__':
     print("Preparing data for VG")
     #subset = (1600, 400, 20) # TODO: allow multi-word vocabs, so that we can load 1600-400-20_bottomup
     vg_subsets = [(150, 50, 50, "all"), (150, 50, 50, "activities"), (150, 50, 50, "spatial")]
+    vg_subsets = [(150, 50, 50, "activities"), (150, 50, 50, "spatial")]
     for vg_subset in vg_subsets:
       data_preparer_vg = VGPrep(subset = vg_subset, multi_label=multi_label, generate_emb=generate_embeddings)
       data_preparer_vg.save_data(["relst", "annos"])
