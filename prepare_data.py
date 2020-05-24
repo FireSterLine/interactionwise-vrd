@@ -79,6 +79,9 @@ class DataPreparer:
         obj_vocab  = utils.load_txt_list(self.fullpath(obj_vocab_file))
         pred_vocab = utils.load_txt_list(self.fullpath(pred_vocab_file))
 
+        self.objects_label_to_id_mapping    = utils.invert_dict(obj_vocab)
+        self.predicates_label_to_id_mapping = utils.invert_dict(pred_vocab)
+
         if subset is not False and subset != "all":
           subset_mapping = self.readjson("subset_{}.json".format(subset))
           def rename_vocab(cls_vocab, rename_map):
@@ -111,7 +114,7 @@ class DataPreparer:
     # These functions are used for each different "dataset source" to convert the annotations to our formats
     def _generate_relst(self, anns): raise NotImplementedError
     def _generate_annos(self, anns): raise NotImplementedError
-    
+
     def get_clean_obj_cls(self,  cls): # TODO: validate this
       return self.subset_mapping["obj"].get(cls, None) if (hasattr(self, "subset_mapping") and "obj" in self.subset_mapping) else cls
     def get_clean_pred_cls(self, cls):
@@ -794,8 +797,6 @@ class VGPrep(DataPreparer):
 
         # LOAD DATA
         print("\tLoad data...")
-        self.objects_label_to_id_mapping    = utils.invert_dict(self.obj_vocab)
-        self.predicates_label_to_id_mapping = utils.invert_dict(self.pred_vocab)
 
         self.splits = {
           "train" : [line.split(" ")[0] for line in utils.load_txt_list(self.fullpath("../train.txt"))],
@@ -845,7 +846,7 @@ class VGPrep(DataPreparer):
             rel_data['object']['id']   = self.get_clean_obj_cls(int(self.objects_label_to_id_mapping[object_info['name']]))
             rel_data['object']['name'] = self.obj_vocab[rel_data['object']['id']]
             rel_data['object']['bbox'] = object_info['bbox']
-       
+
             predicate_id = self.get_clean_pred_cls(int(self.predicates_label_to_id_mapping[pred_label]))
             if predicate_id is None: continue
             predicate_label = self.pred_vocab[predicate_id]
