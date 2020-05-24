@@ -616,7 +616,7 @@ if __name__ == "__main__":
                 #  # For instance, "mlab_mse" indicates using the average of MultiLabelMarginLoss and MSELoss as the loss
                 for loss in ["mlab"]: # , "bcel"]: # , mlab_mse]:
                   # Dataset in use. "vrd", "vg" # TODO check if "vrd:spatial" works
-                  for dataset in ["vg"] # "vrd:activities"]: # "vg"]: # "vrd:activities"]: # , "vrd:spatial", "vrd:activities"]:
+                  for dataset in ["vg"]: # "vrd:activities"]: # "vg"]: # "vrd:activities"]: # , "vrd:spatial", "vrd:activities"]:
                     # Training profile to load. The profiles are listed in the ./cfgs/ folder, and they contain the options that are used to override the default ones (deafult.yml).
                     # Some examples are:
                     #  # "only_sem": Only uses semantic, "hides" visual and spatial features
