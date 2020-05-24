@@ -424,3 +424,13 @@ python gen_obj_det.py --dataset vg --net res101 \
                    --cut_predictions_at $CUT_AT \
                    --checksession $SESSION --checkepoch $EPOCH --checkpoint $CHECKPOINT \
                    --cuda --vis
+
+
+
+filename = "../../vrd/all/data_annos_img_train.json"
+with open(filename, 'r') as f:
+  train = json.load(f)
+
+filename = "../../vrd/all/data_annos_img_test.json"
+with open(filename, 'r') as f:
+  test = json.load(f)

@@ -1,0 +1,174 @@
+VRD
+
+gnews
+	'traffic light' mapped to 'stoplight'
+	'trash can' mapped to 'trashcan'
+	'next to' mapped to 'next'
+	'in the front of' mapped to 'front'
+	'of' mapped to 'about'
+	'on left of' mapped to the average of ('on', 'left', 'of')
+	'on the left of' mapped to 'on left of'
+	'of' mapped to 'about'
+	'on right of' mapped to the average of ('on', 'right', 'of')
+	'on the right of' mapped to 'on right of'
+	'sit on' mapped to the average of ('sit', 'on')
+	'on top' mapped to the average of ('on', 'top')
+	'on top of' mapped to 'on top'
+	'on the top of' mapped to 'on top of'
+	'stand next' mapped to the average of ('stand', 'next')
+	'stand next to' mapped to 'stand next'
+	'stand on' mapped to the average of ('stand', 'on')
+	'sit next' mapped to the average of ('sit', 'next')
+	'sit next to' mapped to 'sit next'
+	'attach to' mapped to the average of ('attach',)
+	'park next' mapped to the average of ('park', 'next')
+	'taller than' mapped to 'taller'
+	'adjacent to' mapped to the average of ('adjacent',)
+	'park on' mapped to the average of ('park', 'on')
+	'walk to' mapped to the average of ('walk',)
+	'lean on' mapped to the average of ('lean', 'on')
+	'lying on' mapped to the average of ('lying', 'on')
+	'play with' mapped to 'play'
+	'sleep on' mapped to the average of ('sleep', 'on')
+	'drive on' mapped to the average of ('drive', 'on')
+	'stand behind' mapped to the average of ('stand', 'behind')
+	'sit behind' mapped to the average of ('sit', 'behind')
+	'rest on' mapped to the average of ('rest', 'on')
+	'lying on' mapped to the average of ('lying', 'on')
+	'play with' mapped to 'play'
+	'sleep on' mapped to the average of ('sleep', 'on')
+	'drive on' mapped to the average of ('drive', 'on')
+	'stand behind' mapped to the average of ('stand', 'behind')
+	'sit behind' mapped to the average of ('sit', 'behind')
+	'rest on' mapped to the average of ('rest', 'on')
+	  'of' mapped to 'about'
+	'outside of' mapped to the average of ('outside', 'of')
+	  'walk next' mapped to the average of ('walk', 'next')
+	'walk next to' mapped to 'walk next'
+	'stand under' mapped to the average of ('stand', 'under')
+	'skate on' mapped to the average of ('skate', 'on')
+	  'sleep next' mapped to the average of ('sleep', 'next')
+	'sleep next to' mapped to 'sleep next'
+	'walk beside' mapped to the average of ('walk', 'beside')
+	'sit under' mapped to the average of ('sit', 'under')
+	'walk past' mapped to the average of ('walk', 'past')
+	'park behind' mapped to the average of ('park', 'behind')
+	Loading embedding model '300'...
+	  'stand next' mapped to the average of ('stand', 'next')
+	'stand next to' mapped to 'stand next'
+	  'sit next' mapped to the average of ('sit', 'next')
+	'sit next to' mapped to 'sit next'
+	  'walk next' mapped to the average of ('walk', 'next')
+	'walk next to' mapped to 'walk next'
+	  'sleep next' mapped to the average of ('sleep', 'next')
+
+300 has them ALL
+
+COCOs
+	'stand next' mapped to the average of ('stand', 'next')
+	'stand next to' mapped to 'stand next'
+	'sit next' mapped to the average of ('sit', 'next')
+	'sit next to' mapped to 'sit next'
+	'walk next' mapped to the average of ('walk', 'next')
+	'walk next to' mapped to 'walk next'
+	'sleep next' mapped to the average of ('sleep', 'next')
+	'sleep next to' mapped to 'sleep next'
+
+VRD/SPATIAL
+
+GNEWS
+	'traffic light' mapped to 'stoplight'
+	'trash can' mapped to 'trashcan'
+	'next to' mapped to 'next'
+	'in the front of' mapped to 'front'
+	    'of' mapped to 'about'
+	  'on left of' mapped to the average of ('on', 'left', 'of')
+	'on the left of' mapped to 'on left of'
+	    'of' mapped to 'about'
+	  'on right of' mapped to the average of ('on', 'right', 'of')
+	'on the right of' mapped to 'on right of'
+	    'on top' mapped to the average of ('on', 'top')
+	  'on top of' mapped to 'on top'
+	'on the top of' mapped to 'on top of'
+	'adjacent to' mapped to the average of ('adjacent',)
+	  'of' mapped to 'about'
+	'outside of' mapped to the average of ('outside', 'of')
+
+COCO ALL
+
+VRD/ACTIVITIES: EVERY MODEL EMBEDDING HAS THEM ALL
+
+VG
+
+gnews
+	'of' mapped to 'about'
+	'on a' mapped to the average of ('on',)
+	'have a' mapped to the average of ('have',)
+	'next to' mapped to 'next'
+	  'on top' mapped to the average of ('on', 'top')
+	'on top of' mapped to 'on top'
+	  'of' mapped to 'about'
+	'of a' mapped to the average of ('of',)
+	'sit on' mapped to the average of ('sit', 'on')
+	'in front of' mapped to 'front'
+	  'of' mapped to 'about'
+	'on side of' mapped to the average of ('on', 'side', 'of')
+	'wear a' mapped to the average of ('wear',)
+	'stand on' mapped to the average of ('stand', 'on')
+	'be on' mapped to the average of ('be', 'on')
+	'stand in' mapped to the average of ('stand', 'in')
+	'walk on' mapped to the average of ('walk', 'on')
+	'attach to' mapped to the average of ('attach',)
+	'in a' mapped to the average of ('in',)
+	'be in' mapped to the average of ('be', 'in')
+	'hang on' mapped to the average of ('hang', 'on')
+	'belong to' mapped to the average of ('belong',)
+	  'of' mapped to 'about'
+	'on front of' mapped to the average of ('on', 'front', 'of')
+	'lay on' mapped to the average of ('lay', 'on')
+	'sit in' mapped to the average of ('sit', 'in')
+	'hang from' mapped to the average of ('hang', 'from')
+	  'of' mapped to 'about'
+	'inside of' mapped to the average of ('inside', 'of')
+
+300
+	'have a' mapped to the average of ('have',)
+	  'on top' mapped to the average of ('on', 'top')
+	'on top of' mapped to 'on top'
+	'of a' mapped to the average of ('of',)
+	'in front of' mapped to 'in_front'
+	'on side of' mapped to the average of ('on', 'side', 'of')
+	'wear a' mapped to the average of ('wear',)
+	'be on' mapped to the average of ('be', 'on')
+	'stand in' mapped to the average of ('stand', 'in')
+	'walk on' mapped to the average of ('walk', 'on')
+	'in a' mapped to the average of ('in',)
+	'be in' mapped to the average of ('be', 'in')
+	'hang on' mapped to the average of ('hang', 'on')
+	'belong to' mapped to the average of ('belong', 'to')
+	'on front of' mapped to the average of ('on', 'front', 'of')
+	'lay on' mapped to the average of ('lay', 'on')
+	'sit in' mapped to the average of ('sit', 'in')
+	'hang from' mapped to the average of ('hang', 'from')
+	'inside of' mapped to the average of ('inside', 'of')
+
+COCOs
+	'have a' mapped to the average of ('have',)
+	  'on top' mapped to the average of ('on', 'top')
+	'on top of' mapped to 'on top'
+	'of a' mapped to the average of ('of',)
+	'in front of' mapped to 'in_front'
+	'on side of' mapped to the average of ('on', 'side', 'of')
+	'wear a' mapped to the average of ('wear',)
+	'be on' mapped to the average of ('be', 'on')
+	'stand in' mapped to the average of ('stand', 'in')
+	'walk on' mapped to the average of ('walk', 'on')
+	'in a' mapped to the average of ('in',)
+	'be in' mapped to the average of ('be', 'in')
+	'hang on' mapped to the average of ('hang', 'on')
+	'belong to' mapped to the average of ('belong', 'to')
+	'on front of' mapped to the average of ('on', 'front', 'of')
+	'lay on' mapped to the average of ('lay', 'on')
+	'sit in' mapped to the average of ('sit', 'in')
+	'hang from' mapped to the average of ('hang', 'from')
+	'inside of' mapped to the average of ('inside', 'of')
