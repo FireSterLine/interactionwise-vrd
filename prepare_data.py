@@ -770,13 +770,13 @@ class VGPrep(DataPreparer):
         num_objects, num_attributes, num_predicates, subset_map = subset
         self.dir = osp.join("genome", "{}-{}-{}".format(num_objects, num_attributes, num_predicates))
 
-        self.data_format = "json"
-        self.img_metadata_file_format = osp.join(self.data_format, "{{}}.{}".format(self.data_format))
+        data_format = "json"
+        self.img_metadata_file_format = osp.join(data_format, "{{}}.{}".format(data_format))
         # if the path to metadata files does not exist, generate those files using VGCleaner
-        if not osp.exists(self.fullpath(self.data_format)):
+        if not osp.exists(self.fullpath(data_format)):
           assert DRY_RUN == False, "Can't perform dry run when I need to run VGCleaner()"
-          print("\tGenerating {} files for VG relationships...".format(self.data_format))
-          cleaner = VGCleaner(num_objects, num_attributes, num_predicates, self.data_format)
+          print("\tGenerating {} files for VG relationships...".format(data_format))
+          cleaner = VGCleaner(num_objects, num_attributes, num_predicates, data_format)
           cleaner.build_vocabs_and_json()
 
         self.prepare_vocabs("objects_vocab.txt", "relations_vocab.txt", subset_map)
