@@ -70,8 +70,7 @@ class DataPreparer:
         self.already_wrote_something = False
         self.pred_resorted = False
         # TODO move soP computations from dataset.py to prepare_data.py
-        self.to_delete = [] #["soP.pkl", "pP.pkl"]
-        #self.to_delete = ["soP.pkl", "pP.pkl"]
+        self.to_delete = ["soP.pkl", "pP.pkl"]
 
     # This function reads the dataset's vocab txt files and loads them
     def prepare_vocabs(self, obj_vocab_file, pred_vocab_file, subset = False):
@@ -840,19 +839,22 @@ class VGPrep(DataPreparer):
             pred_label   = pred['predicate']
 
             rel_data = defaultdict(lambda: dict())
-            rel_data['subject']['id']   = self.get_clean_obj_cls(int(self.objects_label_to_id_mapping[subject_info['name']]))
-            rel_data['subject']['name'] = self.obj_vocab[rel_data['subject']['id']]
+            
+            subject_id = self.get_clean_obj_cls(int(self.objects_label_to_id_mapping[subject_info['name']]))
+            rel_data['subject']['name'] = self.obj_vocab[subject_id]
+            rel_data['subject']['id']   = subject_id
             rel_data['subject']['bbox'] = subject_info['bbox']
 
-            rel_data['object']['id']   = self.get_clean_obj_cls(int(self.objects_label_to_id_mapping[object_info['name']]))
-            rel_data['object']['name'] = self.obj_vocab[rel_data['object']['id']]
+            object_id = self.get_clean_obj_cls(int(self.objects_label_to_id_mapping[object_info['name']]))
+            rel_data['object']['name'] = self.obj_vocab[object_id]
+            rel_data['object']['id']   = object_id
             rel_data['object']['bbox'] = object_info['bbox']
 
             predicate_id = self.get_clean_pred_cls(int(self.predicates_label_to_id_mapping[pred_label]))
             if predicate_id is None: continue
             predicate_label = self.pred_vocab[predicate_id]
-            rel_data['predicate']['id'] = [predicate_id]
             rel_data['predicate']['name'] = [predicate_label]
+            rel_data['predicate']['id'] = [predicate_id]
 
             # Add to the relationships list
             if not self.multi_label:
@@ -958,7 +960,7 @@ if __name__ == '__main__':
     #generate_embeddings = ["gnews", "300"]
     #generate_embeddings = ["gnews", "300", "glove-50"]
     #generate_embeddings = ["glove-50"]
-    #generate_embeddings = ["gnews", "300"] # , "coco-20-300", "coco-50-300", "coco-100-300"]
+    generate_embeddings = ["gnews", "300"] # , "coco-20-300", "coco-50-300", "coco-100-300"]
 
     """ VRD
     print("Preparing data for VRD")
