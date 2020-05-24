@@ -98,8 +98,9 @@ class DataPreparer:
                 new_vocab.append(cls)
                 cls_map[i_old_cls] = len(new_vocab)-1
             for cls,to_cls in cl_map.items():
-              if (len(cl_subset) == 0 or to_cls in cl_subset):
-                cls_map[cls_vocab.index(cls)] = new_vocab.index(to_cls)
+              if cls in cls_vocab:
+                if (len(cl_subset) == 0 or to_cls in cl_subset):
+                  cls_map[cls_vocab.index(cls)] = new_vocab.index(to_cls)
             return new_vocab, cls_map
           # assert subset_mapping["obj_map"] == {}, "NotImplemented: A cleaning map for objects requires some preprocessing to the object_detections as well, if not a re-train of the object detection model. Better not touch these things."
           # obj_vocab,  obj_cls_map  = cleaned_vocab(obj_vocab,  subset_mapping["obj_map"])
@@ -957,7 +958,7 @@ if __name__ == '__main__':
     #generate_embeddings = ["gnews", "300"]
     #generate_embeddings = ["gnews", "300", "glove-50"]
     #generate_embeddings = ["glove-50"]
-    generate_embeddings = ["gnews", "300"] # , "coco-20-300", "coco-50-300", "coco-100-300"]
+    #generate_embeddings = ["gnews", "300"] # , "coco-20-300", "coco-50-300", "coco-100-300"]
 
     """ VRD
     print("Preparing data for VRD")
@@ -974,7 +975,8 @@ if __name__ == '__main__':
     print("Preparing data for VG")
     #subset = (1600, 400, 20) # TODO: allow multi-word vocabs, so that we can load 1600-400-20_bottomup
     vg_subsets = [(150, 50, 50, "all"), (150, 50, 50, "activities"), (150, 50, 50, "spatial")]
-    vg_subsets = [(150, 50, 50, "activities"), (150, 50, 50, "spatial")]
+    #vg_subsets = [(150, 50, 50, "activities"), (150, 50, 50, "spatial")]
+    #vg_subsets = [(150, 50, 50, "spatial")]
     for vg_subset in vg_subsets:
       data_preparer_vg = VGPrep(subset = vg_subset, multi_label=multi_label, generate_emb=generate_embeddings)
       data_preparer_vg.save_data(["relst", "annos"])
