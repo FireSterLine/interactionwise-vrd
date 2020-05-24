@@ -46,7 +46,7 @@ class VRDDataset():
 
     if self.subset == None:
       default_subsets = {
-        "vg"  : "150-50-50", # "1600-400-20", "2500-1000-500"
+        "vg"  : "150-50-50/all", # "1600-400-20", "2500-1000-500"
         "vrd" : "all"
       }
       self.subset = default_subsets[self.name]
@@ -64,7 +64,7 @@ class VRDDataset():
     elif self.name == "vg":
 
       self.img_dir = osp.join(globals.data_dir, "vg")
-      self.metadata_dir = osp.join(globals.data_dir, "genome", self.subset)
+      self.metadata_dir = osp.join(globals.data_dir, "genome", osp.join(*self.subset.split("/")))
 
     else:
       raise Exception("Unknown dataset: {}".format(self.name))
