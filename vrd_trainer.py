@@ -623,7 +623,7 @@ if __name__ == "__main__":
                 #  # For instance, "mlab_mse" indicates using the average of MultiLabelMarginLoss and MSELoss as the loss
                 for loss in ["mlab"]: # , "bcel"]: # , mlab_mse]:
                   # Dataset in use. "vrd", "vg" # TODO check if "vrd:spatial" works
-                  for dataset in ["vrd:all", "vrd:spatial", "vrd:activities", "vg:150-50-50=all", "vg:150-50-50=spatial", "vg:150-50-50=activities"]: # "vg:150-50-50=activities", "vg:150-50-50=spatial"]: #, "vrd:activities"]:
+                  for dataset in ["vrd:activities", "vg:150-50-50=all", "vg:150-50-50=spatial", "vg:150-50-50=activities"]: # "vg:150-50-50=activities", "vg:150-50-50=spatial"]: #, "vrd:activities"]:
                     profiles_to_scan = ["all_feats"]
                     if "all" in dataset:
                       profiles_to_scan = ["no_feat", "all_feats", "only_sem"]
