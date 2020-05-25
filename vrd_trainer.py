@@ -581,7 +581,7 @@ if __name__ == "__main__":
     os.mkdir(osp.join(globals.models_dir, scan_name))
   def get_v(dataset):
     if "vrd" in dataset:
-      return 5
+      return 3
     elif "vg" in dataset:
       return 2
     else: raise ValueError()
