@@ -103,13 +103,11 @@ VG/ACTIVITIES: gnews, 300 have them all
 VG/SPATIAL:
 	gnews
 		'next to' mapped to 'next'
-		  'on top' mapped to the average of ('on', 'top')
+	    'on top' mapped to the average of ('on', 'top')
 		'on top of' mapped to 'on top'
 		'in front of' mapped to 'front'
 		  'of' mapped to 'about'
 		'on side of' mapped to the average of ('on', 'side', 'of')
-		  'of' mapped to 'about'
-		'on front of' mapped to the average of ('on', 'front', 'of')
 		  'of' mapped to 'about'
 		'inside of' mapped to the average of ('inside', 'of')
 	300
@@ -117,11 +115,10 @@ VG/SPATIAL:
 		'on top of' mapped to 'on top'
 		'in front of' mapped to 'in_front'
 		'on side of' mapped to the average of ('on', 'side', 'of')
-		'on front of' mapped to the average of ('on', 'front', 'of')
 		'inside of' mapped to the average of ('inside', 'of')
 
 
-VG
+VG/ALL:
 
 gnews
 	'of' mapped to 'about'

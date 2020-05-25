@@ -6,7 +6,11 @@ def add_heatmap_labels(matrix, data_dir, indices = None):
 	filename = "{}/predicates.json".format(data_dir)
 	with open(filename, 'r') as f:
 		predicates = json.load(f)
-	#
+
+	# Avoid bright spots
+	for i in range(len(predicates)):
+		matrix[i][i] = 0
+
 	if indices is not None:
 		predicates = np.array(predicates)[indices].tolist()
 	b = [[predicates[i], predicates[i]] + row for i,row in enumerate(matrix.tolist())]
@@ -132,5 +136,10 @@ save_pred2pred("data/vrd/all", "glove-50")
 save_pred2pred_diff("data/vrd/all", "glove-50", "50")
 
 save_tuple_counts("data/vrd/all")
+save_tuple_counts("data/vrd/spatial")
+save_tuple_counts("data/vrd/activities")
+save_tuple_counts("data/genome/150-50-50/all")
+save_tuple_counts("data/genome/150-50-50/spatial")
+save_tuple_counts("data/genome/150-50-50/activities")
 
 """
