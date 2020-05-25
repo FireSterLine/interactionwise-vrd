@@ -576,7 +576,7 @@ if __name__ == "__main__":
   ## The following portion of code is useful for tuning the model
   ############################################################
 
-  scan_name = "v24-terascan"
+  scan_name = "v25-terascan-embeddings"
   if not osp.exists(osp.join(globals.models_dir, scan_name)):
     os.mkdir(osp.join(globals.models_dir, scan_name))
   def get_v(dataset):
@@ -600,7 +600,7 @@ if __name__ == "__main__":
   if PARAMS_SCAN:
     print("PARAMS_SCAN")
     # Name of the embedding model in use
-    for emb_model in ["gnews"]: #coco-20-300", "coco-50-300"]: #, "gnews"]: # gnews, "300", "glove-50" "50", "coco-70-50", "coco-30-50", "100"]:
+    for emb_model in ["gnews", "300", "glove", "coco-100-300", "gloco-100-300", "coco-50-300", "gloco-50-300", "coco-20-300", "gloco-20-300"]:
       #if FEATURES_SCAN:
       #  training = deepcopy(base_training)
       #  training["test_first"] = True
@@ -623,10 +623,8 @@ if __name__ == "__main__":
                 #  # For instance, "mlab_mse" indicates using the average of MultiLabelMarginLoss and MSELoss as the loss
                 for loss in ["mlab"]: # , "bcel"]: # , mlab_mse]:
                   # Dataset in use. "vrd", "vg" # TODO check if "vrd:spatial" works
-                  for dataset in ["vrd:all", "vrd:spatial", "vrd:activities", "vg:150-50-50=all", "vg:150-50-50=spatial", "vg:150-50-50=activities"]: # "vg:150-50-50=activities", "vg:150-50-50=spatial"]: #, "vrd:activities"]:
+                  for dataset in ["vrd:all", "vrd:activities"]: # "vg:150-50-50=activities", "vg:150-50-50=spatial"]: #, "vrd:activities"]:
                     profiles_to_scan = ["all_feats"]
-                    if "all" in dataset:
-                      profiles_to_scan = ["no_feat", "all_feats", "only_sem"]
                     # Training profile to load. The profiles are listed in the ./cfgs/ folder, and they contain the options that are used to override the default ones (deafult.yml).
                     # Some examples are:
                     #  # "only_sem": Only uses semantic, "hides" visual and spatial features
@@ -667,7 +665,7 @@ if __name__ == "__main__":
 
                         test_rel = False
                         if "activities" in dataset:
-                          training["test_first"] = True
+                          # training["test_first"] = True
                           test_rel = True
 
                         # A training session takes:

@@ -965,7 +965,7 @@ if __name__ == '__main__':
     #generate_embeddings = ["gnews", "50", "100", "coco-70-50", "coco-30-50"]
     #generate_embeddings = ["gnews"]
     #generate_embeddings = ["gnews", "300"]
-    #generate_embeddings = ["glove-300", "gloco-100-300"]
+    #generate_embeddings = ["glove-300"]
     generate_embeddings = ["gnews", "300", "gloco-100-300"]
     #generate_embeddings = ["gloco-20-300", "gloco-50-300", "coco-100-300"]
 
@@ -980,7 +980,7 @@ if __name__ == '__main__':
       data_preparer_vrd.save_data(["relst", "annos"])
     #"""
 
-    #""" VG
+    """ VG
     print("Preparing data for VG")
     #subset = (1600, 400, 20) # TODO: allow multi-word vocabs, so that we can load 1600-400-20_bottomup
     vg_subsets = [(150, 50, 50, "all"), (150, 50, 50, "activities"), (150, 50, 50, "spatial")]
