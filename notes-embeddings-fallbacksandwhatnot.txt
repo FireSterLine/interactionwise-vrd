@@ -116,7 +116,12 @@ VG/SPATIAL:
 		'in front of' mapped to 'in_front'
 		'on side of' mapped to the average of ('on', 'side', 'of')
 		'inside of' mapped to the average of ('inside', 'of')
-
+	COCO
+		'on top' mapped to the average of ('on', 'top')
+	'on top of' mapped to 'on top'
+	'in front of' mapped to 'in_front'
+	'on side of' mapped to the average of ('on', 'side', 'of')
+	'inside of' mapped to the average of ('inside', 'of')
 
 VG/ALL:
 

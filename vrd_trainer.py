@@ -576,10 +576,15 @@ if __name__ == "__main__":
   ## The following portion of code is useful for tuning the model
   ############################################################
 
-  scan_name = "v23-scan-vg"
+  scan_name = "v24-terascan"
   if not osp.exists(osp.join(globals.models_dir, scan_name)):
     os.mkdir(osp.join(globals.models_dir, scan_name))
-  v = 2
+  def get_v(dataset):
+    if "vrd" in dataset:
+      return 5
+    elif "vg" in dataset:
+      return 2
+    else: raise ValueError()
   base_profile = ["pred_sem", "by_pred"]
   base_training = {"num_epochs" : 5, "test_freq" : [2,3,4]}
 
@@ -589,7 +594,7 @@ if __name__ == "__main__":
     # VRDTrainer("test-no_prior-only_vis",  {"training" : {"num_epochs" : 4, "loss" : "mlab_no_prior"}, "model" : {"feat_used" : {"sem" : 0, "spat" : 0}}}).train()
     # VRDTrainer("test-no_prior-only_sem",  {"training" : {"num_epochs" : 4, "loss" : "mlab_no_prior"}, "model" : {"feat_used" : {"vis" : False, "vis_so" : False, "spat" : 0}}}).train()
     VRDTrainer("{}/test-no-features".format(scan_name),  {"training" : {"num_epochs" : 5, "test_freq" : [2,3,4], "test_first": True}}, profile = base_profile + ["no_feat"]).train()
-    VRDTrainer("{}/test-only_spat".format(scan_name),    {"training" : base_training}, profile = base_profile + ["only_spat"]).train()
+    #VRDTrainer("{}/test-only_spat".format(scan_name),    {"training" : base_training}, profile = base_profile + ["only_spat"]).train()
 
   # Parameters scan: scans parameter combinations
   if PARAMS_SCAN:
@@ -618,7 +623,10 @@ if __name__ == "__main__":
                 #  # For instance, "mlab_mse" indicates using the average of MultiLabelMarginLoss and MSELoss as the loss
                 for loss in ["mlab"]: # , "bcel"]: # , mlab_mse]:
                   # Dataset in use. "vrd", "vg" # TODO check if "vrd:spatial" works
-                  for dataset in ["vg:150-50-50=activities", "vg:150-50-50=spatial"]: # "vrd:activities"]: # "vg"]: # "vrd:activities"]: # , "vrd:spatial", "vrd:activities"]:
+                  for dataset in ["vrd:all", "vrd:spatial", "vrd:activities", "vg:150-50-50=all", "vg:150-50-50=spatial", "vg:150-50-50=activities"]: # "vg:150-50-50=activities", "vg:150-50-50=spatial"]: #, "vrd:activities"]:
+                    profiles_to_scan = ["only_sem"]
+                    if "all" in dataset:
+                      profiles_to_scan = ["no_feat", "all_feats", "only_sem"]
                     # Training profile to load. The profiles are listed in the ./cfgs/ folder, and they contain the options that are used to override the default ones (deafult.yml).
                     # Some examples are:
                     #  # "only_sem": Only uses semantic, "hides" visual and spatial features
@@ -626,51 +634,58 @@ if __name__ == "__main__":
                     #  # "sem_spat": Only uses semantic + spatial features, "hides" visual features
                     #  # "all_feats": Uses semantics + spatial + visual features
                     #  # "no_feat": Doesn't use features. Weird
-                    for profile_name in ["only_sem"]: # , "all_feats"]: # , "all_feats", "only_spat"]: # "only_sem_subdot", "only_sem_catdiff", "only_sem_catdot", "only_sem_diffdot"]: # ["only_spat", "spat_sem", "only_sem", False]: # , "vg"]:
-                     # Predicate Semantics Mode, offset by one
-                     #  # -1 indicates no use of predicate semantics;
-                     #  # Values from 0 onwards indicate some of the different "modes" to introducte predicate semantics (e.g SemSim, Semantic Rescoring)
-                     for pred_sem_mode_1 in [-1, 1, 11, 25]: # 0, 1, 2, 3, 8, 9, 10, 11, 12, 13, 14, 15] + list(range(16,16+32)): #3, 16, -1, 16+4, 16+2 , 16+4+1, 16+16+2, 16+16+4+2]: #, 9 16+16, 16+16+4
-                      if "mse" in loss and (pred_sem_mode_1 == -1 or pred_sem_mode_1>=16):
-                        continue
+                    for profile_name in profiles_to_scan: # , "all_feats"]: # , "all_feats", "only_spat"]: # "only_sem_subdot", "only_sem_catdiff", "only_sem_catdot", "only_sem_diffdot"]: # ["only_spat", "spat_sem", "only_sem", False]: # , "vg"]:
+                      # Predicate Semantics Mode, offset by one
+                      #  # -1 indicates no use of predicate semantics;
+                      #  # Values from 0 onwards indicate some of the different "modes" to introducte predicate semantics (e.g SemSim, Semantic Rescoring)
+                      #  # - 1: SoftEmbRescore;
+                      #  # - 11: SemSim
+                      #  # - 25: SemRescore
+                      for pred_sem_mode_1 in [-1, 1, 11, 25]:
+                        if "mse" in loss and (pred_sem_mode_1 == -1 or pred_sem_mode_1>=16):
+                          continue
 
-                      # Training session ID
-                      session_id = "{}/{}-{}-{}-{}-{}-{}-{},{:b}-{}-{}".format(scan_name, emb_model, profile_name, lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode_1, pred_sem_mode_1, dataset, loss)
-                      print("Session: ", session_id)
+                        # Training session ID
+                        session_id = "{}/{}-{}-{}-{}-{}-{}-{},{:b}-{}-{}".format(scan_name, emb_model, profile_name, lr, weight_decay, lr_fus_ratio, lr_rel_ratio, pred_sem_mode_1, pred_sem_mode_1, dataset, loss)
+                        print("Session: ", session_id)
 
-                      pred_sem_mode = pred_sem_mode_1+1
-                      profile = base_profile + utils.listify(profile_name)
-                      training = deepcopy(base_training)
+                        pred_sem_mode = pred_sem_mode_1+1
+                        profile = base_profile + utils.listify(profile_name)
+                        training = deepcopy(base_training)
 
-                      if "vg" in dataset:
-                        training["num_epochs"] -= 1
-                        #profile.append("vg")
-                        #training = {"num_epochs" : 4, "test_freq" : [1,2,3]}
+                        if "vg" in dataset:
+                          training["num_epochs"] -= 1
+                          #profile.append("vg")
+                          #training = {"num_epochs" : 4, "test_freq" : [1,2,3]}
 
-                      # More to learn with all_feats?
-                      #if dataset == "vrd" and "all_feats" in profile and pred_sem_mode_1 >= 0 and pred_sem_mode_1 <= 16:
-                      #  training["num_epochs"] += 1
-                      #  training["test_freq"] = [x+1 for x in training["test_freq"]]
+                        # More to learn with all_feats?
+                        #if dataset == "vrd" and "all_feats" in profile and pred_sem_mode_1 >= 0 and pred_sem_mode_1 <= 16:
+                        #  training["num_epochs"] += 1
+                        #  training["test_freq"] = [x+1 for x in training["test_freq"]]
 
-                      training["loss"] = loss
+                        training["loss"] = loss
 
-                      # A training session takes:
-                      #  # A session name, which will be used to label the saved results
-                      #  # A dictionary specifying the options that override the profile
-                      #  # A profile (string or list of strings) specifying the profile file(s) that are loaded and override(s) the default options (deafult.yml).
-                      VRDTrainerRepeater(v, session_name = session_id, args = {
-                          "data" : { "name" : dataset, "emb_model" : emb_model},
-                          "training" : training,
-                          "model" : {"use_pred_sem" : pred_sem_mode},
-                          "eval" : {"test_pre" : True}, # "test_rel" : True},
-                          #"eval" : {"test_pre" : False, "test_rel" : True},
-                          "opt": {
-                            "lr": lr,
-                            "weight_decay" : weight_decay,
-                            "lr_fus_ratio" : lr_fus_ratio,
-                            "lr_rel_ratio" : lr_rel_ratio,
-                            }
-                          }, profile = profile)
+                        test_rel = False
+                        if "activities" in dataset:
+                          training["test_first"] = True
+                          test_rel = True
+
+                        # A training session takes:
+                        #  # A session name, which will be used to label the saved results
+                        #  # A dictionary specifying the options that override the profile
+                        #  # A profile (string or list of strings) specifying the profile file(s) that are loaded and override(s) the default options (deafult.yml).
+                        VRDTrainerRepeater(get_v(dataset), session_name = session_id, args = {
+                            "data" : { "name" : dataset, "emb_model" : emb_model},
+                            "training" : training,
+                            "model" : {"use_pred_sem" : pred_sem_mode},
+                            "eval" : {"test_pre" : True, "test_rel" : test_rel},
+                            "opt": {
+                              "lr": lr,
+                              "weight_decay" : weight_decay,
+                              "lr_fus_ratio" : lr_fus_ratio,
+                              "lr_rel_ratio" : lr_rel_ratio,
+                              }
+                            }, profile = profile)
 
   pass
 

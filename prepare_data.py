@@ -882,7 +882,7 @@ def getWordEmbedding(word, emb_model, model_name, depth=0):
     with open(os.path.join(globals.data_dir, "embeddings", "fallback-v1.json"), 'r') as rfile:
       getWordEmbedding.fallback_emb_map = json.load(rfile)
   try:
-    if "glove" in model_name:
+    if "glove" in model_name and emb_size != 300:
       embedding = emb_model.word_vectors[emb_model.dictionary[word]]
     else:
       embedding = emb_model[word]
@@ -933,12 +933,19 @@ def load_emb_model(model_name):
   model_path = globals.emb_model_path(model_name)
   if model_name is "gnews":
     model = KeyedVectors.load_word2vec_format(model_path, binary=True)
+  elif "gloco" in model_name:
+    with open(model_path, 'r') as rfile:
+      model = json.load(rfile)
   elif "glove" in model_name:
-    #raise NotImplementedError
-    model = Glove().load(model_path)
-    tmp_file = get_tmpfile("{}.txt".format(model_path))
-    _ = glove2word2vec(model_path, tmp_file)
-    model = Word2Vec.load(tmp_file)
+    if globals.emb_model_size(model_name) != 300:
+      #raise NotImplementedError
+      model = Glove().load(model_path)
+      tmp_file = get_tmpfile("{}.txt".format(model_path))
+      _ = glove2word2vec(model_path, tmp_file)
+      model = Word2Vec.load(tmp_file)
+    else:
+      with open(model_path, 'r') as rfile:
+        model = json.load(rfile)
   else:
     # This is needed happens in the case of COCO finetuned models because they were dumped from outside the
     # train_word2vec script, so the train_word2vec module needs to be in the path for them to load
@@ -958,9 +965,8 @@ if __name__ == '__main__':
     #generate_embeddings = ["gnews", "50", "100", "coco-70-50", "coco-30-50"]
     #generate_embeddings = ["gnews"]
     #generate_embeddings = ["gnews", "300"]
-    #generate_embeddings = ["glove-300"]
-    #generate_embeddings = ["gloco-20-300", "gloco-50-300", "gloco-100-300"]
-    generate_embeddings = ["coco-20-300", "coco-50-300"] # , "coco-100-300"]
+    generate_embeddings = ["glove-300", "gloco-100-300"]
+    #generate_embeddings = ["gloco-20-300", "gloco-50-300", "coco-100-300"]
 
     #""" VRD
     print("Preparing data for VRD")
