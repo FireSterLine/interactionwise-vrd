@@ -11,6 +11,9 @@ faster_rcnn_models_dir = join(faster_rcnn_dir, "models")
 def emb_model_path(model_name):
   if model_name == "gnews":
     w2v_model_path = join(data_dir, "embeddings", "GoogleNews-vectors-negative300.bin.gz")
+  elif "gloco" in model_name:
+    _, ep, dim = model_name.split("-")
+    w2v_model_path = "/home/findwise/interactionwise/wikipedia_dump/coco/glove_epoch_{}_dim_{}.model".format(int(ep)+5, dim)
   elif "glove" in model_name:
     _, dim = model_name.split("-")
     w2v_model_path = "/home/findwise/interactionwise/wikipedia_dump/glove_epoch_5_dim_{}.model".format(dim)
@@ -26,6 +29,9 @@ def emb_model_path(model_name):
 def emb_model_size(model_name):
   if model_name == "gnews":
     emb_size = 300
+  elif "gloco" in model_name:
+    _, ep, dim = model_name.split("-")
+    emb_size = int(dim)
   elif "glove" in model_name:
     _, dim = model_name.split("-")
     emb_size = int(dim)

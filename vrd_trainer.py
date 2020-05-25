@@ -577,8 +577,8 @@ if __name__ == "__main__":
   ############################################################
 
   scan_name = "v23-scan-vg"
-  if not osp.exists(scan_name):
-    os.mkdir(scan_name)
+  if not osp.exists(osp.join(globals.models_dir, scan_name)):
+    os.mkdir(osp.join(globals.models_dir, scan_name))
   v = 2
   base_profile = ["pred_sem", "by_pred"]
   base_training = {"num_epochs" : 5, "test_freq" : [2,3,4]}
@@ -659,7 +659,7 @@ if __name__ == "__main__":
                       #  # A dictionary specifying the options that override the profile
                       #  # A profile (string or list of strings) specifying the profile file(s) that are loaded and override(s) the default options (deafult.yml).
                       VRDTrainerRepeater(v, session_name = session_id, args = {
-                          "data" : { "name" : dataset, "emb_model" : emb_model, "justafew" : True},
+                          "data" : { "name" : dataset, "emb_model" : emb_model},
                           "training" : training,
                           "model" : {"use_pred_sem" : pred_sem_mode},
                           "eval" : {"test_pre" : True}, # "test_rel" : True},
