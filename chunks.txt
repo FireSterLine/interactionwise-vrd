@@ -434,3 +434,23 @@ with open(filename, 'r') as f:
 filename = "../../vrd/all/data_annos_img_test.json"
 with open(filename, 'r') as f:
   test = json.load(f)
+
+
+
+import numpy as np
+from scipy.stats import norm
+import scipy
+
+Xrel = scipy.stats.norm(7.638, 2) # sum counts from tuple_counts
+Xobj = scipy.stats.norm(6.735, 1.5) # grep bbox in annos-test to get this
+
+x = np.linspace(1.,10., 1000)
+
+s = 0
+for x_i in x: s += (2*Xrel.cdf(x_i)*Xobj.cdf(x_i) * min(1, (x_i/(70*(x_i**2)))))
+
+s /= len(x)
+
+s*100
+s*50
+s*20

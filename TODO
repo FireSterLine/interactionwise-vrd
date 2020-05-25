@@ -1,3 +1,4 @@
+- what if you just use the label as categorical 1-hot vector as feature vector of the objects?
 - % To account for this issue, we create a new dummy predicate class % ``\_\_no\_predicate\_\_''
   % representing the lack of a predicate; it's embedding is a 1-hot vector, where the only non-zero value is on a newly-added dimension. This makes the vector orthogonal from all the other embeddings, and the predicated value on this dimension will be an estimate of how likely it is for this object pair to have a predicate. This requires the training process to use ``negative relationships'', that is, object pairs that are not interacting. For these pairs, the ground-truth $z$-score will be $0$ (or $-\inf$ ...?), whereas for real pairs it will be. ...
 

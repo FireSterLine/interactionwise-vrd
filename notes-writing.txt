@@ -1,29 +1,11 @@
 
+
 - show predicates' co-occurrence matrix (for each so pair, just s or just o)
 - the ones with synonyms are?
 
-
-- there are different types of predicates and word embeddings might behave differently for them.
-- they do, the two methods seem to work.
-- this makes sense because the spatial predicates NOTE: spatial predicates are all the same, semantically-wise
-- antonym problem for spatial predicates
-- separate the results for predicate semantics and embeddings
-- do the same with VG
-- show sum of the predicate rescoring matrix, or normalize it
-- give RELCLS in the end
-
 IN THE MORNING:
 - check the big scan, note that some of the things may be wrong (e.g 1: check!). Also check epoch 5!
-
-- Show the results with a randomly initialized untrained model.
-- put on results for vg predcls
-
-- what if you just use the label as categorical vector as feature vector of the objects?
-
-- look up the swap thingy + swap file
-- Mention that there are about 0.5 fluctuations
-
-- are close: beside, next to, adjacent to, near
+- are close semantically: beside, next to, adjacent to, near
 - on
 
 - Long-tail Classification (e.g read a little bit of https://arxiv.org/pdf/2004.00436.pdf)
