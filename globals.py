@@ -13,10 +13,13 @@ def emb_model_path(model_name):
     w2v_model_path = join(data_dir, "embeddings", "GoogleNews-vectors-negative300.bin.gz")
   elif "gloco" in model_name:
     _, ep, dim = model_name.split("-")
-    w2v_model_path = "/home/findwise/interactionwise/wikipedia_dump/coco/glove_epoch_{}_dim_{}.model".format(int(ep)+5, dim)
+    w2v_model_path = "/home/findwise/interactionwise/wikipedia_dump/coco/glove_epoch_{}_dim_{}.json".format(int(ep)+5, dim)
   elif "glove" in model_name:
     _, dim = model_name.split("-")
-    w2v_model_path = "/home/findwise/interactionwise/wikipedia_dump/glove_epoch_5_dim_{}.model".format(dim)
+    if int(dim) == 300:
+      w2v_model_path = "/home/findwise/interactionwise/wikipedia_dump/glove_epoch_5_dim_300_embeddings.json"
+    else:
+      w2v_model_path = "/home/findwise/interactionwise/wikipedia_dump/glove_epoch_5_dim_{}.model".format(dim)
   elif "coco" in model_name:
     _, ep, dim = model_name.split("-")
     w2v_model_path = "/home/findwise/interactionwise/wikipedia_dump/coco/word2vec_epoch_{}_dim_{}.model".format(int(ep)+5, dim)

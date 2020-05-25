@@ -933,6 +933,9 @@ def load_emb_model(model_name):
   model_path = globals.emb_model_path(model_name)
   if model_name is "gnews":
     model = KeyedVectors.load_word2vec_format(model_path, binary=True)
+  elif "gloco" in model_name:
+    with open(model_path, 'r') as rfile:
+      model = json.load(rfile)
   elif "glove" in model_name:
     #raise NotImplementedError
     model = Glove().load(model_path)
@@ -959,8 +962,7 @@ if __name__ == '__main__':
     #generate_embeddings = ["gnews"]
     #generate_embeddings = ["gnews", "300"]
     #generate_embeddings = ["glove-300"]
-    #generate_embeddings = ["gloco-20-300", "gloco-50-300", "gloco-100-300"]
-    generate_embeddings = ["coco-20-300", "coco-50-300"] # , "coco-100-300"]
+    generate_embeddings = ["gloco-20-300", "gloco-50-300", "coco-100-300"]
 
     #""" VRD
     print("Preparing data for VRD")
