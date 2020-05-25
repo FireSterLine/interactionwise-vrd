@@ -270,7 +270,9 @@ class VRDTrainer():
 
       # Number of recalls
       res_head_headers = []
-      if self.args.eval.test_pre: res_head_headers += self.gt_headers(self.args.eval.test_pre, "Pre") + ["Pre Avg"]
+
+      pre_headers = self.gt_headers(self.args.eval.test_pre, "Pre") + ["Pre Avg"]
+      if self.args.eval.test_pre: res_head_headers += pre_headers
       if self.args.eval.test_rel: res_head_headers += self.gt_headers(self.args.eval.test_rel, "Rel") + ["Rel Avg"]
       num_recalls = len(res_head_headers)
 
@@ -283,7 +285,7 @@ class VRDTrainer():
 
         predicates_stacked = []
         predicates_stacked_2ndlast = []
-        for i_rec_score,rec_score in enumerate(res_head_headers):
+        for i_rec_score,rec_score in enumerate(pre_headers):
           x = res_dict["predicates"][:,[0] + list(range(1+i_rec_score*self.dataset.n_pred,1+(i_rec_score+1)*self.dataset.n_pred))]
           predicates_stacked += x.tolist()
           predicates_stacked.append([np.nan for _ in range(x.shape[1])])
@@ -666,7 +668,7 @@ if __name__ == "__main__":
                         training["loss"] = loss
 
                         test_rel = False
-                        if "activities" in dataset:
+                        if "vrd:activities" in dataset:
                           training["test_first"] = True
                           test_rel = True
 
