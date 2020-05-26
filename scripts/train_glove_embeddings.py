@@ -150,7 +150,7 @@ def fine_tune_embeddings(path_to_model, tokenized_captions_fname, num_epochs, di
     # add only those words in the vocab and embedding dict which the model knows
     print("Creating COCO vocab...")
     # NOTE: A key idea of finetuning embeddings on the COCO dataset is that out of all terms we care about (which are
-    #   are in all_words), only those will be updated which exist in COCO too. Additionlly, all terms that are in COCO
+    #   are in all_words), only those will be updated which exist in COCO too. Additionally, all terms that are in COCO
     #   will be updated too, but if they're not in all_terms, we don't particularly care about them
     coco_vocab = []
     model_embeddings = {}
