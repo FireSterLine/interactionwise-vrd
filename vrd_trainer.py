@@ -680,8 +680,8 @@ if __name__ == "__main__":
                         #  # A dictionary specifying the options that override the profile
                         #  # A profile (string or list of strings) specifying the profile file(s) that are loaded and override(s) the default options (deafult.yml).
                         VRDTrainerRepeater(get_v(dataset), session_name = session_id, args = {
-                            # "data" : { "name" : dataset, "emb_model" : emb_model},
-                            "data" : { "justafew" : True, "name" : dataset, "emb_model" : emb_model},
+                            "data" : { "name" : dataset, "emb_model" : emb_model},
+                            #"data" : { "justafew" : True, "name" : dataset, "emb_model" : emb_model},
                             "training" : training,
                             "model" : {"use_pred_sem" : pred_sem_mode},
                             "eval" : {"test_pre" : True, "test_rel" : test_rel},
