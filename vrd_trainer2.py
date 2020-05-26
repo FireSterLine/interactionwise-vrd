@@ -581,7 +581,7 @@ if __name__ == "__main__":
     os.mkdir(osp.join(globals.models_dir, scan_name))
   def get_v(dataset):
     if "vrd" in dataset:
-      return 3
+      return 2
     elif "vg" in dataset:
       return 2
     else: raise ValueError()
@@ -600,7 +600,7 @@ if __name__ == "__main__":
   if PARAMS_SCAN:
     print("PARAMS_SCAN")
     # Name of the embedding model in use
-    for emb_model in ["gnews", "300", "glove", "coco-100-300", "gloco-100-300", "coco-50-300", "gloco-50-300", "coco-20-300", "gloco-20-300"]:
+    for emb_model in ["300", "glove-300", "coco-100-300", "gloco-100-300", "coco-50-300", "gloco-50-300", "coco-20-300", "gloco-20-300"]:
       #if FEATURES_SCAN:
       #  training = deepcopy(base_training)
       #  training["test_first"] = True
@@ -664,9 +664,9 @@ if __name__ == "__main__":
                         training["loss"] = loss
 
                         test_rel = False
-                        if "activities" in dataset:
+                        #if "activities" in dataset:
                           # training["test_first"] = True
-                          test_rel = True
+                          #test_rel = True
 
                         # A training session takes:
                         #  # A session name, which will be used to label the saved results

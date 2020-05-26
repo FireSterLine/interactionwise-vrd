@@ -980,7 +980,7 @@ if __name__ == '__main__':
       data_preparer_vrd.save_data(["relst", "annos"])
     #"""
 
-    """ VG
+    #""" VG
     print("Preparing data for VG")
     #subset = (1600, 400, 20) # TODO: allow multi-word vocabs, so that we can load 1600-400-20_bottomup
     vg_subsets = [(150, 50, 50, "all"), (150, 50, 50, "activities"), (150, 50, 50, "spatial")]
