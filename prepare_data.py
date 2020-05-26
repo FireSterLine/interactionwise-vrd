@@ -964,8 +964,8 @@ if __name__ == '__main__':
     generate_embeddings = []
     #generate_embeddings = ["gnews", "50", "100", "coco-70-50", "coco-30-50"]
     #generate_embeddings = ["gnews"]
-    #generate_embeddings = ["gnews", "300"]
-    generate_embeddings = ["glove-300"]
+    generate_embeddings = ["300"]
+    #generate_embeddings = ["glove-300"]
     #generate_embeddings = ["gnews", "300", "gloco-100-300"]
     #generate_embeddings = ["gloco-20-300", "gloco-50-300", "coco-100-300"]
 
