@@ -454,3 +454,10 @@ s /= len(x)
 s*100
 s*50
 s*20
+
+import vrd_trainer
+vrd_trainer.VRDTrainerRepeater(2, session_name = "test", args = {
+		"data" : { "justafew" : True, "name" : "vrd"},
+		"training" : {"num_epochs" : 3},
+		"eval" : {"test_pre" : True, "test_rel" : True, "by_predicates" : True},
+		})
