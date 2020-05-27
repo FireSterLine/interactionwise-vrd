@@ -7,6 +7,14 @@ def add_heatmap_labels(matrix, data_dir, indices = None):
 	with open(filename, 'r') as f:
 		predicates = json.load(f)
 
+	# if "activities" in data_dir and len(predicates) == 28:
+	# 	idx = np.array(list(range(0, 15)) + list(range(16, len(predicates))))
+	# 	print(matrix[idx].shape)
+	# 	print(matrix[idx][:,idx].shape)
+	# 	matrix = matrix[idx][:,idx]
+	# 	print(matrix.shape)
+	# 	del predicates[15]
+
 	# Avoid bright spots
 	# for i in range(len(predicates)):
 	# 	matrix[i][i] = 0
@@ -119,9 +127,9 @@ def save_tuple_counts(data_dir):
 				sP_cooccurrence[pred_i][pred_j] = n_cooccur
 		return sP_cooccurrence
 
-	np.savetxt("{}/sP_cooccurrence.csv".format(data_dir), add_heatmap_labels(get_soP_cooccurrence(soP_counts), data_dir), delimiter=",", fmt="%s")
-	np.savetxt("{}/sP_cooccurrence-train.csv".format(data_dir), add_heatmap_labels(get_soP_cooccurrence(soP_counts_train), data_dir), delimiter=",", fmt="%s")
-	np.savetxt("{}/sP_cooccurrence-test.csv".format(data_dir), add_heatmap_labels(get_soP_cooccurrence(soP_counts_test), data_dir), delimiter=",", fmt="%s")
+	np.savetxt("{}/sP_cooccurrence.csv".format(data_dir), add_heatmap_labels(get_sP_cooccurrence(sP_counts), data_dir), delimiter=",", fmt="%s")
+	np.savetxt("{}/sP_cooccurrence-train.csv".format(data_dir), add_heatmap_labels(get_sP_cooccurrence(sP_counts_train), data_dir), delimiter=",", fmt="%s")
+	np.savetxt("{}/sP_cooccurrence-test.csv".format(data_dir), add_heatmap_labels(get_sP_cooccurrence(sP_counts_test), data_dir), delimiter=",", fmt="%s")
 
 	return a
 
