@@ -8,8 +8,8 @@ def add_heatmap_labels(matrix, data_dir, indices = None):
 		predicates = json.load(f)
 
 	# Avoid bright spots
-	for i in range(len(predicates)):
-		matrix[i][i] = 0
+	# for i in range(len(predicates)):
+	# 	matrix[i][i] = 0
 
 	if indices is not None:
 		predicates = np.array(predicates)[indices].tolist()
@@ -125,6 +125,9 @@ def save_tuple_counts(data_dir):
 
 	return a
 
+save_pred2pred("data/vrd/all",        "gnews");
+save_pred2pred("data/vrd/spatial",    "gnews");
+save_pred2pred("data/vrd/activities", "gnews");
 """
 save_pred2pred("data/vrd/all", "gnews");
 save_pred2pred("data/vrd/all", "300");
