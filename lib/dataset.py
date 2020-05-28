@@ -26,6 +26,10 @@ class VRDDataset():
         name,subset = pieces
       elif len(pieces) == 3:
         name,subset,img_subset = pieces
+        try:
+          img_subset = float(img_subset)
+        except ValueError:
+          pass
       else:
         raise ValueError("Can't initialize VRDDataset with {}".format(pieces))
 
@@ -108,6 +112,9 @@ class VRDDataset():
           data = data[:100]
         elif self.img_subset == "small" and stage == "test":
           data = data[:2000]
+        elif isinstance(self.img_subset, float):
+          data = data[:int(self.img_subset*len(data))]
+          #train_img,test_img = self.img_subset.split("-")
 
       if self.justafew == True:
           data = data[:10]

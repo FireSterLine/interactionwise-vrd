@@ -581,7 +581,7 @@ if __name__ == "__main__":
   ## The following portion of code is useful for tuning the model
   ############################################################
 
-  scan_name = "v24-terascan"
+  scan_name = "v24-terascan-vg"
   if not osp.exists(osp.join(globals.models_dir, scan_name)):
     os.mkdir(osp.join(globals.models_dir, scan_name))
   def get_v(dataset):
@@ -628,8 +628,9 @@ if __name__ == "__main__":
                 #  # For instance, "mlab_mse" indicates using the average of MultiLabelMarginLoss and MSELoss as the loss
                 for loss in ["mlab"]: # , "bcel"]: # , mlab_mse]:
                   # Dataset in use. "vrd", "vg" # TODO check if "vrd:spatial" works
-                  for dataset in ["vg:150-50-50=all", "vg:150-50-50=spatial", "vg:150-50-50=activities"]: # "vg:150-50-50=activities", "vg:150-50-50=spatial"]: #, "vrd:activities"]:
-                    profiles_to_scan = ["all_feats"]
+                  for dataset in ["vg:150-50-50=activities", "vg:150-50-50=spatial", "vg:150-50-50=all"]: # "vg:150-50-50=activities", "vg:150-50-50=spatial"]: #, "vrd:activities"]:
+                    #profiles_to_scan = ["all_feats"]
+                    profiles_to_scan = ["only_sem"]
                     if "all" in dataset:
                       profiles_to_scan = ["only_sem"] # "all_feats"
                     # Training profile to load. The profiles are listed in the ./cfgs/ folder, and they contain the options that are used to override the default ones (deafult.yml).
@@ -646,7 +647,7 @@ if __name__ == "__main__":
                       #  # - 1: SoftEmbRescore;
                       #  # - 11: SemSim
                       #  # - 25: SemRescore
-                      for pred_sem_mode_1 in [-1, 1, 11, 25]:
+                      for pred_sem_mode_1 in [-1, 11, 25, 1]:
                         if "mse" in loss and (pred_sem_mode_1 == -1 or pred_sem_mode_1>=16):
                           continue
 
@@ -657,6 +658,7 @@ if __name__ == "__main__":
                         pred_sem_mode = pred_sem_mode_1+1
                         profile = base_profile + utils.listify(profile_name)
                         training = deepcopy(base_training)
+                        data = { "name" : dataset, "emb_model" : emb_model}
 
                         if "vg" in dataset:
                           training["num_epochs"] -= 1
@@ -680,8 +682,7 @@ if __name__ == "__main__":
                         #  # A dictionary specifying the options that override the profile
                         #  # A profile (string or list of strings) specifying the profile file(s) that are loaded and override(s) the default options (deafult.yml).
                         VRDTrainerRepeater(get_v(dataset), session_name = session_id, args = {
-                            "data" : { "name" : dataset, "emb_model" : emb_model},
-                            #"data" : { "justafew" : True, "name" : dataset, "emb_model" : emb_model},
+                            "data" : data,
                             "training" : training,
                             "model" : {"use_pred_sem" : pred_sem_mode},
                             "eval" : {"test_pre" : True, "test_rel" : test_rel},
