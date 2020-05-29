@@ -605,7 +605,7 @@ if __name__ == "__main__":
   if PARAMS_SCAN:
     print("PARAMS_SCAN")
     # Name of the embedding model in use
-    for emb_model in ["gnews"]: #coco-20-300", "coco-50-300"]: #, "gnews"]: # gnews, "300", "glove-50" "50", "coco-70-50", "coco-30-50", "100"]:
+    for emb_model in ["gnews", "300", "glove-300", "coco-100-300", "gloco-100-300", "coco-50-300", "gloco-50-300", "coco-20-300", "gloco-20-300"]:
       #if FEATURES_SCAN:
       #  training = deepcopy(base_training)
       #  training["test_first"] = True
@@ -628,11 +628,14 @@ if __name__ == "__main__":
                 #  # For instance, "mlab_mse" indicates using the average of MultiLabelMarginLoss and MSELoss as the loss
                 for loss in ["mlab"]: # , "bcel"]: # , mlab_mse]:
                   # Dataset in use. "vrd", "vg" # TODO check if "vrd:spatial" works
-                  for dataset in ["vg:150-50-50=activities", "vg:150-50-50=spatial", "vg:150-50-50=all"]: # "vg:150-50-50=activities", "vg:150-50-50=spatial"]: #, "vrd:activities"]:
+                  datasets_to_scan = ["vrd:spatial"]
+                  if emb_model == "gnews":
+                    datasets_to_scan = ["vrd:spatial", "vg:150-50-50=all"]
+                  for dataset in datasets_to_scan: # , "vg:150-50-50=spatial", "vg:150-50-50=all"]: # "vg:150-50-50=activities", "vg:150-50-50=spatial"]: #, "vrd:activities"]:
                     #profiles_to_scan = ["all_feats"]
                     profiles_to_scan = ["only_sem"]
-                    if "all" in dataset:
-                      profiles_to_scan = ["only_sem"] # "all_feats"
+                    #if "all" in dataset:
+                    #  profiles_to_scan = ["only_sem"] # "all_feats"
                     # Training profile to load. The profiles are listed in the ./cfgs/ folder, and they contain the options that are used to override the default ones (deafult.yml).
                     # Some examples are:
                     #  # "only_sem": Only uses semantic, "hides" visual and spatial features
@@ -673,9 +676,9 @@ if __name__ == "__main__":
                         training["loss"] = loss
 
                         test_rel = False
-                        if "vrd:activities" in dataset:
+                        if "vrd:spatial" in dataset and pred_sem_mode_1 == -1:
                           training["test_first"] = True
-                          test_rel = True
+                          #test_rel = True
 
                         # A training session takes:
                         #  # A session name, which will be used to label the saved results
