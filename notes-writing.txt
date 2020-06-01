@@ -1,45 +1,32 @@
+% when the predicates at play are so various.
+
+- Additionally, predicting spatial relations requires a different kind of reasoning as compared to ``actions'', and they perhaps lend more naturally themselves to a structured representation as vectors ... . In particular, semantic ones bring an antonym problem for the spatial predicates. This opens up a question about whether one can train ``spatial embeddings'' as opposed to semantic ones.
 
 
-- show predicates' co-occurrence matrix (for each so pair, just s or just o)
-- the ones with synonyms are?
+An issue of using semantic embeddings here has to do with the following fact: while it's true that synonyms are going to have a high cosine similarity, that's due to their similar meaning, the same is also true for antonyms, due to the fact that, despite having different meaning, they often belong to the same semantic area. Therefore, a semantic similarity layer, for instance, can't probably tell apart pair of antonymic predicates, like ``above'' and ``below'', since their embeddings are going to be cosine-similar. More precise similarity estimates could be one derived from an embedding model that relates more strongly to the ``meaning'' of words, as opposed to their semantics, e.g ideally, one where antonymic words are represented by opposite vectors. \cite{w2v-antonyms}
 
-IN THE MORNING:
-- check the big scan, note that some of the things may be wrong (e.g 1: check!). Also check epoch 5!
-- are close semantically: beside, next to, adjacent to, near
-- on
+Lastly, we believe it's possible that the metrics in use can't show the benefits of the approach. With apparently-poor results like this, one could make the point that, for any classification tasks, it is better to treat every class as independent from the others. In fact, strictly speaking, if a dataset considers ``below'' and ``under'' as two different classes, then a ``good'' classification model trained on this data is expected to classify as ``below'' instances that are similar to those labeled as ``below'', and to classify as ``under'' instances that are similar to those labeled as ``under''.
+However, we ask how much is it desirable to put sharp boundaries between the classes, within this specific research area? After all, for instances where the correct answer is ``under'', outputting ``below'' is not as bad as outputting ``above''.
+Indeed, metrics that are unaware of the predicates' meaning, might end up penalizing the model too much whenever it outputs, for example, one of two synonymic classes while the other one is the correct one.
+With regards of designing meaning-aware metrics, the problem is how to estimate the ``goodness'' of a predicted class given a ground-truth one (other than a simple $0/1$ value), % given by equality check
+ and maybe semantic cosine similarity is not the answer. % , and how to factor that into the architecture, and into the evaluation.
+
+
+
 
 - Long-tail Classification (e.g read a little bit of https://arxiv.org/pdf/2004.00436.pdf)
-
-*** Chapter 4: ***
-
-My main difficulty here is "seeing the forest and not just the trees".
-I feel that I need at least a clear section structure, but hopefully also some discussions of the various results,
-before I can see what you are trying to tell here, so that I can react and give my feedback.
-
-You have many results and tables and to help the reader understand the logic of this chapter,
-I think it would be a good idea to start the results chapter with some sort of roadmap.
-
-As I don't yet know the story you are trying to tell,
-I can't determine which results are the main ones and which are less important.
-But if you feel that there are too many numbers and tables, you might consider moving some tables into an appendix.
-You don't have to put everything that you have done into chapter 4. It's enough to include the results that illustrate your main points.
 
 
 WRITING:
 
 Abstract
 - It would be nice to add as last sentence your achievement. Eg. we improved the existing model by decreasing the error by 4%.
-- And then, either: in this work we find that we can leverage word embeddings for the purpose; or we clearly state the hypothesis: can we leverage word embeddings for this
+- And then, either: in this work we find that we can leverage word embeddings for the purpose;
+or we clearly state the hypothesis: can we leverage word embeddings for this
 
-Methods
-- the results should show the results obtained with models described in methods, e.g explain the blind model
-
-Discussion
-- Make points about results, re-establish the research, show the limitations, future research and recommendation
 
 Results
-- be less humble in the results
-- ...So we believe that the metrics are weak in this sense. In fact, this may be a side offect of using ``softened metrics'' (see section...)
+- TODO sort three methods
 - Use @20 instead of R@30 and compare to other works
     https://arxiv.org/pdf/2004.06193.pdf
     https://kevinstan.github.io/data/aesg_report.pdf
