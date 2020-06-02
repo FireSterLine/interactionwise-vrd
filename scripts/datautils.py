@@ -37,7 +37,8 @@ def save_pred2pred(data_dir, model, force_indices = None, ind_method = "sum"):
 	np.savetxt("{}/pred2pred_sim-{}.csv".format(data_dir, model), add_heatmap_labels(pred2pred_sim, data_dir), delimiter=",", fmt="%s")
 	if ind_method   == "sum": indices = np.argsort(pred2pred_sim.sum(axis=1))[::-1]
 	elif ind_method == "std": indices = np.argsort(pred2pred_sim.std(axis=1))[::-1]
-	elif ind_method == "len": indices = np.argsort(np.array([x.count(" ") for x in predicates]))[::-1]
+	elif ind_method == "mwe": indices = np.argsort(np.array([x.count(" ") for x in predicates]))[::-1]
+	# indices = np.argsort(np.array([x.count(" ")*10000+sum for x,sum in zip(predicates,pred2pred_sim.sum(axis=1))]))[::-1]
 	pred2pred_sim_sorted = pred2pred_sim[indices][:,indices]
 	np.savetxt("{}/pred2pred_sim-sorted-{}.csv".format(data_dir, model), add_heatmap_labels(pred2pred_sim_sorted, data_dir, indices=indices), delimiter=",", fmt="%s")
 	if force_indices is not None:
@@ -47,16 +48,20 @@ def save_pred2pred(data_dir, model, force_indices = None, ind_method = "sum"):
 
 
 def save_pred2pred_diff(data_dir, model1, model2):
-  pred2pred1_sim, pred2pred1_sim_sorted, indices = save_pred2pred(data_dir, model1, ind_method = "len")
-  pred2pred2_sim, pred2pred2_sim_sorted, _       = save_pred2pred(data_dir, model2, indices)
-  np.savetxt("{}/pred2pred_sim-{}-{}.csv".format(data_dir, model1, model2),
-    add_heatmap_labels((pred2pred1_sim-pred2pred2_sim), data_dir), delimiter=",", fmt="%s")
-  np.savetxt("{}/pred2pred_sim-sorted-{}(sorted-{}).csv".format(data_dir, model1, model2),
-    add_heatmap_labels(pred2pred1_sim_sorted, data_dir, indices = indices), delimiter=",", fmt="%s")
-  np.savetxt("{}/pred2pred_sim-sorted-{}(sorted-{}).csv".format(data_dir, model2, model1),
-    add_heatmap_labels(pred2pred2_sim_sorted, data_dir, indices = indices), delimiter=",", fmt="%s")
-  np.savetxt("{}/pred2pred_sim-sorted-{}-{}-diff.csv".format(data_dir, model1, model2),
-    add_heatmap_labels(np.abs(pred2pred1_sim_sorted-pred2pred2_sim_sorted), data_dir, indices = indices), delimiter=",", fmt="%s")
+  sort_methods = ["mwe", "sum"] # Sort lines by multi-word-expr-or-not and sum
+  for sort_method in sort_methods:
+	  pred2pred1_sim, pred2pred1_sim_sorted, indices = save_pred2pred(data_dir, model1, ind_method = sort_method)
+	  pred2pred2_sim, pred2pred2_sim_sorted, _       = save_pred2pred(data_dir, model2, indices)
+
+	  np.savetxt("{}/pred2pred_sim-{}-{}-diff.csv".format(data_dir, model1, model2),
+	    add_heatmap_labels(np.abs(pred2pred1_sim-pred2pred2_sim), data_dir), delimiter=",", fmt="%s")
+
+	  np.savetxt("{}/pred2pred_sim-sorted-{}-{}(sorted-{}).csv".format(data_dir, sort_method, model1, model2),
+	    add_heatmap_labels(pred2pred1_sim_sorted, data_dir, indices = indices), delimiter=",", fmt="%s")
+	  np.savetxt("{}/pred2pred_sim-sorted-{}-{}(sorted-{}).csv".format(data_dir, sort_method, model2, model1),
+	    add_heatmap_labels(pred2pred2_sim_sorted, data_dir, indices = indices), delimiter=",", fmt="%s")
+	  np.savetxt("{}/pred2pred_sim-sorted-{}-{}-{}-diff.csv".format(data_dir, sort_method, model1, model2),
+	    add_heatmap_labels(np.abs(pred2pred1_sim_sorted-pred2pred2_sim_sorted), data_dir, indices = indices), delimiter=",", fmt="%s")
 
 
 def save_tuple_counts(data_dir):
@@ -163,12 +168,18 @@ save_pred2pred("data/vrd/activities", "300");
 save_pred2pred("data/vrd/spatial",    "300");
 save_pred2pred("data/vrd/all", "300");
 
-save_pred2pred_diff("data/vrd/all",        "gnews", "300");
-save_pred2pred_diff("data/vrd/all",        "gnews", "glove-300");
-save_pred2pred_diff("data/vrd/spatial",    "gnews", "300");
-save_pred2pred_diff("data/vrd/spatial",    "gnews", "glove-300");
-save_pred2pred_diff("data/vrd/activities", "gnews", "300");
-save_pred2pred_diff("data/vrd/activities", "gnews", "glove-300");
+save_pred2pred_diff("data/vrd/all",                     "gnews", "300");
+save_pred2pred_diff("data/vrd/all",                     "gnews", "glove-300");
+save_pred2pred_diff("data/vrd/spatial",                 "gnews", "300");
+save_pred2pred_diff("data/vrd/spatial",                 "gnews", "glove-300");
+save_pred2pred_diff("data/vrd/activities",              "gnews", "300");
+save_pred2pred_diff("data/vrd/activities",              "gnews", "glove-300");
+save_pred2pred_diff("data/genome/150-50-50/all",        "gnews", "300");
+save_pred2pred_diff("data/genome/150-50-50/all",        "gnews", "glove-300");
+save_pred2pred_diff("data/genome/150-50-50/spatial",    "gnews", "300");
+save_pred2pred_diff("data/genome/150-50-50/spatial",    "gnews", "glove-300");
+save_pred2pred_diff("data/genome/150-50-50/activities", "gnews", "300");
+save_pred2pred_diff("data/genome/150-50-50/activities", "gnews", "glove-300");
 
 """
 save_pred2pred("data/vrd/all", "gnews");
