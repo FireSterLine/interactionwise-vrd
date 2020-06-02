@@ -588,7 +588,7 @@ if __name__ == "__main__":
     if "vrd" in dataset:
       return 3
     elif "vg" in dataset:
-      return 3
+      return 1
     else: raise ValueError()
   base_profile = ["pred_sem", "by_pred"]
   base_training = {"num_epochs" : 5, "test_freq" : [2,3,4]}
@@ -651,6 +651,7 @@ if __name__ == "__main__":
                       #  # - 11: SemSim
                       #  # - 25: SemRescore
                       for pred_sem_mode_1 in [-1, 11, 25, 1]:
+                        if pred_sem_mode_1 in [-1, 11] and emb_model == "300" and dataset == "vg:150-50-50=all": continue
                         if "mse" in loss and (pred_sem_mode_1 == -1 or pred_sem_mode_1>=16):
                           continue
 
