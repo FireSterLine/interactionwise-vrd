@@ -29,6 +29,8 @@ data/genome/*/xml
 data/genome/*/json
 #data/genome/1600-400-20/data_*.json
 
+!data/vrd/sg_dataset/sg_test_images/4392556686_44d71ff5a0_o.gif
+
 data/**/*_relst_*.json
 data/genome/**/*_count.txt
 data/genome/**/data_annos_img_train.json
@@ -47,4 +49,3 @@ data/**/*.npy
 !data/vrd/from-dsr/*.pkl
 data/vrd/from-dsr/so_prior.pkl
 !data/vrd/from-language-priors/*.mat
-
