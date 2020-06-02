@@ -1,0 +1,463 @@
+import pickle
+import json
+import os.path as osp
+
+with open("data/vrd/train.pkl", 'rb') as f:
+  train = pickle.load(f, encoding="latin1")
+
+with open("data/vrd/test.pkl", 'rb') as f:
+  test = pickle.load(f, encoding="latin1")
+
+
+with open("data/vrd/dsr_relst_test.json", 'r') as f:
+  test_pkl = json.load(f)
+
+with open("data/vrd/data_relst_img_test.json", 'r') as f:
+  test_data_pkl = json.load(f)
+
+
+len(train)
+len(test)
+
+for i in range(len(test)):
+  if test[i] is not None:
+    print(test[i]["img_path"])
+    print(osp.join(*test[i]["img_path"].split("/")[-2:]))
+    for j,(t,t_d) in enumerate(zip(test_pkl,test_data_pkl)):
+      if t[0] == osp.join(*test[i]["img_path"].split("/")[-2:]):
+        break
+    print(t)
+    print(t_d)
+    #print(test[i]["rel_classes"])
+    #print(test[i])
+    input()
+
+
+test[0].keys() # dict_keys(['img_path', 'boxes', 'classes', 'ix2', 'ix1', 'rel_classes'])
+test[0]["img_path"] # '../data/sg_dataset/sg_test_images/3845770407_1a8cd41230_b.jpg'
+test[0]["boxes"].shape # (10, 4)
+test[0]["classes"].shape # (10,)
+test[0]["ix2"].shape # (12,)
+test[0]["ix1"].shape # (12,)
+len(test[0]["rel_classes"]) # 12
+len(test[0]["rel_classes"][0])
+
+
+
+from lib.dataset import dataset
+
+dataset_args = {"ds_name" : "vrd", "with_bg_obj" : False, "with_bg_pred" : False}
+
+dataset = dataset("vrd", dataset_args)
+
+test_imgrels = dataset.getData("relst", "test")
+
+test_imgrels_list = [(k,v) for k,v in dataset.getData("relst", "test").items()]
+
+if len(test_imgrels) != len(test):
+  print("ERR!")
+
+if len(test_imgrels_list) != len(test):
+  print("ERR!")
+
+print(test[0])
+for i,imgrel in enumerate(test_imgrels_list):
+  k, v = imgrel
+  if "3845770407_1a8cd41230_b.jpg" in k:
+    print(imgrel)
+    break
+
+
+
+
+import json
+with open("data/vrd/datatest.json", 'rb') as f:
+  data_old = json.load(f)
+
+with open("data/vrd/data_relst_test.json", 'rb') as f:
+  data_new = json.load(f)
+
+
+
+import json
+with open("data/vrd/datatrain.json", 'rb') as f:
+  data_old = json.load(f)
+
+with open("data/vrd/data_relst_train.json", 'rb') as f:
+  data_new = json.load(f)
+
+
+  import json
+  with open("data/vrd/sg_dataset/sg_test_annotations.json", 'rb') as f:
+    data = json.load(f)
+
+  for i in data:
+    if i["filename"] == "9055930159_9560984041_b.jpg":
+      print(i['relationships'])
+
+import pickle
+with open("output/vgg16/vrd_test/faster_rcnn_10/proposal_faster_rcnn.pkl", 'rb') as f:
+  propnew = pickle.load(f, encoding="latin1")
+
+with open("data/vrd/eval/det_res.pkl", 'rb') as f:
+  propold = pickle.load(f, encoding="latin1")
+
+propnew.keys()
+propold.keys()
+
+len(propnew["confs"])
+len(propold["confs"])
+
+propnew["confs"][0][0]
+propold["confs"][0][0]
+
+
+ln -sf {../../interactionwise-azfar,../interactionwise-gio}/data/pretrained_model
+ln -sf {../../interactionwise-azfar,../interactionwise-gio}/data/demo
+ln -sf {../../interactionwise-azfar,../interactionwise-gio}/data/scripts
+ln -sf {../../interactionwise-azfar,../interactionwise-gio}/data/vg
+ln -sf {../../interactionwise-azfar,../interactionwise-gio}/data/word2vec_model
+ln -sf {../../interactionwise-azfar,../interactionwise-gio}/data/VGG_imagenet.npy
+ln -sf {../interactionwise-azfar,../interactionwise-gio}/other
+
+ln -sf {../../../interactionwise-azfar,../interactionwise-gio}/data/genome/visual_genome_python_driver
+ln -sf {../../../interactionwise-azfar,../interactionwise-gio}/data/genome/coco_splits
+ln -sf {../../../interactionwise-azfar,../interactionwise-gio}/data/genome/xml/
+
+ln -sf ../iwenv3 iwenv3
+mkdir models
+ln -sf ../interactionwise{-azfar,-gio}/
+
+import pickle
+with open("output/vgg16/vrd_test/faster_rcnn_10/proposal_faster_rcnn.pkl", 'rb') as f:
+  propnew = pickle.load(f, encoding="latin1")
+
+import pickle
+with open("data/vrd/eval/det_res.pkl", 'rb') as f:
+  propold = pickle.load(f, encoding="latin1")
+
+print("propnew\tpropold")
+for i in range(max(len(propnew["boxes"][0]), len(propold["boxes"][0]))):
+  print(i, end="\t")
+  if i < len(propnew["boxes"][0]): print(propnew["boxes"][0][i], end="\t")
+  if i < len(propnew["confs"][0]): print(propnew["confs"][0][i], end="\t")
+  if i < len(propnew["cls"][0]):   print(propnew["cls"][0][i],   end="\t")
+  if i < len(propold["boxes"][0]): print(propold["boxes"][0][i], end="\t")
+  if i < len(propold["confs"][0]): print(propold["confs"][0][i], end="\t")
+  if i < len(propold["cls"][0]):   print(propold["cls"][0][i],   end="\t")
+  print()
+
+
+
+
+class gen():
+   def __init__(self):
+     self.a = 2
+   def __iter__(self):
+    return self
+   def __next__(self, i):
+     if self.a == 4:
+       return
+     yield self.a*i
+     yield self.a
+     self.a += 1
+
+a = gen()
+
+
+for i,j in iter(a):
+  print(i)
+  print(j)
+
+for i,j in a:
+  print(i)
+  print(j)
+
+for i in a:
+  print(i)
+
+while True:
+  i = next(a, 2)
+  print(i)
+
+
+while True:
+  i = a.__next__(2)
+  print(i)
+
+
+
+import torch
+with open("faster-rcnn/models/faster_rcnn_1_20_7559.pth", 'rb') as f:
+  train = torch.load(f, encoding="latin1")
+      print(i,x)
+
+import torch
+with open("models/epoch_4_checkpoint.pth.tar", 'rb') as f:
+  train = torch.load(f, encoding="latin1")
+
+
+
+
+
+# so prior
+
+import pickle
+with open("data/vrd/so_prior.pkl", 'rb') as f:
+  so_prior = pickle.load(f, encoding="latin1")
+
+with open("data/vrd/soP.pkl", 'rb') as f:
+  sop = pickle.load(f, encoding="latin1")
+
+for i in range(100):
+  for j in range(100):
+    print((i,j), ((so_prior[i][j] - sop[i][j] ) > 0.999))
+
+# THERE IS A "bear" "wear" "ball" in their prior! why?
+sop[89][88]
+so_prior[89][88]
+
+
+import os.path as osp
+import pickle
+ds_name = 'vrd'
+gt_path = osp.join("data", "{}", "eval", "gt.pkl").format(ds_name)
+with open(gt_path, 'rb') as fid:
+  gt = pickle.load(fid, encoding="latin1")
+  print(gt.keys())
+  print(len(gt["obj_bboxes"]))
+
+
+
+import pickle
+filename = "data/genome/vg-dsr/gt.pkl"
+filename = "detections.pkl"
+filename = "data/genome/vg_image_index_minival.p"
+filename = "data/genome/vg_image_index_minitrain.p"
+
+with open(filename, 'rb') as f:
+  d = pickle.load(f, encoding="latin1")
+
+filename = "data/genome/vg_id_to_dir_minitrain.p"
+
+import pickle
+filename = "output/vgg16/vg_150-50-50_minival/faster_rcnn_10/proposal_faster_rcnn.pkl"
+with open(filename, 'rb') as f:
+  d2 = pickle.load(f, encoding="latin1")
+
+import pickle
+filename = "data/vrd/eval/det_res.pkl"
+with open(filename, 'rb') as f:
+  d3 = pickle.load(f, encoding="latin1")
+
+
+
+BATCH_SIZE=4
+WORKER_NUMBER=1
+LEARNING_RATE="0.001"
+DECAY_STEP=5
+
+python trainval_net.py \
+                    --dataset vg --net res101 \
+                    --bs $BATCH_SIZE --nw $WORKER_NUMBER \
+                    --lr $LEARNING_RATE --lr_decay_step $DECAY_STEP \
+                    --cuda
+
+# faster_rcnn_1_5_47969.pth
+SESSION=1
+EPOCH=5
+CHECKPOINT=47969
+#CUT_AT=gt
+CUT_AT=7
+python gen_obj_det.py --dataset vg --net res101 \
+                   --cut_predictions_at $CUT_AT \
+                   --checksession $SESSION --checkepoch $EPOCH --checkpoint $CHECKPOINT \
+                   --cuda
+
+
+python
+import pickle
+filename = "faster-rcnn/output/res101/vg_150-50-50_minival/faster_rcnn_10/frcnn-det_res.pkl"
+with open(filename, 'rb') as f:
+  d2 = pickle.load(f, encoding="latin1")
+
+np.array(d2["boxes"][0], dtype=np.int)[np.argsort(d2["confs"][0], axis=0)[-10:]]
+len(d2["confs"][0])
+
+
+import pickle
+filename = "data/genome/vg-dsr/gt.pkl"
+with open(filename, 'rb') as f:
+  ddsr = pickle.load(f, encoding="latin1")
+
+len(ddsr["obj_bboxes"])
+len(ddsr["obj_bboxes"][0])
+
+ddsr.keys()
+d2.keys()
+
+ddsr["obj_bboxes"][0], np.array(d2["boxes"][0], dtype=np.int)[np.argsort(d2["confs"][0], axis=0)[-10:]]
+ddsr["tuple_label"][0], np.array(d2["cls"][0], dtype=np.int)[np.argsort(d2["confs"][0], axis=0)[-10:]]
+
+for i in range(len(ddsr["obj_bboxes"])):
+  ddsr["obj_bboxes"][i], np.array(d2["boxes"][i], dtype=np.int)[np.argsort(d2["confs"][i], axis=0)[-10:]]
+  input()
+
+  cut_val = 7
+  ind = np.argsort(d2["confs"][0], axis=0)[-cut_val:]
+  np.array(d2["boxes"][0], dtype=np.int)[ind]
+
+
+import json
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
+filename = "data/vrd/predicates-emb-gnews.json"
+with open(filename, 'r') as f:
+  pred_emb = json.load(f)
+
+pred_emb =np.array(pred_emb)
+cosine_similarity(pred_emb)
+
+from sklearn.metrics.pairwise import cosine_similarity
+a = [[1],[-1]]
+cosine_similarity(a)
+
+filename = "data/genome/150-50-50/objects-emb-gnews.json"
+with open(filename, 'r') as f:
+  pred_emb = json.load(f)
+
+pred_emb =np.array(pred_emb)
+cosine_similarity(pred_emb)
+[[scipy.spatial.distance.cosine(u, v) for v in d2] for u in d2]
+
+
+import pickle
+with open("data/genome/150-50-50/eval/det_res.pkl", 'rb') as f:
+  vg_det_res = pickle.load(f, encoding="latin1")
+
+import pickle
+with open("data/vrd/eval/det_res.pkl", 'rb') as f:
+  vrd_det_res = pickle.load(f, encoding="latin1")
+
+import numpy as np
+(vg_det_res["boxes"][0][0]).shape
+vrd_det_res["boxes"][0][0].shape
+
+(vg_det_res["cls"][0]).shape
+vrd_det_res["cls"][0].shape
+
+(vg_det_res["confs"][0][0]).shape
+vrd_det_res["confs"][0][0].shape
+
+(vg_det_res["boxes"][0][0]).dtype
+vrd_det_res["boxes"][0][0].dtype
+
+(vg_det_res["cls"][0]).dtype
+vrd_det_res["cls"][0].dtype
+
+(vg_det_res["confs"][0][0]).dtype
+vrd_det_res["confs"][0][0].dtype
+
+
+import os.path as osp
+import pickle
+ds_name = 'vrd'
+gt_path = osp.join("data", "{}", "eval", "from-language-priors/gt.pkl").format(ds_name)
+with open(gt_path, 'rb') as fid:
+  gt_vrdlp = pickle.load(fid, encoding="latin1")
+
+import os.path as osp
+import pickle
+ds_name = 'vrd'
+gt_path = osp.join("data", "{}", "eval", "gt.pkl").format(ds_name)
+with open(gt_path, 'rb') as fid:
+  gt_vrd = pickle.load(fid, encoding="latin1")
+
+import os.path as osp
+import pickle
+ds_name = 'genome/150-50-50'
+gt_path = osp.join("data", "{}", "eval", "gt.pkl").format(ds_name)
+with open(gt_path, 'rb') as fid:
+  gt_vg = pickle.load(fid, encoding="latin1")
+
+
+import numpy as np
+type(gt_vrd["tuple_label"][0][0])
+type(gt_vg["tuple_label"][0][0])
+
+type(gt_vrd["sub_bboxes"][0])
+type(gt_vg["sub_bboxes"][0])
+
+type(gt_vrd["obj_bboxes"][0])
+type(gt_vg["obj_bboxes"][0])
+
+gt_vrd["tuple_label"][0][0].shape
+gt_vg["tuple_label"][0][0].shape
+
+gt_vrd["sub_bboxes"][0].shape
+gt_vg["sub_bboxes"][0].shape
+
+gt_vrd["obj_bboxes"][0].shape
+gt_vg["obj_bboxes"][0].shape
+
+gt_vrd["tuple_label"][0][0].dtype
+gt_vg["tuple_label"][0][0].dtype
+
+gt_vrd["sub_bboxes"][0].dtype
+gt_vg["sub_bboxes"][0].dtype
+
+gt_vrd["obj_bboxes"][0].dtype
+gt_vg["obj_bboxes"][0].dtype
+
+
+np.array(gt_vg["tuple_label"][0], dtype=np.uint8)
+np.array(from dict to np array gt_vg["sub_bboxes"][0], , dtype=np.uint16)
+np.array(from dict to np array gt_vg["obj_bboxes"][0], , dtype=np.uint16)
+
+
+SESSION=1
+EPOCH=5
+CHECKPOINT=47969
+#CUT_AT=gt
+CUT_AT=7
+python gen_obj_det.py --dataset vg --net res101 \
+                   --cut_predictions_at $CUT_AT \
+                   --checksession $SESSION --checkepoch $EPOCH --checkpoint $CHECKPOINT \
+                   --cuda --vis
+
+
+
+filename = "../../vrd/all/data_annos_img_train.json"
+with open(filename, 'r') as f:
+  train = json.load(f)
+
+filename = "../../vrd/all/data_annos_img_test.json"
+with open(filename, 'r') as f:
+  test = json.load(f)
+
+
+
+import numpy as np
+from scipy.stats import norm
+import scipy
+
+Xrel = scipy.stats.norm(7.638, 2) # sum counts from tuple_counts
+Xobj = scipy.stats.norm(6.735, 1.5) # grep bbox in annos-test to get this
+
+x = np.linspace(1.,10., 1000)
+
+s = 0
+for x_i in x: s += (2*Xrel.cdf(x_i)*Xobj.cdf(x_i) * min(1, (x_i/(70*(x_i**2)))))
+
+s /= len(x)
+
+s*100
+s*50
+s*20
+
+import vrd_trainer
+vrd_trainer.VRDTrainerRepeater(2, session_name = "test", args = {
+		"data" : { "justafew" : True, "name" : "vrd"},
+		"training" : {"num_epochs" : 3},
+		"eval" : {"test_pre" : True, "test_rel" : True, "by_predicates" : True},
+		})

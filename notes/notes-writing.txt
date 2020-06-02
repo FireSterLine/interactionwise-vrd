@@ -1,0 +1,65 @@
+- Long-tail Classification (e.g read a little bit of https://arxiv.org/pdf/2004.00436.pdf)
+
+
+WRITING:
+
+Results
+- TODO sort three methods
+- Use @20 instead of R@30 and compare to other works
+    https://arxiv.org/pdf/2004.06193.pdf
+    https://kevinstan.github.io/data/aesg_report.pdf
+    https://arxiv.org/pdf/2004.06193.pdf
+- When showing the results per-predicate, signal what predicates were not in the embedding model
+
+
+
+
+
+################################################################################################
+################################################################################################
+################################################################################################
+################################################################################################
+
+% when the predicates at play are so various.
+
+- Additionally, predicting spatial relations requires a different kind of reasoning as compared to ``actions'', and they perhaps lend more naturally themselves to a structured representation as vectors ... . In particular, semantic ones bring an antonym problem for the spatial predicates. This opens up a question about whether one can train ``spatial embeddings'' as opposed to semantic ones.
+
+
+An issue of using semantic embeddings here has to do with the following fact: while it's true that synonyms are going to have a high cosine similarity, that's due to their similar meaning, the same is also true for antonyms, due to the fact that, despite having different meaning, they often belong to the same semantic area. Therefore, a semantic similarity layer, for instance, can't probably tell apart pair of antonymic predicates, like ``above'' and ``below'', since their embeddings are going to be cosine-similar. More precise similarity estimates could be one derived from an embedding model that relates more strongly to the ``meaning'' of words, as opposed to their semantics, e.g ideally, one where antonymic words are represented by opposite vectors. \cite{w2v-antonyms}
+
+Lastly, we believe it's possible that the metrics in use can't show the benefits of the approach. With apparently-poor results like this, one could make the point that, for any classification tasks, it is better to treat every class as independent from the others. In fact, strictly speaking, if a dataset considers ``below'' and ``under'' as two different classes, then a ``good'' classification model trained on this data is expected to classify as ``below'' instances that are similar to those labeled as ``below'', and to classify as ``under'' instances that are similar to those labeled as ``under''.
+However, we ask how much is it desirable to put sharp boundaries between the classes, within this specific research area? After all, for instances where the correct answer is ``under'', outputting ``below'' is not as bad as outputting ``above''.
+Indeed, metrics that are unaware of the predicates' meaning, might end up penalizing the model too much whenever it outputs, for example, one of two synonymic classes while the other one is the correct one.
+With regards of designing meaning-aware metrics, the problem is how to estimate the ``goodness'' of a predicted class given a ground-truth one (other than a simple $0/1$ value), % given by equality check
+ and maybe semantic cosine similarity is not the answer. % , and how to factor that into the architecture, and into the evaluation.
+
+
+
+DISCUSSION
+
+This approach shows a few deficiencies: first of all, since a unique predicate embedding is predicted
+it can't account for multi-label triples. In fact, we are implicitly assuming that all of the interactions that a certain object pair can have must belong to the same area of meaning. This is certainly not true: for example, a person may be ``on'' a skateboard, and ``riding'' the skateboard without ``on'' and ``ride'' having the same semantics.\footnote{The case of ``on'' and ``ride'', actually show how the assumption of predicate correlation being symmetric is an approximation of a more complex interdependence system: arguably, in fact, the predicate ``ride'' might strongly entail ``on'', whereas the opposite is not true, and this kind of correlation can't be expressed through cosine similarity (which is a distance measure and, as such, a symmetric one).
+A review of such cases can be found in~\citebyaut{prior-softmax} % ...
+}
+
+More importantly, our method can't express how likely it is that the two objects are in a relationship in the first place. Throughout the learning process, the layer forces its input to be a predicate embedding representation which is cosine-close to the correct predicate, but note that it has no clear way of expressing the lack of a predicate.
+In fact, what if there is no relationship between the object pair, namely no predicate that appropriately describes the relation? What is the embedding representation that can capture the lack of a predicate?
+It must be a vector that is the cosine-farthest from every predicate class embedding, so that the similarity measure will bring low scores to every predicate. This lack of expressiveness is quite important, given that the number of actual object pairs interacting is much lower than the number of existing pairs in an image.
+
+
+\iffalse
+A question whether treating the classes as independent entities is the best approach,
+  and look to see if we can teach the models some their interdependence in some form.
+But here, with the ranking approach, and these softened R@x metrics,
+   similar class labels can help eachother in rising above the others
+- "Semantic dense representation instead of 1-hot."
+
+ idea to justify the use of predicate semantics:
+   perhaps that is not generically good for a framework where the metrics are not softened (no ranking approach)
+   perhaps in that case it's better to treat the classes as totally unrelated entities.
+\fi
+
+
+
+The figure, in fact, reveals how the model reputes spatial predicates as very similar to each other
+  and different from other types of predicates, such as ``activities''.~\ref{fig:pred2pred-all-gnews}

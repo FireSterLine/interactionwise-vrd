@@ -1,0 +1,6 @@
+model:
+  feat_used:
+      vis: True
+      vis_so : True
+      sem: concat
+      spat: dsr_spat_vec

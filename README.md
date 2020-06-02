@@ -1,130 +1,95 @@
-# Visual Relationship Detection with Deep Structural Ranking
+# Interactionwise -- Semantic Awareness for Visual Relationship Detection
 
-The code is written in python and pytorch (0.2.0) [torch-0.2.0.post3].
+This repo contains the code for our thesis work on Visual Relationship Detection.
+It is now quite messy, and we are in the process of tidying it up.
+We based our work on [[1]](#1).
 
-Since I have graduated, I may not be able to respond to the issues in time. Thanks for your understanding.
+## In the meantime... partial instructions to set up some assets (datasets, models and packages)
 
-### Clone the repo
-  * `git clone git@github.com:GriffinLiang/vrd-dsr.git`
-  * `git submodule update --recursive`
+### Packages
 
-  OR
-  * `git clone --recursive git@github.com:GriffinLiang/vrd-dsr.git`
+```
+pip install -r requirements.txt
+pip install git+https://github.com/Infinidat/munch
+```
 
-### Data Preparation
+<!---
+Obsolete pre-trained R-CNN `https://pan.baidu.com/s/1V0QIiEI06tcKQOTcHkaorQ`
 
-1. Download VRD Dateset ([image](http://imagenet.stanford.edu/internal/jcjohns/scene_graphs/sg_dataset.zip), [annotation](http://cs.stanford.edu/people/ranjaykrishna/vrd/dataset.zip), [backup](https://drive.google.com/drive/folders/1V8q2i2gHUpSAXTY4Mf6k06WHDVn6MXQ7)) and put it in the path ~/data. Replace ~/data/sg_dataset/sg_test_images/4392556686_44d71ff5a0_o.gif with ~/data/vrd/4392556686_44d71ff5a0_o.jpg
+Mirror: `https://www.dropbox.com/s/62qxqt477vhb59e/faster_rcnn_1_20_7559.pth?dl=0`
+-->
 
-2. Download [VGG16 trained on ImageNet](https://drive.google.com/open?id=0ByuDEGFYmWsbNVF5eExySUtMZmM) and put it in the path ~/data
+### VGG16 feature extractor trained on ImageNet:
+```
+./scripts/gd.pl "https://drive.google.com/file/d/0ByuDEGFYmWsbNVF5eExySUtMZmM/view" "data/VGG_imagenet.npy"
+```
 
-3. Download the meta data (so_prior.pkl) [[Baidu YUN]](https://pan.baidu.com/s/1qZErdmc) or [[Google Drive]](https://drive.google.com/open?id=1e1agFQ32QYZim-Vj07NyZieJnQaQ7YKa) and put it in ~/data/vrd
+### VRD dataset:
+```
+cd data/vrd
+wget http://imagenet.stanford.edu/internal/jcjohns/scene_graphs/sg_dataset.zip
+unzip -n sg_datset
+cd ../..
+```
 
-4. Download visual genome data (vg.zip) [[Baidu YUN]](https://pan.baidu.com/s/1qZErdmc) or [[Google Drive]](https://drive.google.com/open?id=1QrxXRE4WBPDVN81bYsecCxrlzDkR2zXZ) and put it in ~/data/vg
-
-5. Word2vec representations of the subject and object categories are provided in this project. If you want to use the model for novel categories, please refer to this [blog](http://mccormickml.com/2016/04/12/googles-pretrained-word2vec-model-in-python/).
-
-The folder should be:
-
-    ├── sg_dataset
-    │   ├── sg_test_images
-    │   ├── sg_train_images
-    │   
-    ├── VGG_imagenet.npy
-    └── vrd
-        ├── gt.mat
-        ├── obj.txt
-        ├── params_emb.pkl
-        ├── proposal.pkl
-        ├── rel.txt
-        ├── so_prior.pkl
-        ├── test.pkl
-        ├── train.pkl
-        └── zeroShot.mat
-### Data format
-
-* train.pkl or test.pkl
-	* python list
-	* each item is a dictionary with the following keys: {'img_path', 'classes', 'boxes', 'ix1', 'ix2', 'rel_classes'}
-	  * 'classes' and 'boxes' describe the objects contained in a single image.
-	  * 'ix1': subject index.
-	  * 'ix2': object index.
-	  * 'rel_classes': relationship for a subject-object pair.
+```
+mkdir data/embeddings
+wget "https://s3.amazonaws.com/dl4j-distribution/GoogleNews-vectors-negative300.bin.gz"
+mv GoogleNews-vectors-negative300.bin.gz data/embeddings
+```
 
 
-* proposal.pkl
-	```Python
-        >>> proposals.keys()
-        ['confs', 'boxes', 'cls']
-        >>> proposals['confs'].shape, proposals['boxes'].shape, proposals['cls'].shape
-        ((1000,), (1000,), (1000,))
-        >>> proposals['confs'][0].shape, proposals['boxes'][0].shape, proposals['cls'][0].shape
-        ((9, 1), (9, 4), (9, 1))
-        ```
+### VG dataset:
+Please download everything you need from https://visualgenome.org/api/v0/api_home.html into `data/vg`
 
-### Prerequisites
+<!--
+`./scripts/gd.pl "https://drive.google.com/file/d/1_jWnvWNwlJ2ZqKbDMHsSs4BjTblg0FSe/view" "models/epoch_4_checkpoint.pth.tar"`
+`./scripts/gd.pl "https://drive.google.com/file/d/1e1agFQ32QYZim-Vj07NyZieJnQaQ7YKa/view" "data/vrd/so_prior.pkl"`-->
 
-* Python 2.7
-* Pytorch 0.2.0
-* opencv-python
-* tabulate
-* CUDA 8.0 or higher
+### Faster R-CNN pre-trained model:
+```
+./scripts/gd.pl https://drive.google.com/file/d/11YQ7Ctj7kaau6WTx5MKkbw6PIxJAyvsZ/view "faster-rcnn/faster_rcnn_1_20_7559.pth"
+```
 
-### Installation 
+<!--
+./scripts/gd.pl https://drive.google.com/file/d/1QrxXRE4WBPDVN81bYsecCxrlzDkR2zXZ/view vg.zip
+unzip vg.zip
+rm vg.zip
+mv vg data/vg/dsr
+-->
 
-* Edit ~/lib/make.sh to set CUDA_PATH and choose your `-arch` option to match your GPU.
+<!--Download the annotations:
+`wget http://cs.stanford.edu/people/ranjaykrishna/vrd/dataset.zip`-->
 
-  | GPU model  | Architecture |
-  | ------------- | ------------- |
-  | TitanX (Maxwell/Pascal) | sm_52 |
-  | GTX 960M | sm_50 |
-  | GTX 1080 (Ti) | sm_61 |
-  | Grid K520 (AWS g2.2xlarge) | sm_30 |
-  | Tesla K80 (AWS p2.xlarge) | sm_37 |
-  
-* Build the Cython modules for the roi_pooling layer and choose the right -arch to compile the cuda code refering to https://github.com/ruotianluo/pytorch-faster-rcnn.
+<!---do we really need this? -->
+<!---wget https://drive.google.com/drive/folders/1V8q2i2gHUpSAXTY4Mf6k06WHDVn6MXQ7 -->
 
-    ```bash
-    cd lib
-    ./make.sh
-    ```
-    
-### Demo
- * Predicate demo: demo.py->pre_demo()
-   * Download epoch_4_checkpoint.pth.tar [[Baidu YUN]](https://pan.baidu.com/s/1POE2LKJulOoHqEkWV-XHig) or [[Google Drive]](https://drive.google.com/file/d/1_jWnvWNwlJ2ZqKbDMHsSs4BjTblg0FSe/view?usp=sharing) and put it in ~/model
- * Relationship demo: demo.py->vrd_demo().
-   * Install [faster-rcnn](https://github.com/GriffinLiang/faster-rcnn.pytorch/tree/773184a60635918e43b320eb1a0e8881779b90c8
-) according to  README file. (Pay attention to ~/lib/make.sh. Set CUDA_PATH by choosing your `-arch` option to match your GPU.)
-   * Download [faster_rcnn_1_20_7559.pth](https://pan.baidu.com/s/1V0QIiEI06tcKQOTcHkaorQ) and put it in ~/model
-   * [Thanks Jianwei Yang and Jiasen Lu for the detector codes!](https://github.com/jwyang/faster-rcnn.pytorch)
-   
-### Train
+<!--
+For downloading so\_prior.pkl This has to be put in the `~/data/vrd/ folder`
+`scp  data/vrd/so_prior.pkl`
 
-* Model Structure
+For downloading VG dataset:
+-->
 
-![Model Structure](https://github.com/GriffinLiang/vrd-dsr/blob/master/img/net.png)
+## References
+<a id="1">[1]</a>
+Kongming Liang, Yuhong Guo, Hong Chang, and Xilin Chen (2018).
+	Visual relationship detection with deep structural ranking
+https://github.com/GriffinLiang/vrd-dsr
 
-* Run
+<!--
+## References
+<a id="1">[1]</a>
+Dijkstra, E. W. (1968).
+	Go to statement considered harmful.
+Communications of the ACM, 11(3), 147-148.
+-->
 
-  ```bash
-  cd tool
-  CUDA_VISIBLE_DEVICES=0 python train.py --dataset vrd --name VRD_RANK --epochs 10 --print-freq 500 --model_type RANK_IM
-  ```
-  
-  You can set the parser argument -no_so to discard separate bbox visual input and --no_obj to discard semantic cue.
-
-* This project contains all training and testing code for predicate detection. For relationship detection, our proposed pipeline contains two stages. The first stage is object detection and not included in this project. I am trying to release the code ASAP. Before that, you may refer to some other projects such as [pytorch-faster-rcnn](https://github.com/ruotianluo/pytorch-faster-rcnn) and [faster-rcnn.pytorch](https://github.com/jwyang/faster-rcnn.pytorch).
-
-## Citation
-
-If you use this code, please cite the following paper(s):
-
-	@article{liang2018Visual,
-		title={Visual Relationship Detection with Deep Structural Ranking},
-		author={Liang, Kongming and Guo, Yuhong and Chang, Hong and Chen, Xilin},
-  		booktitle={AAAI Conference on Artificial Intelligence},
-  		year={2018}
-	}
-
-## License
-
-The source codes and processed data can only be used for none-commercial purpose. 
+<!--
+replace this image in vrd_test
+https://raw.githubusercontent.com/GriffinLiang/vrd-dsr/master/data/vrd/4392556686_44d71ff5a0_o.jpg
+see Griffin Liang for more:
+wget https://raw.githubusercontent.com/GriffinLiang/vrd-dsr/master/data/vrd/4392556686_44d71ff5a0_o.jpg
+mv 4392556686_44d71ff5a0_o.jpg data/vrd/sg_dataset/sg_test_images/4392556686_44d71ff5a0_o.jpg
+rm data/vrd/sg_dataset/sg_test_images/4392556686_44d71ff5a0_o.gif
+-->

@@ -7,6 +7,13 @@
 
 """Blob helper functions."""
 
+
+
+
+
+
+
+#TODO check maybe this is not necessary, because faster-rcnn already has these functions
 import numpy as np
 import cv2
 

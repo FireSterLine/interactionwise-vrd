@@ -1,0 +1,444 @@
+REFERENCE test performance for the pre-trained DSR Model:
+
+
+08/04/2020
+Trained from scratch:
+
+PRED TEST:
+        R@100:  93.415  ZS:  82.121
+        R@50:  86.122   ZS:  64.671
+TEST Time: 00:01:10
+REL TEST:
+        R@100:  23.173  ZS:  8.083
+        R@50:  18.638   ZS:  4.557
+
+07/04/2020
+
+88.020 65.269 94.135 82.464    18.231 4.815 22.897 8.340
+CLS PRED TEST:
+All:	R@4x:  84.656	R@50:  88.020	R@100:  94.135
+ZShot:	R@4x:  24.808	R@50:  65.269	R@100:  82.464
+TEST Time: 00:03:09
+CLS REL TEST:
+All:	R@4x:  16.824	R@50:  18.231	R@100:  22.897
+ZShot:	R@4x:  1.204	R@50:  4.815	R@100:  8.340
+CLS OBJ TEST POS:  43.000, LOC:  6225.000, GT:  6694.000, Precision:  0.007, Recall:  0.006
+
+
+
+QUESTION: why is a newly initialized model already this good?
+CLS PRED TEST:
+All:	R@50:  19.023	R@100:  32.941
+ZShot:	R@50:  13.430	R@100:  21.129
+CLS REL TEST:
+All:	R@50:  16.719	R@100:  21.307
+ZShot:	R@50:  0.516	R@100:  1.548
+CLS OBJ TEST POS:  92.000, LOC:  6176.000, GT:  6694.000, Precision:  0.015, Recall:  0.014
+
+
+I tried training: after 1 epoch
+CLS PRED TEST:
+All:	R@50:  79.248	R@100:  90.573
+ZShot:	R@50:  57.399	R@100:  78.101
+CLS REL TEST:
+All:	R@50:  18.021	R@100:  22.700
+ZShot:	R@50:  3.439	R@100:  6.621
+CLS OBJ TEST POS:  92.000, LOC:  6176.000, GT:  6694.000, Precision:  0.015, Recall:  0.014
+
+2 epoch:
+
+CLS PRED TEST:
+All:	R@50:  83.765	R@100:  92.577
+ZShot:	R@50:  61.163	R@100:  81.523
+CLS REL TEST:
+All:	R@50:  18.730	R@100:  23.094
+ZShot:	R@50:  4.127	R@100:  7.911
+CLS OBJ TEST POS:  92.000, LOC:  6176.000, GT:  6694.000, Precision:  0.015, Recall:  0.014
+
+CLS PRED TEST:
+All:	R@50:  84.800	R@100:  93.074
+ZShot:	R@50:  63.216	R@100:  82.036
+TEST Time: 00:01:16
+CLS REL TEST:
+All:	R@50:  18.638	R@100:  23.278
+ZShot:	R@50:  4.385	R@100:  8.598
+CLS OBJ TEST POS:  92.000, LOC:  6176.000, GT:  6694.000, Precision:  0.015, Recall:  0.014
+
+CLS PRED TEST:
+All:	R@50:  86.332	R@100:  93.519
+ZShot:	R@50:  64.756	R@100:  83.062
+TEST Time: 00:01:16
+CLS REL TEST:
+All:	R@50:  18.612	R@100:  23.068
+ZShot:	R@50:  4.643	R@100:  7.739
+CLS OBJ TEST POS:  92.000, LOC:  6176.000, GT:  6694.000, Precision:  0.015, Recall:  0.014
+
+
+OUTPUT IN LOCAL with just a few (10) training/test samples (no shuffling):
+
+
+Arguments:
+No Checkpoint
+args: {
+  "data": {
+    "justafew": true,
+    "name": "vrd",
+    "with_bg_obj": false,
+    "with_bg_pred": false
+  },
+  "eval": {
+    "use_obj_prior": true
+  },
+  "model": {
+    "n_fus_neurons": 256,
+    "type": "DSRModel",
+    "use_bn": false,
+    "use_sem": true,
+    "use_so": true,
+    "use_spat": 0,
+    "use_vis": true
+  },
+  "training": {
+    "batch_size": 1,
+    "checkpoint_freq": 5,
+    "num_epochs": 4,
+    "opt": {
+      "lr": 1e-05,
+      "weight_decay": 0.0005
+    },
+    "prints_per_epoch": 1,
+    "test_pre": true,
+    "test_rel": true,
+    "use_shuffle": false
+  }
+}
+Initializing data...
+Data args:  Munch({'name': 'vrd', 'with_bg_obj': False, 'with_bg_pred': False, 'justafew': True})
+/home/gio/Desktop/thesis/interactionwise-vrd/lib/dataset.py:30: UserWarning: Warning: Using less data (because of 'justafew' debugging)
+  warnings.warn("Warning: Using less data (because of 'justafew' debugging)", UserWarning)
+Distribution soP found!
+Data not cached. Reading data_annos_img_train.json...
+Max shape is: (1000, 1000, 3)
+Initializing VRD Model...
+Model args:  Munch({'type': 'DSRModel', 'use_so': True, 'use_vis': True, 'use_sem': True, 'use_spat': 0, 'n_fus_neurons': 256, 'use_bn': False, 'n_obj': 100, 'n_pred': 70})
+Initializing evaluation...
+Evaluation args:  Munch({'use_obj_prior': True})
+Initializing training...
+Training args:  Munch({'opt': Munch({'lr': 1e-05, 'weight_decay': 0.0005}), 'use_shuffle': False, 'num_epochs': 4, 'checkpoint_freq': 5, 'prints_per_epoch': 1, 'batch_size': 1, 'test_pre': True, 'test_rel': True})
+train()
+Epoch 1/4
+Distribution soP found!
+Data not cached. Reading data_annos_img_test.json...
+Max shape is: (1000, 1000, 3)
+index:  0
+index:  1
+index:  2
+index:  3
+index:  4
+index:  5
+index:  6
+index:  7
+index:  8
+index:  9
+/home/gio/Desktop/thesis/interactionwise-vrd/lib/evaluation_dsr.py:92: UserWarning: Warning! Test results and ground truths do not have the same length: test performance might be off! 1000 != 10
+  warnings.warn("Warning! Test results and ground truths do not have the same length: test performance might be off! {} != {}".format(num_imgs, len(res["rlp_confs_ours"])), UserWarning)
+/home/gio/Desktop/thesis/interactionwise-vrd/lib/evaluation_dsr.py:104: UserWarning: Warning! Prediction on test set yield wrong size: 1000 != 10
+  warnings.warn("Warning! Prediction on test set yield wrong size: {} != {}".format(num_imgs, len(pred["tuple_confs"])))
+CLS PRED TEST:
+All:	R@50:  17.500	R@100:  35.000
+ZShot:	R@50:  0.000	R@100:  25.000
+TEST Time: 00:00:38
+Distribution soP found!
+Data not cached. Reading data_annos_img_test.json...
+Max shape is: (1000, 1000, 3)
+index:  0
+0/10
+index:  1
+1/10
+index:  2
+2/10
+index:  3
+3/10
+index:  4
+4/10
+index:  5
+5/10
+index:  6
+6/10
+index:  7
+7/10
+index:  8
+8/10
+index:  9
+9/10
+CLS REL TEST:
+All:	R@50:  22.500	R@100:  26.250
+ZShot:	R@50:  0.000	R@100:  6.250
+CLS OBJ TEST POS:  3.000, LOC:  58.000, GT:  64.000, Precision:  0.049, Recall:  0.047
+TEST Time: 00:01:09
+index:  0
+0/10
+	   0: LOSS:  6.100
+index:  1
+1/10
+	   1: LOSS:  1.335
+index:  2
+2/10
+	   2: LOSS:  13.594
+index:  3
+3/10
+	   3: LOSS:  20.147
+index:  4
+4/10
+	   4: LOSS:  15.239
+index:  5
+5/10
+	   5: LOSS:  12.890
+index:  6
+6/10
+	   6: LOSS:  8.087
+index:  7
+7/10
+	   7: LOSS:  13.103
+index:  8
+8/10
+	   8: LOSS:  13.677
+index:  9
+9/10
+	   9: LOSS:  18.360
+TRAIN Loss:  12.253
+TRAIN Time: 00:00:46
+Epoch 2/4
+Distribution soP found!
+Data not cached. Reading data_annos_img_test.json...
+Max shape is: (1000, 1000, 3)
+index:  0
+index:  1
+index:  2
+index:  3
+index:  4
+index:  5
+index:  6
+index:  7
+index:  8
+index:  9
+CLS PRED TEST:
+All:	R@50:  50.000	R@100:  62.500
+ZShot:	R@50:  43.750	R@100:  68.750
+TEST Time: 00:02:48
+Distribution soP found!
+Data not cached. Reading data_annos_img_test.json...
+Max shape is: (1000, 1000, 3)
+index:  0
+0/10
+index:  1
+1/10
+index:  2
+2/10
+index:  3
+3/10
+index:  4
+4/10
+index:  5
+5/10
+index:  6
+6/10
+index:  7
+7/10
+index:  8
+8/10
+index:  9
+9/10
+CLS REL TEST:
+All:	R@50:  23.750	R@100:  27.500
+ZShot:	R@50:  6.250	R@100:  12.500
+CLS OBJ TEST POS:  3.000, LOC:  58.000, GT:  64.000, Precision:  0.049, Recall:  0.047
+TEST Time: 00:00:59
+index:  0
+0/10
+	   0: LOSS:  5.654
+index:  1
+1/10
+	   1: LOSS:  1.265
+index:  2
+2/10
+	   2: LOSS:  12.945
+index:  3
+3/10
+	   3: LOSS:  19.142
+index:  4
+4/10
+	   4: LOSS:  14.157
+index:  5
+5/10
+	   5: LOSS:  11.736
+index:  6
+6/10
+	   6: LOSS:  7.346
+index:  7
+7/10
+	   7: LOSS:  11.772
+index:  8
+8/10
+	   8: LOSS:  11.404
+index:  9
+9/10
+	   9: LOSS:  16.558
+TRAIN Loss:  11.198
+TRAIN Time: 00:00:52
+Epoch 3/4
+Distribution soP found!
+Data not cached. Reading data_annos_img_test.json...
+Max shape is: (1000, 1000, 3)
+index:  0
+index:  1
+index:  2
+index:  3
+index:  4
+index:  5
+index:  6
+index:  7
+index:  8
+index:  9
+CLS PRED TEST:
+All:	R@50:  65.000	R@100:  77.500
+ZShot:	R@50:  87.500	R@100:  93.750
+TEST Time: 00:01:00
+Distribution soP found!
+Data not cached. Reading data_annos_img_test.json...
+Max shape is: (1000, 1000, 3)
+index:  0
+0/10
+index:  1
+1/10
+index:  2
+2/10
+index:  3
+3/10
+index:  4
+4/10
+index:  5
+5/10
+index:  6
+6/10
+index:  7
+7/10
+index:  8
+8/10
+index:  9
+9/10
+CLS REL TEST:
+All:	R@50:  26.250	R@100:  30.000
+ZShot:	R@50:  18.750	R@100:  25.000
+CLS OBJ TEST POS:  3.000, LOC:  58.000, GT:  64.000, Precision:  0.049, Recall:  0.047
+TEST Time: 00:01:08
+index:  0
+0/10
+	   0: LOSS:  4.642
+index:  1
+1/10
+	   1: LOSS:  1.090
+index:  2
+2/10
+	   2: LOSS:  10.663
+index:  3
+3/10
+	   3: LOSS:  15.905
+index:  4
+4/10
+	   4: LOSS:  10.180
+index:  5
+5/10
+	   5: LOSS:  7.776
+index:  6
+6/10
+	   6: LOSS:  4.695
+index:  7
+7/10
+	   7: LOSS:  6.881
+index:  8
+8/10
+	   8: LOSS:  3.622
+index:  9
+9/10
+	   9: LOSS:  9.373
+TRAIN Loss:  7.483
+TRAIN Time: 00:00:56
+Epoch 4/4
+Distribution soP found!
+Data not cached. Reading data_annos_img_test.json...
+Max shape is: (1000, 1000, 3)
+index:  0
+index:  1
+index:  2
+index:  3
+index:  4
+index:  5
+index:  6
+index:  7
+index:  8
+index:  9
+CLS PRED TEST:
+All:	R@50:  66.250	R@100:  78.750
+ZShot:	R@50:  87.500	R@100:  93.750
+TEST Time: 00:01:08
+Distribution soP found!
+Data not cached. Reading data_annos_img_test.json...
+Max shape is: (1000, 1000, 3)
+index:  0
+0/10
+index:  1
+1/10
+index:  2
+2/10
+index:  3
+3/10
+index:  4
+4/10
+index:  5
+5/10
+index:  6
+6/10
+index:  7
+7/10
+index:  8
+8/10
+index:  9
+9/10
+CLS REL TEST:
+All:	R@50:  28.750	R@100:  33.750
+ZShot:	R@50:  25.000	R@100:  31.250
+CLS OBJ TEST POS:  3.000, LOC:  58.000, GT:  64.000, Precision:  0.049, Recall:  0.047
+TEST Time: 00:01:12
+index:  0
+0/10
+	   0: LOSS:  1.586
+index:  1
+1/10
+	   1: LOSS:  0.327
+index:  2
+2/10
+	   2: LOSS:  3.903
+index:  3
+3/10
+	   3: LOSS:  5.785
+index:  4
+4/10
+	   4: LOSS:  3.054
+index:  5
+5/10
+	   5: LOSS:  1.649
+index:  6
+6/10
+	   6: LOSS:  1.156
+index:  7
+7/10
+	   7: LOSS:  2.145
+index:  8
+8/10
+	   8: LOSS:  1.109
+index:  9
+9/10
+	   9: LOSS:  3.652
+TRAIN Loss:  2.437
+TRAIN Time: 00:01:03

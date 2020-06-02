@@ -1,0 +1,31 @@
+scan-v6
+
+Let the mode be the last value in the name of the scan files.
+mode = [1 2   9 10   17 18 19 25 29 33]
+
+Here's an explanation of the mode value,
+  together with some comments on the results of the scan:
+
+- [1,2,9,10] uses a SemSim layer, coupled with either one or two fc layers, and with or without logit
+  - [1,  2] : FC 512 -> FC 300 -> SemSim
+  - [9, 10] : FC 300 -> SemSim
+  - [1,  9] : Logit applied after cosine similarity
+  comment: A unique FC layer is better than two FCs.
+           Interestingly, applying the logit messes up relationship detection (all 4 scores go between 0-1%),
+            although it improves Pre R@100 (zs and non-zs) by 5-10 perc. points.
+- [17 to 33] Simply uses the pred2pred semantic (cosine) similarities to re-score the predicates scores (matrix multiplication)
+  - 17, the simplest version of these:
+    - doesn't normalize the rows of the pred2pred matrix
+    - doesn't use relu before the last layer
+    - doesn't use the bias in the last layer
+    - trains the last layer
+    - uses a unique FC before the re-scoring layer
+  - 18 normalizes the rows of the pred2pred matrix
+  - 19 uses relu before the last layer
+  comment: 18 and 19 don't improve 17
+  - 25 fixes the last layer
+  - 29 fixes the last layer using the biases (fixed at random value).
+  comment: 25 and 29 are 5% worse than 17. TODO: try using the biases without fixing the last layer (21)
+  - 33 uses two FCs before the re-scoring layer
+  comment: this does slightly worse than 17
+comment: just below no-pred-sem, 17 is the best choice of these.

@@ -1,99 +1,51 @@
 ## General
-iwenv/
-experiment/results/*
-models/exp_models/*
-models/*
-models/*/*
-tools/*.sh
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.cuo
+tmp*
+*.tmp
+__pycache__
+other
+iwenv*
+models/**/*.pth.tar
+**/.~lock.*
+#!models/*.txt
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
+images
+images_det
 
-# Compiled Static libraries
-*.lai
-*.la
-*.a
+#data/*
+#!data/genome/*
+data/demo
+data/embeddings/*
+!data/embeddings/fallback*.json
+data/vg
+data/scripts
+data/coco
+data/pretrained_model
+data/cache/*
+data/genome/visual_genome_python_driver
+data/genome/coco_splits
+data/genome/vg-dsr
+data/genome/xml
+data/genome/*/xml
+data/genome/*/json
+#data/genome/1600-400-20/data_*.json
 
-# Compiled protocol buffers
-*.pb.h
-*.pb.cc
-*_pb2.py
+!data/vrd/sg_dataset/sg_test_images/4392556686_44d71ff5a0_o.gif
 
-# Compiled python
-*.pyc
+data/**/*_relst_*.json
+data/genome/**/*_count.txt
+data/genome/**/data_annos_img_train.json
+data/vrd/dsr/data_annos_img_train.json
+!data/vrd/*.json
 
-# Compiled MATLAB
-*.mex*
+data/sg_dataset.zip # TODO: remove, move sg_dataset.zip to vrd folder
+data/vrd/sg_dataset*
+#data/vrd/4392556686_44d71ff5a0_o.jpg
 
-# IPython notebook checkpoints
-.ipynb_checkpoints
-
-# Editor temporaries
-*.swp
-*~
-
-# Sublime Text settings
-*.sublime-workspace
-*.sublime-project
-
-# Eclipse Project settings
-*.*project
-.settings
-
-# QtCreator files
-*.user
-
-# PyCharm files
-.idea
-
-# OSX dir files
-.DS_Store
-
-## Caffe
-
-# User's build configuration
-Makefile.config
-
-# Data and models are either
-# 1. reference, and not casually committed
-# 2. custom, and live on their own unless they're deliberated contributed
-data/*
-*.caffemodel
-*.caffemodel.h5
-*.solverstate
-*.solverstate.h5
-*.binaryproto
-*leveldb
-*lmdb
-
-# build, distribute, and bins (+ python proto bindings)
-build
-.build_debug/*
-.build_release/*
-distribute/*
-*.testbin
-*.bin
-python/caffe/proto/
-cmake_build
-.cmake_build
-
-# Generated documentation
-docs/_site
-docs/gathered
-_site
-doxygen
-docs/dev
-
-# LevelDB files
-*.sst
-*.ldb
-LOCK
-LOG*
-CURRENT
-MANIFEST-*
+# Non-evaluation Pickles, Matlab
+data/**/*.pkl
+data/**/*.mat
+data/**/*.npy
+!data/vrd/**/eval/**/*.pkl
+!data/vrd/from-dsr/*.pkl
+data/vrd/from-dsr/so_prior.pkl
+!data/vrd/from-language-priors/*.mat

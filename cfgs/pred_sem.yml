@@ -1,0 +1,14 @@
+# Dataset in use
+data:
+  name: vrd
+
+# Evaluation Arguments
+eval:
+  eval_obj: False
+  test_rel: False
+  rec: [50, 20]
+
+# Training parameters
+training:
+  checkpoint_freq: 0
+  loss: mlab

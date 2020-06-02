@@ -1,0 +1,3138 @@
+Arguments:
+ data:
+  justafew: false
+  name: vrd
+  with_bg_obj: false
+  with_bg_pred: false
+eval:
+  eval_obj: false
+  justafew: false
+  rec:
+  - 50
+  - 30
+  test_pre: true
+  test_rel: false
+  use_obj_prior: true
+  use_preload: false
+model:
+  n_fus_neurons: 256
+  type: DSRModel
+  use_bn: false
+  use_pred_sem: 0
+  use_sem: true
+  use_so: true
+  use_spat: 1
+  use_vis: true
+opt:
+  lr: 0.0001
+  lr_fus_ratio: 1
+  lr_rel_ratio: 1
+  weight_decay: 0.0005
+training:
+  batch_size: 1
+  checkpoint_freq: 0
+  loss: mlab
+  num_epochs: 4
+  print_freq: 0.1
+  test_first: false
+  test_freq:
+  - 1
+  - 2
+  - 3
+  use_preload: false
+  use_shuffle: true
+
+Initializing data:  Munch({'name': 'vrd', 'with_bg_obj': False, 'with_bg_pred': False, 'justafew': False})
+Initializing VRD Model:  Munch({'type': 'DSRModel', 'use_so': True, 'use_vis': True, 'use_sem': True, 'use_spat': 1, 'use_pred_sem': 0, 'n_fus_neurons': 256, 'use_bn': False, 'n_obj': 100, 'n_pred': 57})
+Random initialization...
+Distribution soP found!
+Initializing evaluator...
+Initializing training...
+train()
+Epoch 1/4
+/opt/interactionwise/interactionwise-gio/utils.py:305: UserWarning: dict_patch: key 'lr_fus_ratio' not int original dict.
+  warnings.warn("dict_patch: key '{}' not int original dict.".format(k), UserWarning)
+/opt/interactionwise/interactionwise-gio/utils.py:305: UserWarning: dict_patch: key 'lr_rel_ratio' not int original dict.
+  warnings.warn("dict_patch: key '{}' not int original dict.".format(k), UserWarning)
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  2.523
+	 378/3780: LOSS:  1.776
+	 756/3780: LOSS:  1.647
+	1134/3780: LOSS:  1.537
+	1512/3780: LOSS:  1.323
+	1890/3780: LOSS:  1.195
+	2268/3780: LOSS:  1.065
+	2646/3780: LOSS:  1.121
+	3024/3780: LOSS:  1.048
+	3402/3780: LOSS:  0.964
+TRAIN Loss:  1.420 Time: 00:02:23
+Epoch 2/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.997
+	 378/3780: LOSS:  0.850
+	 756/3780: LOSS:  0.802
+	1134/3780: LOSS:  0.928
+	1512/3780: LOSS:  0.930
+	1890/3780: LOSS:  0.950
+	2268/3780: LOSS:  0.748
+	2646/3780: LOSS:  0.898
+	3024/3780: LOSS:  0.809
+	3402/3780: LOSS:  0.773
+TRAIN Loss:  0.868 Time: 00:02:23
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  87.942	ZS:  71.678
+	R@30:  78.424	ZS:  54.633
+
+TEST Time: 00:01:06
+Epoch 3/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.838
+	 378/3780: LOSS:  0.769
+	 756/3780: LOSS:  0.685
+	1134/3780: LOSS:  0.763
+	1512/3780: LOSS:  0.777
+	1890/3780: LOSS:  0.773
+	2268/3780: LOSS:  0.771
+	2646/3780: LOSS:  0.990
+	3024/3780: LOSS:  0.686
+	3402/3780: LOSS:  0.707
+TRAIN Loss:  0.776 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  88.754	ZS:  73.864
+	R@30:  80.283	ZS:  58.566
+
+TEST Time: 00:01:06
+Epoch 4/4
+Dividing the learning rate by 10 at epoch 3!
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.658
+	 378/3780: LOSS:  0.716
+	 756/3780: LOSS:  0.695
+	1134/3780: LOSS:  0.695
+	1512/3780: LOSS:  0.654
+	1890/3780: LOSS:  0.628
+	2268/3780: LOSS:  0.663
+	2646/3780: LOSS:  0.647
+	3024/3780: LOSS:  0.629
+	3402/3780: LOSS:  0.619
+TRAIN Loss:  0.661 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  89.539	ZS:  74.213
+	R@30:  80.767	ZS:  57.517
+
+TEST Time: 00:01:05
+Arguments:
+ data:
+  justafew: false
+  name: vrd
+  with_bg_obj: false
+  with_bg_pred: false
+eval:
+  eval_obj: false
+  justafew: false
+  rec:
+  - 50
+  - 30
+  test_pre: true
+  test_rel: false
+  use_obj_prior: true
+  use_preload: false
+model:
+  n_fus_neurons: 256
+  type: DSRModel
+  use_bn: false
+  use_pred_sem: 17
+  use_sem: true
+  use_so: true
+  use_spat: 1
+  use_vis: true
+opt:
+  lr: 0.0001
+  lr_fus_ratio: 1
+  lr_rel_ratio: 1
+  weight_decay: 0.0005
+training:
+  batch_size: 1
+  checkpoint_freq: 0
+  loss: mlab
+  num_epochs: 4
+  print_freq: 0.1
+  test_first: false
+  test_freq:
+  - 1
+  - 2
+  - 3
+  use_preload: false
+  use_shuffle: true
+
+Initializing data:  Munch({'name': 'vrd', 'with_bg_obj': False, 'with_bg_pred': False, 'justafew': False})
+Initializing VRD Model:  Munch({'type': 'DSRModel', 'use_so': True, 'use_vis': True, 'use_sem': True, 'use_spat': 1, 'use_pred_sem': 17, 'n_fus_neurons': 256, 'use_bn': False, 'n_obj': 100, 'n_pred': 57, 'pred_emb': array([[ 0.01668124, -0.0566705 ,  0.01736677, ..., -0.07281854,
+        -0.01835698, -0.04417861],
+       [-0.06716008, -0.04918766, -0.02096782, ..., -0.04698053,
+         0.07315089,  0.08134883],
+       [-0.02224379, -0.01505082,  0.00116357, ...,  0.00607473,
+        -0.04376223, -0.00773697],
+       ...,
+       [-0.02783789,  0.07209299, -0.07744642, ..., -0.03640339,
+        -0.08565503, -0.07744642],
+       [ 0.02842034, -0.02331489,  0.01276363, ..., -0.00808363,
+        -0.00209536,  0.01089163],
+       [-0.0423268 , -0.07201692,  0.01818595, ..., -0.05389565,
+        -0.02868766, -0.15799776]])})
+Mode 0 = 00000
+Random initialization...
+Distribution soP found!
+Initializing evaluator...
+Initializing training...
+train()
+Epoch 1/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  2.616
+	 378/3780: LOSS:  1.948
+	 756/3780: LOSS:  1.733
+	1134/3780: LOSS:  1.598
+	1512/3780: LOSS:  1.541
+	1890/3780: LOSS:  1.411
+	2268/3780: LOSS:  1.425
+	2646/3780: LOSS:  1.231
+	3024/3780: LOSS:  1.189
+	3402/3780: LOSS:  1.115
+TRAIN Loss:  1.581 Time: 00:02:22
+Epoch 2/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  1.206
+	 378/3780: LOSS:  0.978
+	 756/3780: LOSS:  0.952
+	1134/3780: LOSS:  0.979
+	1512/3780: LOSS:  0.919
+	1890/3780: LOSS:  0.986
+	2268/3780: LOSS:  1.036
+	2646/3780: LOSS:  0.845
+	3024/3780: LOSS:  0.962
+	3402/3780: LOSS:  0.877
+TRAIN Loss:  0.974 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  86.580	ZS:  67.920
+	R@30:  76.839	ZS:  51.836
+
+TEST Time: 00:01:06
+Epoch 3/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.915
+	 378/3780: LOSS:  0.893
+	 756/3780: LOSS:  0.871
+	1134/3780: LOSS:  0.872
+	1512/3780: LOSS:  0.868
+	1890/3780: LOSS:  0.777
+	2268/3780: LOSS:  0.798
+	2646/3780: LOSS:  0.833
+	3024/3780: LOSS:  0.938
+	3402/3780: LOSS:  0.761
+TRAIN Loss:  0.852 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  87.693	ZS:  70.892
+	R@30:  78.568	ZS:  54.196
+
+TEST Time: 00:01:06
+Epoch 4/4
+Dividing the learning rate by 10 at epoch 3!
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.776
+	 378/3780: LOSS:  0.778
+	 756/3780: LOSS:  0.779
+	1134/3780: LOSS:  0.740
+	1512/3780: LOSS:  0.796
+	1890/3780: LOSS:  0.782
+	2268/3780: LOSS:  0.794
+	2646/3780: LOSS:  0.705
+	3024/3780: LOSS:  0.762
+	3402/3780: LOSS:  0.700
+TRAIN Loss:  0.761 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  88.518	ZS:  71.416
+	R@30:  79.419	ZS:  55.682
+
+TEST Time: 00:01:06
+Arguments:
+ data:
+  justafew: false
+  name: vrd
+  with_bg_obj: false
+  with_bg_pred: false
+eval:
+  eval_obj: false
+  justafew: false
+  rec:
+  - 50
+  - 30
+  test_pre: true
+  test_rel: false
+  use_obj_prior: true
+  use_preload: false
+model:
+  n_fus_neurons: 256
+  type: DSRModel
+  use_bn: false
+  use_pred_sem: 0
+  use_sem: true
+  use_so: true
+  use_spat: 1
+  use_vis: true
+opt:
+  lr: 0.0001
+  lr_fus_ratio: 1
+  lr_rel_ratio: 10
+  weight_decay: 0.0005
+training:
+  batch_size: 1
+  checkpoint_freq: 0
+  loss: mlab
+  num_epochs: 4
+  print_freq: 0.1
+  test_first: false
+  test_freq:
+  - 1
+  - 2
+  - 3
+  use_preload: false
+  use_shuffle: true
+
+Initializing data:  Munch({'name': 'vrd', 'with_bg_obj': False, 'with_bg_pred': False, 'justafew': False})
+Initializing VRD Model:  Munch({'type': 'DSRModel', 'use_so': True, 'use_vis': True, 'use_sem': True, 'use_spat': 1, 'use_pred_sem': 0, 'n_fus_neurons': 256, 'use_bn': False, 'n_obj': 100, 'n_pred': 57})
+Random initialization...
+Distribution soP found!
+Initializing evaluator...
+Initializing training...
+train()
+Epoch 1/4
+/opt/interactionwise/interactionwise-gio/utils.py:305: UserWarning: dict_patch: key 'lr_fus_ratio' not int original dict.
+  warnings.warn("dict_patch: key '{}' not int original dict.".format(k), UserWarning)
+/opt/interactionwise/interactionwise-gio/utils.py:305: UserWarning: dict_patch: key 'lr_rel_ratio' not int original dict.
+  warnings.warn("dict_patch: key '{}' not int original dict.".format(k), UserWarning)
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  2.439
+	 378/3780: LOSS:  1.470
+	 756/3780: LOSS:  1.252
+	1134/3780: LOSS:  1.102
+	1512/3780: LOSS:  1.040
+	1890/3780: LOSS:  0.912
+	2268/3780: LOSS:  0.896
+	2646/3780: LOSS:  0.771
+	3024/3780: LOSS:  0.889
+	3402/3780: LOSS:  0.731
+TRAIN Loss:  1.150 Time: 00:02:23
+Epoch 2/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.788
+	 378/3780: LOSS:  0.682
+	 756/3780: LOSS:  0.676
+	1134/3780: LOSS:  0.732
+	1512/3780: LOSS:  0.641
+	1890/3780: LOSS:  0.590
+	2268/3780: LOSS:  0.669
+	2646/3780: LOSS:  1.064
+	3024/3780: LOSS:  0.653
+	3402/3780: LOSS:  0.704
+TRAIN Loss:  0.720 Time: 00:02:23
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  89.827	ZS:  73.252
+	R@30:  81.330	ZS:  57.955
+
+TEST Time: 00:01:06
+Epoch 3/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.534
+	 378/3780: LOSS:  0.570
+	 756/3780: LOSS:  0.609
+	1134/3780: LOSS:  0.582
+	1512/3780: LOSS:  0.664
+	1890/3780: LOSS:  0.572
+	2268/3780: LOSS:  0.648
+	2646/3780: LOSS:  0.522
+	3024/3780: LOSS:  0.598
+	3402/3780: LOSS:  0.615
+TRAIN Loss:  0.591 Time: 00:02:23
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  90.731	ZS:  74.563
+	R@30:  82.509	ZS:  58.654
+
+TEST Time: 00:01:06
+Epoch 4/4
+Dividing the learning rate by 10 at epoch 3!
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.487
+	 378/3780: LOSS:  0.508
+	 756/3780: LOSS:  0.506
+	1134/3780: LOSS:  0.449
+	1512/3780: LOSS:  0.491
+	1890/3780: LOSS:  0.509
+	2268/3780: LOSS:  0.444
+	2646/3780: LOSS:  0.506
+	3024/3780: LOSS:  0.489
+	3402/3780: LOSS:  0.476
+TRAIN Loss:  0.487 Time: 00:02:23
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  91.660	ZS:  76.486
+	R@30:  84.027	ZS:  60.140
+
+TEST Time: 00:01:06
+Arguments:
+ data:
+  justafew: false
+  name: vrd
+  with_bg_obj: false
+  with_bg_pred: false
+eval:
+  eval_obj: false
+  justafew: false
+  rec:
+  - 50
+  - 30
+  test_pre: true
+  test_rel: false
+  use_obj_prior: true
+  use_preload: false
+model:
+  n_fus_neurons: 256
+  type: DSRModel
+  use_bn: false
+  use_pred_sem: 17
+  use_sem: true
+  use_so: true
+  use_spat: 1
+  use_vis: true
+opt:
+  lr: 0.0001
+  lr_fus_ratio: 1
+  lr_rel_ratio: 10
+  weight_decay: 0.0005
+training:
+  batch_size: 1
+  checkpoint_freq: 0
+  loss: mlab
+  num_epochs: 4
+  print_freq: 0.1
+  test_first: false
+  test_freq:
+  - 1
+  - 2
+  - 3
+  use_preload: false
+  use_shuffle: true
+
+Initializing data:  Munch({'name': 'vrd', 'with_bg_obj': False, 'with_bg_pred': False, 'justafew': False})
+Initializing VRD Model:  Munch({'type': 'DSRModel', 'use_so': True, 'use_vis': True, 'use_sem': True, 'use_spat': 1, 'use_pred_sem': 17, 'n_fus_neurons': 256, 'use_bn': False, 'n_obj': 100, 'n_pred': 57, 'pred_emb': array([[ 0.01668124, -0.0566705 ,  0.01736677, ..., -0.07281854,
+        -0.01835698, -0.04417861],
+       [-0.06716008, -0.04918766, -0.02096782, ..., -0.04698053,
+         0.07315089,  0.08134883],
+       [-0.02224379, -0.01505082,  0.00116357, ...,  0.00607473,
+        -0.04376223, -0.00773697],
+       ...,
+       [-0.02783789,  0.07209299, -0.07744642, ..., -0.03640339,
+        -0.08565503, -0.07744642],
+       [ 0.02842034, -0.02331489,  0.01276363, ..., -0.00808363,
+        -0.00209536,  0.01089163],
+       [-0.0423268 , -0.07201692,  0.01818595, ..., -0.05389565,
+        -0.02868766, -0.15799776]])})
+Mode 0 = 00000
+Random initialization...
+Distribution soP found!
+Initializing evaluator...
+Initializing training...
+train()
+Epoch 1/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  2.408
+	 378/3780: LOSS:  1.702
+	 756/3780: LOSS:  1.547
+	1134/3780: LOSS:  1.232
+	1512/3780: LOSS:  1.062
+	1890/3780: LOSS:  1.032
+	2268/3780: LOSS:  0.976
+	2646/3780: LOSS:  0.879
+	3024/3780: LOSS:  0.944
+	3402/3780: LOSS:  0.956
+TRAIN Loss:  1.274 Time: 00:02:22
+Epoch 2/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.799
+	 378/3780: LOSS:  0.774
+	 756/3780: LOSS:  0.886
+	1134/3780: LOSS:  0.820
+	1512/3780: LOSS:  0.868
+	1890/3780: LOSS:  0.906
+	2268/3780: LOSS:  0.805
+	2646/3780: LOSS:  0.701
+	3024/3780: LOSS:  0.797
+	3402/3780: LOSS:  0.639
+TRAIN Loss:  0.799 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  88.767	ZS:  72.378
+	R@30:  79.746	ZS:  56.556
+
+TEST Time: 00:01:06
+Epoch 3/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.816
+	 378/3780: LOSS:  0.703
+	 756/3780: LOSS:  0.711
+	1134/3780: LOSS:  0.701
+	1512/3780: LOSS:  0.694
+	1890/3780: LOSS:  0.753
+	2268/3780: LOSS:  0.744
+	2646/3780: LOSS:  0.667
+	3024/3780: LOSS:  0.709
+	3402/3780: LOSS:  0.622
+TRAIN Loss:  0.712 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  89.317	ZS:  73.077
+	R@30:  80.492	ZS:  56.643
+
+TEST Time: 00:01:06
+Epoch 4/4
+Dividing the learning rate by 10 at epoch 3!
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.550
+	 378/3780: LOSS:  0.624
+	 756/3780: LOSS:  0.646
+	1134/3780: LOSS:  0.622
+	1512/3780: LOSS:  0.608
+	1890/3780: LOSS:  0.594
+	2268/3780: LOSS:  0.626
+	2646/3780: LOSS:  0.583
+	3024/3780: LOSS:  0.573
+	3402/3780: LOSS:  0.553
+TRAIN Loss:  0.598 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  90.744	ZS:  73.951
+	R@30:  82.613	ZS:  59.091
+
+TEST Time: 00:01:06
+Arguments:
+ data:
+  justafew: false
+  name: vrd
+  with_bg_obj: false
+  with_bg_pred: false
+eval:
+  eval_obj: false
+  justafew: false
+  rec:
+  - 50
+  - 30
+  test_pre: true
+  test_rel: false
+  use_obj_prior: true
+  use_preload: false
+model:
+  n_fus_neurons: 256
+  type: DSRModel
+  use_bn: false
+  use_pred_sem: 0
+  use_sem: true
+  use_so: true
+  use_spat: 1
+  use_vis: true
+opt:
+  lr: 0.0001
+  lr_fus_ratio: 10
+  lr_rel_ratio: 1
+  weight_decay: 0.0005
+training:
+  batch_size: 1
+  checkpoint_freq: 0
+  loss: mlab
+  num_epochs: 4
+  print_freq: 0.1
+  test_first: false
+  test_freq:
+  - 1
+  - 2
+  - 3
+  use_preload: false
+  use_shuffle: true
+
+Initializing data:  Munch({'name': 'vrd', 'with_bg_obj': False, 'with_bg_pred': False, 'justafew': False})
+Initializing VRD Model:  Munch({'type': 'DSRModel', 'use_so': True, 'use_vis': True, 'use_sem': True, 'use_spat': 1, 'use_pred_sem': 0, 'n_fus_neurons': 256, 'use_bn': False, 'n_obj': 100, 'n_pred': 57})
+Random initialization...
+Distribution soP found!
+Initializing evaluator...
+Initializing training...
+train()
+Epoch 1/4
+/opt/interactionwise/interactionwise-gio/utils.py:305: UserWarning: dict_patch: key 'lr_fus_ratio' not int original dict.
+  warnings.warn("dict_patch: key '{}' not int original dict.".format(k), UserWarning)
+/opt/interactionwise/interactionwise-gio/utils.py:305: UserWarning: dict_patch: key 'lr_rel_ratio' not int original dict.
+  warnings.warn("dict_patch: key '{}' not int original dict.".format(k), UserWarning)
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  2.230
+	 378/3780: LOSS:  1.509
+	 756/3780: LOSS:  1.220
+	1134/3780: LOSS:  1.119
+	1512/3780: LOSS:  0.934
+	1890/3780: LOSS:  0.981
+	2268/3780: LOSS:  0.854
+	2646/3780: LOSS:  0.926
+	3024/3780: LOSS:  0.840
+	3402/3780: LOSS:  0.866
+TRAIN Loss:  1.148 Time: 00:02:22
+Epoch 2/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.808
+	 378/3780: LOSS:  0.741
+	 756/3780: LOSS:  0.810
+	1134/3780: LOSS:  0.783
+	1512/3780: LOSS:  0.651
+	1890/3780: LOSS:  0.653
+	2268/3780: LOSS:  1.020
+	2646/3780: LOSS:  0.736
+	3024/3780: LOSS:  0.767
+	3402/3780: LOSS:  0.711
+TRAIN Loss:  0.768 Time: 00:02:23
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  88.767	ZS:  72.203
+	R@30:  79.916	ZS:  55.857
+
+TEST Time: 00:01:05
+Epoch 3/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.656
+	 378/3780: LOSS:  0.663
+	 756/3780: LOSS:  0.681
+	1134/3780: LOSS:  0.698
+	1512/3780: LOSS:  0.667
+	1890/3780: LOSS:  0.659
+	2268/3780: LOSS:  0.681
+	2646/3780: LOSS:  0.740
+	3024/3780: LOSS:  0.609
+	3402/3780: LOSS:  0.666
+TRAIN Loss:  0.672 Time: 00:02:23
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  87.418	ZS:  70.629
+	R@30:  77.245	ZS:  54.545
+
+TEST Time: 00:01:06
+Epoch 4/4
+Dividing the learning rate by 10 at epoch 3!
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.563
+	 378/3780: LOSS:  0.579
+	 756/3780: LOSS:  0.584
+	1134/3780: LOSS:  0.576
+	1512/3780: LOSS:  0.592
+	1890/3780: LOSS:  0.583
+	2268/3780: LOSS:  0.592
+	2646/3780: LOSS:  0.583
+	3024/3780: LOSS:  0.606
+	3402/3780: LOSS:  0.549
+TRAIN Loss:  0.581 Time: 00:02:23
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  90.704	ZS:  75.000
+	R@30:  82.312	ZS:  59.353
+
+TEST Time: 00:01:06
+Arguments:
+ data:
+  justafew: false
+  name: vrd
+  with_bg_obj: false
+  with_bg_pred: false
+eval:
+  eval_obj: false
+  justafew: false
+  rec:
+  - 50
+  - 30
+  test_pre: true
+  test_rel: false
+  use_obj_prior: true
+  use_preload: false
+model:
+  n_fus_neurons: 256
+  type: DSRModel
+  use_bn: false
+  use_pred_sem: 17
+  use_sem: true
+  use_so: true
+  use_spat: 1
+  use_vis: true
+opt:
+  lr: 0.0001
+  lr_fus_ratio: 10
+  lr_rel_ratio: 1
+  weight_decay: 0.0005
+training:
+  batch_size: 1
+  checkpoint_freq: 0
+  loss: mlab
+  num_epochs: 4
+  print_freq: 0.1
+  test_first: false
+  test_freq:
+  - 1
+  - 2
+  - 3
+  use_preload: false
+  use_shuffle: true
+
+Initializing data:  Munch({'name': 'vrd', 'with_bg_obj': False, 'with_bg_pred': False, 'justafew': False})
+Initializing VRD Model:  Munch({'type': 'DSRModel', 'use_so': True, 'use_vis': True, 'use_sem': True, 'use_spat': 1, 'use_pred_sem': 17, 'n_fus_neurons': 256, 'use_bn': False, 'n_obj': 100, 'n_pred': 57, 'pred_emb': array([[ 0.01668124, -0.0566705 ,  0.01736677, ..., -0.07281854,
+        -0.01835698, -0.04417861],
+       [-0.06716008, -0.04918766, -0.02096782, ..., -0.04698053,
+         0.07315089,  0.08134883],
+       [-0.02224379, -0.01505082,  0.00116357, ...,  0.00607473,
+        -0.04376223, -0.00773697],
+       ...,
+       [-0.02783789,  0.07209299, -0.07744642, ..., -0.03640339,
+        -0.08565503, -0.07744642],
+       [ 0.02842034, -0.02331489,  0.01276363, ..., -0.00808363,
+        -0.00209536,  0.01089163],
+       [-0.0423268 , -0.07201692,  0.01818595, ..., -0.05389565,
+        -0.02868766, -0.15799776]])})
+Mode 0 = 00000
+Random initialization...
+Distribution soP found!
+Initializing evaluator...
+Initializing training...
+train()
+Epoch 1/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  2.386
+	 378/3780: LOSS:  1.563
+	 756/3780: LOSS:  1.258
+	1134/3780: LOSS:  1.154
+	1512/3780: LOSS:  1.045
+	1890/3780: LOSS:  1.127
+	2268/3780: LOSS:  0.915
+	2646/3780: LOSS:  0.842
+	3024/3780: LOSS:  0.900
+	3402/3780: LOSS:  0.909
+TRAIN Loss:  1.210 Time: 00:02:22
+Epoch 2/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.887
+	 378/3780: LOSS:  0.864
+	 756/3780: LOSS:  0.767
+	1134/3780: LOSS:  0.794
+	1512/3780: LOSS:  0.728
+	1890/3780: LOSS:  0.765
+	2268/3780: LOSS:  0.788
+	2646/3780: LOSS:  1.271
+	3024/3780: LOSS:  0.787
+	3402/3780: LOSS:  0.737
+TRAIN Loss:  0.839 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  88.741	ZS:  73.427
+	R@30:  79.458	ZS:  57.867
+
+TEST Time: 00:01:06
+Epoch 3/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.727
+	 378/3780: LOSS:  0.811
+	 756/3780: LOSS:  0.826
+	1134/3780: LOSS:  0.734
+	1512/3780: LOSS:  0.701
+	1890/3780: LOSS:  0.694
+	2268/3780: LOSS:  0.649
+	2646/3780: LOSS:  0.660
+	3024/3780: LOSS:  0.692
+	3402/3780: LOSS:  0.728
+TRAIN Loss:  0.722 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  89.029	ZS:  73.164
+	R@30:  80.244	ZS:  57.255
+
+TEST Time: 00:01:06
+Epoch 4/4
+Dividing the learning rate by 10 at epoch 3!
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.665
+	 378/3780: LOSS:  0.648
+	 756/3780: LOSS:  0.602
+	1134/3780: LOSS:  0.638
+	1512/3780: LOSS:  0.695
+	1890/3780: LOSS:  0.683
+	2268/3780: LOSS:  0.573
+	2646/3780: LOSS:  0.588
+	3024/3780: LOSS:  0.649
+	3402/3780: LOSS:  0.632
+TRAIN Loss:  0.637 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  90.063	ZS:  73.514
+	R@30:  81.500	ZS:  58.654
+
+TEST Time: 00:01:06
+Arguments:
+ data:
+  justafew: false
+  name: vrd
+  with_bg_obj: false
+  with_bg_pred: false
+eval:
+  eval_obj: false
+  justafew: false
+  rec:
+  - 50
+  - 30
+  test_pre: true
+  test_rel: false
+  use_obj_prior: true
+  use_preload: false
+model:
+  n_fus_neurons: 256
+  type: DSRModel
+  use_bn: false
+  use_pred_sem: 0
+  use_sem: true
+  use_so: true
+  use_spat: 1
+  use_vis: true
+opt:
+  lr: 0.0001
+  lr_fus_ratio: 10
+  lr_rel_ratio: 10
+  weight_decay: 0.0005
+training:
+  batch_size: 1
+  checkpoint_freq: 0
+  loss: mlab
+  num_epochs: 4
+  print_freq: 0.1
+  test_first: false
+  test_freq:
+  - 1
+  - 2
+  - 3
+  use_preload: false
+  use_shuffle: true
+
+Initializing data:  Munch({'name': 'vrd', 'with_bg_obj': False, 'with_bg_pred': False, 'justafew': False})
+Initializing VRD Model:  Munch({'type': 'DSRModel', 'use_so': True, 'use_vis': True, 'use_sem': True, 'use_spat': 1, 'use_pred_sem': 0, 'n_fus_neurons': 256, 'use_bn': False, 'n_obj': 100, 'n_pred': 57})
+Random initialization...
+Distribution soP found!
+Initializing evaluator...
+Initializing training...
+train()
+Epoch 1/4
+/opt/interactionwise/interactionwise-gio/utils.py:305: UserWarning: dict_patch: key 'lr_fus_ratio' not int original dict.
+  warnings.warn("dict_patch: key '{}' not int original dict.".format(k), UserWarning)
+/opt/interactionwise/interactionwise-gio/utils.py:305: UserWarning: dict_patch: key 'lr_rel_ratio' not int original dict.
+  warnings.warn("dict_patch: key '{}' not int original dict.".format(k), UserWarning)
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  2.079
+	 378/3780: LOSS:  1.294
+	 756/3780: LOSS:  1.144
+	1134/3780: LOSS:  0.960
+	1512/3780: LOSS:  0.892
+	1890/3780: LOSS:  0.847
+	2268/3780: LOSS:  0.708
+	2646/3780: LOSS:  0.780
+	3024/3780: LOSS:  0.769
+	3402/3780: LOSS:  0.664
+TRAIN Loss:  1.014 Time: 00:02:23
+Epoch 2/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.595
+	 378/3780: LOSS:  1.005
+	 756/3780: LOSS:  0.739
+	1134/3780: LOSS:  0.727
+	1512/3780: LOSS:  0.642
+	1890/3780: LOSS:  0.597
+	2268/3780: LOSS:  0.616
+	2646/3780: LOSS:  0.622
+	3024/3780: LOSS:  0.654
+	3402/3780: LOSS:  0.591
+TRAIN Loss:  0.679 Time: 00:02:23
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  90.443	ZS:  73.514
+	R@30:  82.247	ZS:  57.867
+
+TEST Time: 00:01:06
+Epoch 3/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.525
+	 378/3780: LOSS:  0.590
+	 756/3780: LOSS:  0.562
+	1134/3780: LOSS:  0.538
+	1512/3780: LOSS:  0.523
+	1890/3780: LOSS:  0.553
+	2268/3780: LOSS:  0.606
+	2646/3780: LOSS:  0.590
+	3024/3780: LOSS:  0.633
+	3402/3780: LOSS:  0.564
+TRAIN Loss:  0.568 Time: 00:02:23
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  91.464	ZS:  74.913
+	R@30:  83.805	ZS:  59.703
+
+TEST Time: 00:01:06
+Epoch 4/4
+Dividing the learning rate by 10 at epoch 3!
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.446
+	 378/3780: LOSS:  0.478
+	 756/3780: LOSS:  0.425
+	1134/3780: LOSS:  0.629
+	1512/3780: LOSS:  0.461
+	1890/3780: LOSS:  0.418
+	2268/3780: LOSS:  0.493
+	2646/3780: LOSS:  0.469
+	3024/3780: LOSS:  0.468
+	3402/3780: LOSS:  0.436
+TRAIN Loss:  0.472 Time: 00:02:23
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  92.328	ZS:  76.573
+	R@30:  84.826	ZS:  61.888
+
+TEST Time: 00:01:06
+Arguments:
+ data:
+  justafew: false
+  name: vrd
+  with_bg_obj: false
+  with_bg_pred: false
+eval:
+  eval_obj: false
+  justafew: false
+  rec:
+  - 50
+  - 30
+  test_pre: true
+  test_rel: false
+  use_obj_prior: true
+  use_preload: false
+model:
+  n_fus_neurons: 256
+  type: DSRModel
+  use_bn: false
+  use_pred_sem: 17
+  use_sem: true
+  use_so: true
+  use_spat: 1
+  use_vis: true
+opt:
+  lr: 0.0001
+  lr_fus_ratio: 10
+  lr_rel_ratio: 10
+  weight_decay: 0.0005
+training:
+  batch_size: 1
+  checkpoint_freq: 0
+  loss: mlab
+  num_epochs: 4
+  print_freq: 0.1
+  test_first: false
+  test_freq:
+  - 1
+  - 2
+  - 3
+  use_preload: false
+  use_shuffle: true
+
+Initializing data:  Munch({'name': 'vrd', 'with_bg_obj': False, 'with_bg_pred': False, 'justafew': False})
+Initializing VRD Model:  Munch({'type': 'DSRModel', 'use_so': True, 'use_vis': True, 'use_sem': True, 'use_spat': 1, 'use_pred_sem': 17, 'n_fus_neurons': 256, 'use_bn': False, 'n_obj': 100, 'n_pred': 57, 'pred_emb': array([[ 0.01668124, -0.0566705 ,  0.01736677, ..., -0.07281854,
+        -0.01835698, -0.04417861],
+       [-0.06716008, -0.04918766, -0.02096782, ..., -0.04698053,
+         0.07315089,  0.08134883],
+       [-0.02224379, -0.01505082,  0.00116357, ...,  0.00607473,
+        -0.04376223, -0.00773697],
+       ...,
+       [-0.02783789,  0.07209299, -0.07744642, ..., -0.03640339,
+        -0.08565503, -0.07744642],
+       [ 0.02842034, -0.02331489,  0.01276363, ..., -0.00808363,
+        -0.00209536,  0.01089163],
+       [-0.0423268 , -0.07201692,  0.01818595, ..., -0.05389565,
+        -0.02868766, -0.15799776]])})
+Mode 0 = 00000
+Random initialization...
+Distribution soP found!
+Initializing evaluator...
+Initializing training...
+train()
+Epoch 1/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  2.289
+	 378/3780: LOSS:  1.305
+	 756/3780: LOSS:  1.072
+	1134/3780: LOSS:  0.964
+	1512/3780: LOSS:  1.015
+	1890/3780: LOSS:  0.876
+	2268/3780: LOSS:  0.814
+	2646/3780: LOSS:  0.818
+	3024/3780: LOSS:  0.751
+	3402/3780: LOSS:  0.800
+TRAIN Loss:  1.070 Time: 00:02:22
+Epoch 2/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.838
+	 378/3780: LOSS:  0.758
+	 756/3780: LOSS:  0.613
+	1134/3780: LOSS:  0.714
+	1512/3780: LOSS:  0.665
+	1890/3780: LOSS:  1.530
+	2268/3780: LOSS:  0.684
+	2646/3780: LOSS:  0.713
+	3024/3780: LOSS:  0.758
+	3402/3780: LOSS:  0.696
+TRAIN Loss:  0.797 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  89.592	ZS:  72.115
+	R@30:  81.448	ZS:  57.430
+
+TEST Time: 00:01:06
+Epoch 3/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.570
+	 378/3780: LOSS:  0.619
+	 756/3780: LOSS:  0.542
+	1134/3780: LOSS:  0.648
+	1512/3780: LOSS:  0.743
+	1890/3780: LOSS:  0.660
+	2268/3780: LOSS:  0.646
+	2646/3780: LOSS:  0.641
+	3024/3780: LOSS:  0.625
+	3402/3780: LOSS:  0.611
+TRAIN Loss:  0.630 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  90.744	ZS:  73.514
+	R@30:  82.011	ZS:  57.080
+
+TEST Time: 00:01:06
+Epoch 4/4
+Dividing the learning rate by 10 at epoch 3!
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.599
+	 378/3780: LOSS:  0.479
+	 756/3780: LOSS:  0.489
+	1134/3780: LOSS:  0.501
+	1512/3780: LOSS:  0.478
+	1890/3780: LOSS:  0.515
+	2268/3780: LOSS:  0.518
+	2646/3780: LOSS:  0.507
+	3024/3780: LOSS:  0.488
+	3402/3780: LOSS:  0.486
+TRAIN Loss:  0.506 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  91.961	ZS:  74.825
+	R@30:  84.093	ZS:  59.878
+
+TEST Time: 00:01:06
+Arguments:
+ data:
+  justafew: false
+  name: vrd
+  with_bg_obj: false
+  with_bg_pred: false
+eval:
+  eval_obj: false
+  justafew: false
+  rec:
+  - 50
+  - 30
+  test_pre: true
+  test_rel: false
+  use_obj_prior: true
+  use_preload: false
+model:
+  n_fus_neurons: 256
+  type: DSRModel
+  use_bn: false
+  use_pred_sem: 0
+  use_sem: true
+  use_so: true
+  use_spat: 1
+  use_vis: true
+opt:
+  lr: 0.0001
+  lr_fus_ratio: 1
+  lr_rel_ratio: 1
+  weight_decay: 0.0001
+training:
+  batch_size: 1
+  checkpoint_freq: 0
+  loss: mlab
+  num_epochs: 4
+  print_freq: 0.1
+  test_first: false
+  test_freq:
+  - 1
+  - 2
+  - 3
+  use_preload: false
+  use_shuffle: true
+
+Initializing data:  Munch({'name': 'vrd', 'with_bg_obj': False, 'with_bg_pred': False, 'justafew': False})
+Initializing VRD Model:  Munch({'type': 'DSRModel', 'use_so': True, 'use_vis': True, 'use_sem': True, 'use_spat': 1, 'use_pred_sem': 0, 'n_fus_neurons': 256, 'use_bn': False, 'n_obj': 100, 'n_pred': 57})
+Random initialization...
+Distribution soP found!
+Initializing evaluator...
+Initializing training...
+train()
+Epoch 1/4
+/opt/interactionwise/interactionwise-gio/utils.py:305: UserWarning: dict_patch: key 'lr_fus_ratio' not int original dict.
+  warnings.warn("dict_patch: key '{}' not int original dict.".format(k), UserWarning)
+/opt/interactionwise/interactionwise-gio/utils.py:305: UserWarning: dict_patch: key 'lr_rel_ratio' not int original dict.
+  warnings.warn("dict_patch: key '{}' not int original dict.".format(k), UserWarning)
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  2.678
+	 378/3780: LOSS:  1.766
+	 756/3780: LOSS:  1.487
+	1134/3780: LOSS:  1.261
+	1512/3780: LOSS:  1.101
+	1890/3780: LOSS:  1.088
+	2268/3780: LOSS:  0.992
+	2646/3780: LOSS:  0.925
+	3024/3780: LOSS:  0.980
+	3402/3780: LOSS:  0.831
+TRAIN Loss:  1.311 Time: 00:02:23
+Epoch 2/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.811
+	 378/3780: LOSS:  0.804
+	 756/3780: LOSS:  0.842
+	1134/3780: LOSS:  0.733
+	1512/3780: LOSS:  0.782
+	1890/3780: LOSS:  0.736
+	2268/3780: LOSS:  0.740
+	2646/3780: LOSS:  0.721
+	3024/3780: LOSS:  0.874
+	3402/3780: LOSS:  0.683
+TRAIN Loss:  0.773 Time: 00:02:23
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  88.832	ZS:  72.465
+	R@30:  80.283	ZS:  56.381
+
+TEST Time: 00:01:06
+Epoch 3/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.601
+	 378/3780: LOSS:  0.696
+	 756/3780: LOSS:  0.675
+	1134/3780: LOSS:  0.648
+	1512/3780: LOSS:  0.656
+	1890/3780: LOSS:  0.656
+	2268/3780: LOSS:  0.670
+	2646/3780: LOSS:  0.607
+	3024/3780: LOSS:  0.672
+	3402/3780: LOSS:  0.638
+TRAIN Loss:  0.652 Time: 00:02:23
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  90.233	ZS:  75.524
+	R@30:  81.684	ZS:  59.091
+
+TEST Time: 00:01:06
+Epoch 4/4
+Dividing the learning rate by 10 at epoch 3!
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.582
+	 378/3780: LOSS:  0.537
+	 756/3780: LOSS:  0.601
+	1134/3780: LOSS:  0.541
+	1512/3780: LOSS:  0.586
+	1890/3780: LOSS:  0.553
+	2268/3780: LOSS:  0.538
+	2646/3780: LOSS:  0.560
+	3024/3780: LOSS:  0.643
+	3402/3780: LOSS:  0.554
+TRAIN Loss:  0.570 Time: 00:02:23
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  90.678	ZS:  75.262
+	R@30:  82.168	ZS:  59.266
+
+TEST Time: 00:01:06
+Arguments:
+ data:
+  justafew: false
+  name: vrd
+  with_bg_obj: false
+  with_bg_pred: false
+eval:
+  eval_obj: false
+  justafew: false
+  rec:
+  - 50
+  - 30
+  test_pre: true
+  test_rel: false
+  use_obj_prior: true
+  use_preload: false
+model:
+  n_fus_neurons: 256
+  type: DSRModel
+  use_bn: false
+  use_pred_sem: 17
+  use_sem: true
+  use_so: true
+  use_spat: 1
+  use_vis: true
+opt:
+  lr: 0.0001
+  lr_fus_ratio: 1
+  lr_rel_ratio: 1
+  weight_decay: 0.0001
+training:
+  batch_size: 1
+  checkpoint_freq: 0
+  loss: mlab
+  num_epochs: 4
+  print_freq: 0.1
+  test_first: false
+  test_freq:
+  - 1
+  - 2
+  - 3
+  use_preload: false
+  use_shuffle: true
+
+Initializing data:  Munch({'name': 'vrd', 'with_bg_obj': False, 'with_bg_pred': False, 'justafew': False})
+Initializing VRD Model:  Munch({'type': 'DSRModel', 'use_so': True, 'use_vis': True, 'use_sem': True, 'use_spat': 1, 'use_pred_sem': 17, 'n_fus_neurons': 256, 'use_bn': False, 'n_obj': 100, 'n_pred': 57, 'pred_emb': array([[ 0.01668124, -0.0566705 ,  0.01736677, ..., -0.07281854,
+        -0.01835698, -0.04417861],
+       [-0.06716008, -0.04918766, -0.02096782, ..., -0.04698053,
+         0.07315089,  0.08134883],
+       [-0.02224379, -0.01505082,  0.00116357, ...,  0.00607473,
+        -0.04376223, -0.00773697],
+       ...,
+       [-0.02783789,  0.07209299, -0.07744642, ..., -0.03640339,
+        -0.08565503, -0.07744642],
+       [ 0.02842034, -0.02331489,  0.01276363, ..., -0.00808363,
+        -0.00209536,  0.01089163],
+       [-0.0423268 , -0.07201692,  0.01818595, ..., -0.05389565,
+        -0.02868766, -0.15799776]])})
+Mode 0 = 00000
+Random initialization...
+Distribution soP found!
+Initializing evaluator...
+Initializing training...
+train()
+Epoch 1/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  2.722
+	 378/3780: LOSS:  1.759
+	 756/3780: LOSS:  1.698
+	1134/3780: LOSS:  1.454
+	1512/3780: LOSS:  1.362
+	1890/3780: LOSS:  1.287
+	2268/3780: LOSS:  1.112
+	2646/3780: LOSS:  1.134
+	3024/3780: LOSS:  0.955
+	3402/3780: LOSS:  0.964
+TRAIN Loss:  1.445 Time: 00:02:22
+Epoch 2/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.877
+	 378/3780: LOSS:  0.954
+	 756/3780: LOSS:  0.864
+	1134/3780: LOSS:  0.882
+	1512/3780: LOSS:  0.957
+	1890/3780: LOSS:  0.889
+	2268/3780: LOSS:  0.786
+	2646/3780: LOSS:  0.861
+	3024/3780: LOSS:  0.792
+	3402/3780: LOSS:  0.866
+TRAIN Loss:  0.873 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  86.436	ZS:  68.969
+	R@30:  77.023	ZS:  53.147
+
+TEST Time: 00:01:06
+Epoch 3/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.696
+	 378/3780: LOSS:  0.798
+	 756/3780: LOSS:  0.784
+	1134/3780: LOSS:  0.723
+	1512/3780: LOSS:  0.782
+	1890/3780: LOSS:  0.913
+	2268/3780: LOSS:  0.734
+	2646/3780: LOSS:  0.734
+	3024/3780: LOSS:  0.757
+	3402/3780: LOSS:  0.673
+TRAIN Loss:  0.759 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  89.330	ZS:  73.164
+	R@30:  80.060	ZS:  56.556
+
+TEST Time: 00:01:06
+Epoch 4/4
+Dividing the learning rate by 10 at epoch 3!
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.672
+	 378/3780: LOSS:  0.697
+	 756/3780: LOSS:  0.732
+	1134/3780: LOSS:  0.601
+	1512/3780: LOSS:  0.658
+	1890/3780: LOSS:  0.601
+	2268/3780: LOSS:  0.665
+	2646/3780: LOSS:  0.669
+	3024/3780: LOSS:  0.713
+	3402/3780: LOSS:  0.721
+TRAIN Loss:  0.673 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  89.709	ZS:  73.427
+	R@30:  80.741	ZS:  57.605
+
+TEST Time: 00:01:06
+Arguments:
+ data:
+  justafew: false
+  name: vrd
+  with_bg_obj: false
+  with_bg_pred: false
+eval:
+  eval_obj: false
+  justafew: false
+  rec:
+  - 50
+  - 30
+  test_pre: true
+  test_rel: false
+  use_obj_prior: true
+  use_preload: false
+model:
+  n_fus_neurons: 256
+  type: DSRModel
+  use_bn: false
+  use_pred_sem: 0
+  use_sem: true
+  use_so: true
+  use_spat: 1
+  use_vis: true
+opt:
+  lr: 0.0001
+  lr_fus_ratio: 1
+  lr_rel_ratio: 10
+  weight_decay: 0.0001
+training:
+  batch_size: 1
+  checkpoint_freq: 0
+  loss: mlab
+  num_epochs: 4
+  print_freq: 0.1
+  test_first: false
+  test_freq:
+  - 1
+  - 2
+  - 3
+  use_preload: false
+  use_shuffle: true
+
+Initializing data:  Munch({'name': 'vrd', 'with_bg_obj': False, 'with_bg_pred': False, 'justafew': False})
+Initializing VRD Model:  Munch({'type': 'DSRModel', 'use_so': True, 'use_vis': True, 'use_sem': True, 'use_spat': 1, 'use_pred_sem': 0, 'n_fus_neurons': 256, 'use_bn': False, 'n_obj': 100, 'n_pred': 57})
+Random initialization...
+Distribution soP found!
+Initializing evaluator...
+Initializing training...
+train()
+Epoch 1/4
+/opt/interactionwise/interactionwise-gio/utils.py:305: UserWarning: dict_patch: key 'lr_fus_ratio' not int original dict.
+  warnings.warn("dict_patch: key '{}' not int original dict.".format(k), UserWarning)
+/opt/interactionwise/interactionwise-gio/utils.py:305: UserWarning: dict_patch: key 'lr_rel_ratio' not int original dict.
+  warnings.warn("dict_patch: key '{}' not int original dict.".format(k), UserWarning)
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  2.392
+	 378/3780: LOSS:  1.636
+	 756/3780: LOSS:  1.159
+	1134/3780: LOSS:  1.018
+	1512/3780: LOSS:  1.033
+	1890/3780: LOSS:  0.873
+	2268/3780: LOSS:  0.868
+	2646/3780: LOSS:  0.685
+	3024/3780: LOSS:  0.647
+	3402/3780: LOSS:  0.711
+TRAIN Loss:  1.102 Time: 00:02:23
+Epoch 2/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.610
+	 378/3780: LOSS:  0.628
+	 756/3780: LOSS:  0.648
+	1134/3780: LOSS:  0.958
+	1512/3780: LOSS:  0.623
+	1890/3780: LOSS:  0.696
+	2268/3780: LOSS:  0.597
+	2646/3780: LOSS:  0.601
+	3024/3780: LOSS:  0.650
+	3402/3780: LOSS:  0.530
+TRAIN Loss:  0.654 Time: 00:02:23
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  90.796	ZS:  74.213
+	R@30:  82.731	ZS:  58.916
+
+TEST Time: 00:01:06
+Epoch 3/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.564
+	 378/3780: LOSS:  0.573
+	 756/3780: LOSS:  0.574
+	1134/3780: LOSS:  0.558
+	1512/3780: LOSS:  0.514
+	1890/3780: LOSS:  0.516
+	2268/3780: LOSS:  0.523
+	2646/3780: LOSS:  0.515
+	3024/3780: LOSS:  0.534
+	3402/3780: LOSS:  0.530
+TRAIN Loss:  0.540 Time: 00:02:23
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  91.516	ZS:  76.049
+	R@30:  83.778	ZS:  60.752
+
+TEST Time: 00:01:06
+Epoch 4/4
+Dividing the learning rate by 10 at epoch 3!
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.478
+	 378/3780: LOSS:  0.471
+	 756/3780: LOSS:  0.459
+	1134/3780: LOSS:  0.440
+	1512/3780: LOSS:  0.434
+	1890/3780: LOSS:  0.443
+	2268/3780: LOSS:  0.438
+	2646/3780: LOSS:  0.414
+	3024/3780: LOSS:  0.444
+	3402/3780: LOSS:  0.428
+TRAIN Loss:  0.445 Time: 00:02:23
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  92.249	ZS:  77.448
+	R@30:  84.774	ZS:  62.063
+
+TEST Time: 00:01:06
+Arguments:
+ data:
+  justafew: false
+  name: vrd
+  with_bg_obj: false
+  with_bg_pred: false
+eval:
+  eval_obj: false
+  justafew: false
+  rec:
+  - 50
+  - 30
+  test_pre: true
+  test_rel: false
+  use_obj_prior: true
+  use_preload: false
+model:
+  n_fus_neurons: 256
+  type: DSRModel
+  use_bn: false
+  use_pred_sem: 17
+  use_sem: true
+  use_so: true
+  use_spat: 1
+  use_vis: true
+opt:
+  lr: 0.0001
+  lr_fus_ratio: 1
+  lr_rel_ratio: 10
+  weight_decay: 0.0001
+training:
+  batch_size: 1
+  checkpoint_freq: 0
+  loss: mlab
+  num_epochs: 4
+  print_freq: 0.1
+  test_first: false
+  test_freq:
+  - 1
+  - 2
+  - 3
+  use_preload: false
+  use_shuffle: true
+
+Initializing data:  Munch({'name': 'vrd', 'with_bg_obj': False, 'with_bg_pred': False, 'justafew': False})
+Initializing VRD Model:  Munch({'type': 'DSRModel', 'use_so': True, 'use_vis': True, 'use_sem': True, 'use_spat': 1, 'use_pred_sem': 17, 'n_fus_neurons': 256, 'use_bn': False, 'n_obj': 100, 'n_pred': 57, 'pred_emb': array([[ 0.01668124, -0.0566705 ,  0.01736677, ..., -0.07281854,
+        -0.01835698, -0.04417861],
+       [-0.06716008, -0.04918766, -0.02096782, ..., -0.04698053,
+         0.07315089,  0.08134883],
+       [-0.02224379, -0.01505082,  0.00116357, ...,  0.00607473,
+        -0.04376223, -0.00773697],
+       ...,
+       [-0.02783789,  0.07209299, -0.07744642, ..., -0.03640339,
+        -0.08565503, -0.07744642],
+       [ 0.02842034, -0.02331489,  0.01276363, ..., -0.00808363,
+        -0.00209536,  0.01089163],
+       [-0.0423268 , -0.07201692,  0.01818595, ..., -0.05389565,
+        -0.02868766, -0.15799776]])})
+Mode 0 = 00000
+Random initialization...
+Distribution soP found!
+Initializing evaluator...
+Initializing training...
+train()
+Epoch 1/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  2.546
+	 378/3780: LOSS:  1.619
+	 756/3780: LOSS:  1.346
+	1134/3780: LOSS:  1.048
+	1512/3780: LOSS:  0.970
+	1890/3780: LOSS:  0.990
+	2268/3780: LOSS:  0.909
+	2646/3780: LOSS:  0.879
+	3024/3780: LOSS:  0.927
+	3402/3780: LOSS:  0.836
+TRAIN Loss:  1.207 Time: 00:02:22
+Epoch 2/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.767
+	 378/3780: LOSS:  0.808
+	 756/3780: LOSS:  0.745
+	1134/3780: LOSS:  0.683
+	1512/3780: LOSS:  0.697
+	1890/3780: LOSS:  0.731
+	2268/3780: LOSS:  0.742
+	2646/3780: LOSS:  0.674
+	3024/3780: LOSS:  0.700
+	3402/3780: LOSS:  0.953
+TRAIN Loss:  0.750 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  89.015	ZS:  72.290
+	R@30:  80.060	ZS:  57.343
+
+TEST Time: 00:01:06
+Epoch 3/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.618
+	 378/3780: LOSS:  0.648
+	 756/3780: LOSS:  0.610
+	1134/3780: LOSS:  0.698
+	1512/3780: LOSS:  0.627
+	1890/3780: LOSS:  0.595
+	2268/3780: LOSS:  0.647
+	2646/3780: LOSS:  0.612
+	3024/3780: LOSS:  0.712
+	3402/3780: LOSS:  0.641
+TRAIN Loss:  0.641 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  90.010	ZS:  71.503
+	R@30:  81.828	ZS:  55.769
+
+TEST Time: 00:01:06
+Epoch 4/4
+Dividing the learning rate by 10 at epoch 3!
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.566
+	 378/3780: LOSS:  0.545
+	 756/3780: LOSS:  0.588
+	1134/3780: LOSS:  0.496
+	1512/3780: LOSS:  0.541
+	1890/3780: LOSS:  0.536
+	2268/3780: LOSS:  0.516
+	2646/3780: LOSS:  0.524
+	3024/3780: LOSS:  0.526
+	3402/3780: LOSS:  0.534
+TRAIN Loss:  0.537 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  91.516	ZS:  74.563
+	R@30:  83.425	ZS:  58.654
+
+TEST Time: 00:01:06
+Arguments:
+ data:
+  justafew: false
+  name: vrd
+  with_bg_obj: false
+  with_bg_pred: false
+eval:
+  eval_obj: false
+  justafew: false
+  rec:
+  - 50
+  - 30
+  test_pre: true
+  test_rel: false
+  use_obj_prior: true
+  use_preload: false
+model:
+  n_fus_neurons: 256
+  type: DSRModel
+  use_bn: false
+  use_pred_sem: 0
+  use_sem: true
+  use_so: true
+  use_spat: 1
+  use_vis: true
+opt:
+  lr: 0.0001
+  lr_fus_ratio: 10
+  lr_rel_ratio: 1
+  weight_decay: 0.0001
+training:
+  batch_size: 1
+  checkpoint_freq: 0
+  loss: mlab
+  num_epochs: 4
+  print_freq: 0.1
+  test_first: false
+  test_freq:
+  - 1
+  - 2
+  - 3
+  use_preload: false
+  use_shuffle: true
+
+Initializing data:  Munch({'name': 'vrd', 'with_bg_obj': False, 'with_bg_pred': False, 'justafew': False})
+Initializing VRD Model:  Munch({'type': 'DSRModel', 'use_so': True, 'use_vis': True, 'use_sem': True, 'use_spat': 1, 'use_pred_sem': 0, 'n_fus_neurons': 256, 'use_bn': False, 'n_obj': 100, 'n_pred': 57})
+Random initialization...
+Distribution soP found!
+Initializing evaluator...
+Initializing training...
+train()
+Epoch 1/4
+/opt/interactionwise/interactionwise-gio/utils.py:305: UserWarning: dict_patch: key 'lr_fus_ratio' not int original dict.
+  warnings.warn("dict_patch: key '{}' not int original dict.".format(k), UserWarning)
+/opt/interactionwise/interactionwise-gio/utils.py:305: UserWarning: dict_patch: key 'lr_rel_ratio' not int original dict.
+  warnings.warn("dict_patch: key '{}' not int original dict.".format(k), UserWarning)
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  2.490
+	 378/3780: LOSS:  1.483
+	 756/3780: LOSS:  1.184
+	1134/3780: LOSS:  1.036
+	1512/3780: LOSS:  1.103
+	1890/3780: LOSS:  0.918
+	2268/3780: LOSS:  0.760
+	2646/3780: LOSS:  0.740
+	3024/3780: LOSS:  0.833
+	3402/3780: LOSS:  0.776
+TRAIN Loss:  1.132 Time: 00:02:23
+Epoch 2/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.749
+	 378/3780: LOSS:  0.655
+	 756/3780: LOSS:  0.666
+	1134/3780: LOSS:  0.696
+	1512/3780: LOSS:  0.670
+	1890/3780: LOSS:  0.625
+	2268/3780: LOSS:  0.646
+	2646/3780: LOSS:  0.629
+	3024/3780: LOSS:  0.608
+	3402/3780: LOSS:  0.697
+TRAIN Loss:  0.664 Time: 00:02:23
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  90.390	ZS:  74.650
+	R@30:  82.168	ZS:  60.052
+
+TEST Time: 00:01:06
+Epoch 3/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.600
+	 378/3780: LOSS:  0.638
+	 756/3780: LOSS:  0.507
+	1134/3780: LOSS:  0.584
+	1512/3780: LOSS:  0.568
+	1890/3780: LOSS:  0.562
+	2268/3780: LOSS:  0.519
+	2646/3780: LOSS:  0.533
+	3024/3780: LOSS:  0.576
+	3402/3780: LOSS:  0.560
+TRAIN Loss:  0.565 Time: 00:02:23
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  91.032	ZS:  74.301
+	R@30:  83.216	ZS:  58.654
+
+TEST Time: 00:01:06
+Epoch 4/4
+Dividing the learning rate by 10 at epoch 3!
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.540
+	 378/3780: LOSS:  0.481
+	 756/3780: LOSS:  0.445
+	1134/3780: LOSS:  0.501
+	1512/3780: LOSS:  0.459
+	1890/3780: LOSS:  0.472
+	2268/3780: LOSS:  0.468
+	2646/3780: LOSS:  0.429
+	3024/3780: LOSS:  0.440
+	3402/3780: LOSS:  0.499
+TRAIN Loss:  0.473 Time: 00:02:23
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  92.027	ZS:  76.661
+	R@30:  84.263	ZS:  61.101
+
+TEST Time: 00:01:06
+Arguments:
+ data:
+  justafew: false
+  name: vrd
+  with_bg_obj: false
+  with_bg_pred: false
+eval:
+  eval_obj: false
+  justafew: false
+  rec:
+  - 50
+  - 30
+  test_pre: true
+  test_rel: false
+  use_obj_prior: true
+  use_preload: false
+model:
+  n_fus_neurons: 256
+  type: DSRModel
+  use_bn: false
+  use_pred_sem: 17
+  use_sem: true
+  use_so: true
+  use_spat: 1
+  use_vis: true
+opt:
+  lr: 0.0001
+  lr_fus_ratio: 10
+  lr_rel_ratio: 1
+  weight_decay: 0.0001
+training:
+  batch_size: 1
+  checkpoint_freq: 0
+  loss: mlab
+  num_epochs: 4
+  print_freq: 0.1
+  test_first: false
+  test_freq:
+  - 1
+  - 2
+  - 3
+  use_preload: false
+  use_shuffle: true
+
+Initializing data:  Munch({'name': 'vrd', 'with_bg_obj': False, 'with_bg_pred': False, 'justafew': False})
+Initializing VRD Model:  Munch({'type': 'DSRModel', 'use_so': True, 'use_vis': True, 'use_sem': True, 'use_spat': 1, 'use_pred_sem': 17, 'n_fus_neurons': 256, 'use_bn': False, 'n_obj': 100, 'n_pred': 57, 'pred_emb': array([[ 0.01668124, -0.0566705 ,  0.01736677, ..., -0.07281854,
+        -0.01835698, -0.04417861],
+       [-0.06716008, -0.04918766, -0.02096782, ..., -0.04698053,
+         0.07315089,  0.08134883],
+       [-0.02224379, -0.01505082,  0.00116357, ...,  0.00607473,
+        -0.04376223, -0.00773697],
+       ...,
+       [-0.02783789,  0.07209299, -0.07744642, ..., -0.03640339,
+        -0.08565503, -0.07744642],
+       [ 0.02842034, -0.02331489,  0.01276363, ..., -0.00808363,
+        -0.00209536,  0.01089163],
+       [-0.0423268 , -0.07201692,  0.01818595, ..., -0.05389565,
+        -0.02868766, -0.15799776]])})
+Mode 0 = 00000
+Random initialization...
+Distribution soP found!
+Initializing evaluator...
+Initializing training...
+train()
+Epoch 1/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  2.390
+	 378/3780: LOSS:  1.494
+	 756/3780: LOSS:  1.109
+	1134/3780: LOSS:  0.992
+	1512/3780: LOSS:  0.972
+	1890/3780: LOSS:  0.940
+	2268/3780: LOSS:  0.842
+	2646/3780: LOSS:  0.809
+	3024/3780: LOSS:  0.753
+	3402/3780: LOSS:  0.850
+TRAIN Loss:  1.115 Time: 00:02:22
+Epoch 2/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.701
+	 378/3780: LOSS:  0.700
+	 756/3780: LOSS:  0.717
+	1134/3780: LOSS:  0.735
+	1512/3780: LOSS:  0.827
+	1890/3780: LOSS:  0.696
+	2268/3780: LOSS:  0.766
+	2646/3780: LOSS:  0.601
+	3024/3780: LOSS:  0.632
+	3402/3780: LOSS:  0.633
+TRAIN Loss:  0.701 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  90.220	ZS:  72.378
+	R@30:  81.684	ZS:  56.294
+
+TEST Time: 00:01:06
+Epoch 3/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.589
+	 378/3780: LOSS:  0.635
+	 756/3780: LOSS:  0.631
+	1134/3780: LOSS:  0.548
+	1512/3780: LOSS:  0.565
+	1890/3780: LOSS:  0.657
+	2268/3780: LOSS:  0.601
+	2646/3780: LOSS:  0.697
+	3024/3780: LOSS:  0.607
+	3402/3780: LOSS:  0.598
+TRAIN Loss:  0.613 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  90.953	ZS:  73.514
+	R@30:  82.286	ZS:  57.255
+
+TEST Time: 00:01:06
+Epoch 4/4
+Dividing the learning rate by 10 at epoch 3!
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.562
+	 378/3780: LOSS:  0.513
+	 756/3780: LOSS:  0.531
+	1134/3780: LOSS:  0.504
+	1512/3780: LOSS:  0.536
+	1890/3780: LOSS:  0.529
+	2268/3780: LOSS:  0.490
+	2646/3780: LOSS:  0.476
+	3024/3780: LOSS:  0.512
+	3402/3780: LOSS:  0.517
+TRAIN Loss:  0.517 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  91.608	ZS:  74.650
+	R@30:  83.870	ZS:  59.615
+
+TEST Time: 00:01:06
+Arguments:
+ data:
+  justafew: false
+  name: vrd
+  with_bg_obj: false
+  with_bg_pred: false
+eval:
+  eval_obj: false
+  justafew: false
+  rec:
+  - 50
+  - 30
+  test_pre: true
+  test_rel: false
+  use_obj_prior: true
+  use_preload: false
+model:
+  n_fus_neurons: 256
+  type: DSRModel
+  use_bn: false
+  use_pred_sem: 0
+  use_sem: true
+  use_so: true
+  use_spat: 1
+  use_vis: true
+opt:
+  lr: 0.0001
+  lr_fus_ratio: 10
+  lr_rel_ratio: 10
+  weight_decay: 0.0001
+training:
+  batch_size: 1
+  checkpoint_freq: 0
+  loss: mlab
+  num_epochs: 4
+  print_freq: 0.1
+  test_first: false
+  test_freq:
+  - 1
+  - 2
+  - 3
+  use_preload: false
+  use_shuffle: true
+
+Initializing data:  Munch({'name': 'vrd', 'with_bg_obj': False, 'with_bg_pred': False, 'justafew': False})
+Initializing VRD Model:  Munch({'type': 'DSRModel', 'use_so': True, 'use_vis': True, 'use_sem': True, 'use_spat': 1, 'use_pred_sem': 0, 'n_fus_neurons': 256, 'use_bn': False, 'n_obj': 100, 'n_pred': 57})
+Random initialization...
+Distribution soP found!
+Initializing evaluator...
+Initializing training...
+train()
+Epoch 1/4
+/opt/interactionwise/interactionwise-gio/utils.py:305: UserWarning: dict_patch: key 'lr_fus_ratio' not int original dict.
+  warnings.warn("dict_patch: key '{}' not int original dict.".format(k), UserWarning)
+/opt/interactionwise/interactionwise-gio/utils.py:305: UserWarning: dict_patch: key 'lr_rel_ratio' not int original dict.
+  warnings.warn("dict_patch: key '{}' not int original dict.".format(k), UserWarning)
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  2.250
+	 378/3780: LOSS:  1.241
+	 756/3780: LOSS:  1.017
+	1134/3780: LOSS:  0.840
+	1512/3780: LOSS:  0.767
+	1890/3780: LOSS:  0.838
+	2268/3780: LOSS:  0.806
+	2646/3780: LOSS:  0.734
+	3024/3780: LOSS:  0.727
+	3402/3780: LOSS:  0.641
+TRAIN Loss:  0.986 Time: 00:02:23
+Epoch 2/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.599
+	 378/3780: LOSS:  0.654
+	 756/3780: LOSS:  0.627
+	1134/3780: LOSS:  0.553
+	1512/3780: LOSS:  0.639
+	1890/3780: LOSS:  0.509
+	2268/3780: LOSS:  0.605
+	2646/3780: LOSS:  0.721
+	3024/3780: LOSS:  0.607
+	3402/3780: LOSS:  0.560
+TRAIN Loss:  0.607 Time: 00:02:23
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  91.228	ZS:  74.476
+	R@30:  83.988	ZS:  59.266
+
+TEST Time: 00:01:06
+Epoch 3/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.533
+	 378/3780: LOSS:  0.471
+	 756/3780: LOSS:  0.508
+	1134/3780: LOSS:  0.550
+	1512/3780: LOSS:  0.532
+	1890/3780: LOSS:  0.514
+	2268/3780: LOSS:  0.472
+	2646/3780: LOSS:  0.512
+	3024/3780: LOSS:  0.458
+	3402/3780: LOSS:  0.553
+TRAIN Loss:  0.510 Time: 00:02:23
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  91.280	ZS:  74.476
+	R@30:  83.739	ZS:  59.528
+
+TEST Time: 00:01:06
+Epoch 4/4
+Dividing the learning rate by 10 at epoch 3!
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.412
+	 378/3780: LOSS:  0.441
+	 756/3780: LOSS:  0.406
+	1134/3780: LOSS:  0.400
+	1512/3780: LOSS:  0.385
+	1890/3780: LOSS:  0.376
+	2268/3780: LOSS:  0.394
+	2646/3780: LOSS:  0.378
+	3024/3780: LOSS:  0.421
+	3402/3780: LOSS:  0.406
+TRAIN Loss:  0.402 Time: 00:02:23
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  92.708	ZS:  76.399
+	R@30:  85.494	ZS:  61.538
+
+TEST Time: 00:01:06
+Arguments:
+ data:
+  justafew: false
+  name: vrd
+  with_bg_obj: false
+  with_bg_pred: false
+eval:
+  eval_obj: false
+  justafew: false
+  rec:
+  - 50
+  - 30
+  test_pre: true
+  test_rel: false
+  use_obj_prior: true
+  use_preload: false
+model:
+  n_fus_neurons: 256
+  type: DSRModel
+  use_bn: false
+  use_pred_sem: 17
+  use_sem: true
+  use_so: true
+  use_spat: 1
+  use_vis: true
+opt:
+  lr: 0.0001
+  lr_fus_ratio: 10
+  lr_rel_ratio: 10
+  weight_decay: 0.0001
+training:
+  batch_size: 1
+  checkpoint_freq: 0
+  loss: mlab
+  num_epochs: 4
+  print_freq: 0.1
+  test_first: false
+  test_freq:
+  - 1
+  - 2
+  - 3
+  use_preload: false
+  use_shuffle: true
+
+Initializing data:  Munch({'name': 'vrd', 'with_bg_obj': False, 'with_bg_pred': False, 'justafew': False})
+Initializing VRD Model:  Munch({'type': 'DSRModel', 'use_so': True, 'use_vis': True, 'use_sem': True, 'use_spat': 1, 'use_pred_sem': 17, 'n_fus_neurons': 256, 'use_bn': False, 'n_obj': 100, 'n_pred': 57, 'pred_emb': array([[ 0.01668124, -0.0566705 ,  0.01736677, ..., -0.07281854,
+        -0.01835698, -0.04417861],
+       [-0.06716008, -0.04918766, -0.02096782, ..., -0.04698053,
+         0.07315089,  0.08134883],
+       [-0.02224379, -0.01505082,  0.00116357, ...,  0.00607473,
+        -0.04376223, -0.00773697],
+       ...,
+       [-0.02783789,  0.07209299, -0.07744642, ..., -0.03640339,
+        -0.08565503, -0.07744642],
+       [ 0.02842034, -0.02331489,  0.01276363, ..., -0.00808363,
+        -0.00209536,  0.01089163],
+       [-0.0423268 , -0.07201692,  0.01818595, ..., -0.05389565,
+        -0.02868766, -0.15799776]])})
+Mode 0 = 00000
+Random initialization...
+Distribution soP found!
+Initializing evaluator...
+Initializing training...
+train()
+Epoch 1/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  2.457
+	 378/3780: LOSS:  1.238
+	 756/3780: LOSS:  1.178
+	1134/3780: LOSS:  0.939
+	1512/3780: LOSS:  0.906
+	1890/3780: LOSS:  0.906
+	2268/3780: LOSS:  0.929
+	2646/3780: LOSS:  0.688
+	3024/3780: LOSS:  0.740
+	3402/3780: LOSS:  0.730
+TRAIN Loss:  1.071 Time: 00:02:22
+Epoch 2/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.723
+	 378/3780: LOSS:  0.675
+	 756/3780: LOSS:  0.676
+	1134/3780: LOSS:  0.652
+	1512/3780: LOSS:  0.665
+	1890/3780: LOSS:  0.626
+	2268/3780: LOSS:  0.729
+	2646/3780: LOSS:  0.786
+	3024/3780: LOSS:  0.696
+	3402/3780: LOSS:  0.629
+TRAIN Loss:  0.686 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  90.285	ZS:  71.853
+	R@30:  81.644	ZS:  56.906
+
+TEST Time: 00:01:06
+Epoch 3/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.556
+	 378/3780: LOSS:  0.568
+	 756/3780: LOSS:  0.597
+	1134/3780: LOSS:  0.662
+	1512/3780: LOSS:  0.602
+	1890/3780: LOSS:  0.525
+	2268/3780: LOSS:  0.560
+	2646/3780: LOSS:  0.585
+	3024/3780: LOSS:  0.667
+	3402/3780: LOSS:  0.564
+TRAIN Loss:  0.589 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  90.181	ZS:  71.066
+	R@30:  82.770	ZS:  56.556
+
+TEST Time: 00:01:06
+Epoch 4/4
+Dividing the learning rate by 10 at epoch 3!
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.508
+	 378/3780: LOSS:  0.450
+	 756/3780: LOSS:  0.489
+	1134/3780: LOSS:  0.503
+	1512/3780: LOSS:  0.458
+	1890/3780: LOSS:  0.435
+	2268/3780: LOSS:  0.469
+	2646/3780: LOSS:  0.455
+	3024/3780: LOSS:  0.440
+	3402/3780: LOSS:  0.408
+TRAIN Loss:  0.461 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  92.367	ZS:  75.437
+	R@30:  84.970	ZS:  59.790
+
+TEST Time: 00:01:06
+Arguments:
+ data:
+  justafew: false
+  name: vrd
+  with_bg_obj: false
+  with_bg_pred: false
+eval:
+  eval_obj: false
+  justafew: false
+  rec:
+  - 50
+  - 30
+  test_pre: true
+  test_rel: false
+  use_obj_prior: true
+  use_preload: false
+model:
+  n_fus_neurons: 256
+  type: DSRModel
+  use_bn: false
+  use_pred_sem: 0
+  use_sem: true
+  use_so: true
+  use_spat: 1
+  use_vis: true
+opt:
+  lr: 0.0001
+  lr_fus_ratio: 1
+  lr_rel_ratio: 1
+  weight_decay: 5.0e-05
+training:
+  batch_size: 1
+  checkpoint_freq: 0
+  loss: mlab
+  num_epochs: 4
+  print_freq: 0.1
+  test_first: false
+  test_freq:
+  - 1
+  - 2
+  - 3
+  use_preload: false
+  use_shuffle: true
+
+Initializing data:  Munch({'name': 'vrd', 'with_bg_obj': False, 'with_bg_pred': False, 'justafew': False})
+Initializing VRD Model:  Munch({'type': 'DSRModel', 'use_so': True, 'use_vis': True, 'use_sem': True, 'use_spat': 1, 'use_pred_sem': 0, 'n_fus_neurons': 256, 'use_bn': False, 'n_obj': 100, 'n_pred': 57})
+Random initialization...
+Distribution soP found!
+Initializing evaluator...
+Initializing training...
+train()
+Epoch 1/4
+/opt/interactionwise/interactionwise-gio/utils.py:305: UserWarning: dict_patch: key 'lr_fus_ratio' not int original dict.
+  warnings.warn("dict_patch: key '{}' not int original dict.".format(k), UserWarning)
+/opt/interactionwise/interactionwise-gio/utils.py:305: UserWarning: dict_patch: key 'lr_rel_ratio' not int original dict.
+  warnings.warn("dict_patch: key '{}' not int original dict.".format(k), UserWarning)
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  2.520
+	 378/3780: LOSS:  1.724
+	 756/3780: LOSS:  1.424
+	1134/3780: LOSS:  1.209
+	1512/3780: LOSS:  1.088
+	1890/3780: LOSS:  1.054
+	2268/3780: LOSS:  0.896
+	2646/3780: LOSS:  0.901
+	3024/3780: LOSS:  1.002
+	3402/3780: LOSS:  0.774
+TRAIN Loss:  1.259 Time: 00:02:23
+Epoch 2/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.762
+	 378/3780: LOSS:  0.854
+	 756/3780: LOSS:  0.771
+	1134/3780: LOSS:  0.776
+	1512/3780: LOSS:  0.714
+	1890/3780: LOSS:  0.666
+	2268/3780: LOSS:  0.670
+	2646/3780: LOSS:  0.717
+	3024/3780: LOSS:  0.697
+	3402/3780: LOSS:  0.678
+TRAIN Loss:  0.731 Time: 00:02:23
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  89.303	ZS:  72.552
+	R@30:  80.388	ZS:  56.731
+
+TEST Time: 00:01:06
+Epoch 3/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.630
+	 378/3780: LOSS:  0.633
+	 756/3780: LOSS:  0.596
+	1134/3780: LOSS:  0.646
+	1512/3780: LOSS:  0.608
+	1890/3780: LOSS:  0.594
+	2268/3780: LOSS:  0.606
+	2646/3780: LOSS:  0.624
+	3024/3780: LOSS:  0.675
+	3402/3780: LOSS:  0.651
+TRAIN Loss:  0.626 Time: 00:02:23
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  90.508	ZS:  75.612
+	R@30:  82.273	ZS:  60.490
+
+TEST Time: 00:01:06
+Epoch 4/4
+Dividing the learning rate by 10 at epoch 3!
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.553
+	 378/3780: LOSS:  0.540
+	 756/3780: LOSS:  0.515
+	1134/3780: LOSS:  0.552
+	1512/3780: LOSS:  0.548
+	1890/3780: LOSS:  0.488
+	2268/3780: LOSS:  0.533
+	2646/3780: LOSS:  0.531
+	3024/3780: LOSS:  0.597
+	3402/3780: LOSS:  0.554
+TRAIN Loss:  0.541 Time: 00:02:23
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  91.084	ZS:  75.874
+	R@30:  82.744	ZS:  59.965
+
+TEST Time: 00:01:06
+Arguments:
+ data:
+  justafew: false
+  name: vrd
+  with_bg_obj: false
+  with_bg_pred: false
+eval:
+  eval_obj: false
+  justafew: false
+  rec:
+  - 50
+  - 30
+  test_pre: true
+  test_rel: false
+  use_obj_prior: true
+  use_preload: false
+model:
+  n_fus_neurons: 256
+  type: DSRModel
+  use_bn: false
+  use_pred_sem: 17
+  use_sem: true
+  use_so: true
+  use_spat: 1
+  use_vis: true
+opt:
+  lr: 0.0001
+  lr_fus_ratio: 1
+  lr_rel_ratio: 1
+  weight_decay: 5.0e-05
+training:
+  batch_size: 1
+  checkpoint_freq: 0
+  loss: mlab
+  num_epochs: 4
+  print_freq: 0.1
+  test_first: false
+  test_freq:
+  - 1
+  - 2
+  - 3
+  use_preload: false
+  use_shuffle: true
+
+Initializing data:  Munch({'name': 'vrd', 'with_bg_obj': False, 'with_bg_pred': False, 'justafew': False})
+Initializing VRD Model:  Munch({'type': 'DSRModel', 'use_so': True, 'use_vis': True, 'use_sem': True, 'use_spat': 1, 'use_pred_sem': 17, 'n_fus_neurons': 256, 'use_bn': False, 'n_obj': 100, 'n_pred': 57, 'pred_emb': array([[ 0.01668124, -0.0566705 ,  0.01736677, ..., -0.07281854,
+        -0.01835698, -0.04417861],
+       [-0.06716008, -0.04918766, -0.02096782, ..., -0.04698053,
+         0.07315089,  0.08134883],
+       [-0.02224379, -0.01505082,  0.00116357, ...,  0.00607473,
+        -0.04376223, -0.00773697],
+       ...,
+       [-0.02783789,  0.07209299, -0.07744642, ..., -0.03640339,
+        -0.08565503, -0.07744642],
+       [ 0.02842034, -0.02331489,  0.01276363, ..., -0.00808363,
+        -0.00209536,  0.01089163],
+       [-0.0423268 , -0.07201692,  0.01818595, ..., -0.05389565,
+        -0.02868766, -0.15799776]])})
+Mode 0 = 00000
+Random initialization...
+Distribution soP found!
+Initializing evaluator...
+Initializing training...
+train()
+Epoch 1/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  2.781
+	 378/3780: LOSS:  1.862
+	 756/3780: LOSS:  1.566
+	1134/3780: LOSS:  1.397
+	1512/3780: LOSS:  1.222
+	1890/3780: LOSS:  1.124
+	2268/3780: LOSS:  1.188
+	2646/3780: LOSS:  1.023
+	3024/3780: LOSS:  0.922
+	3402/3780: LOSS:  0.930
+TRAIN Loss:  1.402 Time: 00:02:22
+Epoch 2/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.889
+	 378/3780: LOSS:  0.921
+	 756/3780: LOSS:  0.850
+	1134/3780: LOSS:  1.004
+	1512/3780: LOSS:  0.823
+	1890/3780: LOSS:  0.828
+	2268/3780: LOSS:  0.821
+	2646/3780: LOSS:  0.852
+	3024/3780: LOSS:  0.752
+	3402/3780: LOSS:  0.730
+TRAIN Loss:  0.847 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  88.295	ZS:  69.755
+	R@30:  78.777	ZS:  54.633
+
+TEST Time: 00:01:06
+Epoch 3/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.710
+	 378/3780: LOSS:  0.804
+	 756/3780: LOSS:  0.701
+	1134/3780: LOSS:  0.719
+	1512/3780: LOSS:  0.760
+	1890/3780: LOSS:  0.728
+	2268/3780: LOSS:  0.730
+	2646/3780: LOSS:  0.684
+	3024/3780: LOSS:  0.720
+	3402/3780: LOSS:  0.722
+TRAIN Loss:  0.728 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  89.618	ZS:  72.727
+	R@30:  81.016	ZS:  56.643
+
+TEST Time: 00:01:06
+Epoch 4/4
+Dividing the learning rate by 10 at epoch 3!
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.657
+	 378/3780: LOSS:  0.624
+	 756/3780: LOSS:  0.648
+	1134/3780: LOSS:  0.642
+	1512/3780: LOSS:  0.659
+	1890/3780: LOSS:  0.691
+	2268/3780: LOSS:  0.605
+	2646/3780: LOSS:  0.635
+	3024/3780: LOSS:  0.713
+	3402/3780: LOSS:  0.597
+TRAIN Loss:  0.647 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  89.971	ZS:  73.514
+	R@30:  81.330	ZS:  57.343
+
+TEST Time: 00:01:06
+Arguments:
+ data:
+  justafew: false
+  name: vrd
+  with_bg_obj: false
+  with_bg_pred: false
+eval:
+  eval_obj: false
+  justafew: false
+  rec:
+  - 50
+  - 30
+  test_pre: true
+  test_rel: false
+  use_obj_prior: true
+  use_preload: false
+model:
+  n_fus_neurons: 256
+  type: DSRModel
+  use_bn: false
+  use_pred_sem: 0
+  use_sem: true
+  use_so: true
+  use_spat: 1
+  use_vis: true
+opt:
+  lr: 0.0001
+  lr_fus_ratio: 1
+  lr_rel_ratio: 10
+  weight_decay: 5.0e-05
+training:
+  batch_size: 1
+  checkpoint_freq: 0
+  loss: mlab
+  num_epochs: 4
+  print_freq: 0.1
+  test_first: false
+  test_freq:
+  - 1
+  - 2
+  - 3
+  use_preload: false
+  use_shuffle: true
+
+Initializing data:  Munch({'name': 'vrd', 'with_bg_obj': False, 'with_bg_pred': False, 'justafew': False})
+Initializing VRD Model:  Munch({'type': 'DSRModel', 'use_so': True, 'use_vis': True, 'use_sem': True, 'use_spat': 1, 'use_pred_sem': 0, 'n_fus_neurons': 256, 'use_bn': False, 'n_obj': 100, 'n_pred': 57})
+Random initialization...
+Distribution soP found!
+Initializing evaluator...
+Initializing training...
+train()
+Epoch 1/4
+/opt/interactionwise/interactionwise-gio/utils.py:305: UserWarning: dict_patch: key 'lr_fus_ratio' not int original dict.
+  warnings.warn("dict_patch: key '{}' not int original dict.".format(k), UserWarning)
+/opt/interactionwise/interactionwise-gio/utils.py:305: UserWarning: dict_patch: key 'lr_rel_ratio' not int original dict.
+  warnings.warn("dict_patch: key '{}' not int original dict.".format(k), UserWarning)
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  2.488
+	 378/3780: LOSS:  1.539
+	 756/3780: LOSS:  1.186
+	1134/3780: LOSS:  1.150
+	1512/3780: LOSS:  0.881
+	1890/3780: LOSS:  0.801
+	2268/3780: LOSS:  0.751
+	2646/3780: LOSS:  0.688
+	3024/3780: LOSS:  0.765
+	3402/3780: LOSS:  0.720
+TRAIN Loss:  1.097 Time: 00:02:23
+Epoch 2/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.654
+	 378/3780: LOSS:  0.644
+	 756/3780: LOSS:  0.634
+	1134/3780: LOSS:  0.581
+	1512/3780: LOSS:  0.695
+	1890/3780: LOSS:  0.642
+	2268/3780: LOSS:  0.873
+	2646/3780: LOSS:  0.639
+	3024/3780: LOSS:  0.567
+	3402/3780: LOSS:  0.526
+TRAIN Loss:  0.645 Time: 00:02:23
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  91.176	ZS:  75.087
+	R@30:  83.085	ZS:  61.626
+
+TEST Time: 00:01:06
+Epoch 3/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.495
+	 378/3780: LOSS:  0.541
+	 756/3780: LOSS:  0.529
+	1134/3780: LOSS:  0.578
+	1512/3780: LOSS:  0.540
+	1890/3780: LOSS:  0.533
+	2268/3780: LOSS:  0.505
+	2646/3780: LOSS:  0.506
+	3024/3780: LOSS:  0.459
+	3402/3780: LOSS:  0.510
+TRAIN Loss:  0.520 Time: 00:02:23
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  91.961	ZS:  76.224
+	R@30:  84.485	ZS:  61.276
+
+TEST Time: 00:01:06
+Epoch 4/4
+Dividing the learning rate by 10 at epoch 3!
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.440
+	 378/3780: LOSS:  0.405
+	 756/3780: LOSS:  0.461
+	1134/3780: LOSS:  0.407
+	1512/3780: LOSS:  0.456
+	1890/3780: LOSS:  0.415
+	2268/3780: LOSS:  0.436
+	2646/3780: LOSS:  0.420
+	3024/3780: LOSS:  0.444
+	3402/3780: LOSS:  0.391
+TRAIN Loss:  0.428 Time: 00:02:23
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  92.275	ZS:  76.486
+	R@30:  84.983	ZS:  61.101
+
+TEST Time: 00:01:06
+Arguments:
+ data:
+  justafew: false
+  name: vrd
+  with_bg_obj: false
+  with_bg_pred: false
+eval:
+  eval_obj: false
+  justafew: false
+  rec:
+  - 50
+  - 30
+  test_pre: true
+  test_rel: false
+  use_obj_prior: true
+  use_preload: false
+model:
+  n_fus_neurons: 256
+  type: DSRModel
+  use_bn: false
+  use_pred_sem: 17
+  use_sem: true
+  use_so: true
+  use_spat: 1
+  use_vis: true
+opt:
+  lr: 0.0001
+  lr_fus_ratio: 1
+  lr_rel_ratio: 10
+  weight_decay: 5.0e-05
+training:
+  batch_size: 1
+  checkpoint_freq: 0
+  loss: mlab
+  num_epochs: 4
+  print_freq: 0.1
+  test_first: false
+  test_freq:
+  - 1
+  - 2
+  - 3
+  use_preload: false
+  use_shuffle: true
+
+Initializing data:  Munch({'name': 'vrd', 'with_bg_obj': False, 'with_bg_pred': False, 'justafew': False})
+Initializing VRD Model:  Munch({'type': 'DSRModel', 'use_so': True, 'use_vis': True, 'use_sem': True, 'use_spat': 1, 'use_pred_sem': 17, 'n_fus_neurons': 256, 'use_bn': False, 'n_obj': 100, 'n_pred': 57, 'pred_emb': array([[ 0.01668124, -0.0566705 ,  0.01736677, ..., -0.07281854,
+        -0.01835698, -0.04417861],
+       [-0.06716008, -0.04918766, -0.02096782, ..., -0.04698053,
+         0.07315089,  0.08134883],
+       [-0.02224379, -0.01505082,  0.00116357, ...,  0.00607473,
+        -0.04376223, -0.00773697],
+       ...,
+       [-0.02783789,  0.07209299, -0.07744642, ..., -0.03640339,
+        -0.08565503, -0.07744642],
+       [ 0.02842034, -0.02331489,  0.01276363, ..., -0.00808363,
+        -0.00209536,  0.01089163],
+       [-0.0423268 , -0.07201692,  0.01818595, ..., -0.05389565,
+        -0.02868766, -0.15799776]])})
+Mode 0 = 00000
+Random initialization...
+Distribution soP found!
+Initializing evaluator...
+Initializing training...
+train()
+Epoch 1/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  2.541
+	 378/3780: LOSS:  1.792
+	 756/3780: LOSS:  1.567
+	1134/3780: LOSS:  1.068
+	1512/3780: LOSS:  0.988
+	1890/3780: LOSS:  0.978
+	2268/3780: LOSS:  0.845
+	2646/3780: LOSS:  0.809
+	3024/3780: LOSS:  0.868
+	3402/3780: LOSS:  0.821
+TRAIN Loss:  1.228 Time: 00:02:22
+Epoch 2/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.737
+	 378/3780: LOSS:  0.787
+	 756/3780: LOSS:  0.845
+	1134/3780: LOSS:  0.849
+	1512/3780: LOSS:  0.728
+	1890/3780: LOSS:  0.772
+	2268/3780: LOSS:  0.701
+	2646/3780: LOSS:  0.671
+	3024/3780: LOSS:  0.646
+	3402/3780: LOSS:  0.684
+TRAIN Loss:  0.742 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  89.264	ZS:  72.115
+	R@30:  80.427	ZS:  55.420
+
+TEST Time: 00:01:06
+Epoch 3/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.682
+	 378/3780: LOSS:  0.548
+	 756/3780: LOSS:  0.623
+	1134/3780: LOSS:  0.602
+	1512/3780: LOSS:  0.629
+	1890/3780: LOSS:  0.678
+	2268/3780: LOSS:  0.640
+	2646/3780: LOSS:  0.642
+	3024/3780: LOSS:  0.639
+	3402/3780: LOSS:  0.595
+TRAIN Loss:  0.628 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  90.691	ZS:  73.252
+	R@30:  82.509	ZS:  59.965
+
+TEST Time: 00:01:06
+Epoch 4/4
+Dividing the learning rate by 10 at epoch 3!
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.539
+	 378/3780: LOSS:  0.574
+	 756/3780: LOSS:  0.556
+	1134/3780: LOSS:  0.511
+	1512/3780: LOSS:  0.510
+	1890/3780: LOSS:  0.524
+	2268/3780: LOSS:  0.517
+	2646/3780: LOSS:  0.508
+	3024/3780: LOSS:  0.527
+	3402/3780: LOSS:  0.503
+TRAIN Loss:  0.527 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  91.568	ZS:  74.038
+	R@30:  83.648	ZS:  59.266
+
+TEST Time: 00:01:06
+Arguments:
+ data:
+  justafew: false
+  name: vrd
+  with_bg_obj: false
+  with_bg_pred: false
+eval:
+  eval_obj: false
+  justafew: false
+  rec:
+  - 50
+  - 30
+  test_pre: true
+  test_rel: false
+  use_obj_prior: true
+  use_preload: false
+model:
+  n_fus_neurons: 256
+  type: DSRModel
+  use_bn: false
+  use_pred_sem: 0
+  use_sem: true
+  use_so: true
+  use_spat: 1
+  use_vis: true
+opt:
+  lr: 0.0001
+  lr_fus_ratio: 10
+  lr_rel_ratio: 1
+  weight_decay: 5.0e-05
+training:
+  batch_size: 1
+  checkpoint_freq: 0
+  loss: mlab
+  num_epochs: 4
+  print_freq: 0.1
+  test_first: false
+  test_freq:
+  - 1
+  - 2
+  - 3
+  use_preload: false
+  use_shuffle: true
+
+Initializing data:  Munch({'name': 'vrd', 'with_bg_obj': False, 'with_bg_pred': False, 'justafew': False})
+Initializing VRD Model:  Munch({'type': 'DSRModel', 'use_so': True, 'use_vis': True, 'use_sem': True, 'use_spat': 1, 'use_pred_sem': 0, 'n_fus_neurons': 256, 'use_bn': False, 'n_obj': 100, 'n_pred': 57})
+Random initialization...
+Distribution soP found!
+Initializing evaluator...
+Initializing training...
+train()
+Epoch 1/4
+/opt/interactionwise/interactionwise-gio/utils.py:305: UserWarning: dict_patch: key 'lr_fus_ratio' not int original dict.
+  warnings.warn("dict_patch: key '{}' not int original dict.".format(k), UserWarning)
+/opt/interactionwise/interactionwise-gio/utils.py:305: UserWarning: dict_patch: key 'lr_rel_ratio' not int original dict.
+  warnings.warn("dict_patch: key '{}' not int original dict.".format(k), UserWarning)
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  2.323
+	 378/3780: LOSS:  1.430
+	 756/3780: LOSS:  1.136
+	1134/3780: LOSS:  1.059
+	1512/3780: LOSS:  0.940
+	1890/3780: LOSS:  0.928
+	2268/3780: LOSS:  0.877
+	2646/3780: LOSS:  0.792
+	3024/3780: LOSS:  0.857
+	3402/3780: LOSS:  0.668
+TRAIN Loss:  1.101 Time: 00:02:23
+Epoch 2/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.703
+	 378/3780: LOSS:  0.632
+	 756/3780: LOSS:  0.627
+	1134/3780: LOSS:  0.691
+	1512/3780: LOSS:  0.622
+	1890/3780: LOSS:  0.675
+	2268/3780: LOSS:  0.645
+	2646/3780: LOSS:  0.678
+	3024/3780: LOSS:  0.614
+	3402/3780: LOSS:  0.630
+TRAIN Loss:  0.652 Time: 00:02:23
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  90.272	ZS:  73.689
+	R@30:  81.775	ZS:  57.692
+
+TEST Time: 00:01:06
+Epoch 3/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.556
+	 378/3780: LOSS:  0.569
+	 756/3780: LOSS:  0.567
+	1134/3780: LOSS:  0.605
+	1512/3780: LOSS:  0.570
+	1890/3780: LOSS:  0.574
+	2268/3780: LOSS:  0.495
+	2646/3780: LOSS:  0.543
+	3024/3780: LOSS:  0.567
+	3402/3780: LOSS:  0.473
+TRAIN Loss:  0.552 Time: 00:02:23
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  91.726	ZS:  76.136
+	R@30:  84.106	ZS:  60.664
+
+TEST Time: 00:01:06
+Epoch 4/4
+Dividing the learning rate by 10 at epoch 3!
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.480
+	 378/3780: LOSS:  0.464
+	 756/3780: LOSS:  0.476
+	1134/3780: LOSS:  0.431
+	1512/3780: LOSS:  0.421
+	1890/3780: LOSS:  0.443
+	2268/3780: LOSS:  0.495
+	2646/3780: LOSS:  0.486
+	3024/3780: LOSS:  0.464
+	3402/3780: LOSS:  0.424
+TRAIN Loss:  0.458 Time: 00:02:23
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  91.948	ZS:  76.136
+	R@30:  84.813	ZS:  61.451
+
+TEST Time: 00:01:06
+Arguments:
+ data:
+  justafew: false
+  name: vrd
+  with_bg_obj: false
+  with_bg_pred: false
+eval:
+  eval_obj: false
+  justafew: false
+  rec:
+  - 50
+  - 30
+  test_pre: true
+  test_rel: false
+  use_obj_prior: true
+  use_preload: false
+model:
+  n_fus_neurons: 256
+  type: DSRModel
+  use_bn: false
+  use_pred_sem: 17
+  use_sem: true
+  use_so: true
+  use_spat: 1
+  use_vis: true
+opt:
+  lr: 0.0001
+  lr_fus_ratio: 10
+  lr_rel_ratio: 1
+  weight_decay: 5.0e-05
+training:
+  batch_size: 1
+  checkpoint_freq: 0
+  loss: mlab
+  num_epochs: 4
+  print_freq: 0.1
+  test_first: false
+  test_freq:
+  - 1
+  - 2
+  - 3
+  use_preload: false
+  use_shuffle: true
+
+Initializing data:  Munch({'name': 'vrd', 'with_bg_obj': False, 'with_bg_pred': False, 'justafew': False})
+Initializing VRD Model:  Munch({'type': 'DSRModel', 'use_so': True, 'use_vis': True, 'use_sem': True, 'use_spat': 1, 'use_pred_sem': 17, 'n_fus_neurons': 256, 'use_bn': False, 'n_obj': 100, 'n_pred': 57, 'pred_emb': array([[ 0.01668124, -0.0566705 ,  0.01736677, ..., -0.07281854,
+        -0.01835698, -0.04417861],
+       [-0.06716008, -0.04918766, -0.02096782, ..., -0.04698053,
+         0.07315089,  0.08134883],
+       [-0.02224379, -0.01505082,  0.00116357, ...,  0.00607473,
+        -0.04376223, -0.00773697],
+       ...,
+       [-0.02783789,  0.07209299, -0.07744642, ..., -0.03640339,
+        -0.08565503, -0.07744642],
+       [ 0.02842034, -0.02331489,  0.01276363, ..., -0.00808363,
+        -0.00209536,  0.01089163],
+       [-0.0423268 , -0.07201692,  0.01818595, ..., -0.05389565,
+        -0.02868766, -0.15799776]])})
+Mode 0 = 00000
+Random initialization...
+Distribution soP found!
+Initializing evaluator...
+Initializing training...
+train()
+Epoch 1/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  2.469
+	 378/3780: LOSS:  1.539
+	 756/3780: LOSS:  1.314
+	1134/3780: LOSS:  0.963
+	1512/3780: LOSS:  0.981
+	1890/3780: LOSS:  0.896
+	2268/3780: LOSS:  0.831
+	2646/3780: LOSS:  1.062
+	3024/3780: LOSS:  0.761
+	3402/3780: LOSS:  0.709
+TRAIN Loss:  1.152 Time: 00:02:22
+Epoch 2/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.874
+	 378/3780: LOSS:  0.697
+	 756/3780: LOSS:  0.718
+	1134/3780: LOSS:  0.649
+	1512/3780: LOSS:  0.666
+	1890/3780: LOSS:  0.694
+	2268/3780: LOSS:  0.691
+	2646/3780: LOSS:  0.607
+	3024/3780: LOSS:  0.682
+	3402/3780: LOSS:  0.657
+TRAIN Loss:  0.693 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  90.482	ZS:  72.815
+	R@30:  81.409	ZS:  56.469
+
+TEST Time: 00:01:06
+Epoch 3/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.577
+	 378/3780: LOSS:  0.591
+	 756/3780: LOSS:  0.590
+	1134/3780: LOSS:  0.569
+	1512/3780: LOSS:  0.655
+	1890/3780: LOSS:  0.618
+	2268/3780: LOSS:  0.656
+	2646/3780: LOSS:  0.560
+	3024/3780: LOSS:  0.638
+	3402/3780: LOSS:  0.558
+TRAIN Loss:  0.601 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  91.385	ZS:  74.825
+	R@30:  82.757	ZS:  58.654
+
+TEST Time: 00:01:06
+Epoch 4/4
+Dividing the learning rate by 10 at epoch 3!
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.543
+	 378/3780: LOSS:  0.524
+	 756/3780: LOSS:  0.456
+	1134/3780: LOSS:  0.578
+	1512/3780: LOSS:  0.471
+	1890/3780: LOSS:  0.472
+	2268/3780: LOSS:  0.504
+	2646/3780: LOSS:  0.499
+	3024/3780: LOSS:  0.492
+	3402/3780: LOSS:  0.492
+TRAIN Loss:  0.503 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  91.922	ZS:  74.738
+	R@30:  84.053	ZS:  58.829
+
+TEST Time: 00:01:06
+Arguments:
+ data:
+  justafew: false
+  name: vrd
+  with_bg_obj: false
+  with_bg_pred: false
+eval:
+  eval_obj: false
+  justafew: false
+  rec:
+  - 50
+  - 30
+  test_pre: true
+  test_rel: false
+  use_obj_prior: true
+  use_preload: false
+model:
+  n_fus_neurons: 256
+  type: DSRModel
+  use_bn: false
+  use_pred_sem: 0
+  use_sem: true
+  use_so: true
+  use_spat: 1
+  use_vis: true
+opt:
+  lr: 0.0001
+  lr_fus_ratio: 10
+  lr_rel_ratio: 10
+  weight_decay: 5.0e-05
+training:
+  batch_size: 1
+  checkpoint_freq: 0
+  loss: mlab
+  num_epochs: 4
+  print_freq: 0.1
+  test_first: false
+  test_freq:
+  - 1
+  - 2
+  - 3
+  use_preload: false
+  use_shuffle: true
+
+Initializing data:  Munch({'name': 'vrd', 'with_bg_obj': False, 'with_bg_pred': False, 'justafew': False})
+Initializing VRD Model:  Munch({'type': 'DSRModel', 'use_so': True, 'use_vis': True, 'use_sem': True, 'use_spat': 1, 'use_pred_sem': 0, 'n_fus_neurons': 256, 'use_bn': False, 'n_obj': 100, 'n_pred': 57})
+Random initialization...
+Distribution soP found!
+Initializing evaluator...
+Initializing training...
+train()
+Epoch 1/4
+/opt/interactionwise/interactionwise-gio/utils.py:305: UserWarning: dict_patch: key 'lr_fus_ratio' not int original dict.
+  warnings.warn("dict_patch: key '{}' not int original dict.".format(k), UserWarning)
+/opt/interactionwise/interactionwise-gio/utils.py:305: UserWarning: dict_patch: key 'lr_rel_ratio' not int original dict.
+  warnings.warn("dict_patch: key '{}' not int original dict.".format(k), UserWarning)
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  2.322
+	 378/3780: LOSS:  1.318
+	 756/3780: LOSS:  1.121
+	1134/3780: LOSS:  0.913
+	1512/3780: LOSS:  0.811
+	1890/3780: LOSS:  0.844
+	2268/3780: LOSS:  1.157
+	2646/3780: LOSS:  0.749
+	3024/3780: LOSS:  0.733
+	3402/3780: LOSS:  0.721
+TRAIN Loss:  1.069 Time: 00:02:23
+Epoch 2/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.573
+	 378/3780: LOSS:  0.591
+	 756/3780: LOSS:  0.572
+	1134/3780: LOSS:  0.611
+	1512/3780: LOSS:  0.651
+	1890/3780: LOSS:  0.596
+	2268/3780: LOSS:  0.555
+	2646/3780: LOSS:  0.638
+	3024/3780: LOSS:  0.624
+	3402/3780: LOSS:  0.589
+TRAIN Loss:  0.600 Time: 00:02:23
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  91.110	ZS:  75.000
+	R@30:  83.150	ZS:  59.528
+
+TEST Time: 00:01:06
+Epoch 3/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.511
+	 378/3780: LOSS:  0.526
+	 756/3780: LOSS:  0.472
+	1134/3780: LOSS:  0.524
+	1512/3780: LOSS:  0.458
+	1890/3780: LOSS:  0.597
+	2268/3780: LOSS:  0.543
+	2646/3780: LOSS:  0.586
+	3024/3780: LOSS:  0.462
+	3402/3780: LOSS:  0.530
+TRAIN Loss:  0.521 Time: 00:02:23
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  91.974	ZS:  75.437
+	R@30:  84.171	ZS:  61.014
+
+TEST Time: 00:01:06
+Epoch 4/4
+Dividing the learning rate by 10 at epoch 3!
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.448
+	 378/3780: LOSS:  0.409
+	 756/3780: LOSS:  0.402
+	1134/3780: LOSS:  0.377
+	1512/3780: LOSS:  0.382
+	1890/3780: LOSS:  0.422
+	2268/3780: LOSS:  0.400
+	2646/3780: LOSS:  0.416
+	3024/3780: LOSS:  0.421
+	3402/3780: LOSS:  0.373
+TRAIN Loss:  0.405 Time: 00:02:23
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  92.577	ZS:  76.836
+	R@30:  85.546	ZS:  62.238
+
+TEST Time: 00:01:06
+Arguments:
+ data:
+  justafew: false
+  name: vrd
+  with_bg_obj: false
+  with_bg_pred: false
+eval:
+  eval_obj: false
+  justafew: false
+  rec:
+  - 50
+  - 30
+  test_pre: true
+  test_rel: false
+  use_obj_prior: true
+  use_preload: false
+model:
+  n_fus_neurons: 256
+  type: DSRModel
+  use_bn: false
+  use_pred_sem: 17
+  use_sem: true
+  use_so: true
+  use_spat: 1
+  use_vis: true
+opt:
+  lr: 0.0001
+  lr_fus_ratio: 10
+  lr_rel_ratio: 10
+  weight_decay: 5.0e-05
+training:
+  batch_size: 1
+  checkpoint_freq: 0
+  loss: mlab
+  num_epochs: 4
+  print_freq: 0.1
+  test_first: false
+  test_freq:
+  - 1
+  - 2
+  - 3
+  use_preload: false
+  use_shuffle: true
+
+Initializing data:  Munch({'name': 'vrd', 'with_bg_obj': False, 'with_bg_pred': False, 'justafew': False})
+Initializing VRD Model:  Munch({'type': 'DSRModel', 'use_so': True, 'use_vis': True, 'use_sem': True, 'use_spat': 1, 'use_pred_sem': 17, 'n_fus_neurons': 256, 'use_bn': False, 'n_obj': 100, 'n_pred': 57, 'pred_emb': array([[ 0.01668124, -0.0566705 ,  0.01736677, ..., -0.07281854,
+        -0.01835698, -0.04417861],
+       [-0.06716008, -0.04918766, -0.02096782, ..., -0.04698053,
+         0.07315089,  0.08134883],
+       [-0.02224379, -0.01505082,  0.00116357, ...,  0.00607473,
+        -0.04376223, -0.00773697],
+       ...,
+       [-0.02783789,  0.07209299, -0.07744642, ..., -0.03640339,
+        -0.08565503, -0.07744642],
+       [ 0.02842034, -0.02331489,  0.01276363, ..., -0.00808363,
+        -0.00209536,  0.01089163],
+       [-0.0423268 , -0.07201692,  0.01818595, ..., -0.05389565,
+        -0.02868766, -0.15799776]])})
+Mode 0 = 00000
+Random initialization...
+Distribution soP found!
+Initializing evaluator...
+Initializing training...
+train()
+Epoch 1/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  2.211
+	 378/3780: LOSS:  1.328
+	 756/3780: LOSS:  1.123
+	1134/3780: LOSS:  0.853
+	1512/3780: LOSS:  0.872
+	1890/3780: LOSS:  0.913
+	2268/3780: LOSS:  0.723
+	2646/3780: LOSS:  0.839
+	3024/3780: LOSS:  0.784
+	3402/3780: LOSS:  0.757
+TRAIN Loss:  1.040 Time: 00:02:22
+Epoch 2/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.686
+	 378/3780: LOSS:  0.683
+	 756/3780: LOSS:  0.623
+	1134/3780: LOSS:  0.648
+	1512/3780: LOSS:  0.640
+	1890/3780: LOSS:  0.721
+	2268/3780: LOSS:  0.603
+	2646/3780: LOSS:  1.208
+	3024/3780: LOSS:  0.627
+	3402/3780: LOSS:  0.631
+TRAIN Loss:  0.707 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  90.796	ZS:  74.126
+	R@30:  82.810	ZS:  58.304
+
+TEST Time: 00:01:06
+Epoch 3/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.562
+	 378/3780: LOSS:  0.540
+	 756/3780: LOSS:  0.577
+	1134/3780: LOSS:  0.560
+	1512/3780: LOSS:  0.581
+	1890/3780: LOSS:  0.553
+	2268/3780: LOSS:  0.594
+	2646/3780: LOSS:  0.630
+	3024/3780: LOSS:  0.542
+	3402/3780: LOSS:  0.585
+TRAIN Loss:  0.572 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  91.202	ZS:  72.902
+	R@30:  83.137	ZS:  57.867
+
+TEST Time: 00:01:06
+Epoch 4/4
+Dividing the learning rate by 10 at epoch 3!
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  0.452
+	 378/3780: LOSS:  0.465
+	 756/3780: LOSS:  0.430
+	1134/3780: LOSS:  0.442
+	1512/3780: LOSS:  0.436
+	1890/3780: LOSS:  0.461
+	2268/3780: LOSS:  0.493
+	2646/3780: LOSS:  0.441
+	3024/3780: LOSS:  0.427
+	3402/3780: LOSS:  0.470
+TRAIN Loss:  0.452 Time: 00:02:22
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@50:  92.563	ZS:  75.612
+	R@30:  85.088	ZS:  59.178
+
+TEST Time: 00:01:06
+Arguments:
+ data:
+  justafew: false
+  name: vrd
+  with_bg_obj: false
+  with_bg_pred: false
+eval:
+  eval_obj: true
+  justafew: false
+  rec:
+  - 100
+  - 50
+  test_pre: true
+  test_rel: true
+  use_obj_prior: true
+  use_preload: false
+model:
+  n_fus_neurons: 256
+  type: DSRModel
+  use_bn: false
+  use_pred_sem: false
+  use_sem: true
+  use_so: false
+  use_spat: 0
+  use_vis: false
+opt:
+  lr: 1.0e-05
+  weight_decay: 0.0005
+training:
+  batch_size: 1
+  checkpoint_freq: 0
+  loss: mlab
+  num_epochs: 4
+  print_freq: 0.1
+  test_first: false
+  test_freq: 1
+  use_preload: false
+  use_shuffle: true
+
+Initializing data:  Munch({'name': 'vrd', 'with_bg_obj': False, 'with_bg_pred': False, 'justafew': False})
+Initializing VRD Model:  Munch({'type': 'DSRModel', 'use_so': False, 'use_vis': False, 'use_sem': True, 'use_spat': 0, 'use_pred_sem': False, 'n_fus_neurons': 256, 'use_bn': False, 'n_obj': 100, 'n_pred': 57})
+Random initialization...
+Distribution soP found!
+Initializing evaluator...
+Initializing training...
+train()
+Epoch 1/4
+libpng warning: iCCP: known incorrect sRGB profile
+	   0/3780: LOSS:  4.311
+	 378/3780: LOSS:  2.330
+	 756/3780: LOSS:  2.205
+	1134/3780: LOSS:  2.293
+	1512/3780: LOSS:  2.010
+	1890/3780: LOSS:  1.906
+	2268/3780: LOSS:  1.799
+	2646/3780: LOSS:  1.603
+	3024/3780: LOSS:  1.668
+	3402/3780: LOSS:  1.727
+TRAIN Loss:  2.185 Time: 00:00:36
+0/1000100/1000200/1000300/1000400/1000500/1000600/1000700/1000900/1000PRED TEST:
+	R@100:  88.230	ZS:  76.049
+	R@50:  71.576	ZS:  51.136
+
+TEST Time: 00:00:36
+0/1000Traceback (most recent call last):
+  File "vrd_trainer.py", line 420, in <module>
+    trainer.train()
+  File "vrd_trainer.py", line 207, in train
+    self.do_test(res, res_headers)
+  File "vrd_trainer.py", line 235, in do_test
+    recalls, dtime = self.test_rel()
+  File "vrd_trainer.py", line 312, in test_rel
+    recalls, (pos_num, loc_num, gt_num), dtime = self.eval.test_rel(self.model, self.args.eval.rec)
+  File "/opt/interactionwise/interactionwise-gio/lib/evaluator.py", line 262, in test_rel
+    pos_num_img, loc_num_img = eval_obj_img(gt_obj_boxes, gt_obj_classes, det_obj_boxes, obj_pred.cpu().numpy(), gt_thr=0.5)
+  File "/opt/interactionwise/interactionwise-gio/lib/evaluation.py", line 206, in eval_obj_img
+    if np.linalg.norm(gt_cls[jj] - pred_cls[ii]) == 0:
+IndexError: index 1 is out of bounds for axis 0 with size 1
