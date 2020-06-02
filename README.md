@@ -1,10 +1,11 @@
-# Interactionwise -- Semantic Awareness for Visual Relationship Detection
+# Interactionwise
+## Semantic Awareness for Visual Relationship Detection
 
 This repo contains the code for our thesis work on Visual Relationship Detection.
 It is now quite messy, and we are in the process of tidying it up.
-We based our work on [[1]](#1).
+In the meantime... here are partial instructions to set up some assets (datasets, models and packages)
 
-## In the meantime... partial instructions to set up some assets (datasets, models and packages)
+We based our work on [[1]](#1).
 
 ### Packages
 
@@ -24,6 +25,14 @@ Mirror: `https://www.dropbox.com/s/62qxqt477vhb59e/faster_rcnn_1_20_7559.pth?dl=
 ./scripts/gd.pl "https://drive.google.com/file/d/0ByuDEGFYmWsbNVF5eExySUtMZmM/view" "data/VGG_imagenet.npy"
 ```
 
+### Pre-trained Word2vec embedding model:
+```
+mkdir data/embeddings
+wget "https://s3.amazonaws.com/dl4j-distribution/GoogleNews-vectors-negative300.bin.gz"
+mv GoogleNews-vectors-negative300.bin.gz data/embeddings
+```
+
+
 ### VRD dataset:
 ```
 cd data/vrd
@@ -31,13 +40,6 @@ wget http://imagenet.stanford.edu/internal/jcjohns/scene_graphs/sg_dataset.zip
 unzip -n sg_datset
 cd ../..
 ```
-
-```
-mkdir data/embeddings
-wget "https://s3.amazonaws.com/dl4j-distribution/GoogleNews-vectors-negative300.bin.gz"
-mv GoogleNews-vectors-negative300.bin.gz data/embeddings
-```
-
 
 ### VG dataset:
 Please download everything you need from https://visualgenome.org/api/v0/api_home.html into `data/vg`
@@ -86,6 +88,15 @@ Communications of the ACM, 11(3), 147-148.
 -->
 
 <!--
+
+
+`curl -LO https://download.pytorch.org/whl/cu80/torch-0.2.0.post3-cp27-cp27mu-manylinux1_x86_64.whl`
+`pip install torch-0.2.0.post3-cp27-cp27mu-manylinux1_x86_64.whl`
+`vim lib/make.sh faster*/lib/make.sh`
+
+`cd faster*/lib/ && sh make.sh && cd ../../lib && sh make.sh && cd .. && exit 0`
+
+
 replace this image in vrd_test
 https://raw.githubusercontent.com/GriffinLiang/vrd-dsr/master/data/vrd/4392556686_44d71ff5a0_o.jpg
 see Griffin Liang for more:
